@@ -53,9 +53,9 @@ export default function Home() {
               <div className="w-16 h-16 bg-gradient-to-br from-teal-400 to-blue-500 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
                 <Sparkles className="w-8 h-8 text-white" />
               </div>
-              <h3 className="font-display text-2xl font-semibold text-slate-800 mb-3">Free Publishing Support</h3>
+              <h3 className="font-display text-2xl font-semibold text-slate-800 mb-3">Publishing Tools</h3>
               <p className="text-gray-600">
-                Professional editing, cover design, and formatting services at no cost. 
+                Professional editing, cover design, and formatting tools at no cost. 
                 We invest in your success.
               </p>
             </div>
