@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { useAuth } from "../App";
 import { 
   Users, FileText, CheckCircle, Clock, TrendingUp, 
-  Eye, Check, X 
+  Eye, Check, X, RefreshCw, AlertTriangle, Zap
 } from "lucide-react";
 
 interface Application {
@@ -29,6 +29,24 @@ interface Stats {
   migratedAuthors: number;
   signedContracts: number;
   pendingContracts: number;
+  syncedToLLC: number;
+  pendingSync: number;
+  failedSync: number;
+}
+
+interface SyncRecord {
+  id: number;
+  applicationId: number;
+  userId: number;
+  indieQuillAuthorId: string | null;
+  syncStatus: string;
+  syncError: string | null;
+  syncAttempts: number;
+  lastSyncAttempt: string | null;
+  lastSyncedAt: string | null;
+  bookTitle: string;
+  authorName: string;
+  email: string;
 }
 
 export default function AdminDashboard() {
@@ -36,10 +54,13 @@ export default function AdminDashboard() {
   const [, setLocation] = useLocation();
   const [applications, setApplications] = useState<Application[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
+  const [syncRecords, setSyncRecords] = useState<SyncRecord[]>([]);
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
   const [reviewNotes, setReviewNotes] = useState("");
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [activeTab, setActiveTab] = useState<"applications" | "sync">("applications");
+  const [retrying, setRetrying] = useState<number | null>(null);
 
   useEffect(() => {
     if (!user || user.role !== "admin") {
@@ -47,17 +68,25 @@ export default function AdminDashboard() {
       return;
     }
 
-    Promise.all([
-      fetch("/api/applications").then((r) => r.json()),
-      fetch("/api/admin/stats").then((r) => r.json()),
-    ])
-      .then(([apps, statsData]) => {
-        setApplications(apps);
-        setStats(statsData);
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
+    loadData();
   }, [user, setLocation]);
+
+  const loadData = async () => {
+    try {
+      const [apps, statsData, syncData] = await Promise.all([
+        fetch("/api/applications").then((r) => r.json()),
+        fetch("/api/admin/stats").then((r) => r.json()),
+        fetch("/api/admin/sync-status").then((r) => r.json()),
+      ]);
+      setApplications(apps);
+      setStats(statsData);
+      setSyncRecords(syncData);
+    } catch (error) {
+      console.error("Failed to load data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const updateStatus = async (status: string) => {
     if (!selectedApp) return;
@@ -77,14 +106,36 @@ export default function AdminDashboard() {
         );
         setSelectedApp(null);
         setReviewNotes("");
-
-        const statsRes = await fetch("/api/admin/stats");
-        setStats(await statsRes.json());
+        loadData();
       }
     } catch (error) {
       console.error("Update failed:", error);
     } finally {
       setUpdating(false);
+    }
+  };
+
+  const retrySync = async (id: number) => {
+    setRetrying(id);
+    try {
+      await fetch(`/api/admin/retry-sync/${id}`, { method: "POST" });
+      await loadData();
+    } catch (error) {
+      console.error("Retry failed:", error);
+    } finally {
+      setRetrying(null);
+    }
+  };
+
+  const retryAllFailed = async () => {
+    setRetrying(-1);
+    try {
+      await fetch("/api/admin/retry-all-failed", { method: "POST" });
+      await loadData();
+    } catch (error) {
+      console.error("Retry all failed:", error);
+    } finally {
+      setRetrying(null);
     }
   };
 
@@ -95,6 +146,16 @@ export default function AdminDashboard() {
       accepted: "bg-green-100 text-green-700",
       rejected: "bg-red-100 text-red-700",
       migrated: "bg-purple-100 text-purple-700",
+    };
+    return colors[status] || colors.pending;
+  };
+
+  const getSyncStatusColor = (status: string) => {
+    const colors: Record<string, string> = {
+      pending: "bg-yellow-100 text-yellow-700",
+      syncing: "bg-blue-100 text-blue-700",
+      synced: "bg-green-100 text-green-700",
+      failed: "bg-red-100 text-red-700",
     };
     return colors[status] || colors.pending;
   };
@@ -142,8 +203,8 @@ export default function AdminDashboard() {
                   <CheckCircle className="w-5 h-5 text-green-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-slate-800">{stats.acceptedApplications}</p>
-                  <p className="text-xs text-gray-500">Accepted</p>
+                  <p className="text-2xl font-bold text-slate-800">{stats.syncedToLLC}</p>
+                  <p className="text-xs text-gray-500">Synced to LLC</p>
                 </div>
               </div>
             </div>
@@ -160,78 +221,186 @@ export default function AdminDashboard() {
             </div>
             <div className="card">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <FileText className="w-5 h-5 text-blue-600" />
+                <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                  <TrendingUp className="w-5 h-5 text-orange-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-slate-800">{stats.signedContracts}</p>
-                  <p className="text-xs text-gray-500">Signed</p>
+                  <p className="text-2xl font-bold text-slate-800">{stats.pendingSync}</p>
+                  <p className="text-xs text-gray-500">Pending Sync</p>
                 </div>
               </div>
             </div>
             <div className="card">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-                  <TrendingUp className="w-5 h-5 text-orange-600" />
+                <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                  <AlertTriangle className="w-5 h-5 text-red-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-slate-800">{stats.pendingContracts}</p>
-                  <p className="text-xs text-gray-500">Awaiting Sign</p>
+                  <p className="text-2xl font-bold text-slate-800">{stats.failedSync}</p>
+                  <p className="text-xs text-gray-500">Failed Sync</p>
                 </div>
               </div>
             </div>
           </div>
         )}
 
-        <div className="card">
-          <h2 className="font-display text-xl font-semibold text-slate-800 mb-4">Applications</h2>
-          
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 font-medium text-gray-600">Book Title</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-600">Genre</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-600">Minor</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-600">Status</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-600">Date</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-600">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {applications.map((app) => (
-                  <tr key={app.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-3 px-4 font-medium text-slate-800">{app.bookTitle}</td>
-                    <td className="py-3 px-4 text-gray-600">{app.genre}</td>
-                    <td className="py-3 px-4">
-                      {app.isMinor ? (
-                        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">Minor</span>
-                      ) : (
-                        <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">Adult</span>
-                      )}
-                    </td>
-                    <td className="py-3 px-4">
-                      <span className={`text-xs px-2 py-1 rounded capitalize ${getStatusColor(app.status)}`}>
-                        {app.status.replace("_", " ")}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-gray-600 text-sm">
-                      {new Date(app.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="py-3 px-4">
-                      <button
-                        onClick={() => setSelectedApp(app)}
-                        className="text-blue-600 hover:text-blue-800 transition-colors"
-                      >
-                        <Eye className="w-5 h-5" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        <div className="flex space-x-2 mb-6">
+          <button
+            onClick={() => setActiveTab("applications")}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              activeTab === "applications"
+                ? "bg-teal-400 text-white"
+                : "bg-white text-gray-600 hover:bg-gray-100"
+            }`}
+          >
+            Applications
+          </button>
+          <button
+            onClick={() => setActiveTab("sync")}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              activeTab === "sync"
+                ? "bg-teal-400 text-white"
+                : "bg-white text-gray-600 hover:bg-gray-100"
+            }`}
+          >
+            LLC Sync Status
+          </button>
         </div>
+
+        {activeTab === "applications" && (
+          <div className="card">
+            <h2 className="font-display text-xl font-semibold text-slate-800 mb-4">Applications</h2>
+            
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left py-3 px-4 font-medium text-gray-600">Book Title</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-600">Genre</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-600">Minor</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-600">Status</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-600">Date</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-600">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {applications.map((app) => (
+                    <tr key={app.id} className="border-b border-gray-100 hover:bg-gray-50">
+                      <td className="py-3 px-4 font-medium text-slate-800">{app.bookTitle}</td>
+                      <td className="py-3 px-4 text-gray-600">{app.genre}</td>
+                      <td className="py-3 px-4">
+                        {app.isMinor ? (
+                          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">Minor</span>
+                        ) : (
+                          <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">Adult</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className={`text-xs px-2 py-1 rounded capitalize ${getStatusColor(app.status)}`}>
+                          {app.status.replace("_", " ")}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-gray-600 text-sm">
+                        {new Date(app.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="py-3 px-4">
+                        <button
+                          onClick={() => setSelectedApp(app)}
+                          className="text-blue-600 hover:text-blue-800 transition-colors"
+                        >
+                          <Eye className="w-5 h-5" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "sync" && (
+          <div className="card">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-display text-xl font-semibold text-slate-800">
+                The Indie Quill LLC Sync Status
+              </h2>
+              {stats && stats.failedSync > 0 && (
+                <button
+                  onClick={retryAllFailed}
+                  disabled={retrying === -1}
+                  className="btn-primary text-sm py-2 px-4 flex items-center space-x-2"
+                >
+                  <RefreshCw className={`w-4 h-4 ${retrying === -1 ? "animate-spin" : ""}`} />
+                  <span>Retry All Failed</span>
+                </button>
+              )}
+            </div>
+
+            {syncRecords.length === 0 ? (
+              <p className="text-gray-500 text-center py-8">
+                No sync records yet. Authors will appear here once contracts are signed.
+              </p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-200">
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">Author</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">Book</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">Sync Status</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">LLC Author ID</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">Attempts</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {syncRecords.map((record) => (
+                      <tr key={record.id} className="border-b border-gray-100 hover:bg-gray-50">
+                        <td className="py-3 px-4">
+                          <p className="font-medium text-slate-800">{record.authorName}</p>
+                          <p className="text-xs text-gray-500">{record.email}</p>
+                        </td>
+                        <td className="py-3 px-4 text-gray-600">{record.bookTitle}</td>
+                        <td className="py-3 px-4">
+                          <span className={`text-xs px-2 py-1 rounded capitalize ${getSyncStatusColor(record.syncStatus)}`}>
+                            {record.syncStatus}
+                          </span>
+                          {record.syncError && (
+                            <p className="text-xs text-red-500 mt-1 max-w-xs truncate" title={record.syncError}>
+                              {record.syncError}
+                            </p>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-gray-600 font-mono text-sm">
+                          {record.indieQuillAuthorId || "-"}
+                        </td>
+                        <td className="py-3 px-4 text-gray-600 text-sm">
+                          {record.syncAttempts}
+                        </td>
+                        <td className="py-3 px-4">
+                          {record.syncStatus === "failed" && (
+                            <button
+                              onClick={() => retrySync(record.id)}
+                              disabled={retrying === record.id}
+                              className="text-blue-600 hover:text-blue-800 transition-colors"
+                              title="Retry Sync"
+                            >
+                              <RefreshCw className={`w-5 h-5 ${retrying === record.id ? "animate-spin" : ""}`} />
+                            </button>
+                          )}
+                          {record.syncStatus === "synced" && (
+                            <Zap className="w-5 h-5 text-green-500" title="Synced" />
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
 
         {selectedApp && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">

@@ -3,6 +3,7 @@ import { db } from "./db";
 import { users, applications, contracts, publishingUpdates } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
 import { hash, compare } from "./auth";
+import { migrateAuthorToIndieQuill, retryFailedMigrations } from "./indie-quill-integration";
 
 declare module "express-session" {
   interface SessionData {
@@ -295,11 +296,16 @@ export function registerRoutes(app: Express) {
           .set({ status: "migrated", updatedAt: new Date() })
           .where(eq(applications.id, contract.applicationId));
 
-        await db.insert(publishingUpdates).values({
+        const [publishingUpdate] = await db.insert(publishingUpdates).values({
           applicationId: contract.applicationId,
           userId: contract.userId,
           status: "not_started",
-          statusMessage: "Your application has been accepted and contract signed. Welcome to The Indie Quill family!",
+          syncStatus: "pending",
+          statusMessage: "Your application has been accepted and contract signed. Syncing with The Indie Quill LLC...",
+        }).returning();
+
+        migrateAuthorToIndieQuill(publishingUpdate.id).catch(err => {
+          console.error("Background migration failed:", err);
         });
       }
 
@@ -334,6 +340,7 @@ export function registerRoutes(app: Express) {
     try {
       const allApps = await db.select().from(applications);
       const allContracts = await db.select().from(contracts);
+      const allUpdates = await db.select().from(publishingUpdates);
       
       const stats = {
         totalApplications: allApps.length,
@@ -342,12 +349,96 @@ export function registerRoutes(app: Express) {
         migratedAuthors: allApps.filter(a => a.status === "migrated").length,
         signedContracts: allContracts.filter(c => c.status === "signed").length,
         pendingContracts: allContracts.filter(c => c.status !== "signed" && c.status !== "rejected").length,
+        syncedToLLC: allUpdates.filter(u => u.syncStatus === "synced").length,
+        pendingSync: allUpdates.filter(u => u.syncStatus === "pending").length,
+        failedSync: allUpdates.filter(u => u.syncStatus === "failed").length,
       };
 
       return res.json(stats);
     } catch (error) {
       console.error("Fetch stats error:", error);
       return res.status(500).json({ message: "Failed to fetch stats" });
+    }
+  });
+
+  app.get("/api/admin/sync-status", async (req: Request, res: Response) => {
+    if (!req.session.userId || req.session.userRole !== "admin") {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    try {
+      const allUpdates = await db.select({
+        id: publishingUpdates.id,
+        applicationId: publishingUpdates.applicationId,
+        userId: publishingUpdates.userId,
+        indieQuillAuthorId: publishingUpdates.indieQuillAuthorId,
+        syncStatus: publishingUpdates.syncStatus,
+        syncError: publishingUpdates.syncError,
+        syncAttempts: publishingUpdates.syncAttempts,
+        lastSyncAttempt: publishingUpdates.lastSyncAttempt,
+        lastSyncedAt: publishingUpdates.lastSyncedAt,
+      }).from(publishingUpdates).orderBy(desc(publishingUpdates.updatedAt));
+
+      const updatesWithDetails = await Promise.all(
+        allUpdates.map(async (update) => {
+          const [app] = await db.select({
+            bookTitle: applications.bookTitle,
+            penName: applications.penName,
+          }).from(applications).where(eq(applications.id, update.applicationId));
+
+          const [user] = await db.select({
+            email: users.email,
+            firstName: users.firstName,
+            lastName: users.lastName,
+          }).from(users).where(eq(users.id, update.userId));
+
+          return {
+            ...update,
+            bookTitle: app?.bookTitle,
+            authorName: user ? `${user.firstName} ${user.lastName}` : "Unknown",
+            email: user?.email,
+          };
+        })
+      );
+
+      return res.json(updatesWithDetails);
+    } catch (error) {
+      console.error("Fetch sync status error:", error);
+      return res.status(500).json({ message: "Failed to fetch sync status" });
+    }
+  });
+
+  app.post("/api/admin/retry-sync/:id", async (req: Request, res: Response) => {
+    if (!req.session.userId || req.session.userRole !== "admin") {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    try {
+      const updateId = parseInt(req.params.id);
+      const success = await migrateAuthorToIndieQuill(updateId);
+      
+      if (success) {
+        return res.json({ message: "Sync successful" });
+      } else {
+        return res.status(500).json({ message: "Sync failed - check error details" });
+      }
+    } catch (error) {
+      console.error("Retry sync error:", error);
+      return res.status(500).json({ message: "Failed to retry sync" });
+    }
+  });
+
+  app.post("/api/admin/retry-all-failed", async (req: Request, res: Response) => {
+    if (!req.session.userId || req.session.userRole !== "admin") {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    try {
+      const result = await retryFailedMigrations();
+      return res.json(result);
+    } catch (error) {
+      console.error("Retry all failed error:", error);
+      return res.status(500).json({ message: "Failed to retry migrations" });
     }
   });
 }

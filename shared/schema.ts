@@ -28,6 +28,13 @@ export const publishingStatusEnum = pgEnum('publishing_status', [
   'published'
 ]);
 
+export const syncStatusEnum = pgEnum('sync_status', [
+  'pending',
+  'syncing',
+  'synced',
+  'failed'
+]);
+
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   email: text("email").notNull().unique(),
@@ -104,6 +111,11 @@ export const publishingUpdates = pgTable("publishing_updates", {
   status: publishingStatusEnum("status").default("not_started").notNull(),
   statusMessage: text("status_message"),
   estimatedCompletion: text("estimated_completion"),
+  
+  syncStatus: syncStatusEnum("sync_status").default("pending").notNull(),
+  syncError: text("sync_error"),
+  syncAttempts: integer("sync_attempts").default(0).notNull(),
+  lastSyncAttempt: timestamp("last_sync_attempt"),
   
   lastSyncedAt: timestamp("last_synced_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
