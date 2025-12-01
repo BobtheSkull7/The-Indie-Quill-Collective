@@ -133,9 +133,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center space-x-3 mb-4 md:mb-0">
-              <div className="w-10 h-10 bg-gradient-to-br from-teal-400 to-blue-600 rounded-lg flex items-center justify-center">
-                <BookOpen className="w-6 h-6 text-white" />
-              </div>
+              <img src="/logo.png" alt="The Indie Quill Collective" className="w-12 h-12 rounded-full" />
               <div>
                 <h3 className="font-display text-lg font-bold text-white">The Indie Quill Collective</h3>
                 <p className="text-xs text-teal-400">501(c)(3) Non-Profit Organization</p>

@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "../App";
-import { BookOpen, Menu, X, User, LogOut } from "lucide-react";
+import { Menu, X, User, LogOut } from "lucide-react";
 import { useState } from "react";
 
 export default function Navbar() {
@@ -20,9 +20,7 @@ export default function Navbar() {
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <Link href="/" className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-teal-400 to-blue-600 rounded-lg flex items-center justify-center">
-                <BookOpen className="w-6 h-6 text-white" />
-              </div>
+              <img src="/logo.png" alt="The Indie Quill Collective" className="w-12 h-12 rounded-full" />
               <div className="hidden sm:block">
                 <h1 className="font-display text-xl font-bold text-slate-800">The Indie Quill</h1>
                 <p className="text-xs text-teal-500 font-medium -mt-1">COLLECTIVE</p>

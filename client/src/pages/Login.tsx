@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "../App";
-import { BookOpen, Mail, Lock, AlertCircle } from "lucide-react";
+import { Mail, Lock, AlertCircle } from "lucide-react";
 
 export default function Login() {
   const [, setLocation] = useLocation();
@@ -41,10 +41,8 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-gray-50 to-blue-50">
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center space-x-3 mb-6">
-            <div className="w-12 h-12 bg-gradient-to-br from-teal-400 to-blue-600 rounded-xl flex items-center justify-center">
-              <BookOpen className="w-7 h-7 text-white" />
-            </div>
+          <Link href="/" className="inline-block mb-6">
+            <img src="/logo.png" alt="The Indie Quill Collective" className="w-16 h-16 rounded-full mx-auto" />
           </Link>
           <h2 className="font-display text-3xl font-bold text-slate-800">Welcome Back</h2>
           <p className="text-gray-600 mt-2">Sign in to continue your author journey</p>
