@@ -38,12 +38,6 @@ export default function Navbar() {
             
             {!user ? (
               <>
-                <Link 
-                  href="/apply" 
-                  className={`text-sm font-medium transition-colors ${location === "/apply" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`}
-                >
-                  Apply
-                </Link>
                 <Link href="/login" className="btn-secondary text-sm py-2 px-4">
                   Sign In
                 </Link>
@@ -113,7 +107,6 @@ export default function Navbar() {
           <Link href="/" className="block text-gray-600 hover:text-slate-800 py-2">Home</Link>
           {!user ? (
             <>
-              <Link href="/apply" className="block text-gray-600 hover:text-slate-800 py-2">Apply</Link>
               <Link href="/login" className="block text-gray-600 hover:text-slate-800 py-2">Sign In</Link>
               <Link href="/register" className="block btn-primary text-center">Join Us</Link>
             </>
