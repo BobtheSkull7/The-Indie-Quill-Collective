@@ -163,6 +163,73 @@ export const publishingUpdatesRelations = relations(publishingUpdates, ({ one })
   }),
 }));
 
+export const calendarEvents = pgTable("calendar_events", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description"),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date"),
+  allDay: boolean("all_day").default(false).notNull(),
+  eventType: text("event_type").notNull().default("meeting"),
+  location: text("location"),
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const fundraisingCampaigns = pgTable("fundraising_campaigns", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  goalAmount: integer("goal_amount").notNull(),
+  currentAmount: integer("current_amount").default(0).notNull(),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date"),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const donations = pgTable("donations", {
+  id: serial("id").primaryKey(),
+  campaignId: integer("campaign_id").references(() => fundraisingCampaigns.id),
+  donorName: text("donor_name").notNull(),
+  donorEmail: text("donor_email"),
+  amount: integer("amount").notNull(),
+  isAnonymous: boolean("is_anonymous").default(false).notNull(),
+  notes: text("notes"),
+  donatedAt: timestamp("donated_at").defaultNow().notNull(),
+  recordedBy: integer("recorded_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const calendarEventsRelations = relations(calendarEvents, ({ one }) => ({
+  creator: one(users, {
+    fields: [calendarEvents.createdBy],
+    references: [users.id],
+  }),
+}));
+
+export const fundraisingCampaignsRelations = relations(fundraisingCampaigns, ({ one, many }) => ({
+  creator: one(users, {
+    fields: [fundraisingCampaigns.createdBy],
+    references: [users.id],
+  }),
+  donations: many(donations),
+}));
+
+export const donationsRelations = relations(donations, ({ one }) => ({
+  campaign: one(fundraisingCampaigns, {
+    fields: [donations.campaignId],
+    references: [fundraisingCampaigns.id],
+  }),
+  recorder: one(users, {
+    fields: [donations.recordedBy],
+    references: [users.id],
+  }),
+}));
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 export type Application = typeof applications.$inferSelect;
@@ -171,3 +238,9 @@ export type Contract = typeof contracts.$inferSelect;
 export type InsertContract = typeof contracts.$inferInsert;
 export type PublishingUpdate = typeof publishingUpdates.$inferSelect;
 export type InsertPublishingUpdate = typeof publishingUpdates.$inferInsert;
+export type CalendarEvent = typeof calendarEvents.$inferSelect;
+export type InsertCalendarEvent = typeof calendarEvents.$inferInsert;
+export type FundraisingCampaign = typeof fundraisingCampaigns.$inferSelect;
+export type InsertFundraisingCampaign = typeof fundraisingCampaigns.$inferInsert;
+export type Donation = typeof donations.$inferSelect;
+export type InsertDonation = typeof donations.$inferInsert;
