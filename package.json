@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.10.4",
+    "@octokit/rest": "^22.0.1",
     "@vitejs/plugin-react": "^4.4.1",
     "autoprefixer": "^10.4.22",
     "connect-pg-simple": "^10.0.0",
