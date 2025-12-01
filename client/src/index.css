@@ -14,11 +14,11 @@ body {
 
 @layer components {
   .btn-primary {
-    @apply bg-gradient-to-r from-teal-400 to-blue-700 text-white font-semibold py-3 px-6 rounded-lg hover:opacity-90 transition-all duration-200 shadow-lg hover:shadow-xl;
+    @apply bg-gradient-to-r from-red-500 to-red-700 text-white font-semibold py-3 px-6 rounded-lg hover:opacity-90 transition-all duration-200 shadow-lg hover:shadow-xl;
   }
   
   .btn-secondary {
-    @apply border-2 border-blue-700 text-blue-800 font-semibold py-3 px-6 rounded-lg hover:bg-blue-50 transition-all duration-200;
+    @apply border-2 border-slate-700 text-slate-800 font-semibold py-3 px-6 rounded-lg hover:bg-slate-50 transition-all duration-200;
   }
   
   .card {
@@ -26,7 +26,7 @@ body {
   }
   
   .input-field {
-    @apply w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-400 focus:border-transparent outline-none transition-all duration-200;
+    @apply w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-400 focus:border-transparent outline-none transition-all duration-200;
   }
   
   .label {

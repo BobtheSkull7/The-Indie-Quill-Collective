@@ -23,7 +23,7 @@ export default function Navbar() {
               <img src="/logo.png" alt="The Indie Quill Collective" className="w-12 h-12 rounded-full" />
               <div className="hidden sm:block">
                 <h1 className="font-display text-xl font-bold text-slate-800">The Indie Quill</h1>
-                <p className="text-xs text-teal-500 font-medium -mt-1">COLLECTIVE</p>
+                <p className="text-xs text-red-500 font-medium -mt-1">COLLECTIVE</p>
               </div>
             </Link>
           </div>
@@ -31,7 +31,7 @@ export default function Navbar() {
           <div className="hidden md:flex items-center space-x-6">
             <Link 
               href="/" 
-              className={`text-sm font-medium transition-colors ${location === "/" ? "text-teal-500" : "text-gray-600 hover:text-slate-800"}`}
+              className={`text-sm font-medium transition-colors ${location === "/" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`}
             >
               Home
             </Link>
@@ -40,7 +40,7 @@ export default function Navbar() {
               <>
                 <Link 
                   href="/apply" 
-                  className={`text-sm font-medium transition-colors ${location === "/apply" ? "text-teal-500" : "text-gray-600 hover:text-slate-800"}`}
+                  className={`text-sm font-medium transition-colors ${location === "/apply" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`}
                 >
                   Apply
                 </Link>
@@ -55,34 +55,34 @@ export default function Navbar() {
               <>
                 <Link 
                   href="/dashboard" 
-                  className={`text-sm font-medium transition-colors ${location === "/dashboard" ? "text-teal-500" : "text-gray-600 hover:text-slate-800"}`}
+                  className={`text-sm font-medium transition-colors ${location === "/dashboard" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`}
                 >
                   Dashboard
                 </Link>
                 <Link 
                   href="/contracts" 
-                  className={`text-sm font-medium transition-colors ${location === "/contracts" ? "text-teal-500" : "text-gray-600 hover:text-slate-800"}`}
+                  className={`text-sm font-medium transition-colors ${location === "/contracts" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`}
                 >
                   Contracts
                 </Link>
                 <Link 
                   href="/publishing-status" 
-                  className={`text-sm font-medium transition-colors ${location === "/publishing-status" ? "text-teal-500" : "text-gray-600 hover:text-slate-800"}`}
+                  className={`text-sm font-medium transition-colors ${location === "/publishing-status" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`}
                 >
                   Publishing Status
                 </Link>
                 {user.role === "admin" && (
                   <Link 
                     href="/admin" 
-                    className={`text-sm font-medium transition-colors ${location === "/admin" ? "text-teal-500" : "text-gray-600 hover:text-slate-800"}`}
+                    className={`text-sm font-medium transition-colors ${location === "/admin" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`}
                   >
                     Admin
                   </Link>
                 )}
                 <div className="flex items-center space-x-3 border-l pl-6 border-gray-200">
                   <div className="flex items-center space-x-2">
-                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                      <User className="w-4 h-4 text-blue-600" />
+                    <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                      <User className="w-4 h-4 text-red-600" />
                     </div>
                     <span className="text-sm font-medium text-gray-700">{user.firstName}</span>
                   </div>

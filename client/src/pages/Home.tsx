@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { BookOpen, Heart, ArrowRight, Sparkles, Shield, Rocket } from "lucide-react";
+import { Heart, ArrowRight, Sparkles, Shield, Rocket } from "lucide-react";
 
 export default function Home() {
   return (
@@ -10,13 +10,13 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 relative z-10">
           <div className="text-center max-w-4xl mx-auto">
             <div className="inline-flex items-center space-x-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 mb-6">
-              <Heart className="w-4 h-4 text-teal-400" />
+              <Heart className="w-4 h-4 text-red-400" />
               <span className="text-sm font-medium">501(c)(3) Non-Profit Organization</span>
             </div>
             
             <h1 className="font-display text-5xl md:text-7xl font-bold mb-6 leading-tight">
               The Indie Quill
-              <span className="block text-teal-400">Collective</span>
+              <span className="block text-red-500">Collective</span>
             </h1>
             
             <p className="text-xl md:text-2xl text-slate-200 mb-8 leading-relaxed">
@@ -50,7 +50,7 @@ export default function Home() {
           
           <div className="grid md:grid-cols-3 gap-8">
             <div className="card text-center group hover:shadow-xl transition-shadow">
-              <div className="w-16 h-16 bg-gradient-to-br from-teal-400 to-blue-500 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
+              <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-red-700 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
                 <Sparkles className="w-8 h-8 text-white" />
               </div>
               <h3 className="font-display text-2xl font-semibold text-slate-800 mb-3">Publishing Tools</h3>
@@ -61,7 +61,7 @@ export default function Home() {
             </div>
             
             <div className="card text-center group hover:shadow-xl transition-shadow">
-              <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
+              <div className="w-16 h-16 bg-gradient-to-br from-slate-700 to-slate-900 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
                 <Shield className="w-8 h-8 text-white" />
               </div>
               <h3 className="font-display text-2xl font-semibold text-slate-800 mb-3">Safe for Young Authors</h3>
@@ -72,7 +72,7 @@ export default function Home() {
             </div>
             
             <div className="card text-center group hover:shadow-xl transition-shadow">
-              <div className="w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
+              <div className="w-16 h-16 bg-gradient-to-br from-red-600 to-slate-800 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
                 <Rocket className="w-8 h-8 text-white" />
               </div>
               <h3 className="font-display text-2xl font-semibold text-slate-800 mb-3">Path to Publication</h3>
@@ -101,7 +101,7 @@ export default function Home() {
               { step: 4, title: "Publish", desc: "We handle everything to bring your book to life" },
             ].map((item) => (
               <div key={item.step} className="text-center">
-                <div className="w-12 h-12 bg-gradient-to-br from-teal-400 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 text-white font-bold text-lg">
+                <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-red-700 rounded-full flex items-center justify-center mx-auto mb-4 text-white font-bold text-lg">
                   {item.step}
                 </div>
                 <h3 className="font-display text-xl font-semibold text-slate-800 mb-2">{item.title}</h3>
@@ -114,7 +114,7 @@ export default function Home() {
 
       <section className="py-20 bg-gradient-to-br from-slate-800 to-slate-900 text-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <BookOpen className="w-16 h-16 mx-auto mb-6 text-teal-400" />
+          <img src="/logo.png" alt="The Indie Quill Collective" className="w-20 h-20 mx-auto mb-6 rounded-full" />
           <h2 className="font-display text-4xl font-bold mb-6">
             Ready to Share Your Story?
           </h2>
@@ -122,7 +122,7 @@ export default function Home() {
             Join our community of emerging authors and take the first step toward 
             seeing your book in print.
           </p>
-          <Link href="/apply" className="btn-primary inline-flex items-center space-x-2">
+          <Link href="/register" className="btn-primary inline-flex items-center space-x-2">
             <span>Apply Now</span>
             <ArrowRight className="w-5 h-5" />
           </Link>
@@ -136,7 +136,7 @@ export default function Home() {
               <img src="/logo.png" alt="The Indie Quill Collective" className="w-12 h-12 rounded-full" />
               <div>
                 <h3 className="font-display text-lg font-bold text-white">The Indie Quill Collective</h3>
-                <p className="text-xs text-teal-400">501(c)(3) Non-Profit Organization</p>
+                <p className="text-xs text-red-400">501(c)(3) Non-Profit Organization</p>
               </div>
             </div>
             <p className="text-sm">
