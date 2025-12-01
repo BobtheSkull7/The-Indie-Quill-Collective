@@ -426,7 +426,9 @@ export default function AdminDashboard() {
                             </button>
                           )}
                           {record.syncStatus === "synced" && (
-                            <Zap className="w-5 h-5 text-green-500" title="Synced" />
+                            <span title="Synced">
+                              <Zap className="w-5 h-5 text-green-500" />
+                            </span>
                           )}
                         </td>
                       </tr>

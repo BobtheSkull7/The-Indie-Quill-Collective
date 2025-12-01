@@ -40,14 +40,18 @@ The Indie Quill Collective is a 501(c)(3) non-profit organization platform desig
 ```
 
 ## Database Schema
-- **users** - User accounts with role (applicant/admin)
+- **users** - User accounts with role (applicant/admin/board_member)
 - **applications** - Author applications with book/manuscript details
 - **contracts** - Publishing agreements with signature tracking
 - **publishingUpdates** - Publishing status from The Indie Quill LLC
+- **calendarEvents** - Shared calendar events for board meetings
+- **fundraisingCampaigns** - Fundraising campaigns with goals and progress
+- **donations** - Donation records linked to campaigns
 
 ## User Roles
 - **applicant** - Default role for new users, can submit applications
 - **admin** - Can review applications, accept/reject, view all data
+- **board_member** - Board of Directors access: can view stats, manage calendar, track fundraising
 
 ## API Endpoints
 - `POST /api/auth/register` - Create new account
@@ -60,6 +64,14 @@ The Indie Quill Collective is a 501(c)(3) non-profit organization platform desig
 - `POST /api/contracts/:id/sign` - Sign a contract
 - `GET /api/publishing-updates` - Get publishing status
 - `GET /api/admin/stats` - Dashboard statistics (admin)
+
+### Board Member Endpoints
+- `GET /api/board/stats` - Read-only statistics (board_member)
+- `GET/POST /api/board/calendar` - Calendar events (board_member)
+- `DELETE /api/board/calendar/:id` - Delete calendar event (board_member)
+- `GET/POST /api/board/campaigns` - Fundraising campaigns (board_member)
+- `PATCH /api/board/campaigns/:id` - Update campaign status (board_member)
+- `GET/POST /api/board/donations` - Donation records (board_member)
 
 ## Running Locally
 ```bash

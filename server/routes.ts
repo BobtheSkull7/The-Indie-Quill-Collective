@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { db } from "./db";
-import { users, applications, contracts, publishingUpdates } from "@shared/schema";
-import { eq, desc } from "drizzle-orm";
+import { users, applications, contracts, publishingUpdates, calendarEvents, fundraisingCampaigns, donations } from "@shared/schema";
+import { eq, desc, gte } from "drizzle-orm";
 import { hash, compare } from "./auth";
 import { migrateAuthorToIndieQuill, retryFailedMigrations, sendApplicationToLLC, sendStatusUpdateToLLC, sendContractSignatureToLLC } from "./indie-quill-integration";
 import { sendApplicationReceivedEmail, sendApplicationAcceptedEmail, sendApplicationRejectedEmail } from "./email";
@@ -517,6 +517,210 @@ export function registerRoutes(app: Express) {
     } catch (error) {
       console.error("Retry all failed error:", error);
       return res.status(500).json({ message: "Failed to retry migrations" });
+    }
+  });
+
+  app.get("/api/board/stats", async (req: Request, res: Response) => {
+    if (!req.session.userId || req.session.userRole !== "board_member") {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    try {
+      const allApps = await db.select().from(applications);
+      const allContracts = await db.select().from(contracts);
+      const allUpdates = await db.select().from(publishingUpdates);
+      
+      const stats = {
+        totalApplications: allApps.length,
+        pendingApplications: allApps.filter(a => a.status === "pending").length,
+        acceptedApplications: allApps.filter(a => a.status === "accepted").length,
+        migratedAuthors: allApps.filter(a => a.status === "migrated").length,
+        signedContracts: allContracts.filter(c => c.status === "signed").length,
+        pendingContracts: allContracts.filter(c => c.status !== "signed" && c.status !== "rejected").length,
+        syncedToLLC: allUpdates.filter(u => u.syncStatus === "synced").length,
+        pendingSync: allUpdates.filter(u => u.syncStatus === "pending").length,
+        failedSync: allUpdates.filter(u => u.syncStatus === "failed").length,
+      };
+
+      return res.json(stats);
+    } catch (error) {
+      console.error("Fetch board stats error:", error);
+      return res.status(500).json({ message: "Failed to fetch stats" });
+    }
+  });
+
+  app.get("/api/board/calendar", async (req: Request, res: Response) => {
+    if (!req.session.userId || req.session.userRole !== "board_member") {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    try {
+      const events = await db.select().from(calendarEvents)
+        .where(gte(calendarEvents.startDate, new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)))
+        .orderBy(calendarEvents.startDate);
+      return res.json(events);
+    } catch (error) {
+      console.error("Fetch calendar error:", error);
+      return res.status(500).json({ message: "Failed to fetch calendar" });
+    }
+  });
+
+  app.post("/api/board/calendar", async (req: Request, res: Response) => {
+    if (!req.session.userId || req.session.userRole !== "board_member") {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    try {
+      const { title, description, startDate, endDate, allDay, eventType, location } = req.body;
+      const [newEvent] = await db.insert(calendarEvents).values({
+        title,
+        description,
+        startDate: new Date(startDate),
+        endDate: endDate ? new Date(endDate) : null,
+        allDay,
+        eventType,
+        location,
+        createdBy: req.session.userId,
+      }).returning();
+      return res.json(newEvent);
+    } catch (error) {
+      console.error("Create calendar event error:", error);
+      return res.status(500).json({ message: "Failed to create event" });
+    }
+  });
+
+  app.delete("/api/board/calendar/:id", async (req: Request, res: Response) => {
+    if (!req.session.userId || req.session.userRole !== "board_member") {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    try {
+      await db.delete(calendarEvents).where(eq(calendarEvents.id, parseInt(req.params.id)));
+      return res.json({ message: "Event deleted" });
+    } catch (error) {
+      console.error("Delete calendar event error:", error);
+      return res.status(500).json({ message: "Failed to delete event" });
+    }
+  });
+
+  app.get("/api/board/campaigns", async (req: Request, res: Response) => {
+    if (!req.session.userId || req.session.userRole !== "board_member") {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    try {
+      const campaigns = await db.select().from(fundraisingCampaigns)
+        .orderBy(desc(fundraisingCampaigns.createdAt));
+      return res.json(campaigns);
+    } catch (error) {
+      console.error("Fetch campaigns error:", error);
+      return res.status(500).json({ message: "Failed to fetch campaigns" });
+    }
+  });
+
+  app.post("/api/board/campaigns", async (req: Request, res: Response) => {
+    if (!req.session.userId || req.session.userRole !== "board_member") {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    try {
+      const { name, description, goalAmount, startDate, endDate } = req.body;
+      const [newCampaign] = await db.insert(fundraisingCampaigns).values({
+        name,
+        description,
+        goalAmount,
+        startDate: new Date(startDate),
+        endDate: endDate ? new Date(endDate) : null,
+        createdBy: req.session.userId,
+      }).returning();
+      return res.json(newCampaign);
+    } catch (error) {
+      console.error("Create campaign error:", error);
+      return res.status(500).json({ message: "Failed to create campaign" });
+    }
+  });
+
+  app.patch("/api/board/campaigns/:id", async (req: Request, res: Response) => {
+    if (!req.session.userId || req.session.userRole !== "board_member") {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    try {
+      const { isActive } = req.body;
+      const [updated] = await db.update(fundraisingCampaigns)
+        .set({ isActive, updatedAt: new Date() })
+        .where(eq(fundraisingCampaigns.id, parseInt(req.params.id)))
+        .returning();
+      return res.json(updated);
+    } catch (error) {
+      console.error("Update campaign error:", error);
+      return res.status(500).json({ message: "Failed to update campaign" });
+    }
+  });
+
+  app.get("/api/board/donations", async (req: Request, res: Response) => {
+    if (!req.session.userId || req.session.userRole !== "board_member") {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    try {
+      const allDonations = await db.select().from(donations)
+        .orderBy(desc(donations.donatedAt));
+      
+      const donationsWithCampaign = await Promise.all(
+        allDonations.map(async (donation) => {
+          if (donation.campaignId) {
+            const [campaign] = await db.select({ name: fundraisingCampaigns.name })
+              .from(fundraisingCampaigns)
+              .where(eq(fundraisingCampaigns.id, donation.campaignId));
+            return { ...donation, campaignName: campaign?.name };
+          }
+          return { ...donation, campaignName: null };
+        })
+      );
+      
+      return res.json(donationsWithCampaign);
+    } catch (error) {
+      console.error("Fetch donations error:", error);
+      return res.status(500).json({ message: "Failed to fetch donations" });
+    }
+  });
+
+  app.post("/api/board/donations", async (req: Request, res: Response) => {
+    if (!req.session.userId || req.session.userRole !== "board_member") {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    try {
+      const { campaignId, donorName, donorEmail, amount, isAnonymous, notes } = req.body;
+      
+      const [newDonation] = await db.insert(donations).values({
+        campaignId: campaignId || null,
+        donorName,
+        donorEmail,
+        amount,
+        isAnonymous,
+        notes,
+        recordedBy: req.session.userId,
+      }).returning();
+
+      if (campaignId) {
+        const [campaign] = await db.select().from(fundraisingCampaigns)
+          .where(eq(fundraisingCampaigns.id, campaignId));
+        if (campaign) {
+          await db.update(fundraisingCampaigns)
+            .set({ 
+              currentAmount: campaign.currentAmount + amount,
+              updatedAt: new Date() 
+            })
+            .where(eq(fundraisingCampaigns.id, campaignId));
+        }
+      }
+
+      return res.json(newDonation);
+    } catch (error) {
+      console.error("Create donation error:", error);
+      return res.status(500).json({ message: "Failed to record donation" });
     }
   });
 }
