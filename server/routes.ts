@@ -4,6 +4,7 @@ import { users, applications, contracts, publishingUpdates } from "@shared/schem
 import { eq, desc } from "drizzle-orm";
 import { hash, compare } from "./auth";
 import { migrateAuthorToIndieQuill, retryFailedMigrations } from "./indie-quill-integration";
+import { sendApplicationReceivedEmail, sendApplicationAcceptedEmail, sendApplicationRejectedEmail } from "./email";
 
 declare module "express-session" {
   interface SessionData {
@@ -124,6 +125,16 @@ export function registerRoutes(app: Express) {
       };
 
       const [newApplication] = await db.insert(applications).values(applicationData).returning();
+      
+      const [user] = await db.select().from(users).where(eq(users.id, req.session.userId));
+      if (user) {
+        try {
+          await sendApplicationReceivedEmail(user.email, user.firstName, newApplication.bookTitle);
+        } catch (emailError) {
+          console.error("Failed to send confirmation email:", emailError);
+        }
+      }
+      
       return res.json(newApplication);
     } catch (error) {
       console.error("Application submission error:", error);
@@ -139,7 +150,24 @@ export function registerRoutes(app: Express) {
     try {
       if (req.session.userRole === "admin") {
         const allApplications = await db.select().from(applications).orderBy(desc(applications.createdAt));
-        return res.json(allApplications);
+        
+        const appsWithUserDetails = await Promise.all(
+          allApplications.map(async (app) => {
+            const [user] = await db.select({
+              email: users.email,
+              firstName: users.firstName,
+              lastName: users.lastName,
+            }).from(users).where(eq(users.id, app.userId));
+            
+            return {
+              ...app,
+              authorName: user ? `${user.firstName} ${user.lastName}` : "Unknown",
+              authorEmail: user?.email,
+            };
+          })
+        );
+        
+        return res.json(appsWithUserDetails);
       } else {
         const userApplications = await db.select().from(applications)
           .where(eq(applications.userId, req.session.userId))
@@ -194,6 +222,8 @@ export function registerRoutes(app: Express) {
         .where(eq(applications.id, parseInt(req.params.id)))
         .returning();
 
+      const [applicantUser] = await db.select().from(users).where(eq(users.id, updated.userId));
+
       if (status === "accepted") {
         await db.insert(contracts).values({
           applicationId: updated.id,
@@ -203,6 +233,22 @@ export function registerRoutes(app: Express) {
           requiresGuardian: updated.isMinor,
           status: "pending_signature",
         });
+        
+        if (applicantUser) {
+          try {
+            await sendApplicationAcceptedEmail(applicantUser.email, applicantUser.firstName, updated.bookTitle);
+          } catch (emailError) {
+            console.error("Failed to send acceptance email:", emailError);
+          }
+        }
+      } else if (status === "rejected") {
+        if (applicantUser) {
+          try {
+            await sendApplicationRejectedEmail(applicantUser.email, applicantUser.firstName, updated.bookTitle);
+          } catch (emailError) {
+            console.error("Failed to send rejection email:", emailError);
+          }
+        }
       }
 
       return res.json(updated);

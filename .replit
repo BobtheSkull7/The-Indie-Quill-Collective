@@ -1,5 +1,5 @@
 entrypoint = "index.js"
-modules = ["nodejs-22"]
+modules = ["nodejs-22", "python-3.11"]
 hidden = [".config", "package-lock.json"]
 
 [gitHubImport]
@@ -15,7 +15,7 @@ ignorePorts = false
 
 [agent]
 expertMode = true
-integrations = ["javascript_database:1.0.0"]
+integrations = ["javascript_database:1.0.0", "resend:1.0.0"]
 
 [workflows]
 runButton = "Project"
@@ -46,5 +46,5 @@ localPort = 5000
 externalPort = 80
 
 [[ports]]
-localPort = 45611
+localPort = 36123
 externalPort = 3000
