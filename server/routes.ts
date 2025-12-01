@@ -3,7 +3,7 @@ import { db } from "./db";
 import { users, applications, contracts, publishingUpdates } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
 import { hash, compare } from "./auth";
-import { migrateAuthorToIndieQuill, retryFailedMigrations } from "./indie-quill-integration";
+import { migrateAuthorToIndieQuill, retryFailedMigrations, sendApplicationToLLC, sendStatusUpdateToLLC, sendContractSignatureToLLC } from "./indie-quill-integration";
 import { sendApplicationReceivedEmail, sendApplicationAcceptedEmail, sendApplicationRejectedEmail } from "./email";
 
 declare module "express-session" {
@@ -128,10 +128,28 @@ export function registerRoutes(app: Express) {
       
       const [user] = await db.select().from(users).where(eq(users.id, req.session.userId));
       if (user) {
+        // Send confirmation email
         try {
           await sendApplicationReceivedEmail(user.email, user.firstName, newApplication.bookTitle);
         } catch (emailError) {
           console.error("Failed to send confirmation email:", emailError);
+        }
+        
+        // Immediately sync application to The Indie Quill LLC
+        try {
+          const syncResult = await sendApplicationToLLC(
+            newApplication.id,
+            user.id,
+            applicationData,
+            { email: user.email, firstName: user.firstName, lastName: user.lastName }
+          );
+          if (syncResult.success) {
+            console.log(`Application ${newApplication.id} synced to LLC: ${syncResult.llcApplicationId}`);
+          } else {
+            console.error(`Failed to sync application to LLC: ${syncResult.error}`);
+          }
+        } catch (syncError) {
+          console.error("Failed to sync application to LLC:", syncError);
         }
       }
       
@@ -223,6 +241,13 @@ export function registerRoutes(app: Express) {
         .returning();
 
       const [applicantUser] = await db.select().from(users).where(eq(users.id, updated.userId));
+
+      // Sync status update to LLC immediately
+      try {
+        await sendStatusUpdateToLLC(updated.id, status, reviewNotes || null);
+      } catch (syncError) {
+        console.error("Failed to sync status to LLC:", syncError);
+      }
 
       if (status === "accepted") {
         await db.insert(contracts).values({
@@ -336,6 +361,13 @@ export function registerRoutes(app: Express) {
         .set(updateData)
         .where(eq(contracts.id, parseInt(req.params.id)))
         .returning();
+
+      // Sync signature to LLC immediately
+      try {
+        await sendContractSignatureToLLC(contract.applicationId, signatureType, signature);
+      } catch (syncError) {
+        console.error("Failed to sync signature to LLC:", syncError);
+      }
 
       if (updated.status === "signed") {
         await db.update(applications)

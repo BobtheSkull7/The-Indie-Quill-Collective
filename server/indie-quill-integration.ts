@@ -7,6 +7,41 @@ const INDIE_QUILL_API_URL = process.env.INDIE_QUILL_API_URL || "";
 const INDIE_QUILL_API_KEY = process.env.INDIE_QUILL_API_KEY || "";
 const INDIE_QUILL_API_SECRET = process.env.INDIE_QUILL_API_SECRET || "";
 
+interface ApplicationPayload {
+  source: "npo_collective";
+  collectiveApplicationId: number;
+  collectiveUserId: number;
+  author: {
+    email: string;
+    firstName: string;
+    lastName: string;
+    penName: string | null;
+    dateOfBirth: string;
+    isMinor: boolean;
+  };
+  guardian: {
+    name: string | null;
+    email: string | null;
+    phone: string | null;
+    relationship: string | null;
+  } | null;
+  book: {
+    title: string;
+    genre: string;
+    wordCount: number | null;
+    summary: string;
+    manuscriptStatus: string;
+    previouslyPublished: boolean;
+    publishingDetails: string | null;
+  };
+  motivation: {
+    whyCollective: string;
+    goals: string | null;
+    hearAboutUs: string | null;
+  };
+  submittedAt: Date;
+}
+
 interface AuthorPayload {
   collectiveAuthorId: number;
   email: string;
@@ -31,6 +66,182 @@ function generateHmacSignature(payload: string, timestamp: number): string {
     .createHmac("sha256", INDIE_QUILL_API_SECRET)
     .update(message)
     .digest("hex");
+}
+
+// Send application data to LLC immediately upon submission
+export async function sendApplicationToLLC(
+  applicationId: number,
+  userId: number,
+  applicationData: any,
+  userData: { email: string; firstName: string; lastName: string }
+): Promise<{ success: boolean; llcApplicationId?: string; error?: string }> {
+  if (!INDIE_QUILL_API_URL || !INDIE_QUILL_API_KEY || !INDIE_QUILL_API_SECRET) {
+    console.log("Indie Quill integration not configured - skipping immediate sync");
+    return { success: false, error: "Integration not configured" };
+  }
+
+  const payload: ApplicationPayload = {
+    source: "npo_collective",
+    collectiveApplicationId: applicationId,
+    collectiveUserId: userId,
+    author: {
+      email: userData.email,
+      firstName: userData.firstName,
+      lastName: userData.lastName,
+      penName: applicationData.penName || null,
+      dateOfBirth: applicationData.dateOfBirth,
+      isMinor: applicationData.isMinor,
+    },
+    guardian: applicationData.isMinor ? {
+      name: applicationData.guardianName || null,
+      email: applicationData.guardianEmail || null,
+      phone: applicationData.guardianPhone || null,
+      relationship: applicationData.guardianRelationship || null,
+    } : null,
+    book: {
+      title: applicationData.bookTitle,
+      genre: applicationData.genre,
+      wordCount: applicationData.wordCount || null,
+      summary: applicationData.bookSummary,
+      manuscriptStatus: applicationData.manuscriptStatus,
+      previouslyPublished: applicationData.previouslyPublished || false,
+      publishingDetails: applicationData.publishingDetails || null,
+    },
+    motivation: {
+      whyCollective: applicationData.whyCollective,
+      goals: applicationData.goals || null,
+      hearAboutUs: applicationData.hearAboutUs || null,
+    },
+    submittedAt: new Date(),
+  };
+
+  const timestamp = Math.floor(Date.now() / 1000);
+  const payloadJson = JSON.stringify(payload);
+  const signature = generateHmacSignature(payloadJson, timestamp);
+
+  try {
+    const response = await fetch(`${INDIE_QUILL_API_URL}/api/internal/npo-applications`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-Key": INDIE_QUILL_API_KEY,
+        "X-Timestamp": timestamp.toString(),
+        "X-Signature": signature,
+      },
+      body: payloadJson,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Indie Quill API error:", response.status, errorText);
+      return { success: false, error: `API error: ${response.status}` };
+    }
+
+    const data = await response.json();
+    console.log(`Application ${applicationId} synced to LLC with ID: ${data.applicationId}`);
+    return { success: true, llcApplicationId: data.applicationId };
+  } catch (error) {
+    console.error("Failed to send application to Indie Quill:", error);
+    return { success: false, error: `Connection failed: ${error}` };
+  }
+}
+
+// Send contract signature update to LLC
+export async function sendContractSignatureToLLC(
+  applicationId: number,
+  signatureType: "author" | "guardian",
+  signature: string
+): Promise<{ success: boolean; error?: string }> {
+  if (!INDIE_QUILL_API_URL || !INDIE_QUILL_API_KEY || !INDIE_QUILL_API_SECRET) {
+    console.log("Indie Quill integration not configured - skipping signature sync");
+    return { success: false, error: "Integration not configured" };
+  }
+
+  const payload = {
+    source: "npo_collective",
+    collectiveApplicationId: applicationId,
+    signatureType,
+    signature,
+    signedAt: new Date(),
+  };
+
+  const timestamp = Math.floor(Date.now() / 1000);
+  const payloadJson = JSON.stringify(payload);
+  const signatureHash = generateHmacSignature(payloadJson, timestamp);
+
+  try {
+    const response = await fetch(`${INDIE_QUILL_API_URL}/api/internal/npo-applications/${applicationId}/signature`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-Key": INDIE_QUILL_API_KEY,
+        "X-Timestamp": timestamp.toString(),
+        "X-Signature": signatureHash,
+      },
+      body: payloadJson,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Indie Quill signature sync error:", response.status, errorText);
+      return { success: false, error: `API error: ${response.status}` };
+    }
+
+    console.log(`Contract signature for application ${applicationId} synced to LLC`);
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to send signature to Indie Quill:", error);
+    return { success: false, error: `Connection failed: ${error}` };
+  }
+}
+
+// Send application status update to LLC (when admin accepts/rejects)
+export async function sendStatusUpdateToLLC(
+  applicationId: number,
+  status: string,
+  reviewNotes: string | null
+): Promise<{ success: boolean; error?: string }> {
+  if (!INDIE_QUILL_API_URL || !INDIE_QUILL_API_KEY || !INDIE_QUILL_API_SECRET) {
+    console.log("Indie Quill integration not configured - skipping status sync");
+    return { success: false, error: "Integration not configured" };
+  }
+
+  const payload = {
+    source: "npo_collective",
+    collectiveApplicationId: applicationId,
+    status,
+    reviewNotes,
+    updatedAt: new Date(),
+  };
+
+  const timestamp = Math.floor(Date.now() / 1000);
+  const payloadJson = JSON.stringify(payload);
+  const signature = generateHmacSignature(payloadJson, timestamp);
+
+  try {
+    const response = await fetch(`${INDIE_QUILL_API_URL}/api/internal/npo-applications/${applicationId}/status`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-Key": INDIE_QUILL_API_KEY,
+        "X-Timestamp": timestamp.toString(),
+        "X-Signature": signature,
+      },
+      body: payloadJson,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Indie Quill status sync error:", response.status, errorText);
+      return { success: false, error: `API error: ${response.status}` };
+    }
+
+    console.log(`Status update for application ${applicationId} synced to LLC`);
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to send status to Indie Quill:", error);
+    return { success: false, error: `Connection failed: ${error}` };
+  }
 }
 
 async function sendToIndieQuill(payload: AuthorPayload): Promise<{ success: boolean; authorId?: string; error?: string }> {

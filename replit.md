@@ -71,12 +71,13 @@ npm run db:push      # Push schema to database
 - `DATABASE_URL` - PostgreSQL connection string (auto-configured)
 
 ## Integration with The Indie Quill LLC
-Once applications are accepted and contracts are signed:
-1. Author record is migrated to "migrated" status
-2. Publishing update is created with sync status "pending"
-3. Automatic API call to The Indie Quill LLC to create author as "NPO Author" role
-4. Sync status tracked (pending → syncing → synced/failed)
-5. Admin can retry failed syncs from the dashboard
+**All data is synced immediately to The Indie Quill LLC database.** The Collective keeps minimal local data (only session/login info) while all author and application data is stored in the LLC's production database.
+
+### Immediate Sync Points:
+1. **Application Submission** - Full application data sent to LLC immediately
+2. **Status Updates** - Accept/reject decisions synced to LLC in real-time
+3. **Contract Signatures** - Both author and guardian signatures synced immediately
+4. **Final Migration** - After contract signing, author is created in LLC system
 
 ### Integration Configuration (Required Environment Variables)
 - `INDIE_QUILL_API_URL` - Base URL of The Indie Quill LLC API
@@ -85,7 +86,20 @@ Once applications are accepted and contracts are signed:
 
 ### LLC API Endpoint Requirements
 The Indie Quill LLC must implement:
-- `POST /api/internal/npo-authors` - Create NPO author
+- `POST /api/internal/npo-applications` - Receive new application
+  - Headers: X-API-Key, X-Timestamp, X-Signature (HMAC-SHA256)
+  - Body: Full application data (author, guardian, book, motivation)
+  - Response: { applicationId: string }
+  
+- `PATCH /api/internal/npo-applications/:id/status` - Receive status update
+  - Headers: X-API-Key, X-Timestamp, X-Signature (HMAC-SHA256)
+  - Body: { status, reviewNotes, updatedAt }
+  
+- `POST /api/internal/npo-applications/:id/signature` - Receive contract signature
+  - Headers: X-API-Key, X-Timestamp, X-Signature (HMAC-SHA256)
+  - Body: { signatureType, signature, signedAt }
+  
+- `POST /api/internal/npo-authors` - Create NPO author (after contract signed)
   - Headers: X-API-Key, X-Timestamp, X-Signature (HMAC-SHA256)
   - Body: Author profile, book details, guardian info (for minors)
   - Response: { authorId: string }
