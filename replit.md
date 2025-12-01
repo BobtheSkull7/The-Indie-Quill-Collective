@@ -73,8 +73,22 @@ npm run db:push      # Push schema to database
 ## Integration with The Indie Quill LLC
 Once applications are accepted and contracts are signed:
 1. Author record is migrated to "migrated" status
-2. Publishing updates are created to track progress
-3. The Indie Quill LLC handles actual publishing services
+2. Publishing update is created with sync status "pending"
+3. Automatic API call to The Indie Quill LLC to create author as "NPO Author" role
+4. Sync status tracked (pending → syncing → synced/failed)
+5. Admin can retry failed syncs from the dashboard
+
+### Integration Configuration (Required Environment Variables)
+- `INDIE_QUILL_API_URL` - Base URL of The Indie Quill LLC API
+- `INDIE_QUILL_API_KEY` - API key for authentication
+- `INDIE_QUILL_API_SECRET` - HMAC secret for request signing
+
+### LLC API Endpoint Requirements
+The Indie Quill LLC must implement:
+- `POST /api/internal/npo-authors` - Create NPO author
+  - Headers: X-API-Key, X-Timestamp, X-Signature (HMAC-SHA256)
+  - Body: Author profile, book details, guardian info (for minors)
+  - Response: { authorId: string }
 
 ## Notes
 - All text styling uses standard Tailwind classes
