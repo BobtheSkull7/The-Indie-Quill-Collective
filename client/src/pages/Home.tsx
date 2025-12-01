@@ -24,13 +24,10 @@ export default function Home() {
               We provide mentorship, resources, and a path to professional publishing.
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/apply" className="btn-primary flex items-center justify-center space-x-2">
+            <div className="flex justify-center">
+              <Link href="/register" className="btn-primary flex items-center justify-center space-x-2">
                 <span>Start Your Journey</span>
                 <ArrowRight className="w-5 h-5" />
-              </Link>
-              <Link href="/register" className="bg-white/10 border-2 border-white/30 text-white font-semibold py-3 px-6 rounded-lg hover:bg-white/20 transition-all duration-200">
-                Create Account
               </Link>
             </div>
           </div>

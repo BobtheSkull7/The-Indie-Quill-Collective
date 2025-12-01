@@ -51,7 +51,7 @@ export default function Register() {
       }
 
       setUser(data.user);
-      setLocation("/dashboard");
+      setLocation("/apply");
     } catch (err: any) {
       setError(err.message);
     } finally {
