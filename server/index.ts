@@ -88,7 +88,7 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  await ensurePermanentAdmin();
+  // Register routes first so health checks pass immediately
   registerRoutes(app);
   const server = createServer(app);
 
@@ -108,5 +108,9 @@ app.use((req, res, next) => {
   const PORT = 5000;
   server.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on port ${PORT}`);
+    // Run admin setup after server is listening (non-blocking)
+    ensurePermanentAdmin().catch(err => {
+      console.error("Failed to ensure permanent admin:", err);
+    });
   });
 })();
