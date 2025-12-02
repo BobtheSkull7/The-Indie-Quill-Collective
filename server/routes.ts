@@ -3,7 +3,7 @@ import { db } from "./db";
 import { users, applications, contracts, publishingUpdates, calendarEvents, fundraisingCampaigns, donations } from "@shared/schema";
 import { eq, desc, gte } from "drizzle-orm";
 import { hash, compare } from "./auth";
-import { migrateAuthorToIndieQuill, retryFailedMigrations, sendApplicationToLLC, sendStatusUpdateToLLC, sendContractSignatureToLLC } from "./indie-quill-integration";
+import { migrateAuthorToIndieQuill, retryFailedMigrations, sendApplicationToLLC, sendStatusUpdateToLLC, sendContractSignatureToLLC, sendUserRoleUpdateToLLC } from "./indie-quill-integration";
 import { sendApplicationReceivedEmail, sendApplicationAcceptedEmail, sendApplicationRejectedEmail } from "./email";
 
 declare module "express-session" {
@@ -517,6 +517,83 @@ export function registerRoutes(app: Express) {
     } catch (error) {
       console.error("Retry all failed error:", error);
       return res.status(500).json({ message: "Failed to retry migrations" });
+    }
+  });
+
+  app.get("/api/admin/users", async (req: Request, res: Response) => {
+    if (!req.session.userId || req.session.userRole !== "admin") {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    try {
+      const allUsers = await db.select({
+        id: users.id,
+        email: users.email,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        role: users.role,
+        createdAt: users.createdAt,
+      }).from(users).orderBy(desc(users.createdAt));
+
+      const usersWithStats = await Promise.all(
+        allUsers.map(async (user) => {
+          const userApps = await db.select().from(applications)
+            .where(eq(applications.userId, user.id));
+          
+          return {
+            ...user,
+            applicationCount: userApps.length,
+            hasAcceptedApp: userApps.some(a => a.status === "accepted" || a.status === "migrated"),
+          };
+        })
+      );
+
+      return res.json(usersWithStats);
+    } catch (error) {
+      console.error("Fetch users error:", error);
+      return res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
+  app.patch("/api/admin/users/:id/role", async (req: Request, res: Response) => {
+    if (!req.session.userId || req.session.userRole !== "admin") {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    try {
+      const userId = parseInt(req.params.id);
+      const { role } = req.body;
+
+      if (!["applicant", "admin", "board_member"].includes(role)) {
+        return res.status(400).json({ message: "Invalid role" });
+      }
+
+      const [existingUser] = await db.select().from(users).where(eq(users.id, userId));
+      if (!existingUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const [updated] = await db.update(users)
+        .set({ role, updatedAt: new Date() })
+        .where(eq(users.id, userId))
+        .returning();
+
+      try {
+        await sendUserRoleUpdateToLLC(userId, existingUser.email, role);
+      } catch (syncError) {
+        console.error("Failed to sync role update to LLC:", syncError);
+      }
+
+      return res.json({
+        id: updated.id,
+        email: updated.email,
+        firstName: updated.firstName,
+        lastName: updated.lastName,
+        role: updated.role,
+      });
+    } catch (error) {
+      console.error("Update user role error:", error);
+      return res.status(500).json({ message: "Failed to update user role" });
     }
   });
 
