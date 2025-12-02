@@ -6,7 +6,6 @@ import { type Server } from "http";
 
 const viteLogger = {
   hasWarned: false,
-  hasErrorLogged: false,
   info: (msg: string) => console.log(msg),
   warn: (msg: string) => {
     console.warn(msg);
@@ -20,9 +19,9 @@ const viteLogger = {
   },
   error: (msg: string) => {
     console.error(msg);
-    viteLogger.hasErrorLogged = true;
   },
   clearScreen: () => {},
+  hasErrorLogged: (_error: Error) => false,
 };
 
 export async function setupVite(app: Express, server: Server) {
@@ -37,7 +36,7 @@ export async function setupVite(app: Express, server: Server) {
 
   app.use(vite.middlewares);
   app.use(async (req, res, next) => {
-    if (req.path.startsWith("/api")) {
+    if (req.path.startsWith("/api") || req.path === "/health") {
       return next();
     }
     const url = req.originalUrl;
@@ -64,12 +63,10 @@ export function serveStatic(app: Express) {
   const distPath = path.resolve(process.cwd(), "dist/public");
 
   if (!fs.existsSync(distPath)) {
-    throw new Error(
-      `Could not find the build directory: ${distPath}, make sure to build the client first`
-    );
+    console.warn(`Build directory not found: ${distPath}, static serving disabled`);
+    return;
   }
 
-  // Set permissive CSP headers to allow scripts to run
   app.use((req, res, next) => {
     res.setHeader(
       "Content-Security-Policy",
@@ -80,7 +77,7 @@ export function serveStatic(app: Express) {
 
   app.use(express.static(distPath));
   app.use((req, res, next) => {
-    if (req.path.startsWith("/api")) {
+    if (req.path.startsWith("/api") || req.path === "/health") {
       return next();
     }
     res.sendFile(path.resolve(distPath, "index.html"));
