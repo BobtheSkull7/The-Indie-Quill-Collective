@@ -10,7 +10,7 @@ channel = "stable-24_11"
 
 [deployment]
 run = ["npm", "run", "start"]
-deploymentTarget = "autoscale"
+deploymentTarget = "vm"
 ignorePorts = false
 build = ["npm", "run", "build"]
 
@@ -45,7 +45,3 @@ outputType = "webview"
 [[ports]]
 localPort = 5000
 externalPort = 80
-
-[[ports]]
-localPort = 42731
-externalPort = 3000
