@@ -9,6 +9,8 @@ import { users } from "../shared/schema";
 import { eq, sql } from "drizzle-orm";
 import { hash } from "./auth";
 
+const isProd = process.env.NODE_ENV === "production";
+
 async function ensurePermanentAdmin() {
   const ADMIN_EMAIL = "jon@theindiequill.com";
   const ADMIN_PASSWORD = "Marcella@99";
@@ -41,6 +43,11 @@ async function ensurePermanentAdmin() {
 
 const app = express();
 
+// Health check endpoint - responds immediately without any database operations
+app.get("/health", (_req, res) => {
+  res.status(200).send("OK");
+});
+
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -51,7 +58,7 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: process.env.NODE_ENV === "production",
+      secure: isProd,
       maxAge: 24 * 60 * 60 * 1000,
     },
   })
@@ -87,30 +94,40 @@ app.use((req, res, next) => {
   next();
 });
 
-(async () => {
-  // Register routes first so health checks pass immediately
-  registerRoutes(app);
-  const server = createServer(app);
+// In production, set up static file serving synchronously before routes
+if (isProd) {
+  serveStatic(app);
+}
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-    res.status(status).json({ message });
-    throw err;
-  });
+// Register API routes
+registerRoutes(app);
 
-  if (process.env.NODE_ENV === "development" || !process.env.NODE_ENV) {
-    await setupVite(app, server);
-  } else {
-    serveStatic(app);
-  }
+// Error handler
+app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  const status = err.status || err.statusCode || 500;
+  const message = err.message || "Internal Server Error";
+  res.status(status).json({ message });
+  console.error(err);
+});
 
-  const PORT = 5000;
-  server.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on port ${PORT}`);
-    // Run admin setup after server is listening (non-blocking)
+const server = createServer(app);
+const PORT = 5000;
+
+// Start server immediately
+server.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server running on port ${PORT}`);
+  
+  // Run database operations asynchronously after server is listening
+  setImmediate(() => {
     ensurePermanentAdmin().catch(err => {
       console.error("Failed to ensure permanent admin:", err);
     });
   });
-})();
+  
+  // Set up Vite dev server after server is listening (development only)
+  if (!isProd) {
+    setupVite(app, server).catch(err => {
+      console.error("Failed to setup Vite:", err);
+    });
+  }
+});
