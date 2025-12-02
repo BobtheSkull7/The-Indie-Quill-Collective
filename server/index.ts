@@ -16,8 +16,8 @@ async function start() {
       console.log(`Server listening on port ${PORT}`);
     });
     
-    // Run slow operations after server is listening
-    bootstrapSlow().catch(err => console.error("Bootstrap slow error:", err));
+    // Skip slow operations - they block health checks on deployment
+    // Admin setup should be done manually, not on every deployment
   } catch (err) {
     console.error("Bootstrap failed:", err);
     process.exit(1);
