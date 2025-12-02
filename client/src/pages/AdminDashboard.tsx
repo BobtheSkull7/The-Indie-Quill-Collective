@@ -82,30 +82,47 @@ export default function AdminDashboard() {
   const [allUsers, setAllUsers] = useState<UserRecord[]>([]);
   const [editingUser, setEditingUser] = useState<UserRecord | null>(null);
   const [newRole, setNewRole] = useState<string>("");
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!user || user.role !== "admin") {
+    console.log("AdminDashboard: user =", user);
+    if (!user) {
+      console.log("AdminDashboard: No user, redirecting to login");
+      setLocation("/login");
+      return;
+    }
+    if (user.role !== "admin") {
+      console.log("AdminDashboard: User is not admin, redirecting to dashboard");
       setLocation("/dashboard");
       return;
     }
 
+    console.log("AdminDashboard: User is admin, loading data");
     loadData();
   }, [user, setLocation]);
 
   const loadData = async () => {
+    setError(null);
     try {
-      const [apps, statsData, syncData, usersData] = await Promise.all([
-        fetch("/api/applications").then((r) => r.json()),
-        fetch("/api/admin/stats").then((r) => r.json()),
-        fetch("/api/admin/sync-status").then((r) => r.json()),
-        fetch("/api/admin/users").then((r) => r.json()),
+      const [appsRes, statsRes, syncRes, usersRes] = await Promise.all([
+        fetch("/api/applications"),
+        fetch("/api/admin/stats"),
+        fetch("/api/admin/sync-status"),
+        fetch("/api/admin/users"),
       ]);
-      setApplications(apps);
+
+      const apps = appsRes.ok ? await appsRes.json() : [];
+      const statsData = statsRes.ok ? await statsRes.json() : null;
+      const syncData = syncRes.ok ? await syncRes.json() : [];
+      const usersData = usersRes.ok ? await usersRes.json() : [];
+
+      setApplications(Array.isArray(apps) ? apps : []);
       setStats(statsData);
-      setSyncRecords(syncData);
-      setAllUsers(usersData);
-    } catch (error) {
-      console.error("Failed to load data:", error);
+      setSyncRecords(Array.isArray(syncData) ? syncData : []);
+      setAllUsers(Array.isArray(usersData) ? usersData : []);
+    } catch (err: any) {
+      console.error("Failed to load data:", err);
+      setError("Failed to load dashboard data. Please refresh the page.");
     } finally {
       setLoading(false);
     }
@@ -241,10 +258,47 @@ export default function AdminDashboard() {
     return types.split(",").map(t => typeLabels[t.trim()] || t.trim()).join(", ");
   };
 
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center py-8 px-4 bg-gray-50">
+        <div className="card max-w-md text-center">
+          <h2 className="font-display text-xl font-bold text-slate-800 mb-2">Please Sign In</h2>
+          <p className="text-gray-600">You need to be logged in to view this page.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (user.role !== "admin") {
+    return (
+      <div className="min-h-screen flex items-center justify-center py-8 px-4 bg-gray-50">
+        <div className="card max-w-md text-center">
+          <h2 className="font-display text-xl font-bold text-slate-800 mb-2">Access Denied</h2>
+          <p className="text-gray-600">You don't have permission to view this page.</p>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center py-8 px-4 bg-gray-50">
+        <div className="card max-w-md text-center">
+          <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h2 className="font-display text-xl font-bold text-slate-800 mb-2">Error Loading Dashboard</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button onClick={loadData} className="btn-primary">
+            Try Again
+          </button>
+        </div>
       </div>
     );
   }
