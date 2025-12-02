@@ -33,15 +33,10 @@ async function bootstrapFast() {
     res.status(200).send("OK");
   });
 
-  app.get("/", (req, res, next) => {
-    const ua = req.headers?.["user-agent"] || "";
-    if (ua.includes("Health") || ua.includes("health") || ua.includes("curl") || ua.includes("Go-http")) {
-      return res.status(200).send("OK");
-    }
-    if (!(app as any).__initialized) {
-      return res.status(200).send("OK");
-    }
-    next();
+  app.get("/", (_req, res) => {
+    // Always respond OK immediately for health checks and initial startup
+    res.set("Cache-Control", "no-cache, no-store, must-revalidate");
+    res.status(200).send("OK");
   });
 
   const cors = (await import("cors")).default;
