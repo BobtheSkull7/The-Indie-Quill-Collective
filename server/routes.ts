@@ -574,7 +574,7 @@ export function registerRoutes(app: Express) {
       }
 
       const [updated] = await db.update(users)
-        .set({ role, updatedAt: new Date() })
+        .set({ role })
         .where(eq(users.id, userId))
         .returning();
 

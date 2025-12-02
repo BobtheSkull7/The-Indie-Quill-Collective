@@ -59,6 +59,17 @@ interface SyncRecord {
   email: string;
 }
 
+interface UserRecord {
+  id: number;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+  createdAt: string;
+  applicationCount: number;
+  hasAcceptedApp: boolean;
+}
+
 export default function AdminDashboard() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
@@ -69,8 +80,11 @@ export default function AdminDashboard() {
   const [reviewNotes, setReviewNotes] = useState("");
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
-  const [activeTab, setActiveTab] = useState<"applicants" | "sync">("applicants");
+  const [activeTab, setActiveTab] = useState<"applicants" | "sync" | "users">("applicants");
   const [retrying, setRetrying] = useState<number | null>(null);
+  const [allUsers, setAllUsers] = useState<UserRecord[]>([]);
+  const [editingUser, setEditingUser] = useState<UserRecord | null>(null);
+  const [newRole, setNewRole] = useState<string>("");
 
   useEffect(() => {
     if (!user || user.role !== "admin") {
@@ -83,14 +97,16 @@ export default function AdminDashboard() {
 
   const loadData = async () => {
     try {
-      const [apps, statsData, syncData] = await Promise.all([
+      const [apps, statsData, syncData, usersData] = await Promise.all([
         fetch("/api/applications").then((r) => r.json()),
         fetch("/api/admin/stats").then((r) => r.json()),
         fetch("/api/admin/sync-status").then((r) => r.json()),
+        fetch("/api/admin/users").then((r) => r.json()),
       ]);
       setApplications(apps);
       setStats(statsData);
       setSyncRecords(syncData);
+      setAllUsers(usersData);
     } catch (error) {
       console.error("Failed to load data:", error);
     } finally {
@@ -147,6 +163,41 @@ export default function AdminDashboard() {
     } finally {
       setRetrying(null);
     }
+  };
+
+  const updateUserRole = async () => {
+    if (!editingUser || !newRole) return;
+    setUpdating(true);
+
+    try {
+      const res = await fetch(`/api/admin/users/${editingUser.id}/role`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: newRole }),
+      });
+
+      if (res.ok) {
+        const updated = await res.json();
+        setAllUsers((prev) =>
+          prev.map((u) => (u.id === updated.id ? { ...u, role: updated.role } : u))
+        );
+        setEditingUser(null);
+        setNewRole("");
+      }
+    } catch (error) {
+      console.error("Update user role failed:", error);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const getRoleColor = (role: string) => {
+    const colors: Record<string, string> = {
+      applicant: "bg-gray-100 text-gray-700",
+      admin: "bg-red-100 text-red-700",
+      board_member: "bg-purple-100 text-purple-700",
+    };
+    return colors[role] || colors.applicant;
   };
 
   const getStatusColor = (status: string) => {
@@ -286,6 +337,16 @@ export default function AdminDashboard() {
             }`}
           >
             LLC Sync Status
+          </button>
+          <button
+            onClick={() => setActiveTab("users")}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              activeTab === "users"
+                ? "bg-red-500 text-white"
+                : "bg-white text-gray-600 hover:bg-gray-100"
+            }`}
+          >
+            Users
           </button>
         </div>
 
@@ -437,6 +498,141 @@ export default function AdminDashboard() {
                 </table>
               </div>
             )}
+          </div>
+        )}
+
+        {activeTab === "users" && (
+          <div className="card">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-display text-xl font-semibold text-slate-800">
+                User Management
+              </h2>
+              <p className="text-sm text-gray-500">{allUsers.length} total users</p>
+            </div>
+
+            {allUsers.length === 0 ? (
+              <p className="text-gray-500 text-center py-8">No users found.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-200">
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">User</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">Role</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">Applications</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">Joined</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {allUsers.map((u) => (
+                      <tr key={u.id} className="border-b border-gray-100 hover:bg-gray-50">
+                        <td className="py-3 px-4">
+                          <div>
+                            <p className="font-medium text-slate-800">{u.firstName} {u.lastName}</p>
+                            <p className="text-xs text-gray-500">{u.email}</p>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className={`text-xs px-2 py-1 rounded capitalize ${getRoleColor(u.role)}`}>
+                            {u.role.replace("_", " ")}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className="text-gray-600">{u.applicationCount}</span>
+                          {u.hasAcceptedApp && (
+                            <CheckCircle className="w-4 h-4 text-green-500 inline ml-2" />
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-gray-600 text-sm">
+                          {formatDateTime(u.createdAt)}
+                        </td>
+                        <td className="py-3 px-4">
+                          <button
+                            onClick={() => {
+                              setEditingUser(u);
+                              setNewRole(u.role);
+                            }}
+                            className="text-blue-600 hover:text-blue-800 transition-colors text-sm font-medium"
+                          >
+                            Edit Role
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {editingUser && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
+              <div className="p-6 border-b border-gray-200">
+                <div className="flex items-center justify-between">
+                  <h2 className="font-display text-xl font-bold text-slate-800">
+                    Edit User Role
+                  </h2>
+                  <button
+                    onClick={() => {
+                      setEditingUser(null);
+                      setNewRole("");
+                    }}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-6 space-y-4">
+                <div>
+                  <p className="text-sm text-gray-500">User</p>
+                  <p className="font-medium text-slate-800">{editingUser.firstName} {editingUser.lastName}</p>
+                  <p className="text-sm text-gray-500">{editingUser.email}</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Role
+                  </label>
+                  <select
+                    value={newRole}
+                    onChange={(e) => setNewRole(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  >
+                    <option value="applicant">Applicant</option>
+                    <option value="admin">Admin</option>
+                    <option value="board_member">Board Member</option>
+                  </select>
+                </div>
+
+                <p className="text-xs text-gray-500">
+                  Role changes will be synced to The Indie Quill LLC production database.
+                </p>
+              </div>
+
+              <div className="p-6 border-t border-gray-200 flex justify-end space-x-3">
+                <button
+                  onClick={() => {
+                    setEditingUser(null);
+                    setNewRole("");
+                  }}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={updateUserRole}
+                  disabled={updating || newRole === editingUser.role}
+                  className="btn-primary"
+                >
+                  {updating ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
+            </div>
           </div>
         )}
 

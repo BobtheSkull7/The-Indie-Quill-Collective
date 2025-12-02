@@ -65,6 +65,10 @@ The Indie Quill Collective is a 501(c)(3) non-profit organization platform desig
 - `GET /api/publishing-updates` - Get publishing status
 - `GET /api/admin/stats` - Dashboard statistics (admin)
 
+### User Management Endpoints (Admin only)
+- `GET /api/admin/users` - Get all users with application stats
+- `PATCH /api/admin/users/:id/role` - Update user role (syncs to LLC)
+
 ### Board Member Endpoints
 - `GET /api/board/stats` - Read-only statistics (board_member)
 - `GET/POST /api/board/calendar` - Calendar events (board_member)
