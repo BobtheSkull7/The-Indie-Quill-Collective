@@ -125,7 +125,7 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   console.error(err);
 });
 
-const PORT = 5000;
+const PORT = parseInt(process.env.PORT || "5000", 10);
 
 server.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
