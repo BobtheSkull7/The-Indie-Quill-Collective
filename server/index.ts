@@ -6,22 +6,6 @@ const server = createServer(app);
 const PORT = parseInt(process.env.PORT || "5000", 10);
 const isProd = process.env.NODE_ENV === "production";
 
-app.get("/health", (_req, res) => {
-  res.set("Cache-Control", "no-cache, no-store, must-revalidate");
-  res.status(200).send("OK");
-});
-
-app.get("/", (req, res, next) => {
-  const ua = req.headers?.["user-agent"] || "";
-  if (ua.includes("Health") || ua.includes("health") || ua.includes("curl") || ua.includes("Go-http")) {
-    return res.status(200).send("OK");
-  }
-  if (!(app as any).__initialized) {
-    return res.status(200).send("OK");
-  }
-  next();
-});
-
 async function start() {
   try {
     // Fast: Set up lightweight middleware first
@@ -68,6 +52,23 @@ async function createSessionStore() {
 }
 
 async function bootstrapFast() {
+  // Register health check FIRST before any middleware
+  app.get("/health", (_req, res) => {
+    res.set("Cache-Control", "no-cache, no-store, must-revalidate");
+    res.status(200).send("OK");
+  });
+
+  app.get("/", (req, res, next) => {
+    const ua = req.headers?.["user-agent"] || "";
+    if (ua.includes("Health") || ua.includes("health") || ua.includes("curl") || ua.includes("Go-http")) {
+      return res.status(200).send("OK");
+    }
+    if (!(app as any).__initialized) {
+      return res.status(200).send("OK");
+    }
+    next();
+  });
+
   const cors = (await import("cors")).default;
   const session = (await import("express-session")).default;
 
