@@ -41,7 +41,11 @@ The Indie Quill Collective is a 501(c)(3) non-profit organization platform desig
 
 ## Database Schema
 - **users** - User accounts with role (applicant/admin/board_member)
-- **applications** - Author applications with book/manuscript details
+- **applications** - Author applications with story expression details:
+  - `hasStoryToTell` (boolean) - Whether applicant has a story to share
+  - `personalStruggles` (text) - Their personal background and struggles
+  - `expressionTypes` (text) - Comma-separated types: novel, short_story, poems, graphic_novel, other
+  - `expressionOther` (text) - Details if "other" is selected
 - **contracts** - Publishing agreements with signature tracking
 - **publishingUpdates** - Publishing status from The Indie Quill LLC
 - **calendarEvents** - Shared calendar events for board meetings
@@ -104,7 +108,7 @@ npm run db:push      # Push schema to database
 The Indie Quill LLC must implement:
 - `POST /api/internal/npo-applications` - Receive new application
   - Headers: X-API-Key, X-Timestamp, X-Signature (HMAC-SHA256)
-  - Body: Full application data (author, guardian, book, motivation)
+  - Body: Full application data (author, guardian, story, motivation)
   - Response: { applicationId: string }
   
 - `PATCH /api/internal/npo-applications/:id/status` - Receive status update
@@ -117,7 +121,7 @@ The Indie Quill LLC must implement:
   
 - `POST /api/internal/npo-authors` - Create NPO author (after contract signed)
   - Headers: X-API-Key, X-Timestamp, X-Signature (HMAC-SHA256)
-  - Body: Author profile, book details, guardian info (for minors)
+  - Body: Author profile, story details, guardian info (for minors)
   - Response: { authorId: string }
 
 ## Notes
