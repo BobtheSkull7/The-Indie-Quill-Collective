@@ -2,16 +2,17 @@ import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
 import cors from "cors";
 import path from "path";
-import fs from "fs";
 import { createServer } from "http";
 import { registerRoutes } from "./routes";
-import { setupVite, serveStatic } from "./vite";
+import { setupVite } from "./vite";
 import { db } from "./db";
 import { users } from "../shared/schema";
 import { eq, sql } from "drizzle-orm";
 import { hash } from "./auth";
 
 const isProd = process.env.NODE_ENV === "production";
+const distPath = path.resolve(process.cwd(), "dist/public");
+const indexPath = path.resolve(distPath, "index.html");
 
 async function ensurePermanentAdmin() {
   const ADMIN_EMAIL = "jon@theindiequill.com";
@@ -44,6 +45,7 @@ async function ensurePermanentAdmin() {
 }
 
 const app = express();
+const server = createServer(app);
 
 app.use(cors());
 app.use(express.json());
@@ -91,46 +93,31 @@ app.use((req, res, next) => {
   next();
 });
 
-// Register API routes first
 registerRoutes(app);
 
-// In production, set up static file serving
 if (isProd) {
-  const distPath = path.resolve(process.cwd(), "dist/public");
-  const indexPath = path.resolve(distPath, "index.html");
+  app.use((req, res, next) => {
+    res.setHeader(
+      "Content-Security-Policy",
+      "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data: https:; connect-src 'self' https:;"
+    );
+    next();
+  });
   
-  if (fs.existsSync(distPath)) {
-    app.use((req, res, next) => {
-      res.setHeader(
-        "Content-Security-Policy",
-        "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data: https:; connect-src 'self' https:;"
-      );
-      next();
-    });
-    
-    app.use(express.static(distPath));
-    
-    app.get("*", (req, res, next) => {
-      if (req.path.startsWith("/api")) {
-        return next();
-      }
-      if (fs.existsSync(indexPath)) {
-        res.sendFile(indexPath);
-      } else {
-        res.status(200).send("<!DOCTYPE html><html><head><title>The Indie Quill Collective</title></head><body><h1>The Indie Quill Collective</h1><p>Application is starting...</p></body></html>");
+  app.use(express.static(distPath));
+  
+  app.get("*", (req, res, next) => {
+    if (req.path.startsWith("/api")) {
+      return next();
+    }
+    res.sendFile(indexPath, (err) => {
+      if (err) {
+        res.status(200).send("<!DOCTYPE html><html><head><title>The Indie Quill Collective</title></head><body><h1>The Indie Quill Collective</h1><p>Loading...</p></body></html>");
       }
     });
-  } else {
-    app.get("*", (req, res, next) => {
-      if (req.path.startsWith("/api")) {
-        return next();
-      }
-      res.status(200).send("<!DOCTYPE html><html><head><title>The Indie Quill Collective</title></head><body><h1>The Indie Quill Collective</h1><p>Application is starting...</p></body></html>");
-    });
-  }
+  });
 }
 
-// Error handler
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   const status = err.status || err.statusCode || 500;
   const message = err.message || "Internal Server Error";
@@ -138,21 +125,17 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   console.error(err);
 });
 
-const server = createServer(app);
 const PORT = 5000;
 
-// Start server immediately
 server.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
   
-  // Run database operations asynchronously after server is listening
-  setImmediate(() => {
+  setTimeout(() => {
     ensurePermanentAdmin().catch(err => {
       console.error("Failed to ensure permanent admin:", err);
     });
-  });
+  }, 1000);
   
-  // Set up Vite dev server after server is listening (development only)
   if (!isProd) {
     setupVite(app, server).catch(err => {
       console.error("Failed to setup Vite:", err);
