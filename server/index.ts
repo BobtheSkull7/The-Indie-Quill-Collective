@@ -26,31 +26,6 @@ async function start() {
 
 start();
 
-async function createSessionStore() {
-  if (isProd && process.env.DATABASE_URL) {
-    try {
-      const pg = await import("pg");
-      const connectPgSimple = (await import("connect-pg-simple")).default;
-      const session = (await import("express-session")).default;
-      
-      const pool = new pg.default.Pool({
-        connectionString: process.env.DATABASE_URL,
-      });
-      
-      const PgStore = connectPgSimple(session);
-      return new PgStore({
-        pool,
-        tableName: "user_sessions",
-        createTableIfMissing: true,
-      });
-    } catch (err) {
-      console.error("Failed to create PG session store:", err);
-      return undefined;
-    }
-  }
-  return undefined;
-}
-
 async function bootstrapFast() {
   // Register health check FIRST before any middleware
   app.get("/health", (_req, res) => {
@@ -76,7 +51,7 @@ async function bootstrapFast() {
   app.use(express.json());
   app.use(express.urlencoded({ extended: false }));
 
-  // Use memory store initially, will be replaced in bootstrapSlow
+  // Use memory store for sessions
   app.use(
     session({
       store: undefined,
@@ -160,47 +135,4 @@ async function bootstrapFast() {
 
   (app as any).__initialized = true;
   console.log("App initialized");
-}
-
-async function bootstrapSlow() {
-  try {
-    const sessionStore = await createSessionStore();
-    if (sessionStore) {
-      console.log("Session store ready");
-    }
-    await ensureAdmin();
-  } catch (error) {
-    console.error("Slow bootstrap error:", error);
-  }
-}
-
-async function ensureAdmin() {
-  try {
-    const { db } = await import("./db");
-    const { users } = await import("../shared/schema");
-    const { eq, sql } = await import("drizzle-orm");
-    const { hash } = await import("./auth");
-
-    const ADMIN_EMAIL = "jon@theindiequill.com";
-    const ADMIN_PASSWORD = "Marcella@99";
-
-    const existing = await db.select().from(users).where(sql`lower(${users.email}) = lower(${ADMIN_EMAIL})`).limit(1);
-
-    if (existing.length === 0) {
-      const hashedPassword = await hash(ADMIN_PASSWORD);
-      await db.insert(users).values({
-        email: ADMIN_EMAIL,
-        password: hashedPassword,
-        firstName: "Jon",
-        lastName: "Admin",
-        role: "admin",
-      });
-      console.log("Admin account created: " + ADMIN_EMAIL);
-    } else if (existing[0].role !== "admin") {
-      await db.update(users).set({ role: "admin" }).where(eq(users.id, existing[0].id));
-      console.log("Admin role restored: " + ADMIN_EMAIL);
-    }
-  } catch (error) {
-    console.error("Admin setup error:", error);
-  }
 }
