@@ -5,7 +5,7 @@ import path from "path";
 import { createServer } from "http";
 
 const isProd = process.env.NODE_ENV === "production";
-const PORT = parseInt(process.env.PORT || "5000", 10);
+const PORT = parseInt(process.env.PORT || (isProd ? "80" : "5000"), 10);
 const distPath = path.resolve(process.cwd(), "dist/public");
 const indexPath = path.resolve(distPath, "index.html");
 
