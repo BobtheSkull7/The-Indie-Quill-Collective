@@ -51,6 +51,20 @@ export default function Dashboard() {
     );
   };
 
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center py-8 px-4 bg-gray-50">
+        <div className="card max-w-md text-center">
+          <h2 className="font-display text-xl font-bold text-slate-800 mb-2">Please Sign In</h2>
+          <p className="text-gray-600 mb-4">You need to be logged in to view your dashboard.</p>
+          <Link href="/login" className="btn-primary">
+            Sign In
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">

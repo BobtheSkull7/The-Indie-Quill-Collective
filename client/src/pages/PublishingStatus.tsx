@@ -51,6 +51,20 @@ export default function PublishingStatus() {
     return statusSteps.findIndex((s) => s.key === status);
   };
 
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center py-8 px-4 bg-gray-50">
+        <div className="card max-w-md text-center">
+          <h2 className="font-display text-xl font-bold text-slate-800 mb-2">Please Sign In</h2>
+          <p className="text-gray-600 mb-4">You need to be logged in to view your publishing status.</p>
+          <a href="/login" className="btn-primary">
+            Sign In
+          </a>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
