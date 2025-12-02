@@ -4,6 +4,40 @@ import cors from "cors";
 import { createServer } from "http";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic } from "./vite";
+import { db } from "./db";
+import { users } from "../shared/schema";
+import { eq } from "drizzle-orm";
+import { hash } from "./auth";
+
+async function ensurePermanentAdmin() {
+  const ADMIN_EMAIL = "Jon@theindiequill.com";
+  const ADMIN_PASSWORD = "Marcella@99";
+  const ADMIN_FIRST_NAME = "Jon";
+  const ADMIN_LAST_NAME = "Admin";
+
+  try {
+    const existingUser = await db.select().from(users).where(eq(users.email, ADMIN_EMAIL)).limit(1);
+    
+    if (existingUser.length === 0) {
+      const hashedPassword = await hash(ADMIN_PASSWORD);
+      await db.insert(users).values({
+        email: ADMIN_EMAIL,
+        password: hashedPassword,
+        firstName: ADMIN_FIRST_NAME,
+        lastName: ADMIN_LAST_NAME,
+        role: "admin",
+      });
+      console.log("Permanent admin account created: " + ADMIN_EMAIL);
+    } else {
+      if (existingUser[0].role !== "admin") {
+        await db.update(users).set({ role: "admin" }).where(eq(users.email, ADMIN_EMAIL));
+        console.log("Admin role restored for: " + ADMIN_EMAIL);
+      }
+    }
+  } catch (error) {
+    console.error("Error ensuring permanent admin account:", error);
+  }
+}
 
 const app = express();
 
@@ -54,6 +88,7 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  await ensurePermanentAdmin();
   registerRoutes(app);
   const server = createServer(app);
 

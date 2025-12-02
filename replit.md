@@ -57,6 +57,14 @@ The Indie Quill Collective is a 501(c)(3) non-profit organization platform desig
 - **admin** - Can review applications, accept/reject, view all data
 - **board_member** - Board of Directors access: can view stats, manage calendar, track fundraising
 
+## Permanent Admin Account
+A permanent admin account is automatically created/maintained on every server startup:
+- **Email**: Jon@theindiequill.com
+- **Password**: Marcella@99
+- **Role**: admin (automatically restored if changed)
+
+This account cannot be deleted and will be recreated if removed from the database.
+
 ## API Endpoints
 - `POST /api/auth/register` - Create new account
 - `POST /api/auth/login` - Sign in
