@@ -6,6 +6,7 @@ import { type Server } from "http";
 
 const viteLogger = {
   hasWarned: false,
+  hasErrorLogged: false,
   info: (msg: string) => console.log(msg),
   warn: (msg: string) => {
     console.warn(msg);
@@ -17,7 +18,10 @@ const viteLogger = {
       viteLogger.hasWarned = true;
     }
   },
-  error: (msg: string) => console.error(msg),
+  error: (msg: string) => {
+    console.error(msg);
+    viteLogger.hasErrorLogged = true;
+  },
   clearScreen: () => {},
 };
 
@@ -64,6 +68,15 @@ export function serveStatic(app: Express) {
       `Could not find the build directory: ${distPath}, make sure to build the client first`
     );
   }
+
+  // Set permissive CSP headers to allow scripts to run
+  app.use((req, res, next) => {
+    res.setHeader(
+      "Content-Security-Policy",
+      "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data: https:; connect-src 'self' https:;"
+    );
+    next();
+  });
 
   app.use(express.static(distPath));
   app.use((req, res, next) => {
