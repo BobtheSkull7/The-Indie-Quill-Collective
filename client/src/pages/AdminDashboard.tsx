@@ -16,13 +16,10 @@ interface Application {
   guardianEmail: string | null;
   guardianPhone: string | null;
   guardianRelationship: string | null;
-  bookTitle: string;
-  genre: string;
-  wordCount: number | null;
-  bookSummary: string;
-  manuscriptStatus: string;
-  previouslyPublished: boolean;
-  publishingDetails: string | null;
+  hasStoryToTell: boolean;
+  personalStruggles: string;
+  expressionTypes: string;
+  expressionOther: string | null;
   whyCollective: string;
   goals: string | null;
   hearAboutUs: string | null;
@@ -54,7 +51,7 @@ interface SyncRecord {
   syncAttempts: number;
   lastSyncAttempt: string | null;
   lastSyncedAt: string | null;
-  bookTitle: string;
+  expressionTypes: string;
   authorName: string;
   email: string;
 }
@@ -233,6 +230,17 @@ export default function AdminDashboard() {
     });
   };
 
+  const formatExpressionTypes = (types: string) => {
+    const typeLabels: Record<string, string> = {
+      novel: "Novel",
+      short_story: "Short Story",
+      poems: "Poems",
+      graphic_novel: "Graphic Novel",
+      other: "Other",
+    };
+    return types.split(",").map(t => typeLabels[t.trim()] || t.trim()).join(", ");
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -362,9 +370,9 @@ export default function AdminDashboard() {
                   <thead>
                     <tr className="border-b border-gray-200">
                       <th className="text-left py-3 px-4 font-medium text-gray-600">Author</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Book Title</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Genre</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Type</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">Expression Type</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">Has Story</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">Age</th>
                       <th className="text-left py-3 px-4 font-medium text-gray-600">Status</th>
                       <th className="text-left py-3 px-4 font-medium text-gray-600">Applied</th>
                       <th className="text-left py-3 px-4 font-medium text-gray-600">Actions</th>
@@ -379,8 +387,14 @@ export default function AdminDashboard() {
                             <p className="text-xs text-gray-500">{app.authorEmail}</p>
                           </div>
                         </td>
-                        <td className="py-3 px-4 font-medium text-slate-800">{app.bookTitle}</td>
-                        <td className="py-3 px-4 text-gray-600">{app.genre}</td>
+                        <td className="py-3 px-4 text-gray-600 text-sm">{formatExpressionTypes(app.expressionTypes)}</td>
+                        <td className="py-3 px-4">
+                          {app.hasStoryToTell ? (
+                            <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">Yes</span>
+                          ) : (
+                            <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded">Not Sure</span>
+                          )}
+                        </td>
                         <td className="py-3 px-4">
                           {app.isMinor ? (
                             <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">Minor</span>
@@ -444,7 +458,7 @@ export default function AdminDashboard() {
                   <thead>
                     <tr className="border-b border-gray-200">
                       <th className="text-left py-3 px-4 font-medium text-gray-600">Author</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Book</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">Expression Type</th>
                       <th className="text-left py-3 px-4 font-medium text-gray-600">Sync Status</th>
                       <th className="text-left py-3 px-4 font-medium text-gray-600">LLC Author ID</th>
                       <th className="text-left py-3 px-4 font-medium text-gray-600">Attempts</th>
@@ -458,7 +472,7 @@ export default function AdminDashboard() {
                           <p className="font-medium text-slate-800">{record.authorName}</p>
                           <p className="text-xs text-gray-500">{record.email}</p>
                         </td>
-                        <td className="py-3 px-4 text-gray-600">{record.bookTitle}</td>
+                        <td className="py-3 px-4 text-gray-600 text-sm">{formatExpressionTypes(record.expressionTypes)}</td>
                         <td className="py-3 px-4">
                           <span className={`text-xs px-2 py-1 rounded capitalize ${getSyncStatusColor(record.syncStatus)}`}>
                             {record.syncStatus}
@@ -643,7 +657,7 @@ export default function AdminDashboard() {
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="font-display text-2xl font-bold text-slate-800">
-                      {selectedApp.bookTitle}
+                      Application from {selectedApp.authorName || "Unknown"}
                     </h2>
                     <p className="text-gray-500 text-sm mt-1">
                       Applied: {formatDateTime(selectedApp.createdAt)}
@@ -721,33 +735,29 @@ export default function AdminDashboard() {
                 <div className="bg-slate-50 rounded-lg p-4">
                   <h3 className="font-semibold text-slate-800 mb-3 flex items-center">
                     <BookOpen className="w-5 h-5 mr-2 text-red-500" />
-                    Book Details
+                    Their Story
                   </h3>
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
-                      <p className="text-sm text-gray-500">Title</p>
-                      <p className="text-slate-800 font-medium">{selectedApp.bookTitle}</p>
+                      <p className="text-sm text-gray-500">Has a Story to Tell?</p>
+                      <p className="text-slate-800 font-medium">
+                        {selectedApp.hasStoryToTell ? "Yes" : "Not sure yet"}
+                      </p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-500">Genre</p>
-                      <p className="text-slate-800">{selectedApp.genre}</p>
+                      <p className="text-sm text-gray-500">Expression Type(s)</p>
+                      <p className="text-slate-800">{formatExpressionTypes(selectedApp.expressionTypes)}</p>
                     </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Word Count</p>
-                      <p className="text-slate-800">{selectedApp.wordCount?.toLocaleString() || "Not specified"}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Manuscript Status</p>
-                      <p className="text-slate-800">{selectedApp.manuscriptStatus}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Previously Published</p>
-                      <p className="text-slate-800">{selectedApp.previouslyPublished ? "Yes" : "No"}</p>
-                    </div>
+                    {selectedApp.expressionOther && (
+                      <div className="col-span-2">
+                        <p className="text-sm text-gray-500">Other Expression Details</p>
+                        <p className="text-slate-800">{selectedApp.expressionOther}</p>
+                      </div>
+                    )}
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500 mb-1">Book Summary</p>
-                    <p className="text-gray-700 bg-white p-3 rounded-lg border border-gray-200">{selectedApp.bookSummary}</p>
+                    <p className="text-sm text-gray-500 mb-1">Personal Struggles & Background</p>
+                    <p className="text-gray-700 bg-white p-3 rounded-lg border border-gray-200">{selectedApp.personalStruggles}</p>
                   </div>
                 </div>
 
