@@ -1,6 +1,8 @@
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
 import cors from "cors";
+import path from "path";
+import fs from "fs";
 import { createServer } from "http";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic } from "./vite";
@@ -43,11 +45,6 @@ async function ensurePermanentAdmin() {
 
 const app = express();
 
-// Health check endpoint - responds immediately without any database operations
-app.get("/health", (_req, res) => {
-  res.status(200).send("OK");
-});
-
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -66,7 +63,7 @@ app.use(
 
 app.use((req, res, next) => {
   const start = Date.now();
-  const path = req.path;
+  const reqPath = req.path;
   let capturedJsonResponse: Record<string, any> | undefined = undefined;
 
   const originalResJson = res.json;
@@ -77,8 +74,8 @@ app.use((req, res, next) => {
 
   res.on("finish", () => {
     const duration = Date.now() - start;
-    if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
+    if (reqPath.startsWith("/api")) {
+      let logLine = `${req.method} ${reqPath} ${res.statusCode} in ${duration}ms`;
       if (capturedJsonResponse) {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
       }
@@ -94,13 +91,44 @@ app.use((req, res, next) => {
   next();
 });
 
-// In production, set up static file serving synchronously before routes
-if (isProd) {
-  serveStatic(app);
-}
-
-// Register API routes
+// Register API routes first
 registerRoutes(app);
+
+// In production, set up static file serving
+if (isProd) {
+  const distPath = path.resolve(process.cwd(), "dist/public");
+  const indexPath = path.resolve(distPath, "index.html");
+  
+  if (fs.existsSync(distPath)) {
+    app.use((req, res, next) => {
+      res.setHeader(
+        "Content-Security-Policy",
+        "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data: https:; connect-src 'self' https:;"
+      );
+      next();
+    });
+    
+    app.use(express.static(distPath));
+    
+    app.get("*", (req, res, next) => {
+      if (req.path.startsWith("/api")) {
+        return next();
+      }
+      if (fs.existsSync(indexPath)) {
+        res.sendFile(indexPath);
+      } else {
+        res.status(200).send("<!DOCTYPE html><html><head><title>The Indie Quill Collective</title></head><body><h1>The Indie Quill Collective</h1><p>Application is starting...</p></body></html>");
+      }
+    });
+  } else {
+    app.get("*", (req, res, next) => {
+      if (req.path.startsWith("/api")) {
+        return next();
+      }
+      res.status(200).send("<!DOCTYPE html><html><head><title>The Indie Quill Collective</title></head><body><h1>The Indie Quill Collective</h1><p>Application is starting...</p></body></html>");
+    });
+  }
+}
 
 // Error handler
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
