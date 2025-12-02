@@ -6,9 +6,20 @@ const server = createServer(app);
 const PORT = parseInt(process.env.PORT || "5000", 10);
 const isProd = process.env.NODE_ENV === "production";
 
+// Register health check routes IMMEDIATELY, before server starts
+app.get("/health", (_req, res) => {
+  res.set("Cache-Control", "no-cache, no-store, must-revalidate");
+  res.status(200).send("OK");
+});
+
+app.get("/", (_req, res) => {
+  res.set("Cache-Control", "no-cache, no-store, must-revalidate");
+  res.status(200).send("OK");
+});
+
 async function start() {
   try {
-    // Fast: Set up lightweight middleware first
+    // Fast: Set up lightweight middleware
     await bootstrapFast();
     
     // Start server IMMEDIATELY
@@ -27,17 +38,6 @@ async function start() {
 start();
 
 async function bootstrapFast() {
-  // Register health check FIRST before any middleware
-  app.get("/health", (_req, res) => {
-    res.set("Cache-Control", "no-cache, no-store, must-revalidate");
-    res.status(200).send("OK");
-  });
-
-  app.get("/", (_req, res) => {
-    // Always respond OK immediately for health checks and initial startup
-    res.set("Cache-Control", "no-cache, no-store, must-revalidate");
-    res.status(200).send("OK");
-  });
 
   const cors = (await import("cors")).default;
   const session = (await import("express-session")).default;
