@@ -4,29 +4,24 @@ import { createServer } from "http";
 const app = express();
 const server = createServer(app);
 const PORT = parseInt(process.env.PORT || "5000", 10);
-
-app.get("/health", (_req, res) => {
-  res.status(200).send("OK");
-});
-
-app.get("/", (_req, res, next) => {
-  if (!(app as any).__initialized) {
-    return res.status(200).send("OK");
-  }
-  next();
-});
-
-server.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server running on port ${PORT}`);
-  bootstrap().catch(err => console.error("Bootstrap failed:", err));
-});
+const isProd = process.env.NODE_ENV === "production";
 
 async function bootstrap() {
-  const isProd = process.env.NODE_ENV === "production";
   const path = await import("path");
   const cors = (await import("cors")).default;
   const session = (await import("express-session")).default;
   
+  app.get("/health", (_req, res) => {
+    res.status(200).send("OK");
+  });
+
+  app.get("/", (_req, res, next) => {
+    if (!(app as any).__initialized) {
+      return res.status(200).send("OK");
+    }
+    next();
+  });
+
   app.use(cors());
   app.use(express.json());
   app.use(express.urlencoded({ extended: false }));
@@ -111,34 +106,50 @@ async function bootstrap() {
   });
 
   (app as any).__initialized = true;
-  console.log("App initialized successfully");
-
-  ensureAdmin().catch(err => console.error("Admin setup error:", err));
+  console.log("App initialized");
 }
 
 async function ensureAdmin() {
-  const { db } = await import("./db");
-  const { users } = await import("../shared/schema");
-  const { eq, sql } = await import("drizzle-orm");
-  const { hash } = await import("./auth");
+  try {
+    const { db } = await import("./db");
+    const { users } = await import("../shared/schema");
+    const { eq, sql } = await import("drizzle-orm");
+    const { hash } = await import("./auth");
 
-  const ADMIN_EMAIL = "jon@theindiequill.com";
-  const ADMIN_PASSWORD = "Marcella@99";
+    const ADMIN_EMAIL = "jon@theindiequill.com";
+    const ADMIN_PASSWORD = "Marcella@99";
 
-  const existing = await db.select().from(users).where(sql`lower(${users.email}) = lower(${ADMIN_EMAIL})`).limit(1);
+    const existing = await db.select().from(users).where(sql`lower(${users.email}) = lower(${ADMIN_EMAIL})`).limit(1);
 
-  if (existing.length === 0) {
-    const hashedPassword = await hash(ADMIN_PASSWORD);
-    await db.insert(users).values({
-      email: ADMIN_EMAIL,
-      password: hashedPassword,
-      firstName: "Jon",
-      lastName: "Admin",
-      role: "admin",
-    });
-    console.log("Admin account created: " + ADMIN_EMAIL);
-  } else if (existing[0].role !== "admin") {
-    await db.update(users).set({ role: "admin" }).where(eq(users.id, existing[0].id));
-    console.log("Admin role restored: " + ADMIN_EMAIL);
+    if (existing.length === 0) {
+      const hashedPassword = await hash(ADMIN_PASSWORD);
+      await db.insert(users).values({
+        email: ADMIN_EMAIL,
+        password: hashedPassword,
+        firstName: "Jon",
+        lastName: "Admin",
+        role: "admin",
+      });
+      console.log("Admin account created: " + ADMIN_EMAIL);
+    } else if (existing[0].role !== "admin") {
+      await db.update(users).set({ role: "admin" }).where(eq(users.id, existing[0].id));
+      console.log("Admin role restored: " + ADMIN_EMAIL);
+    }
+  } catch (error) {
+    console.error("Admin setup error:", error);
   }
 }
+
+(async () => {
+  try {
+    await bootstrap();
+    
+    server.listen(PORT, "0.0.0.0", () => {
+      console.log(`Server running on port ${PORT}`);
+      ensureAdmin().catch(err => console.error("Admin setup failed:", err));
+    });
+  } catch (error) {
+    console.error("Failed to start application:", error);
+    process.exit(1);
+  }
+})();
