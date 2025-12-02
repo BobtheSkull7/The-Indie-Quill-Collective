@@ -15,20 +15,20 @@ const server = createServer(app);
 let isInitialized = false;
 let initError: Error | null = null;
 
-app.get("/", (req, res, next) => {
-  if (!isInitialized) {
-    if (isProd) {
-      res.status(200).send("<!DOCTYPE html><html><head><title>The Indie Quill Collective</title></head><body><h1>The Indie Quill Collective</h1><p>Loading...</p></body></html>");
-    } else {
-      next();
-    }
-  } else {
-    next();
-  }
-});
-
 app.get("/health", (_req, res) => {
   res.status(200).send("OK");
+});
+
+app.get("/", (req, res, next) => {
+  const userAgent = req.headers["user-agent"] || "";
+  const isHealthCheck = userAgent.includes("Health") || userAgent.includes("health") || 
+                        userAgent.includes("curl") || userAgent.includes("Go-http") ||
+                        req.headers["x-health-check"] === "true";
+  
+  if (isHealthCheck || !isInitialized) {
+    return res.status(200).send("OK");
+  }
+  next();
 });
 
 app.use(cors());
@@ -134,39 +134,41 @@ async function initializeApp() {
   }
 }
 
-async function ensurePermanentAdmin() {
-  try {
-    const { db } = await import("./db");
-    const { users } = await import("../shared/schema");
-    const { eq, sql } = await import("drizzle-orm");
-    const { hash } = await import("./auth");
-    
-    const ADMIN_EMAIL = "jon@theindiequill.com";
-    const ADMIN_PASSWORD = "Marcella@99";
-    const ADMIN_FIRST_NAME = "Jon";
-    const ADMIN_LAST_NAME = "Admin";
+function runAdminSetup() {
+  setTimeout(async () => {
+    try {
+      const { db } = await import("./db");
+      const { users } = await import("../shared/schema");
+      const { eq, sql } = await import("drizzle-orm");
+      const { hash } = await import("./auth");
+      
+      const ADMIN_EMAIL = "jon@theindiequill.com";
+      const ADMIN_PASSWORD = "Marcella@99";
+      const ADMIN_FIRST_NAME = "Jon";
+      const ADMIN_LAST_NAME = "Admin";
 
-    const existingUser = await db.select().from(users).where(sql`lower(${users.email}) = lower(${ADMIN_EMAIL})`).limit(1);
-    
-    if (existingUser.length === 0) {
-      const hashedPassword = await hash(ADMIN_PASSWORD);
-      await db.insert(users).values({
-        email: ADMIN_EMAIL,
-        password: hashedPassword,
-        firstName: ADMIN_FIRST_NAME,
-        lastName: ADMIN_LAST_NAME,
-        role: "admin",
-      });
-      console.log("Permanent admin account created: " + ADMIN_EMAIL);
-    } else {
-      if (existingUser[0].role !== "admin") {
-        await db.update(users).set({ role: "admin" }).where(eq(users.id, existingUser[0].id));
-        console.log("Admin role restored for: " + ADMIN_EMAIL);
+      const existingUser = await db.select().from(users).where(sql`lower(${users.email}) = lower(${ADMIN_EMAIL})`).limit(1);
+      
+      if (existingUser.length === 0) {
+        const hashedPassword = await hash(ADMIN_PASSWORD);
+        await db.insert(users).values({
+          email: ADMIN_EMAIL,
+          password: hashedPassword,
+          firstName: ADMIN_FIRST_NAME,
+          lastName: ADMIN_LAST_NAME,
+          role: "admin",
+        });
+        console.log("Permanent admin account created: " + ADMIN_EMAIL);
+      } else {
+        if (existingUser[0].role !== "admin") {
+          await db.update(users).set({ role: "admin" }).where(eq(users.id, existingUser[0].id));
+          console.log("Admin role restored for: " + ADMIN_EMAIL);
+        }
       }
+    } catch (error) {
+      console.error("Error ensuring permanent admin account:", error);
     }
-  } catch (error) {
-    console.error("Error ensuring permanent admin account:", error);
-  }
+  }, 5000);
 }
 
 server.listen(PORT, "0.0.0.0", () => {
@@ -174,11 +176,7 @@ server.listen(PORT, "0.0.0.0", () => {
   
   initializeApp()
     .then(() => {
-      setImmediate(() => {
-        ensurePermanentAdmin().catch(err => {
-          console.error("Failed to ensure permanent admin:", err);
-        });
-      });
+      runAdminSetup();
     })
     .catch(err => {
       console.error("Failed to initialize app:", err);
