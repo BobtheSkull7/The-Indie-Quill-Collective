@@ -25,14 +25,11 @@ interface ApplicationPayload {
     phone: string | null;
     relationship: string | null;
   } | null;
-  book: {
-    title: string;
-    genre: string;
-    wordCount: number | null;
-    summary: string;
-    manuscriptStatus: string;
-    previouslyPublished: boolean;
-    publishingDetails: string | null;
+  story: {
+    hasStoryToTell: boolean;
+    personalStruggles: string;
+    expressionTypes: string;
+    expressionOther: string | null;
   };
   motivation: {
     whyCollective: string;
@@ -52,10 +49,10 @@ interface AuthorPayload {
   isMinor: boolean;
   guardianName: string | null;
   guardianEmail: string | null;
-  bookTitle: string;
-  genre: string;
-  bookSummary: string;
-  manuscriptStatus: string;
+  hasStoryToTell: boolean;
+  personalStruggles: string;
+  expressionTypes: string;
+  expressionOther: string | null;
   contractSignedAt: Date;
   role: "npo_author";
 }
@@ -98,14 +95,11 @@ export async function sendApplicationToLLC(
       phone: applicationData.guardianPhone || null,
       relationship: applicationData.guardianRelationship || null,
     } : null,
-    book: {
-      title: applicationData.bookTitle,
-      genre: applicationData.genre,
-      wordCount: applicationData.wordCount || null,
-      summary: applicationData.bookSummary,
-      manuscriptStatus: applicationData.manuscriptStatus,
-      previouslyPublished: applicationData.previouslyPublished || false,
-      publishingDetails: applicationData.publishingDetails || null,
+    story: {
+      hasStoryToTell: applicationData.hasStoryToTell,
+      personalStruggles: applicationData.personalStruggles,
+      expressionTypes: applicationData.expressionTypes,
+      expressionOther: applicationData.expressionOther || null,
     },
     motivation: {
       whyCollective: applicationData.whyCollective,
@@ -331,10 +325,10 @@ export async function migrateAuthorToIndieQuill(publishingUpdateId: number): Pro
       isMinor: application.isMinor,
       guardianName: application.guardianName,
       guardianEmail: application.guardianEmail,
-      bookTitle: application.bookTitle,
-      genre: application.genre,
-      bookSummary: application.bookSummary,
-      manuscriptStatus: application.manuscriptStatus,
+      hasStoryToTell: application.hasStoryToTell,
+      personalStruggles: application.personalStruggles,
+      expressionTypes: application.expressionTypes,
+      expressionOther: application.expressionOther,
       contractSignedAt: contract?.authorSignedAt || new Date(),
       role: "npo_author",
     };

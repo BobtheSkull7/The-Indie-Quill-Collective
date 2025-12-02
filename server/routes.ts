@@ -130,7 +130,7 @@ export function registerRoutes(app: Express) {
       if (user) {
         // Send confirmation email
         try {
-          await sendApplicationReceivedEmail(user.email, user.firstName, newApplication.bookTitle);
+          await sendApplicationReceivedEmail(user.email, user.firstName);
         } catch (emailError) {
           console.error("Failed to send confirmation email:", emailError);
         }
@@ -261,7 +261,7 @@ export function registerRoutes(app: Express) {
         
         if (applicantUser) {
           try {
-            await sendApplicationAcceptedEmail(applicantUser.email, applicantUser.firstName, updated.bookTitle);
+            await sendApplicationAcceptedEmail(applicantUser.email, applicantUser.firstName);
           } catch (emailError) {
             console.error("Failed to send acceptance email:", emailError);
           }
@@ -269,7 +269,7 @@ export function registerRoutes(app: Express) {
       } else if (status === "rejected") {
         if (applicantUser) {
           try {
-            await sendApplicationRejectedEmail(applicantUser.email, applicantUser.firstName, updated.bookTitle);
+            await sendApplicationRejectedEmail(applicantUser.email, applicantUser.firstName);
           } catch (emailError) {
             console.error("Failed to send rejection email:", emailError);
           }
@@ -460,7 +460,7 @@ export function registerRoutes(app: Express) {
       const updatesWithDetails = await Promise.all(
         allUpdates.map(async (update) => {
           const [app] = await db.select({
-            bookTitle: applications.bookTitle,
+            expressionTypes: applications.expressionTypes,
             penName: applications.penName,
           }).from(applications).where(eq(applications.id, update.applicationId));
 
@@ -472,7 +472,7 @@ export function registerRoutes(app: Express) {
 
           return {
             ...update,
-            bookTitle: app?.bookTitle,
+            expressionTypes: app?.expressionTypes,
             authorName: user ? `${user.firstName} ${user.lastName}` : "Unknown",
             email: user?.email,
           };
@@ -802,6 +802,17 @@ export function registerRoutes(app: Express) {
   });
 }
 
+function formatExpressionTypes(types: string): string {
+  const typeLabels: Record<string, string> = {
+    novel: "Novel",
+    short_story: "Short Story",
+    poems: "Poems",
+    graphic_novel: "Graphic Novel",
+    other: "Other",
+  };
+  return types.split(",").map(t => typeLabels[t.trim()] || t.trim()).join(", ");
+}
+
 function generateContract(application: any): string {
   return `
 THE INDIE QUILL COLLECTIVE
@@ -813,9 +824,9 @@ THE INDIE QUILL COLLECTIVE (a 501(c)(3) non-profit organization)
 and
 AUTHOR: ${application.penName || "Author"}
 
-REGARDING THE WORK:
-Title: "${application.bookTitle}"
-Genre: ${application.genre}
+REGARDING THE AUTHOR'S CREATIVE WORK:
+Expression Format(s): ${formatExpressionTypes(application.expressionTypes)}
+${application.expressionOther ? `Additional Details: ${application.expressionOther}` : ""}
 
 TERMS AND CONDITIONS:
 

@@ -38,7 +38,7 @@ async function getResendClient() {
   };
 }
 
-export async function sendApplicationReceivedEmail(toEmail: string, firstName: string, bookTitle: string) {
+export async function sendApplicationReceivedEmail(toEmail: string, firstName: string) {
   try {
     const { client, fromEmail } = await getResendClient();
     
@@ -64,7 +64,7 @@ export async function sendApplicationReceivedEmail(toEmail: string, firstName: s
           
           <div style="padding: 0 10px;">
             <p style="color: #374151; font-size: 16px; line-height: 1.8;">
-              Thank you for submitting your application for <strong>"${bookTitle}"</strong> to The Indie Quill Collective!
+              Thank you for submitting your application to The Indie Quill Collective! We're excited to learn about your story.
             </p>
             
             <p style="color: #374151; font-size: 16px; line-height: 1.8;">
@@ -105,7 +105,7 @@ export async function sendApplicationReceivedEmail(toEmail: string, firstName: s
   }
 }
 
-export async function sendApplicationAcceptedEmail(toEmail: string, firstName: string, bookTitle: string) {
+export async function sendApplicationAcceptedEmail(toEmail: string, firstName: string) {
   try {
     const { client, fromEmail } = await getResendClient();
     
@@ -131,7 +131,7 @@ export async function sendApplicationAcceptedEmail(toEmail: string, firstName: s
           
           <div style="padding: 0 10px;">
             <p style="color: #374151; font-size: 16px; line-height: 1.8;">
-              We're thrilled to welcome you and <strong>"${bookTitle}"</strong> to The Indie Quill Collective!
+              We're thrilled to welcome you to The Indie Quill Collective! We can't wait to help you share your story with the world.
             </p>
             
             <p style="color: #374151; font-size: 16px; line-height: 1.8;">
@@ -167,7 +167,7 @@ export async function sendApplicationAcceptedEmail(toEmail: string, firstName: s
   }
 }
 
-export async function sendApplicationRejectedEmail(toEmail: string, firstName: string, bookTitle: string) {
+export async function sendApplicationRejectedEmail(toEmail: string, firstName: string) {
   try {
     const { client, fromEmail } = await getResendClient();
     
@@ -190,11 +190,11 @@ export async function sendApplicationRejectedEmail(toEmail: string, firstName: s
             </p>
             
             <p style="color: #374151; font-size: 16px; line-height: 1.8;">
-              Thank you for your interest in The Indie Quill Collective and for submitting <strong>"${bookTitle}"</strong>.
+              Thank you for your interest in The Indie Quill Collective and for sharing your story with us.
             </p>
             
             <p style="color: #374151; font-size: 16px; line-height: 1.8;">
-              After careful consideration, we regret to inform you that we are unable to accept your application at this time. This decision was not easy, and we want you to know that it does not reflect on the quality of your work.
+              After careful consideration, we regret to inform you that we are unable to accept your application at this time. This decision was not easy, and we want you to know that it does not reflect on the value of your story.
             </p>
             
             <p style="color: #374151; font-size: 16px; line-height: 1.8;">
