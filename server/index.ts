@@ -21,19 +21,12 @@ app.get("/", (req, res, next) => {
   next();
 });
 
-async function start() {
-  try {
-    await bootstrap();
-    server.listen(PORT, "0.0.0.0", () => {
-      console.log(`Server listening on port ${PORT}`);
-    });
-  } catch (err) {
+server.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server listening on port ${PORT}`);
+  bootstrap().catch(err => {
     console.error("Bootstrap failed:", err);
-    process.exit(1);
-  }
-}
-
-start();
+  });
+});
 
 async function createSessionStore() {
   if (isProd && process.env.DATABASE_URL) {
@@ -154,7 +147,7 @@ async function bootstrap() {
   (app as any).__initialized = true;
   console.log("App initialized");
 
-  await ensureAdmin();
+  ensureAdmin().catch(err => console.error("Admin setup error:", err));
 }
 
 async function ensureAdmin() {
