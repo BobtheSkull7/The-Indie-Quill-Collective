@@ -19,13 +19,10 @@ export default function Apply() {
     guardianEmail: "",
     guardianPhone: "",
     guardianRelationship: "",
-    bookTitle: "",
-    genre: "",
-    wordCount: "",
-    bookSummary: "",
-    manuscriptStatus: "",
-    previouslyPublished: false,
-    publishingDetails: "",
+    hasStoryToTell: true,
+    personalStruggles: "",
+    expressionTypes: [] as string[],
+    expressionOther: "",
     whyCollective: "",
     goals: "",
     hearAboutUs: "",
@@ -64,7 +61,7 @@ export default function Apply() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...formData,
-          wordCount: parseInt(formData.wordCount) || null,
+          expressionTypes: formData.expressionTypes.join(","),
         }),
       });
 
@@ -102,31 +99,22 @@ export default function Apply() {
     );
   }
 
-  const genres = [
-    "Fiction - Literary",
-    "Fiction - Fantasy",
-    "Fiction - Science Fiction",
-    "Fiction - Romance",
-    "Fiction - Mystery/Thriller",
-    "Fiction - Horror",
-    "Fiction - Young Adult",
-    "Fiction - Children's",
-    "Non-Fiction - Memoir",
-    "Non-Fiction - Self-Help",
-    "Non-Fiction - Biography",
-    "Non-Fiction - Educational",
-    "Poetry",
-    "Other",
+  const expressionOptions = [
+    { id: "novel", label: "Novel" },
+    { id: "short_story", label: "Short Story" },
+    { id: "poems", label: "Poems" },
+    { id: "graphic_novel", label: "Graphic Novel" },
+    { id: "other", label: "Other" },
   ];
 
-  const manuscriptStatuses = [
-    "Complete - Ready for editing",
-    "Complete - First draft",
-    "In Progress - 75% done",
-    "In Progress - 50% done",
-    "In Progress - Just started",
-    "Planning stage",
-  ];
+  const handleExpressionToggle = (typeId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      expressionTypes: prev.expressionTypes.includes(typeId)
+        ? prev.expressionTypes.filter(t => t !== typeId)
+        : [...prev.expressionTypes, typeId]
+    }));
+  };
 
   return (
     <div className="min-h-screen py-12 px-4 bg-gradient-to-br from-gray-50 to-blue-50">
@@ -141,7 +129,7 @@ export default function Apply() {
 
         <div className="flex justify-center mb-8">
           <div className="flex items-center space-x-3">
-            {[1, 2, 3, 4].map((s) => (
+            {[1, 2, 3].map((s) => (
               <div key={s} className="flex items-center">
                 <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center font-medium ${
@@ -152,7 +140,7 @@ export default function Apply() {
                 >
                   {s}
                 </div>
-                {s < 4 && <div className={`w-12 h-1 ${step > s ? "bg-teal-400" : "bg-gray-200"}`} />}
+                {s < 3 && <div className={`w-12 h-1 ${step > s ? "bg-teal-400" : "bg-gray-200"}`} />}
               </div>
             ))}
           </div>
@@ -276,7 +264,7 @@ export default function Apply() {
 
                 <div className="flex justify-end">
                   <button type="button" onClick={() => setStep(2)} className="btn-primary">
-                    Next: Book Details
+                    Next: Your Story
                   </button>
                 </div>
               </div>
@@ -286,143 +274,94 @@ export default function Apply() {
               <div className="space-y-6">
                 <div className="flex items-center space-x-3 mb-6">
                   <Book className="w-6 h-6 text-teal-500" />
-                  <h2 className="font-display text-xl font-semibold text-slate-800">Book Information</h2>
+                  <h2 className="font-display text-xl font-semibold text-slate-800">Your Story</h2>
                 </div>
 
                 <div>
-                  <label className="label">Book Title *</label>
-                  <input
-                    type="text"
-                    required
-                    className="input-field"
-                    placeholder="The title of your book"
-                    value={formData.bookTitle}
-                    onChange={(e) => setFormData({ ...formData, bookTitle: e.target.value })}
-                  />
-                </div>
-
-                <div>
-                  <label className="label">Genre *</label>
-                  <select
-                    required
-                    className="input-field"
-                    value={formData.genre}
-                    onChange={(e) => setFormData({ ...formData, genre: e.target.value })}
-                  >
-                    <option value="">Select a genre</option>
-                    {genres.map((g) => (
-                      <option key={g} value={g}>{g}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="label">Estimated Word Count</label>
-                  <input
-                    type="number"
-                    className="input-field"
-                    placeholder="e.g., 50000"
-                    value={formData.wordCount}
-                    onChange={(e) => setFormData({ ...formData, wordCount: e.target.value })}
-                  />
-                </div>
-
-                <div>
-                  <label className="label">Manuscript Status *</label>
-                  <select
-                    required
-                    className="input-field"
-                    value={formData.manuscriptStatus}
-                    onChange={(e) => setFormData({ ...formData, manuscriptStatus: e.target.value })}
-                  >
-                    <option value="">Select status</option>
-                    {manuscriptStatuses.map((s) => (
-                      <option key={s} value={s}>{s}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="label">Book Summary *</label>
-                  <textarea
-                    required
-                    rows={4}
-                    className="input-field"
-                    placeholder="Tell us about your book - the plot, themes, and what makes it special"
-                    value={formData.bookSummary}
-                    onChange={(e) => setFormData({ ...formData, bookSummary: e.target.value })}
-                  />
-                </div>
-
-                <div className="flex justify-between">
-                  <button type="button" onClick={() => setStep(1)} className="btn-secondary">
-                    Back
-                  </button>
-                  <button type="button" onClick={() => setStep(3)} className="btn-primary">
-                    Next: Experience
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {step === 3 && (
-              <div className="space-y-6">
-                <div className="flex items-center space-x-3 mb-6">
-                  <Book className="w-6 h-6 text-teal-500" />
-                  <h2 className="font-display text-xl font-semibold text-slate-800">Publishing Background</h2>
-                </div>
-
-                <div>
-                  <label className="label">Have you been published before?</label>
+                  <label className="label">Do you have a story to tell? *</label>
                   <div className="flex space-x-4 mt-2">
                     <label className="flex items-center space-x-2 cursor-pointer">
                       <input
                         type="radio"
-                        name="published"
-                        checked={!formData.previouslyPublished}
-                        onChange={() => setFormData({ ...formData, previouslyPublished: false })}
+                        name="hasStory"
+                        checked={formData.hasStoryToTell}
+                        onChange={() => setFormData({ ...formData, hasStoryToTell: true })}
                         className="w-4 h-4 text-teal-500"
                       />
-                      <span>No, this is my first</span>
+                      <span>Yes, I do!</span>
                     </label>
                     <label className="flex items-center space-x-2 cursor-pointer">
                       <input
                         type="radio"
-                        name="published"
-                        checked={formData.previouslyPublished}
-                        onChange={() => setFormData({ ...formData, previouslyPublished: true })}
+                        name="hasStory"
+                        checked={!formData.hasStoryToTell}
+                        onChange={() => setFormData({ ...formData, hasStoryToTell: false })}
                         className="w-4 h-4 text-teal-500"
                       />
-                      <span>Yes, I have</span>
+                      <span>I'm not sure yet</span>
                     </label>
                   </div>
                 </div>
 
-                {formData.previouslyPublished && (
+                <div>
+                  <label className="label">Tell me about you and the struggles you deal with *</label>
+                  <textarea
+                    required
+                    rows={5}
+                    className="input-field"
+                    placeholder="Share your experiences, challenges, and the things that have shaped who you are today. This helps us understand your unique perspective and story."
+                    value={formData.personalStruggles}
+                    onChange={(e) => setFormData({ ...formData, personalStruggles: e.target.value })}
+                  />
+                </div>
+
+                <div>
+                  <label className="label">How do you think you want to express it? (check all that apply) *</label>
+                  <div className="mt-3 space-y-3">
+                    {expressionOptions.map((option) => (
+                      <label key={option.id} className="flex items-center space-x-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData.expressionTypes.includes(option.id)}
+                          onChange={() => handleExpressionToggle(option.id)}
+                          className="w-5 h-5 text-teal-500 rounded border-gray-300 focus:ring-teal-400"
+                        />
+                        <span className="text-gray-700">{option.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {formData.expressionTypes.includes("other") && (
                   <div>
-                    <label className="label">Publishing Details</label>
+                    <label className="label">Please explain your "Other" expression type</label>
                     <textarea
-                      rows={3}
+                      rows={2}
                       className="input-field"
-                      placeholder="Tell us about your previous publications"
-                      value={formData.publishingDetails}
-                      onChange={(e) => setFormData({ ...formData, publishingDetails: e.target.value })}
+                      placeholder="Describe how you'd like to express your story..."
+                      value={formData.expressionOther}
+                      onChange={(e) => setFormData({ ...formData, expressionOther: e.target.value })}
                     />
                   </div>
                 )}
 
                 <div className="flex justify-between">
-                  <button type="button" onClick={() => setStep(2)} className="btn-secondary">
+                  <button type="button" onClick={() => setStep(1)} className="btn-secondary">
                     Back
                   </button>
-                  <button type="button" onClick={() => setStep(4)} className="btn-primary">
+                  <button 
+                    type="button" 
+                    onClick={() => setStep(3)} 
+                    className="btn-primary"
+                    disabled={formData.expressionTypes.length === 0}
+                  >
                     Next: Final Details
                   </button>
                 </div>
               </div>
             )}
 
-            {step === 4 && (
+            {step === 3 && (
               <div className="space-y-6">
                 <div className="flex items-center space-x-3 mb-6">
                   <MessageSquare className="w-6 h-6 text-teal-500" />
@@ -470,7 +409,7 @@ export default function Apply() {
                 </div>
 
                 <div className="flex justify-between">
-                  <button type="button" onClick={() => setStep(3)} className="btn-secondary">
+                  <button type="button" onClick={() => setStep(2)} className="btn-secondary">
                     Back
                   </button>
                   <button type="submit" disabled={loading || !user} className="btn-primary disabled:opacity-50">

@@ -58,14 +58,10 @@ export const applications = pgTable("applications", {
   guardianPhone: text("guardian_phone"),
   guardianRelationship: text("guardian_relationship"),
   
-  bookTitle: text("book_title").notNull(),
-  genre: text("genre").notNull(),
-  wordCount: integer("word_count"),
-  bookSummary: text("book_summary").notNull(),
-  manuscriptStatus: text("manuscript_status").notNull(),
-  
-  previouslyPublished: boolean("previously_published").default(false),
-  publishingDetails: text("publishing_details"),
+  hasStoryToTell: boolean("has_story_to_tell").notNull().default(true),
+  personalStruggles: text("personal_struggles").notNull(),
+  expressionTypes: text("expression_types").notNull(),
+  expressionOther: text("expression_other"),
   
   whyCollective: text("why_collective").notNull(),
   goals: text("goals"),
