@@ -118,10 +118,27 @@ export function registerRoutes(app: Express) {
     }
 
     try {
+      const { dateOfBirth, personalStruggles, expressionTypes, whyCollective } = req.body;
+      
+      if (!dateOfBirth || !personalStruggles || !expressionTypes || !whyCollective) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+      
+      if (!personalStruggles.trim()) {
+        return res.status(400).json({ message: "Please tell us about your story and struggles" });
+      }
+      
+      if (!expressionTypes.trim()) {
+        return res.status(400).json({ message: "Please select at least one expression type" });
+      }
+      
       const applicationData = {
         ...req.body,
         userId: req.session.userId,
         status: "pending",
+        expressionTypes: Array.isArray(req.body.expressionTypes) 
+          ? req.body.expressionTypes.join(",") 
+          : req.body.expressionTypes,
       };
 
       const [newApplication] = await db.insert(applications).values(applicationData).returning();
