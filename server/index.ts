@@ -6,17 +6,17 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic } from "./vite";
 import { db } from "./db";
 import { users } from "../shared/schema";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { hash } from "./auth";
 
 async function ensurePermanentAdmin() {
-  const ADMIN_EMAIL = "Jon@theindiequill.com";
+  const ADMIN_EMAIL = "jon@theindiequill.com";
   const ADMIN_PASSWORD = "Marcella@99";
   const ADMIN_FIRST_NAME = "Jon";
   const ADMIN_LAST_NAME = "Admin";
 
   try {
-    const existingUser = await db.select().from(users).where(eq(users.email, ADMIN_EMAIL)).limit(1);
+    const existingUser = await db.select().from(users).where(sql`lower(${users.email}) = lower(${ADMIN_EMAIL})`).limit(1);
     
     if (existingUser.length === 0) {
       const hashedPassword = await hash(ADMIN_PASSWORD);
@@ -30,7 +30,7 @@ async function ensurePermanentAdmin() {
       console.log("Permanent admin account created: " + ADMIN_EMAIL);
     } else {
       if (existingUser[0].role !== "admin") {
-        await db.update(users).set({ role: "admin" }).where(eq(users.email, ADMIN_EMAIL));
+        await db.update(users).set({ role: "admin" }).where(eq(users.id, existingUser[0].id));
         console.log("Admin role restored for: " + ADMIN_EMAIL);
       }
     }

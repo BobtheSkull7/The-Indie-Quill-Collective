@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { db } from "./db";
 import { users, applications, contracts, publishingUpdates, calendarEvents, fundraisingCampaigns, donations } from "@shared/schema";
-import { eq, desc, gte } from "drizzle-orm";
+import { eq, desc, gte, sql } from "drizzle-orm";
 import { hash, compare } from "./auth";
 import { migrateAuthorToIndieQuill, retryFailedMigrations, sendApplicationToLLC, sendStatusUpdateToLLC, sendContractSignatureToLLC, sendUserRoleUpdateToLLC } from "./indie-quill-integration";
 import { sendApplicationReceivedEmail, sendApplicationAcceptedEmail, sendApplicationRejectedEmail } from "./email";
@@ -18,7 +18,7 @@ export function registerRoutes(app: Express) {
     try {
       const { email, password, firstName, lastName } = req.body;
       
-      const existingUser = await db.select().from(users).where(eq(users.email, email));
+      const existingUser = await db.select().from(users).where(sql`lower(${users.email}) = lower(${email})`);
       if (existingUser.length > 0) {
         return res.status(400).json({ message: "Email already registered" });
       }
@@ -54,7 +54,7 @@ export function registerRoutes(app: Express) {
     try {
       const { email, password } = req.body;
       
-      const [user] = await db.select().from(users).where(eq(users.email, email));
+      const [user] = await db.select().from(users).where(sql`lower(${users.email}) = lower(${email})`);
       if (!user) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
