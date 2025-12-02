@@ -403,3 +403,51 @@ export async function getPendingMigrations(): Promise<number> {
     .where(eq(publishingUpdates.syncStatus, "pending"));
   return pending.length;
 }
+
+export async function sendUserRoleUpdateToLLC(
+  userId: number,
+  email: string,
+  role: string
+): Promise<{ success: boolean; error?: string }> {
+  if (!INDIE_QUILL_API_URL || !INDIE_QUILL_API_KEY || !INDIE_QUILL_API_SECRET) {
+    console.log("Indie Quill integration not configured - skipping user role sync");
+    return { success: false, error: "Integration not configured" };
+  }
+
+  const payload = {
+    source: "npo_collective",
+    collectiveUserId: userId,
+    email,
+    role,
+    updatedAt: new Date(),
+  };
+
+  const timestamp = Math.floor(Date.now() / 1000);
+  const payloadJson = JSON.stringify(payload);
+  const signature = generateHmacSignature(payloadJson, timestamp);
+
+  try {
+    const response = await fetch(`${INDIE_QUILL_API_URL}/api/internal/npo-users/${userId}/role`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-Key": INDIE_QUILL_API_KEY,
+        "X-Timestamp": timestamp.toString(),
+        "X-Signature": signature,
+      },
+      body: payloadJson,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Indie Quill user role sync error:", response.status, errorText);
+      return { success: false, error: `API error: ${response.status}` };
+    }
+
+    console.log(`User role update for ${email} synced to LLC: ${role}`);
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to send user role to Indie Quill:", error);
+    return { success: false, error: `Connection failed: ${error}` };
+  }
+}
