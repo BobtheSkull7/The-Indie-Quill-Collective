@@ -12,6 +12,25 @@ const indexPath = path.resolve(distPath, "index.html");
 const app = express();
 const server = createServer(app);
 
+let isInitialized = false;
+let initError: Error | null = null;
+
+app.get("/", (req, res, next) => {
+  if (!isInitialized) {
+    if (isProd) {
+      res.status(200).send("<!DOCTYPE html><html><head><title>The Indie Quill Collective</title></head><body><h1>The Indie Quill Collective</h1><p>Loading...</p></body></html>");
+    } else {
+      next();
+    }
+  } else {
+    next();
+  }
+});
+
+app.get("/health", (_req, res) => {
+  res.status(200).send("OK");
+});
+
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -27,6 +46,16 @@ app.use(
     },
   })
 );
+
+app.use((req, res, next) => {
+  if (req.path.startsWith("/api") && !isInitialized) {
+    if (initError) {
+      return res.status(503).json({ message: "Service initializing, please retry" });
+    }
+    return res.status(503).json({ message: "Service starting up" });
+  }
+  next();
+});
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -59,41 +88,50 @@ app.use((req, res, next) => {
 });
 
 async function initializeApp() {
-  const { registerRoutes } = await import("./routes");
-  registerRoutes(app);
-  
-  if (isProd) {
-    app.use((req, res, next) => {
-      res.setHeader(
-        "Content-Security-Policy",
-        "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data: https:; connect-src 'self' https:;"
-      );
-      next();
-    });
+  try {
+    const { registerRoutes } = await import("./routes");
+    registerRoutes(app);
     
-    app.use(express.static(distPath));
-    
-    app.get("*", (req, res, next) => {
-      if (req.path.startsWith("/api")) {
-        return next();
-      }
-      res.sendFile(indexPath, (err) => {
-        if (err) {
-          res.status(200).send("<!DOCTYPE html><html><head><title>The Indie Quill Collective</title></head><body><h1>The Indie Quill Collective</h1><p>Loading...</p></body></html>");
-        }
+    if (isProd) {
+      app.use((req, res, next) => {
+        res.setHeader(
+          "Content-Security-Policy",
+          "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data: https:; connect-src 'self' https:;"
+        );
+        next();
       });
+      
+      app.use(express.static(distPath));
+      
+      app.get("*", (req, res, next) => {
+        if (req.path.startsWith("/api")) {
+          return next();
+        }
+        res.sendFile(indexPath, (err) => {
+          if (err) {
+            res.status(200).send("<!DOCTYPE html><html><head><title>The Indie Quill Collective</title></head><body><h1>The Indie Quill Collective</h1><p>Loading...</p></body></html>");
+          }
+        });
+      });
+    } else {
+      const { setupVite } = await import("./vite");
+      await setupVite(app, server);
+    }
+    
+    app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+      const status = err.status || err.statusCode || 500;
+      const message = err.message || "Internal Server Error";
+      res.status(status).json({ message });
+      console.error(err);
     });
-  } else {
-    const { setupVite } = await import("./vite");
-    await setupVite(app, server);
+    
+    isInitialized = true;
+    console.log("App initialized successfully");
+  } catch (error) {
+    initError = error as Error;
+    console.error("App initialization failed:", error);
+    throw error;
   }
-  
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-    res.status(status).json({ message });
-    console.error(err);
-  });
 }
 
 async function ensurePermanentAdmin() {
@@ -136,12 +174,11 @@ server.listen(PORT, "0.0.0.0", () => {
   
   initializeApp()
     .then(() => {
-      console.log("App initialized");
-      setTimeout(() => {
+      setImmediate(() => {
         ensurePermanentAdmin().catch(err => {
           console.error("Failed to ensure permanent admin:", err);
         });
-      }, 2000);
+      });
     })
     .catch(err => {
       console.error("Failed to initialize app:", err);
