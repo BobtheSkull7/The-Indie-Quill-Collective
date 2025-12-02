@@ -17,25 +17,14 @@ app.get("/", (_req, res) => {
   res.status(200).send("OK");
 });
 
-async function start() {
-  try {
-    // Fast: Set up lightweight middleware
-    await bootstrapFast();
-    
-    // Start server IMMEDIATELY
-    server.listen(PORT, "0.0.0.0", () => {
-      console.log(`Server listening on port ${PORT}`);
-    });
-    
-    // Skip slow operations - they block health checks on deployment
-    // Admin setup should be done manually, not on every deployment
-  } catch (err) {
+// Start server IMMEDIATELY with health check routes only
+server.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server listening on port ${PORT}`);
+  // Now run bootstrap in background after server is listening
+  bootstrapFast().catch(err => {
     console.error("Bootstrap failed:", err);
-    process.exit(1);
-  }
-}
-
-start();
+  });
+});
 
 async function bootstrapFast() {
 
