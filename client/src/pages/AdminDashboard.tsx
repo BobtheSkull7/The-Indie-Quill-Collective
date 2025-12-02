@@ -85,19 +85,14 @@ export default function AdminDashboard() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    console.log("AdminDashboard: user =", user);
     if (!user) {
-      console.log("AdminDashboard: No user, redirecting to login");
       setLocation("/login");
       return;
     }
     if (user.role !== "admin") {
-      console.log("AdminDashboard: User is not admin, redirecting to dashboard");
       setLocation("/dashboard");
       return;
     }
-
-    console.log("AdminDashboard: User is admin, loading data");
     loadData();
   }, [user, setLocation]);
 
