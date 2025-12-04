@@ -12,11 +12,6 @@ app.get("/health", (_req, res) => {
   res.status(200).send("OK");
 });
 
-app.get("/", (_req, res) => {
-  res.set("Cache-Control", "no-cache, no-store, must-revalidate");
-  res.status(200).send("OK");
-});
-
 // Start server IMMEDIATELY with health check routes only
 server.listen(PORT, "0.0.0.0", () => {
   console.log(`Server listening on port ${PORT}`);
