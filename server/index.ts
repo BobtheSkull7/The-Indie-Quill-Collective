@@ -2,7 +2,12 @@ import express from "express";
 import { createServer } from "http";
 
 const app = express();
+
+// IMPORTANT: allow secure cookies behind Render's proxy
+app.set("trust proxy", 1);
+
 const server = createServer(app);
+
 const PORT = parseInt(process.env.PORT || "5000", 10);
 const isProd = process.env.NODE_ENV === "production";
 
