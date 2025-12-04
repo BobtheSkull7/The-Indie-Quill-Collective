@@ -21,32 +21,39 @@ app.get("/", (_req, res) => {
 server.listen(PORT, "0.0.0.0", () => {
   console.log(`Server listening on port ${PORT}`);
   // Now run bootstrap in background after server is listening
-  bootstrapFast().catch(err => {
+  bootstrapFast().catch((err) => {
     console.error("Bootstrap failed:", err);
   });
 });
 
 async function bootstrapFast() {
-
   const cors = (await import("cors")).default;
   const session = (await import("express-session")).default;
+  const pgSession = (await import("connect-pg-simple")).default(session);
 
   app.use(cors());
   app.use(express.json());
   app.use(express.urlencoded({ extended: false }));
 
-  // Use memory store for sessions
+  // Use Postgres-backed session store in production, memory in dev
+  const sessionStore = isProd
+    ? new pgSession({
+        conString: process.env.DATABASE_URL,
+        ssl: { rejectUnauthorized: false },
+      })
+    : undefined;
+
   app.use(
     session({
-      store: undefined,
+      store: sessionStore,
       secret: process.env.SESSION_SECRET || "indie-quill-collective-secret-key",
       resave: false,
       saveUninitialized: false,
       cookie: {
         secure: isProd,
-        maxAge: 24 * 60 * 60 * 1000,
+        maxAge: 24 * 60 * 60 * 1000, // 1 day
       },
-    })
+    }),
   );
 
   app.use((req, res, next) => {
@@ -88,7 +95,7 @@ async function bootstrapFast() {
     app.use((_req, res, next) => {
       res.setHeader(
         "Content-Security-Policy",
-        "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data: https:; connect-src 'self' https:;"
+        "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data: https:; connect-src 'self' https:;",
       );
       next();
     });
@@ -101,7 +108,11 @@ async function bootstrapFast() {
       }
       res.sendFile(indexPath, (err) => {
         if (err) {
-          res.status(200).send("<!DOCTYPE html><html><head><title>The Indie Quill Collective</title></head><body><h1>Loading...</h1></body></html>");
+          res
+            .status(200)
+            .send(
+              "<!DOCTYPE html><html><head><title>The Indie Quill Collective</title></head><body><h1>Loading...</h1></body></html>",
+            );
         }
       });
     });
@@ -110,12 +121,19 @@ async function bootstrapFast() {
     await setupVite(app, server);
   }
 
-  app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-    res.status(status).json({ message });
-    console.error(err);
-  });
+  app.use(
+    (
+      err: any,
+      _req: express.Request,
+      res: express.Response,
+      _next: express.NextFunction,
+    ) => {
+      const status = err.status || err.statusCode || 500;
+      const message = err.message || "Internal Server Error";
+      res.status(status).json({ message });
+      console.error(err);
+    },
+  );
 
   (app as any).__initialized = true;
   console.log("App initialized");
