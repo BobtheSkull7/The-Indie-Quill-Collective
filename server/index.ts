@@ -121,12 +121,18 @@ async function bootstrapFast() {
       err: any,
       _req: express.Request,
       res: express.Response,
-      _next: express.NextFunction,
+      next: express.NextFunction,
     ) => {
+      console.error(err);
+
+      // Prevent “Cannot set headers after they are sent” errors
+      if (res.headersSent) {
+        return next(err);
+      }
+
       const status = err.status || err.statusCode || 500;
       const message = err.message || "Internal Server Error";
       res.status(status).json({ message });
-      console.error(err);
     },
   );
 
