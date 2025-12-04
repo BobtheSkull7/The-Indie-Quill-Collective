@@ -35,6 +35,8 @@ async function bootstrapFast() {
     ? new pgSession({
         conString: process.env.DATABASE_URL,
         ssl: { rejectUnauthorized: false },
+        tableName: "session",
+        createTableIfMissing: true,
       })
     : undefined;
 
