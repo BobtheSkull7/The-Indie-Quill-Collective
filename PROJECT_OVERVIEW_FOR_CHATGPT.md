@@ -174,14 +174,38 @@ client/
 
 ---
 
+## Production Architecture (CURRENT)
+
+```
+┌─────────────┐     ┌──────────────┐     ┌─────────────────┐     ┌──────────────┐
+│   Replit    │ ──► │    GitHub    │ ──► │     Render      │ ──► │     Neon     │
+│ Development │     │ Source Truth │     │   Production    │     │   Postgres   │
+└─────────────┘     └──────────────┘     └─────────────────┘     └──────────────┘
+```
+
+### Deployment Pipeline
+- **Replit** → Development environment only
+- **GitHub** → Source of truth for all code
+- **Render** → Production hosting (Web Services)
+- **Neon** → Production PostgreSQL database
+- **Drizzle** → Schema management and migrations
+
+### Production Configuration (Render)
+- **Backend**: Node Web Service on Render
+- **Frontend**: Separate Node Web Service on Render (not static)
+- **Sessions**: PostgreSQL-backed via `connect-pg-simple` with Neon
+- **Session Table**: Auto-created with `createTableIfMissing: true`
+
+---
+
 ## Deployment Configuration
 
-### Development
+### Development (Replit)
 ```bash
 npm run dev  # Runs: tsx server/index.ts (starts on port 5000)
 ```
 
-### Production
+### Production (Render)
 ```bash
 npm run build   # Vite builds React to dist/public
 npm start       # Runs: NODE_ENV=production tsx server/index.ts
@@ -231,17 +255,19 @@ npm start       # Runs: NODE_ENV=production tsx server/index.ts
 
 ## Security & Session Management
 
-### Current Implementation
-- **Session Store**: In-memory (Express default)
-- **Session Secret**: Configurable via environment variable (default: hardcoded)
+### Production Implementation (Render/Neon)
+- **Session Store**: PostgreSQL via `connect-pg-simple`
+- **Session Table**: Auto-created in Neon with `createTableIfMissing: true`
+- **Session Secret**: Configured via `SESSION_SECRET` environment variable
 - **Cookie Settings**:
   - Secure flag: true in production
   - MaxAge: 24 hours
   - HttpOnly: true (default Express-session)
-- **CORS**: Enabled without restrictions (all origins allowed)
+- **CORS**: Configured for production domain
 
-### Deployment Note
-⚠️ **Warning**: In-memory sessions don't persist across server restarts and don't scale to multiple processes. For production scaling, implement PostgreSQL session store.
+### Development (Replit)
+- **Session Store**: In-memory (Express default) for faster startup
+- **Database**: Replit-provided PostgreSQL (optional)
 
 ---
 
@@ -268,29 +294,41 @@ npm start       # Runs: NODE_ENV=production tsx server/index.ts
 
 ## Environment Variables Required
 
-### Production Deployment
-- `DATABASE_URL` - PostgreSQL connection string (optional - app runs without it)
+### Production (Render)
+- `DATABASE_URL` - Neon PostgreSQL connection string (required)
+- `SESSION_SECRET` - Secret for session encryption (required)
+- `VITE_API_BASE_URL` - Base URL for API calls from frontend
 - `NODE_ENV=production` - Enable production mode
-- `SESSION_SECRET` - Session encryption key
+
+### Development (Replit)
+- `DATABASE_URL` - Auto-configured by Replit
 
 ### Optional
 - Email configuration for Resend integration
 - GitHub token for @octokit integration (if used)
+- `INDIE_QUILL_API_URL` - Base URL of The Indie Quill LLC API
+- `INDIE_QUILL_API_KEY` - API key for LLC integration
+- `INDIE_QUILL_API_SECRET` - HMAC secret for request signing
 
 ---
 
 ## Current Deployment Status
 
-### Issues Resolved (This Session)
-1. ✅ Updated Vite from 6.2.0 to 6.2.3 (CVE-2025-30208 security patch)
-2. ✅ Fixed health check timeout by registering routes synchronously
-3. ✅ Removed blocking database operations from startup
-4. ✅ Removed automatic admin account creation
+### Completed
+1. ✅ Migrated from Replit Deployments to Render Web Services
+2. ✅ Connected to Neon PostgreSQL for production database
+3. ✅ Fixed session system with `connect-pg-simple` and Neon-backed session table
+4. ✅ Resolved Express routing issues (root route no longer overrides SPA)
+5. ✅ Fixed all authentication issues (401/403 errors resolved)
+6. ✅ Schema synced to Neon using Drizzle (`npx drizzle-kit push`)
+7. ✅ Updated Vite from 6.2.0 to 6.2.3 (CVE-2025-30208 security patch)
+8. ✅ Removed automatic admin account creation (manual setup now)
 
-### Remaining Deployment Issue
-- ⚠️ Autoscale deployment health checks still timing out despite fixes
-- See SUPPORT_TICKET.md for escalation details
-- App runs successfully in development environment
+### Production Status
+- **Backend API**: Operational on Render
+- **Frontend**: Hosted on Render (Node Web Service)
+- **Database**: Neon PostgreSQL (schema synced)
+- **NPO Workflow**: Fully functional (registration, applications, admin dashboard)
 
 ---
 
@@ -327,10 +365,17 @@ npm start       # Runs: NODE_ENV=production tsx server/index.ts
 
 ## For External Development / Deployment
 
+### Current Production Setup (Render)
+Already deployed and operational:
+1. **Backend**: Render Node Web Service
+2. **Frontend**: Render Node Web Service (separate)
+3. **Database**: Neon PostgreSQL
+4. **Deployment**: GitHub → Render (manual deploy)
+
 ### To Deploy to Another Platform:
 
 1. **Database Setup**
-   - Create PostgreSQL database
+   - Create PostgreSQL database (Neon recommended)
    - Set `DATABASE_URL` environment variable
    - Run migrations: `npm run db:push`
 
@@ -349,17 +394,17 @@ npm start       # Runs: NODE_ENV=production tsx server/index.ts
    PORT=5000
    DATABASE_URL=postgresql://...
    SESSION_SECRET=your-secret-key
+   VITE_API_BASE_URL=https://your-api-domain.com
    ```
 
 5. **Health Check Endpoint**
-   - Configure deployment tool to check: `GET /`
+   - Configure deployment tool to check: `GET /health`
    - Returns: `200 OK` (immediately)
-   - Alternative: `GET /health`
 
 ### Deployment Targets
+- **Render** (current): Node Web Services for both frontend and backend
 - Container: Docker (use `node:20+` image, run `npm start`)
-- Serverless: May have cold start challenges due to Express requirements
-- Traditional: Node.js hosting (Railway, Fly.io, etc.)
+- Traditional: Railway, Fly.io, DigitalOcean App Platform
 - Managed: Vercel (requires API routes restructure)
 
 ---
@@ -391,9 +436,10 @@ Based on schema, the following features have database support but routes may nee
 
 ## Notes for ChatGPT Review
 
-- **Project is production-ready skeleton**: Database schema fully designed, core infrastructure in place
-- **Frontend framework chosen**: React + Vite + Tailwind
-- **Backend framework chosen**: Express.js + Drizzle ORM
-- **Key architectural decision**: Lightweight, health-check friendly startup with async bootstrap
-- **Current blocker**: Deployment to Replit's autoscale (health check timeouts) - escalated to support
-- **Can be deployed to alternative platforms** without Replit-specific health check issues
+- **Project is PRODUCTION-READY and DEPLOYED**: Full NPO workflow operational
+- **Architecture**: Replit (dev) → GitHub → Render (prod) → Neon (database)
+- **Frontend framework**: React 19 + Vite 6 + Tailwind CSS
+- **Backend framework**: Express.js + Drizzle ORM + connect-pg-simple sessions
+- **Key architectural decision**: PostgreSQL-backed sessions for production scalability
+- **Development workflow**: Use Replit for design/build, push to GitHub, deploy via Render
+- **Both Bookstore and Collective apps** now use this same unified architecture

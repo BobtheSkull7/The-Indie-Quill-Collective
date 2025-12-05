@@ -7,6 +7,26 @@ The Indie Quill Collective is a 501(c)(3) non-profit organization platform desig
 - **Status**: MVP Complete
 - **Last Updated**: December 2024
 
+## Architecture Overview
+```
+┌─────────────┐     ┌──────────────┐     ┌─────────────────┐     ┌──────────────┐
+│   Replit    │ ──► │    GitHub    │ ──► │     Render      │ ──► │     Neon     │
+│ Development │     │ Source Truth │     │   Production    │     │   Postgres   │
+└─────────────┘     └──────────────┘     └─────────────────┘     └──────────────┘
+```
+
+### Deployment Pipeline
+- **Replit** → Development environment only
+- **GitHub** → Source of truth for all code
+- **Render** → Production hosting (Web Services)
+- **Neon** → Production PostgreSQL database
+- **Drizzle** → Schema management and migrations
+
+### Production Components (Render)
+- **Backend**: Node Web Service on Render
+- **Frontend**: Separate Node Web Service on Render (not static)
+- **Database**: Neon PostgreSQL with connect-pg-simple sessions
+
 ## Key Features
 1. **NPO Author Application System** - Multi-step application form for authors
 2. **Minor Author Support** - Guardian information collection for authors under 18
@@ -57,13 +77,13 @@ The Indie Quill Collective is a 501(c)(3) non-profit organization platform desig
 - **admin** - Can review applications, accept/reject, view all data
 - **board_member** - Board of Directors access: can view stats, manage calendar, track fundraising
 
-## Permanent Admin Account
-A permanent admin account is automatically created/maintained on every server startup:
-- **Email**: Jon@theindiequill.com
-- **Password**: Marcella@99
-- **Role**: admin (automatically restored if changed)
+## Admin Account Setup
+Admin accounts are created manually (one-time setup), not automatically on server startup. This prevents blocking database operations during deployment health checks.
 
-This account cannot be deleted and will be recreated if removed from the database.
+**To create an admin account:**
+1. Register a regular user account via the application
+2. Use database admin tools (Drizzle Studio or direct SQL) to update the user's role to "admin"
+3. Or use the API endpoint `PATCH /api/admin/users/:id/role` from an existing admin account
 
 ## API Endpoints
 - `POST /api/auth/register` - Create new account
@@ -89,14 +109,23 @@ This account cannot be deleted and will be recreated if removed from the databas
 - `PATCH /api/board/campaigns/:id` - Update campaign status (board_member)
 - `GET/POST /api/board/donations` - Donation records (board_member)
 
-## Running Locally
+## Running Locally (Replit Development)
 ```bash
 npm run dev          # Start development server
 npm run db:push      # Push schema to database
+npm run db:studio    # Open Drizzle Studio for database management
 ```
 
 ## Environment Variables
-- `DATABASE_URL` - PostgreSQL connection string (auto-configured)
+
+### Development (Replit)
+- `DATABASE_URL` - PostgreSQL connection string (auto-configured by Replit)
+
+### Production (Render)
+- `DATABASE_URL` - Neon PostgreSQL connection string
+- `SESSION_SECRET` - Secret for session encryption
+- `VITE_API_BASE_URL` - Base URL for API calls from frontend
+- `NODE_ENV=production` - Enable production mode
 
 ## Integration with The Indie Quill LLC
 **All data is synced immediately to The Indie Quill LLC database.** The Collective keeps minimal local data (only session/login info) while all author and application data is stored in the LLC's production database.
