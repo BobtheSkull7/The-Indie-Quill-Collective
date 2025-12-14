@@ -3,7 +3,8 @@ import { useLocation } from "wouter";
 import { useAuth } from "../App";
 import { 
   Users, FileText, CheckCircle, Clock, TrendingUp, 
-  Eye, Check, X, RefreshCw, AlertTriangle, Zap, Calendar, Mail, User, BookOpen, Shield
+  Eye, Check, X, RefreshCw, AlertTriangle, Zap, Calendar, Mail, User, BookOpen, Shield,
+  Plus, Trash2, MapPin
 } from "lucide-react";
 
 interface Application {
@@ -70,6 +71,19 @@ interface UserRecord {
   hasAcceptedApp: boolean;
 }
 
+interface CalendarEvent {
+  id: number;
+  title: string;
+  description: string | null;
+  startDate: string;
+  endDate: string | null;
+  allDay: boolean;
+  eventType: string;
+  location: string | null;
+  createdBy: number;
+  createdAt: string;
+}
+
 export default function AdminDashboard() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
@@ -80,12 +94,25 @@ export default function AdminDashboard() {
   const [reviewNotes, setReviewNotes] = useState("");
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
-  const [activeTab, setActiveTab] = useState<"applicants" | "sync" | "users">("applicants");
+  const [activeTab, setActiveTab] = useState<"applicants" | "sync" | "users" | "calendar">("applicants");
   const [retrying, setRetrying] = useState<number | null>(null);
   const [allUsers, setAllUsers] = useState<UserRecord[]>([]);
   const [editingUser, setEditingUser] = useState<UserRecord | null>(null);
   const [newRole, setNewRole] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
+  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
+  const [showEventForm, setShowEventForm] = useState(false);
+  const [newEvent, setNewEvent] = useState({
+    title: "",
+    description: "",
+    startDate: "",
+    endDate: "",
+    allDay: false,
+    eventType: "meeting",
+    location: "",
+  });
+  const [creatingEvent, setCreatingEvent] = useState(false);
+  const [deletingEventId, setDeletingEventId] = useState<number | null>(null);
   const [coppaConsentMethod, setCoppaConsentMethod] = useState<string>("");
   const [coppaConsentVerified, setCoppaConsentVerified] = useState<boolean>(false);
   const [coppaRetentionDate, setCoppaRetentionDate] = useState<string>("");
@@ -107,22 +134,30 @@ export default function AdminDashboard() {
   const loadData = async () => {
     setError(null);
     try {
-      const [appsRes, statsRes, syncRes, usersRes] = await Promise.all([
+      const [appsRes, statsRes, syncRes, usersRes, calendarRes] = await Promise.all([
         fetch("/api/applications"),
         fetch("/api/admin/stats"),
         fetch("/api/admin/sync-status"),
         fetch("/api/admin/users"),
+        fetch("/api/board/calendar"),
       ]);
 
       const apps = appsRes.ok ? await appsRes.json() : [];
       const statsData = statsRes.ok ? await statsRes.json() : null;
       const syncData = syncRes.ok ? await syncRes.json() : [];
       const usersData = usersRes.ok ? await usersRes.json() : [];
+      const calendarData = calendarRes.ok ? await calendarRes.json() : [];
 
       setApplications(Array.isArray(apps) ? apps : []);
       setStats(statsData);
       setSyncRecords(Array.isArray(syncData) ? syncData : []);
       setAllUsers(Array.isArray(usersData) ? usersData : []);
+      const sortedCalendarEvents = Array.isArray(calendarData) 
+        ? calendarData.sort((a: CalendarEvent, b: CalendarEvent) => 
+            new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+          )
+        : [];
+      setCalendarEvents(sortedCalendarEvents);
     } catch (err: any) {
       console.error("Failed to load data:", err);
       setError("Failed to load dashboard data. Please refresh the page.");
@@ -206,6 +241,91 @@ export default function AdminDashboard() {
     } finally {
       setUpdating(false);
     }
+  };
+
+  const createCalendarEvent = async () => {
+    if (!newEvent.title || !newEvent.startDate) return;
+    setCreatingEvent(true);
+
+    try {
+      const startDateISO = new Date(newEvent.startDate).toISOString();
+      let endDateISO = newEvent.endDate ? new Date(newEvent.endDate).toISOString() : null;
+      
+      if (newEvent.allDay && !endDateISO) {
+        endDateISO = startDateISO;
+      }
+
+      const res = await fetch("/api/board/calendar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: newEvent.title,
+          description: newEvent.description || null,
+          startDate: startDateISO,
+          endDate: endDateISO,
+          allDay: newEvent.allDay,
+          eventType: newEvent.eventType,
+          location: newEvent.location || null,
+        }),
+      });
+
+      if (res.ok) {
+        const created = await res.json();
+        setCalendarEvents((prev) => [...prev, created].sort(
+          (a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+        ));
+        setNewEvent({
+          title: "",
+          description: "",
+          startDate: "",
+          endDate: "",
+          allDay: false,
+          eventType: "meeting",
+          location: "",
+        });
+        setShowEventForm(false);
+      }
+    } catch (error) {
+      console.error("Create calendar event failed:", error);
+    } finally {
+      setCreatingEvent(false);
+    }
+  };
+
+  const deleteCalendarEvent = async (id: number) => {
+    setDeletingEventId(id);
+    try {
+      const res = await fetch(`/api/board/calendar/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setCalendarEvents((prev) => prev.filter((e) => e.id !== id));
+      }
+    } catch (error) {
+      console.error("Delete calendar event failed:", error);
+    } finally {
+      setDeletingEventId(null);
+    }
+  };
+
+  const getEventTypeColor = (type: string) => {
+    const colors: Record<string, string> = {
+      meeting: "bg-blue-100 text-blue-700",
+      board_meeting: "bg-purple-100 text-purple-700",
+      deadline: "bg-red-100 text-red-700",
+      event: "bg-green-100 text-green-700",
+      other: "bg-gray-100 text-gray-700",
+    };
+    return colors[type] || colors.other;
+  };
+
+  const formatEventType = (type: string) => {
+    const labels: Record<string, string> = {
+      meeting: "Meeting",
+      board_meeting: "Board Meeting",
+      deadline: "Deadline",
+      event: "Event",
+      other: "Other",
+    };
+    return labels[type] || type;
   };
 
   const initCoppaState = (app: Application) => {
@@ -473,6 +593,17 @@ export default function AdminDashboard() {
           >
             Users
           </button>
+          <button
+            onClick={() => setActiveTab("calendar")}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2 ${
+              activeTab === "calendar"
+                ? "bg-red-500 text-white"
+                : "bg-white text-gray-600 hover:bg-gray-100"
+            }`}
+          >
+            <Calendar className="w-4 h-4" />
+            <span>Calendar</span>
+          </button>
         </div>
 
         {activeTab === "applicants" && (
@@ -692,6 +823,188 @@ export default function AdminDashboard() {
                             className="text-blue-600 hover:text-blue-800 transition-colors text-sm font-medium"
                           >
                             Edit Role
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === "calendar" && (
+          <div className="card">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-display text-xl font-semibold text-slate-800">
+                Calendar Events
+              </h2>
+              <button
+                onClick={() => setShowEventForm(!showEventForm)}
+                className="btn-primary text-sm py-2 px-4 flex items-center space-x-2"
+              >
+                <Plus className="w-4 h-4" />
+                <span>{showEventForm ? "Cancel" : "Add Event"}</span>
+              </button>
+            </div>
+
+            {showEventForm && (
+              <div className="bg-slate-50 rounded-lg p-4 mb-6 border border-slate-200">
+                <h3 className="font-semibold text-slate-800 mb-4">Create New Event</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
+                    <input
+                      type="text"
+                      value={newEvent.title}
+                      onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
+                      placeholder="Event title"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <textarea
+                      value={newEvent.description}
+                      onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
+                      placeholder="Event description (optional)"
+                      rows={2}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Start Date *</label>
+                    <input
+                      type="datetime-local"
+                      value={newEvent.startDate}
+                      onChange={(e) => setNewEvent({ ...newEvent, startDate: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                    <input
+                      type="datetime-local"
+                      value={newEvent.endDate}
+                      onChange={(e) => setNewEvent({ ...newEvent, endDate: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Event Type</label>
+                    <select
+                      value={newEvent.eventType}
+                      onChange={(e) => setNewEvent({ ...newEvent, eventType: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    >
+                      <option value="meeting">Meeting</option>
+                      <option value="board_meeting">Board Meeting</option>
+                      <option value="deadline">Deadline</option>
+                      <option value="event">Event</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                    <input
+                      type="text"
+                      value={newEvent.location}
+                      onChange={(e) => setNewEvent({ ...newEvent, location: e.target.value })}
+                      placeholder="Location (optional)"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    />
+                  </div>
+                  <div className="md:col-span-2 flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="allDay"
+                      checked={newEvent.allDay}
+                      onChange={(e) => setNewEvent({ ...newEvent, allDay: e.target.checked })}
+                      className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+                    />
+                    <label htmlFor="allDay" className="text-sm text-gray-700">All day event</label>
+                  </div>
+                </div>
+                <div className="mt-4 flex justify-end">
+                  <button
+                    onClick={createCalendarEvent}
+                    disabled={creatingEvent || !newEvent.title || !newEvent.startDate}
+                    className="btn-primary"
+                  >
+                    {creatingEvent ? "Creating..." : "Create Event"}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {calendarEvents.length === 0 ? (
+              <p className="text-gray-500 text-center py-8">
+                No calendar events yet. Click "Add Event" to create one.
+              </p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-200">
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">Event</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">Date & Time</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">Type</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">Location</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {calendarEvents.map((event) => (
+                      <tr key={event.id} className="border-b border-gray-100 hover:bg-gray-50">
+                        <td className="py-3 px-4">
+                          <p className="font-medium text-slate-800">{event.title}</p>
+                          {event.description && (
+                            <p className="text-xs text-gray-500 truncate max-w-xs">{event.description}</p>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-gray-600 text-sm">
+                          <div className="flex items-center space-x-1">
+                            <Calendar className="w-3 h-3" />
+                            <span>
+                              {event.allDay 
+                                ? new Date(event.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                                : formatDateTime(event.startDate)
+                              }
+                            </span>
+                          </div>
+                          {event.endDate && (
+                            <div className="text-xs text-gray-400 mt-1">
+                              to {event.allDay 
+                                ? new Date(event.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                                : formatDateTime(event.endDate)
+                              }
+                            </div>
+                          )}
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className={`text-xs px-2 py-1 rounded ${getEventTypeColor(event.eventType)}`}>
+                            {formatEventType(event.eventType)}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-gray-600 text-sm">
+                          {event.location ? (
+                            <div className="flex items-center space-x-1">
+                              <MapPin className="w-3 h-3" />
+                              <span>{event.location}</span>
+                            </div>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4">
+                          <button
+                            onClick={() => deleteCalendarEvent(event.id)}
+                            disabled={deletingEventId === event.id}
+                            className="text-red-600 hover:text-red-800 transition-colors"
+                            title="Delete Event"
+                          >
+                            <Trash2 className={`w-5 h-5 ${deletingEventId === event.id ? "animate-pulse" : ""}`} />
                           </button>
                         </td>
                       </tr>
