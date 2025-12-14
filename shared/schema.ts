@@ -91,9 +91,13 @@ export const contracts = pgTable("contracts", {
   
   authorSignature: text("author_signature"),
   authorSignedAt: timestamp("author_signed_at"),
+  authorSignatureIp: text("author_signature_ip"),
+  authorSignatureUserAgent: text("author_signature_user_agent"),
   
   guardianSignature: text("guardian_signature"),
   guardianSignedAt: timestamp("guardian_signed_at"),
+  guardianSignatureIp: text("guardian_signature_ip"),
+  guardianSignatureUserAgent: text("guardian_signature_user_agent"),
   requiresGuardian: boolean("requires_guardian").default(false).notNull(),
   
   status: contractStatusEnum("status").default("pending_signature").notNull(),

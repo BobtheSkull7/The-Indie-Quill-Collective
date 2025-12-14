@@ -12,8 +12,12 @@ interface Contract {
   requiresGuardian: boolean;
   authorSignature: string | null;
   authorSignedAt: string | null;
+  authorSignatureIp: string | null;
+  authorSignatureUserAgent: string | null;
   guardianSignature: string | null;
   guardianSignedAt: string | null;
+  guardianSignatureIp: string | null;
+  guardianSignatureUserAgent: string | null;
   createdAt: string;
 }
 
@@ -135,12 +139,26 @@ export default function ContractSign() {
                 ) : (
                   <PenTool className="w-6 h-6 text-gray-400" />
                 )}
-                <div>
+                <div className="flex-1">
                   <p className="font-medium text-slate-800">Author Signature</p>
                   {contract.authorSignature ? (
-                    <p className="text-sm text-green-600">
-                      Signed: {contract.authorSignature} on {new Date(contract.authorSignedAt!).toLocaleDateString()}
-                    </p>
+                    <>
+                      <p className="text-sm text-green-600">
+                        Signed: {contract.authorSignature} on {new Date(contract.authorSignedAt!).toLocaleDateString()}
+                      </p>
+                      {contract.authorSignatureIp && (
+                        <div className="mt-2 pt-2 border-t border-green-200">
+                          <p className="text-xs text-gray-500">
+                            <span className="font-medium">IP:</span> {contract.authorSignatureIp}
+                          </p>
+                          {contract.authorSignatureUserAgent && (
+                            <p className="text-xs text-gray-500 truncate max-w-xs" title={contract.authorSignatureUserAgent}>
+                              <span className="font-medium">Device:</span> {contract.authorSignatureUserAgent.substring(0, 50)}...
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </>
                   ) : (
                     <p className="text-sm text-gray-500">Awaiting signature</p>
                   )}
@@ -156,12 +174,26 @@ export default function ContractSign() {
                   ) : (
                     <PenTool className="w-6 h-6 text-gray-400" />
                   )}
-                  <div>
+                  <div className="flex-1">
                     <p className="font-medium text-slate-800">Guardian Signature</p>
                     {contract.guardianSignature ? (
-                      <p className="text-sm text-green-600">
-                        Signed: {contract.guardianSignature} on {new Date(contract.guardianSignedAt!).toLocaleDateString()}
-                      </p>
+                      <>
+                        <p className="text-sm text-green-600">
+                          Signed: {contract.guardianSignature} on {new Date(contract.guardianSignedAt!).toLocaleDateString()}
+                        </p>
+                        {contract.guardianSignatureIp && (
+                          <div className="mt-2 pt-2 border-t border-green-200">
+                            <p className="text-xs text-gray-500">
+                              <span className="font-medium">IP:</span> {contract.guardianSignatureIp}
+                            </p>
+                            {contract.guardianSignatureUserAgent && (
+                              <p className="text-xs text-gray-500 truncate max-w-xs" title={contract.guardianSignatureUserAgent}>
+                                <span className="font-medium">Device:</span> {contract.guardianSignatureUserAgent.substring(0, 50)}...
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </>
                     ) : (
                       <p className="text-sm text-gray-500">Awaiting guardian signature</p>
                     )}

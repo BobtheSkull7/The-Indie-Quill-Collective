@@ -595,11 +595,16 @@ export function registerRoutes(app: Express) {
         return res.status(404).json({ message: "Contract not found" });
       }
 
+      const clientIp = getClientIp(req) || "unknown";
+      const userAgent = req.headers["user-agent"] || "unknown";
+
       let updateData: any = { updatedAt: new Date() };
 
       if (signatureType === "author") {
         updateData.authorSignature = signature;
         updateData.authorSignedAt = new Date();
+        updateData.authorSignatureIp = clientIp;
+        updateData.authorSignatureUserAgent = userAgent;
         if (!contract.requiresGuardian) {
           updateData.status = "signed";
         } else if (contract.guardianSignature) {
@@ -610,6 +615,8 @@ export function registerRoutes(app: Express) {
       } else if (signatureType === "guardian") {
         updateData.guardianSignature = signature;
         updateData.guardianSignedAt = new Date();
+        updateData.guardianSignatureIp = clientIp;
+        updateData.guardianSignatureUserAgent = userAgent;
         if (contract.authorSignature) {
           updateData.status = "signed";
         }
