@@ -846,7 +846,7 @@ export function registerRoutes(app: Express) {
   });
 
   app.get("/api/board/calendar", async (req: Request, res: Response) => {
-    if (!req.session.userId || req.session.userRole !== "board_member") {
+    if (!req.session.userId || (req.session.userRole !== "board_member" && req.session.userRole !== "admin")) {
       return res.status(403).json({ message: "Not authorized" });
     }
 
@@ -862,7 +862,7 @@ export function registerRoutes(app: Express) {
   });
 
   app.post("/api/board/calendar", async (req: Request, res: Response) => {
-    if (!req.session.userId || req.session.userRole !== "board_member") {
+    if (!req.session.userId || (req.session.userRole !== "board_member" && req.session.userRole !== "admin")) {
       return res.status(403).json({ message: "Not authorized" });
     }
 
@@ -886,7 +886,7 @@ export function registerRoutes(app: Express) {
   });
 
   app.delete("/api/board/calendar/:id", async (req: Request, res: Response) => {
-    if (!req.session.userId || req.session.userRole !== "board_member") {
+    if (!req.session.userId || (req.session.userRole !== "board_member" && req.session.userRole !== "admin")) {
       return res.status(403).json({ message: "Not authorized" });
     }
 
