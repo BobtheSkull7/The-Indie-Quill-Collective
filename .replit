@@ -10,7 +10,7 @@ channel = "stable-24_11"
 
 [deployment]
 run = ["npm", "run", "start"]
-deploymentTarget = "vm"
+deploymentTarget = "autoscale"
 ignorePorts = false
 build = ["npm", "run", "build"]
 
