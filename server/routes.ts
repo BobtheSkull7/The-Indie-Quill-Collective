@@ -339,6 +339,66 @@ export function registerRoutes(app: Express) {
     }
   });
 
+  // COPPA Compliance - Update consent verification and data retention
+  app.patch("/api/applications/:id/coppa-compliance", async (req: Request, res: Response) => {
+    if (!req.session.userId || req.session.userRole !== "admin") {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    try {
+      const { guardianConsentMethod, guardianConsentVerified, dataRetentionUntil } = req.body;
+      
+      // Validate that we're only updating minor applications
+      const [existingApp] = await db.select().from(applications)
+        .where(eq(applications.id, parseInt(req.params.id)));
+      
+      if (!existingApp) {
+        return res.status(404).json({ message: "Application not found" });
+      }
+      
+      if (!existingApp.isMinor) {
+        return res.status(400).json({ message: "COPPA compliance fields are only applicable to minor applications" });
+      }
+
+      const updateData: any = { updatedAt: new Date() };
+      
+      if (guardianConsentMethod !== undefined) {
+        updateData.guardianConsentMethod = guardianConsentMethod;
+      }
+      if (guardianConsentVerified !== undefined) {
+        updateData.guardianConsentVerified = guardianConsentVerified;
+      }
+      if (dataRetentionUntil !== undefined) {
+        updateData.dataRetentionUntil = dataRetentionUntil ? new Date(dataRetentionUntil) : null;
+      }
+
+      const [updated] = await db.update(applications)
+        .set(updateData)
+        .where(eq(applications.id, parseInt(req.params.id)))
+        .returning();
+
+      // Log this as a COPPA compliance action on minor data
+      await logMinorDataAccess(
+        req.session.userId,
+        "update",
+        "applications",
+        updated.id,
+        getClientIp(req),
+        { 
+          actionType: "coppa_compliance_update",
+          guardianConsentMethod: guardianConsentMethod || null,
+          guardianConsentVerified: guardianConsentVerified ?? null,
+          dataRetentionUntil: dataRetentionUntil || null
+        }
+      );
+
+      return res.json(updated);
+    } catch (error) {
+      console.error("Update COPPA compliance error:", error);
+      return res.status(500).json({ message: "Failed to update COPPA compliance" });
+    }
+  });
+
   app.get("/api/contracts", async (req: Request, res: Response) => {
     if (!req.session.userId) {
       return res.status(401).json({ message: "Not authenticated" });

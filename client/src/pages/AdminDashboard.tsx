@@ -16,6 +16,9 @@ interface Application {
   guardianEmail: string | null;
   guardianPhone: string | null;
   guardianRelationship: string | null;
+  guardianConsentMethod: string | null;
+  guardianConsentVerified: boolean | null;
+  dataRetentionUntil: string | null;
   hasStoryToTell: boolean;
   personalStruggles: string;
   expressionTypes: string;
