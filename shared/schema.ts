@@ -226,6 +226,24 @@ export const donationsRelations = relations(donations, ({ one }) => ({
   }),
 }));
 
+export const auditLogs = pgTable("audit_logs", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  action: text("action").notNull(),
+  targetTable: text("target_table").notNull(),
+  targetId: text("target_id").notNull(),
+  details: text("details"),
+  ipAddress: text("ip_address"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
+  user: one(users, {
+    fields: [auditLogs.userId],
+    references: [users.id],
+  }),
+}));
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 export type Application = typeof applications.$inferSelect;
@@ -240,3 +258,5 @@ export type FundraisingCampaign = typeof fundraisingCampaigns.$inferSelect;
 export type InsertFundraisingCampaign = typeof fundraisingCampaigns.$inferInsert;
 export type Donation = typeof donations.$inferSelect;
 export type InsertDonation = typeof donations.$inferInsert;
+export type AuditLog = typeof auditLogs.$inferSelect;
+export type InsertAuditLog = typeof auditLogs.$inferInsert;

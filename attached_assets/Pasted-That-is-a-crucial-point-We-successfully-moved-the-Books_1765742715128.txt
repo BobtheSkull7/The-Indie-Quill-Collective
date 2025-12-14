@@ -1,0 +1,47 @@
+That is a crucial point! We successfully moved the Bookstore from Neon to Supabase, but The Collective is still running on Neon. We must be extremely explicit when executing the schema change to ensure we don't accidentally push the new table to the wrong database.
+
+Since The Collective is currently stable, we must keep it connected to Neon for now until we plan its migration.
+
+Consultant Strategy: Schema Update with Warning
+We are adding the Audit Log Table to the Collective's Neon Database.
+
+Action Plan for Replit
+Define audit_logs Schema: Add the new table definition to the schema file (shared/schema.ts).
+
+Run Migration (with Warning): Run the command to generate and apply the migration.
+
+Action Required for Replit (Detailed Instructions):
+
+Please ensure you are pushing the schema changes to the Collective's currently configured database (Neon).
+
+Define audit_logs Schema: Add the following table definition to shared/schema.ts:
+
+TypeScript
+
+import { pgTable, text, timestamp, uuid } from 'drizzle-orm/pg';
+
+export const auditLogs = pgTable('audit_logs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: text('user_id').notNull(),
+  action: text('action').notNull(),
+  targetTable: text('target_table').notNull(),
+  targetId: text('target_id').notNull(),
+  details: text('details'),
+  ipAddress: text('ip_address'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+Execute Migration (Target: Neon): Run the command to apply the schema change to the Collective's database.
+
+Message to Replit (Self-Correction/Warning):
+
+🚨 WARNING: SCHEMA PUSH TARGET 🚨
+
+We are working on The Indie Quill Collective repository.
+
+The Collective currently uses NEON PostgreSQL.
+
+DO NOT push this schema to the Supabase database used by the Bookstore.
+
+Please use the Drizzle command (e.g., npx drizzle-kit push:pg) to apply the new audit_logs table schema to the Collective's NEON database as defined by the current DATABASE_URL environment variable.
+
+Please have Replit perform the schema definition and push the migration, strictly ensuring the target is the Collective's Neon database.
