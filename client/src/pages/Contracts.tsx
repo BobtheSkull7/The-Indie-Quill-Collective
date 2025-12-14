@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "../App";
-import { FileText, Clock, CheckCircle, AlertCircle, ArrowRight, Users } from "lucide-react";
+import { FileText, Clock, CheckCircle, AlertCircle, ArrowRight, Users, Download } from "lucide-react";
 
 interface Contract {
   id: number;
@@ -138,12 +138,22 @@ export default function Contracts() {
                       )}
 
                       {contract.status === "signed" && (
-                        <Link
-                          href={`/contracts/${contract.id}`}
-                          className="btn-secondary text-sm py-2 px-4"
-                        >
-                          View Contract
-                        </Link>
+                        <div className="flex flex-col space-y-2">
+                          <Link
+                            href={`/contracts/${contract.id}`}
+                            className="btn-secondary text-sm py-2 px-4 text-center"
+                          >
+                            View Contract
+                          </Link>
+                          <a
+                            href={`/api/contracts/${contract.id}/pdf`}
+                            className="btn-primary text-sm py-2 px-4 inline-flex items-center justify-center space-x-2"
+                            download
+                          >
+                            <Download className="w-4 h-4" />
+                            <span>Download PDF</span>
+                          </a>
+                        </div>
                       )}
                     </div>
                   </div>

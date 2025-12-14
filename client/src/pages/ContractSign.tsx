@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation, useParams } from "wouter";
 import { useAuth } from "../App";
-import { FileText, CheckCircle, AlertCircle, PenTool } from "lucide-react";
+import { FileText, CheckCircle, AlertCircle, PenTool, Download } from "lucide-react";
 
 interface Contract {
   id: number;
@@ -232,14 +232,24 @@ export default function ContractSign() {
 
         {contract.status === "signed" && (
           <div className="card bg-green-50 border-green-200">
-            <div className="flex items-center space-x-3">
-              <CheckCircle className="w-8 h-8 text-green-500" />
-              <div>
-                <h2 className="font-display text-xl font-semibold text-green-800">Contract Fully Signed</h2>
-                <p className="text-green-600">
-                  Congratulations! Your publishing agreement is complete. Check your publishing status for updates.
-                </p>
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+              <div className="flex items-center space-x-3">
+                <CheckCircle className="w-8 h-8 text-green-500" />
+                <div>
+                  <h2 className="font-display text-xl font-semibold text-green-800">Contract Fully Signed</h2>
+                  <p className="text-green-600">
+                    Congratulations! Your publishing agreement is complete. Check your publishing status for updates.
+                  </p>
+                </div>
               </div>
+              <a
+                href={`/api/contracts/${contract.id}/pdf`}
+                className="mt-4 md:mt-0 btn-secondary inline-flex items-center space-x-2"
+                download
+              >
+                <Download className="w-4 h-4" />
+                <span>Download PDF</span>
+              </a>
             </div>
           </div>
         )}

@@ -7,6 +7,8 @@ import { migrateAuthorToIndieQuill, retryFailedMigrations, sendApplicationToLLC,
 import { sendApplicationReceivedEmail, sendApplicationAcceptedEmail, sendApplicationRejectedEmail } from "./email";
 import { logAuditEvent, logMinorDataAccess, getClientIp } from "./utils/auditLogger";
 import { syncCalendarEvents, getGoogleCalendarConnectionStatus, deleteGoogleCalendarEvent } from "./google-calendar-sync";
+import { renderToBuffer } from "@react-pdf/renderer";
+import { ContractPDF } from "./pdf-templates/ContractTemplate";
 
 declare module "express-session" {
   interface SessionData {
@@ -475,6 +477,107 @@ export function registerRoutes(app: Express) {
     } catch (error) {
       console.error("Fetch contract error:", error);
       return res.status(500).json({ message: "Failed to fetch contract" });
+    }
+  });
+
+  app.get("/api/contracts/:id/pdf", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    try {
+      const [contract] = await db.select().from(contracts)
+        .where(eq(contracts.id, parseInt(req.params.id)));
+
+      if (!contract) {
+        return res.status(404).json({ message: "Contract not found" });
+      }
+
+      if (req.session.userRole !== "admin" && contract.userId !== req.session.userId) {
+        return res.status(403).json({ message: "Not authorized" });
+      }
+
+      if (contract.status !== "signed") {
+        return res.status(403).json({ message: "PDF download is only available for fully signed contracts" });
+      }
+
+      const [application] = await db.select().from(applications)
+        .where(eq(applications.id, contract.applicationId));
+
+      if (!application) {
+        return res.status(404).json({ message: "Application not found" });
+      }
+
+      const [user] = await db.select().from(users)
+        .where(eq(users.id, contract.userId));
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      if (contract.requiresGuardian || application.isMinor) {
+        await logMinorDataAccess(
+          req.session.userId,
+          "view",
+          "contracts",
+          contract.id,
+          getClientIp(req),
+          { 
+            action: "pdf_download", 
+            contractType: contract.contractType, 
+            viewedByRole: req.session.userRole,
+            applicationId: application.id,
+            includesGuardianData: !!application.guardianName
+          }
+        );
+      }
+
+      let pdfBuffer: Buffer;
+      try {
+        pdfBuffer = await renderToBuffer(
+          ContractPDF({
+            contract: {
+              id: contract.id,
+              contractType: contract.contractType,
+              contractContent: contract.contractContent,
+              authorSignature: contract.authorSignature,
+              authorSignedAt: contract.authorSignedAt?.toISOString() || null,
+              guardianSignature: contract.guardianSignature,
+              guardianSignedAt: contract.guardianSignedAt?.toISOString() || null,
+              requiresGuardian: contract.requiresGuardian,
+              status: contract.status,
+              createdAt: contract.createdAt.toISOString(),
+            },
+            application: {
+              penName: application.penName,
+              dateOfBirth: application.dateOfBirth,
+              isMinor: application.isMinor,
+              guardianName: application.guardianName,
+              guardianEmail: application.guardianEmail,
+              guardianRelationship: application.guardianRelationship,
+            },
+            user: {
+              firstName: user.firstName,
+              lastName: user.lastName,
+              email: user.email,
+            },
+          })
+        );
+      } catch (renderError) {
+        console.error("PDF render error:", renderError);
+        return res.status(500).json({ message: "Failed to render PDF document" });
+      }
+
+      const filename = `contract-${contract.id}-${contract.contractType.replace(/_/g, "-")}.pdf`;
+
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+      res.setHeader("Content-Length", pdfBuffer.length);
+
+      return res.send(pdfBuffer);
+    } catch (error) {
+      console.error("Generate contract PDF error:", error);
+      return res.status(500).json({ message: "Failed to generate PDF" });
     }
   });
 
