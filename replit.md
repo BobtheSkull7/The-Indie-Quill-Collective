@@ -108,6 +108,14 @@ Located at `server/utils/auditLogger.ts`, provides:
 - `ipAddress` - Client IP address for security tracking
 - `createdAt` - Timestamp of the action
 
+### Admin COPPA Compliance UI
+The Admin Dashboard includes a COPPA Compliance section for minor applications:
+- **Consent Method**: Dropdown to record how guardian consent was obtained (e-signature, mail-in form, verbal, in-person, video-call)
+- **Data Retention Until**: Date picker for when minor's data should be reviewed/deleted
+- **Consent Verified Checkbox**: Staff can mark when they've verified the guardian consent
+- **Change Detection**: Save button only enabled when changes are made to prevent redundant updates
+- **Audit Logging**: All COPPA compliance updates are logged for compliance tracking
+
 ## User Roles
 - **applicant** - Default role for new users, can submit applications
 - **admin** - Can review applications, accept/reject, view all data
