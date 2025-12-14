@@ -1,0 +1,58 @@
+🚀 The Indie Quill Collective (NPO) Features
+This project serves as the submission, compliance, and administration hub, built for high stability and legal rigor.
+
+1. Compliance & Data Governance (COPPA)
+COPPA Audit Logging:
+
+Spec: Implemented an audit_logs table to immutably record every sensitive action (data access, creation, update, deletion) with user ID, IP address, action type, and timestamp.
+
+Detail: Required for legal defense and proving compliance with data security requirements.
+
+Data Retention Policy:
+
+Spec: Added data_retention_until field to author profiles.
+
+Detail: Enables automatic, scheduled data deletion upon expiry, meeting data minimization requirements of COPPA and general data protection laws (like GDPR).
+
+Compliance UI:
+
+Spec: Dedicated Admin dashboard features for compliance officers to view audit trails and manage retention dates.
+
+2. Contract Automation & E-Signatures
+Forensic E-Signature Workflow:
+
+Spec: The contract signing endpoint captures and stores legally defensible metadata for both Author and Guardian signatures.
+
+Detail: Fields captured: signedAt, authorSignatureIp, authorSignatureUserAgent, guardianSignatureIp, guardianSignatureUserAgent. This satisfies the U.S. ESIGN Act requirements for non-repudiation.
+
+PDF Generation:
+
+Spec: Server-side PDF generation using @react-pdf/renderer.
+
+Detail: Allows authors and admins to download a professional, final copy of the signed publishing agreement, complete with all terms and signature audit details.
+
+Security: Download restricted to only fully signed contracts and authorized users (owner/admin).
+
+3. Operational & Administrative Tools
+Admin Calendar (CRUD):
+
+Spec: Full Create, Read, Update, Delete access to an internal application calendar for all Admin users.
+
+Detail: Used for logging critical internal deadlines (tax due dates, board meetings, legal filings, etc.).
+
+Google Calendar Two-Way Sync:
+
+Spec: Synchronization between the internal Admin Calendar and a designated shared Google Calendar.
+
+Detail: Allows Admins to see internal deadlines in their Google Calendar and pull external deadlines into the app. Includes status display and manual "Sync Now" functionality.
+
+4. System Reliability & Integration
+LLC Sync Worker:
+
+Spec: Implemented a robust node-cron scheduled worker (runs every 5 minutes).
+
+Detail: Automatically attempts to push data (signed contracts) to The Indie Quill Bookstore (LLC). Includes retry logic (sync_attempts) and clear status tracking (sync_status: pending | synced | failed).
+
+Outbound API Stability:
+
+Spec: The sync worker correctly handles 401 Unauthorized errors and retries, allowing for eventual success after external fixes.
