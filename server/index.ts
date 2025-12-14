@@ -36,10 +36,10 @@ async function bootstrapFast() {
   app.use(express.urlencoded({ extended: false }));
 
   // Use Postgres-backed session store in production, memory in dev
+  // Note: SSL is configured via the DATABASE_URL connection string (sslmode=require)
   const sessionStore = isProd
     ? new pgSession({
         conString: process.env.DATABASE_URL,
-        ssl: { rejectUnauthorized: false },
         tableName: "session",
         createTableIfMissing: true,
       })
