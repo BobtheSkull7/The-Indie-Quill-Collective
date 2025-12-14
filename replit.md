@@ -31,11 +31,12 @@ The Indie Quill Collective is a 501(c)(3) non-profit organization platform desig
 1. **NPO Author Application System** - Multi-step application form for authors
 2. **Minor Author Support** - Guardian information collection for authors under 18
 3. **Contract Management** - Digital contracts with author and guardian signature support
-4. **Admin Dashboard** - Review and manage applications, accept/reject workflow, calendar management
-5. **Publishing Status Tracking** - Visual progress tracker for accepted authors
-6. **User Authentication** - Secure registration and login system
-7. **Calendar Management** - Shared calendar for board meetings and events (accessible by admin and board members)
-8. **Google Calendar Integration** - Two-way sync between internal calendar and Google Calendar
+4. **Contract PDF Generation** - Download professional PDF copies of fully signed contracts
+5. **Admin Dashboard** - Review and manage applications, accept/reject workflow, calendar management
+6. **Publishing Status Tracking** - Visual progress tracker for accepted authors
+7. **User Authentication** - Secure registration and login system
+8. **Calendar Management** - Shared calendar for board meetings and events (accessible by admin and board members)
+9. **Google Calendar Integration** - Two-way sync between internal calendar and Google Calendar
 
 ## Tech Stack
 - **Frontend**: React 19, Vite, TailwindCSS 3
@@ -55,6 +56,8 @@ The Indie Quill Collective is a 501(c)(3) non-profit organization platform desig
 │   ├── routes.ts           # API routes
 │   ├── auth.ts             # Password hashing utilities
 │   ├── db.ts               # Database connection
+│   ├── pdf-templates/      # PDF generation templates
+│   │   └── ContractTemplate.tsx  # Contract PDF layout
 │   └── vite.ts             # Vite middleware
 ├── shared/                 # Shared code
 │   └── schema.ts           # Drizzle database schema
