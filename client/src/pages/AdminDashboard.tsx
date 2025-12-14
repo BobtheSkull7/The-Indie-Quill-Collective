@@ -926,11 +926,14 @@ export default function AdminDashboard() {
                     <label htmlFor="allDay" className="text-sm text-gray-700">All day event</label>
                   </div>
                 </div>
-                <div className="mt-4 flex justify-end">
+                <div className="mt-4 flex justify-end items-center space-x-3">
+                  {(!newEvent.title || !newEvent.startDate) && (
+                    <span className="text-sm text-amber-600">Please fill in title and start date</span>
+                  )}
                   <button
                     onClick={createCalendarEvent}
                     disabled={creatingEvent || !newEvent.title || !newEvent.startDate}
-                    className="btn-primary"
+                    className="bg-red-500 text-white py-2 px-4 rounded-lg font-medium hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {creatingEvent ? "Creating..." : "Create Event"}
                   </button>
