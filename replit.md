@@ -71,6 +71,38 @@ The Indie Quill Collective is a 501(c)(3) non-profit organization platform desig
 - **calendarEvents** - Shared calendar events for board meetings
 - **fundraisingCampaigns** - Fundraising campaigns with goals and progress
 - **donations** - Donation records linked to campaigns
+- **audit_logs** - COPPA compliance audit trail for minor data access
+
+## COPPA Compliance - Audit Logging
+The platform implements comprehensive audit logging for all access to minor (under 18) data as required for COPPA compliance.
+
+### Audit Logger Utility
+Located at `server/utils/auditLogger.ts`, provides:
+- `logAuditEvent()` - General purpose audit logging
+- `logMinorDataAccess()` - Specialized logging for minor data access
+- `getClientIp()` - IP address extraction from requests
+
+### Logged Actions
+| Route | Action | Condition |
+|-------|--------|-----------|
+| `GET /api/applications` (admin) | view | When listing includes minor applications |
+| `GET /api/applications/:id` | view | When application is for a minor |
+| `PATCH /api/applications/:id/status` | status_change | When application is for a minor |
+| `GET /api/contracts/:id` | view | When contract requires guardian signature |
+| `POST /api/contracts/:id/sign` | sign | When contract requires guardian signature |
+| `GET /api/admin/sync-status` | view | When sync records include minors |
+| `GET /api/admin/users` | view | When users have minor applications |
+| `PATCH /api/admin/users/:id/role` | update | When user has minor applications |
+
+### Audit Log Fields
+- `id` - Serial primary key
+- `userId` - ID of user performing the action
+- `action` - Type of action (view, create, update, delete, sign, status_change)
+- `targetTable` - Table being accessed (applications, contracts, users, publishing_updates)
+- `targetId` - ID of the record accessed (or "bulk" for list operations)
+- `details` - JSON with additional context (role, affected IDs, etc.)
+- `ipAddress` - Client IP address for security tracking
+- `createdAt` - Timestamp of the action
 
 ## User Roles
 - **applicant** - Default role for new users, can submit applications
