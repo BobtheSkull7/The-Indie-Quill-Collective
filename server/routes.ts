@@ -203,6 +203,22 @@ export function registerRoutes(app: Express) {
           })
         );
         
+        const minorApps = allApplications.filter(app => app.isMinor);
+        if (minorApps.length > 0) {
+          await logMinorDataAccess(
+            req.session.userId,
+            "view",
+            "applications",
+            "bulk",
+            getClientIp(req),
+            { 
+              viewedByRole: "admin",
+              minorApplicationIds: minorApps.map(app => app.id),
+              totalMinorsAccessed: minorApps.length
+            }
+          );
+        }
+        
         return res.json(appsWithUserDetails);
       } else {
         const userApplications = await db.select().from(applications)
@@ -270,6 +286,17 @@ export function registerRoutes(app: Express) {
         .returning();
 
       const [applicantUser] = await db.select().from(users).where(eq(users.id, updated.userId));
+
+      if (updated.isMinor) {
+        await logMinorDataAccess(
+          req.session.userId,
+          "status_change",
+          "applications",
+          updated.id,
+          getClientIp(req),
+          { newStatus: status, reviewNotes: reviewNotes || null }
+        );
+      }
 
       // Sync status update to LLC immediately
       try {
@@ -345,6 +372,17 @@ export function registerRoutes(app: Express) {
         return res.status(403).json({ message: "Not authorized" });
       }
 
+      if (contract.requiresGuardian) {
+        await logMinorDataAccess(
+          req.session.userId,
+          "view",
+          "contracts",
+          contract.id,
+          getClientIp(req),
+          { contractType: contract.contractType, viewedByRole: req.session.userRole }
+        );
+      }
+
       return res.json(contract);
     } catch (error) {
       console.error("Fetch contract error:", error);
@@ -390,6 +428,17 @@ export function registerRoutes(app: Express) {
         .set(updateData)
         .where(eq(contracts.id, parseInt(req.params.id)))
         .returning();
+
+      if (contract.requiresGuardian) {
+        await logMinorDataAccess(
+          req.session.userId,
+          "sign",
+          "contracts",
+          contract.id,
+          getClientIp(req),
+          { signatureType, newStatus: updated.status }
+        );
+      }
 
       // Sync signature to LLC immediately
       try {
@@ -491,6 +540,7 @@ export function registerRoutes(app: Express) {
           const [app] = await db.select({
             expressionTypes: applications.expressionTypes,
             penName: applications.penName,
+            isMinor: applications.isMinor,
           }).from(applications).where(eq(applications.id, update.applicationId));
 
           const [user] = await db.select({
@@ -504,9 +554,26 @@ export function registerRoutes(app: Express) {
             expressionTypes: app?.expressionTypes,
             authorName: user ? `${user.firstName} ${user.lastName}` : "Unknown",
             email: user?.email,
+            isMinor: app?.isMinor,
           };
         })
       );
+
+      const minorUpdates = updatesWithDetails.filter(u => u.isMinor);
+      if (minorUpdates.length > 0) {
+        await logMinorDataAccess(
+          req.session.userId,
+          "view",
+          "publishing_updates",
+          "bulk",
+          getClientIp(req),
+          {
+            viewedByRole: "admin",
+            minorUpdateIds: minorUpdates.map(u => u.id),
+            totalMinorsAccessed: minorUpdates.length
+          }
+        );
+      }
 
       return res.json(updatesWithDetails);
     } catch (error) {
@@ -573,9 +640,26 @@ export function registerRoutes(app: Express) {
             ...user,
             applicationCount: userApps.length,
             hasAcceptedApp: userApps.some(a => a.status === "accepted" || a.status === "migrated"),
+            hasMinorApp: userApps.some(a => a.isMinor),
           };
         })
       );
+
+      const usersWithMinorApps = usersWithStats.filter(u => u.hasMinorApp);
+      if (usersWithMinorApps.length > 0) {
+        await logMinorDataAccess(
+          req.session.userId,
+          "view",
+          "users",
+          "bulk",
+          getClientIp(req),
+          {
+            viewedByRole: "admin",
+            userIdsWithMinorApps: usersWithMinorApps.map(u => u.id),
+            totalUsersWithMinorsAccessed: usersWithMinorApps.length
+          }
+        );
+      }
 
       return res.json(usersWithStats);
     } catch (error) {
@@ -602,10 +686,29 @@ export function registerRoutes(app: Express) {
         return res.status(404).json({ message: "User not found" });
       }
 
+      const userApps = await db.select().from(applications)
+        .where(eq(applications.userId, userId));
+      const hasMinorApp = userApps.some(a => a.isMinor);
+
       const [updated] = await db.update(users)
         .set({ role })
         .where(eq(users.id, userId))
         .returning();
+
+      if (hasMinorApp) {
+        await logMinorDataAccess(
+          req.session.userId,
+          "update",
+          "users",
+          userId,
+          getClientIp(req),
+          {
+            actionType: "role_change",
+            previousRole: existingUser.role,
+            newRole: role
+          }
+        );
+      }
 
       try {
         await sendUserRoleUpdateToLLC(userId, existingUser.email, role);
