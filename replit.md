@@ -35,6 +35,7 @@ The Indie Quill Collective is a 501(c)(3) non-profit organization platform desig
 5. **Publishing Status Tracking** - Visual progress tracker for accepted authors
 6. **User Authentication** - Secure registration and login system
 7. **Calendar Management** - Shared calendar for board meetings and events (accessible by admin and board members)
+8. **Google Calendar Integration** - Two-way sync between internal calendar and Google Calendar
 
 ## Tech Stack
 - **Frontend**: React 19, Vite, TailwindCSS 3
