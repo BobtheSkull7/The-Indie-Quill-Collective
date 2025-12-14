@@ -32,11 +32,12 @@ The Indie Quill Collective is a 501(c)(3) non-profit organization platform desig
 2. **Minor Author Support** - Guardian information collection for authors under 18
 3. **Contract Management** - Digital contracts with author and guardian signature support
 4. **Contract PDF Generation** - Download professional PDF copies of fully signed contracts
-5. **Admin Dashboard** - Review and manage applications, accept/reject workflow, calendar management
-6. **Publishing Status Tracking** - Visual progress tracker for accepted authors
-7. **User Authentication** - Secure registration and login system
-8. **Calendar Management** - Shared calendar for board meetings and events (accessible by admin and board members)
-9. **Google Calendar Integration** - Two-way sync between internal calendar and Google Calendar
+5. **Forensic Signature Metadata** - Captures and displays IP address and device info for legally defensible e-signatures
+6. **Admin Dashboard** - Review and manage applications, accept/reject workflow, calendar management
+7. **Publishing Status Tracking** - Visual progress tracker for accepted authors
+8. **User Authentication** - Secure registration and login system
+9. **Calendar Management** - Shared calendar for board meetings and events (accessible by admin and board members)
+10. **Google Calendar Integration** - Two-way sync between internal calendar and Google Calendar
 
 ## Tech Stack
 - **Frontend**: React 19, Vite, TailwindCSS 3
