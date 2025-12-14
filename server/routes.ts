@@ -5,6 +5,7 @@ import { eq, desc, gte, sql } from "drizzle-orm";
 import { hash, compare } from "./auth";
 import { migrateAuthorToIndieQuill, retryFailedMigrations, sendApplicationToLLC, sendStatusUpdateToLLC, sendContractSignatureToLLC, sendUserRoleUpdateToLLC } from "./indie-quill-integration";
 import { sendApplicationReceivedEmail, sendApplicationAcceptedEmail, sendApplicationRejectedEmail } from "./email";
+import { logAuditEvent, logMinorDataAccess, getClientIp } from "./utils/auditLogger";
 
 declare module "express-session" {
   interface SessionData {
@@ -230,6 +231,17 @@ export function registerRoutes(app: Express) {
 
       if (req.session.userRole !== "admin" && application.userId !== req.session.userId) {
         return res.status(403).json({ message: "Not authorized" });
+      }
+
+      if (application.isMinor) {
+        await logMinorDataAccess(
+          req.session.userId,
+          "view",
+          "applications",
+          application.id,
+          getClientIp(req),
+          { viewedByRole: req.session.userRole }
+        );
       }
 
       return res.json(application);
