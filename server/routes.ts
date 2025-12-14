@@ -348,6 +348,26 @@ export function registerRoutes(app: Express) {
     try {
       const { guardianConsentMethod, guardianConsentVerified, dataRetentionUntil } = req.body;
       
+      // Validate allowed consent method values (empty string normalized to null)
+      const allowedConsentMethods = ["e-signature", "mail-in form", "verbal", "in-person", "video-call", null];
+      const normalizedConsentMethod = guardianConsentMethod === "" ? null : guardianConsentMethod;
+      if (guardianConsentMethod !== undefined && !allowedConsentMethods.includes(normalizedConsentMethod)) {
+        return res.status(400).json({ message: "Invalid consent method value" });
+      }
+      
+      // Validate guardianConsentVerified is boolean if provided
+      if (guardianConsentVerified !== undefined && typeof guardianConsentVerified !== "boolean") {
+        return res.status(400).json({ message: "guardianConsentVerified must be a boolean" });
+      }
+      
+      // Validate dataRetentionUntil is a valid date if provided
+      if (dataRetentionUntil !== undefined && dataRetentionUntil !== null && dataRetentionUntil !== "") {
+        const parsedDate = new Date(dataRetentionUntil);
+        if (isNaN(parsedDate.getTime())) {
+          return res.status(400).json({ message: "Invalid date format for dataRetentionUntil" });
+        }
+      }
+      
       // Validate that we're only updating minor applications
       const [existingApp] = await db.select().from(applications)
         .where(eq(applications.id, parseInt(req.params.id)));
@@ -363,7 +383,7 @@ export function registerRoutes(app: Express) {
       const updateData: any = { updatedAt: new Date() };
       
       if (guardianConsentMethod !== undefined) {
-        updateData.guardianConsentMethod = guardianConsentMethod;
+        updateData.guardianConsentMethod = normalizedConsentMethod;
       }
       if (guardianConsentVerified !== undefined) {
         updateData.guardianConsentVerified = guardianConsentVerified;
@@ -386,13 +406,20 @@ export function registerRoutes(app: Express) {
         getClientIp(req),
         { 
           actionType: "coppa_compliance_update",
-          guardianConsentMethod: guardianConsentMethod || null,
+          guardianConsentMethod: normalizedConsentMethod ?? null,
           guardianConsentVerified: guardianConsentVerified ?? null,
           dataRetentionUntil: dataRetentionUntil || null
         }
       );
 
-      return res.json(updated);
+      // Return only sanitized COPPA fields to minimize data exposure
+      return res.json({
+        id: updated.id,
+        guardianConsentMethod: updated.guardianConsentMethod,
+        guardianConsentVerified: updated.guardianConsentVerified,
+        dataRetentionUntil: updated.dataRetentionUntil,
+        updatedAt: updated.updatedAt,
+      });
     } catch (error) {
       console.error("Update COPPA compliance error:", error);
       return res.status(500).json({ message: "Failed to update COPPA compliance" });

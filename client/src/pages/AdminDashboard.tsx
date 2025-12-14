@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { useAuth } from "../App";
 import { 
   Users, FileText, CheckCircle, Clock, TrendingUp, 
-  Eye, Check, X, RefreshCw, AlertTriangle, Zap, Calendar, Mail, User, BookOpen
+  Eye, Check, X, RefreshCw, AlertTriangle, Zap, Calendar, Mail, User, BookOpen, Shield
 } from "lucide-react";
 
 interface Application {
@@ -86,6 +86,11 @@ export default function AdminDashboard() {
   const [editingUser, setEditingUser] = useState<UserRecord | null>(null);
   const [newRole, setNewRole] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
+  const [coppaConsentMethod, setCoppaConsentMethod] = useState<string>("");
+  const [coppaConsentVerified, setCoppaConsentVerified] = useState<boolean>(false);
+  const [coppaRetentionDate, setCoppaRetentionDate] = useState<string>("");
+  const [updatingCoppa, setUpdatingCoppa] = useState(false);
+  const [coppaOriginalState, setCoppaOriginalState] = useState({ method: "", verified: false, date: "" });
 
   useEffect(() => {
     if (!user) {
@@ -200,6 +205,66 @@ export default function AdminDashboard() {
       console.error("Update user role failed:", error);
     } finally {
       setUpdating(false);
+    }
+  };
+
+  const initCoppaState = (app: Application) => {
+    const method = app.guardianConsentMethod || "";
+    const verified = app.guardianConsentVerified || false;
+    const date = app.dataRetentionUntil ? app.dataRetentionUntil.split("T")[0] : "";
+    setCoppaConsentMethod(method);
+    setCoppaConsentVerified(verified);
+    setCoppaRetentionDate(date);
+    setCoppaOriginalState({ method, verified, date });
+  };
+
+  const hasCoppaChanges = () => {
+    return coppaConsentMethod !== coppaOriginalState.method ||
+           coppaConsentVerified !== coppaOriginalState.verified ||
+           coppaRetentionDate !== coppaOriginalState.date;
+  };
+
+  const updateCoppaCompliance = async () => {
+    if (!selectedApp) return;
+    setUpdatingCoppa(true);
+
+    try {
+      const res = await fetch(`/api/applications/${selectedApp.id}/coppa-compliance`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          guardianConsentMethod: coppaConsentMethod || null,
+          guardianConsentVerified: coppaConsentVerified,
+          dataRetentionUntil: coppaRetentionDate || null,
+        }),
+      });
+
+      if (res.ok) {
+        const updated = await res.json();
+        // Update the applications list with only COPPA fields
+        setApplications((prev) =>
+          prev.map((a) => (a.id === updated.id ? { 
+            ...a, 
+            guardianConsentMethod: updated.guardianConsentMethod,
+            guardianConsentVerified: updated.guardianConsentVerified,
+            dataRetentionUntil: updated.dataRetentionUntil,
+          } : a))
+        );
+        // Update the selected app with the server response
+        const newSelectedApp = { 
+          ...selectedApp, 
+          guardianConsentMethod: updated.guardianConsentMethod,
+          guardianConsentVerified: updated.guardianConsentVerified,
+          dataRetentionUntil: updated.dataRetentionUntil,
+        };
+        setSelectedApp(newSelectedApp);
+        // Refresh local state from API response to ensure consistency
+        initCoppaState(newSelectedApp);
+      }
+    } catch (error) {
+      console.error("Update COPPA compliance failed:", error);
+    } finally {
+      setUpdatingCoppa(false);
     }
   };
 
@@ -467,7 +532,12 @@ export default function AdminDashboard() {
                         </td>
                         <td className="py-3 px-4">
                           <button
-                            onClick={() => setSelectedApp(app)}
+                            onClick={() => {
+                              setSelectedApp(app);
+                              if (app.isMinor) {
+                                initCoppaState(app);
+                              }
+                            }}
                             className="text-blue-600 hover:text-blue-800 transition-colors"
                           >
                             <Eye className="w-5 h-5" />
@@ -779,6 +849,79 @@ export default function AdminDashboard() {
                       <div>
                         <p className="text-sm text-blue-600">Phone</p>
                         <p className="text-blue-900">{selectedApp.guardianPhone || "Not provided"}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {selectedApp.isMinor && (
+                  <div className="bg-amber-50 rounded-lg p-4 border border-amber-200">
+                    <h3 className="font-semibold text-amber-800 mb-3 flex items-center">
+                      <Shield className="w-5 h-5 mr-2 text-amber-600" />
+                      COPPA Compliance
+                    </h3>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-sm text-amber-700 block mb-1">Consent Method</label>
+                          <select
+                            value={coppaConsentMethod}
+                            onChange={(e) => setCoppaConsentMethod(e.target.value)}
+                            className="w-full px-3 py-2 border border-amber-300 rounded-lg bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                          >
+                            <option value="">Select method...</option>
+                            <option value="e-signature">E-Signature</option>
+                            <option value="mail-in form">Mail-in Form</option>
+                            <option value="verbal">Verbal Confirmation</option>
+                            <option value="in-person">In-Person Verification</option>
+                            <option value="video-call">Video Call Verification</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-sm text-amber-700 block mb-1">Data Retention Until</label>
+                          <input
+                            type="date"
+                            value={coppaRetentionDate}
+                            onChange={(e) => setCoppaRetentionDate(e.target.value)}
+                            className="w-full px-3 py-2 border border-amber-300 rounded-lg bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="checkbox"
+                          id="consentVerified"
+                          checked={coppaConsentVerified}
+                          onChange={(e) => setCoppaConsentVerified(e.target.checked)}
+                          className="w-5 h-5 text-amber-600 border-amber-300 rounded focus:ring-amber-500"
+                        />
+                        <label htmlFor="consentVerified" className="text-sm text-amber-800">
+                          Guardian consent has been verified by staff
+                        </label>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-2 border-t border-amber-200">
+                        <div className="text-xs text-amber-600">
+                          {selectedApp.guardianConsentVerified ? (
+                            <span className="flex items-center text-green-600">
+                              <CheckCircle className="w-4 h-4 mr-1" />
+                              Consent verified
+                            </span>
+                          ) : (
+                            <span className="flex items-center text-amber-600">
+                              <AlertTriangle className="w-4 h-4 mr-1" />
+                              Consent not yet verified
+                            </span>
+                          )}
+                        </div>
+                        <button
+                          onClick={updateCoppaCompliance}
+                          disabled={updatingCoppa || !hasCoppaChanges()}
+                          className="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {updatingCoppa ? "Saving..." : "Save Compliance Info"}
+                        </button>
                       </div>
                     </div>
                   </div>
