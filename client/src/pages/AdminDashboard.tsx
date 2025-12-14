@@ -113,6 +113,9 @@ export default function AdminDashboard() {
   });
   const [creatingEvent, setCreatingEvent] = useState(false);
   const [deletingEventId, setDeletingEventId] = useState<number | null>(null);
+  const [googleCalendarStatus, setGoogleCalendarStatus] = useState<{ connected: boolean; email?: string } | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState<{ success: boolean; pushedToGoogle: number; pulledFromGoogle: number; error?: string } | null>(null);
   const [coppaConsentMethod, setCoppaConsentMethod] = useState<string>("");
   const [coppaConsentVerified, setCoppaConsentVerified] = useState<boolean>(false);
   const [coppaRetentionDate, setCoppaRetentionDate] = useState<string>("");
@@ -134,12 +137,13 @@ export default function AdminDashboard() {
   const loadData = async () => {
     setError(null);
     try {
-      const [appsRes, statsRes, syncRes, usersRes, calendarRes] = await Promise.all([
+      const [appsRes, statsRes, syncRes, usersRes, calendarRes, gcalStatusRes] = await Promise.all([
         fetch("/api/applications"),
         fetch("/api/admin/stats"),
         fetch("/api/admin/sync-status"),
         fetch("/api/admin/users"),
         fetch("/api/board/calendar"),
+        fetch("/api/board/calendar/sync-status"),
       ]);
 
       const apps = appsRes.ok ? await appsRes.json() : [];
@@ -147,11 +151,13 @@ export default function AdminDashboard() {
       const syncData = syncRes.ok ? await syncRes.json() : [];
       const usersData = usersRes.ok ? await usersRes.json() : [];
       const calendarData = calendarRes.ok ? await calendarRes.json() : [];
+      const gcalStatus = gcalStatusRes.ok ? await gcalStatusRes.json() : { connected: false };
 
       setApplications(Array.isArray(apps) ? apps : []);
       setStats(statsData);
       setSyncRecords(Array.isArray(syncData) ? syncData : []);
       setAllUsers(Array.isArray(usersData) ? usersData : []);
+      setGoogleCalendarStatus(gcalStatus);
       const sortedCalendarEvents = Array.isArray(calendarData) 
         ? calendarData.sort((a: CalendarEvent, b: CalendarEvent) => 
             new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
@@ -303,6 +309,28 @@ export default function AdminDashboard() {
       console.error("Delete calendar event failed:", error);
     } finally {
       setDeletingEventId(null);
+    }
+  };
+
+  const syncWithGoogleCalendar = async () => {
+    setSyncing(true);
+    setSyncResult(null);
+    try {
+      const res = await fetch("/api/board/calendar/sync", { method: "POST" });
+      if (res.ok) {
+        const result = await res.json();
+        setSyncResult(result);
+        if (result.success) {
+          await loadData();
+        }
+      } else {
+        setSyncResult({ success: false, pushedToGoogle: 0, pulledFromGoogle: 0, error: "Sync request failed" });
+      }
+    } catch (error) {
+      console.error("Google Calendar sync failed:", error);
+      setSyncResult({ success: false, pushedToGoogle: 0, pulledFromGoogle: 0, error: "Sync failed" });
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -835,19 +863,76 @@ export default function AdminDashboard() {
         )}
 
         {activeTab === "calendar" && (
-          <div className="card">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-display text-xl font-semibold text-slate-800">
-                Calendar Events
-              </h2>
-              <button
-                onClick={() => setShowEventForm(!showEventForm)}
-                className="btn-primary text-sm py-2 px-4 flex items-center space-x-2"
-              >
-                <Plus className="w-4 h-4" />
-                <span>{showEventForm ? "Cancel" : "Add Event"}</span>
-              </button>
+          <div className="space-y-6">
+            <div className="card">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-display text-xl font-semibold text-slate-800 flex items-center space-x-2">
+                  <Calendar className="w-5 h-5 text-red-500" />
+                  <span>Google Calendar Sync</span>
+                </h2>
+              </div>
+              
+              <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-200">
+                <div className="flex items-center space-x-3">
+                  <div className={`w-3 h-3 rounded-full ${googleCalendarStatus?.connected ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                  <div>
+                    <p className="font-medium text-slate-800">
+                      {googleCalendarStatus?.connected ? 'Connected' : 'Not Connected'}
+                    </p>
+                    {googleCalendarStatus?.email && (
+                      <p className="text-sm text-gray-500">{googleCalendarStatus.email}</p>
+                    )}
+                  </div>
+                </div>
+                
+                <button
+                  onClick={syncWithGoogleCalendar}
+                  disabled={!googleCalendarStatus?.connected || syncing}
+                  className="bg-blue-500 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                >
+                  <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
+                  <span>{syncing ? 'Syncing...' : 'Sync Now'}</span>
+                </button>
+              </div>
+              
+              {syncResult && (
+                <div className={`mt-4 p-3 rounded-lg ${syncResult.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
+                  {syncResult.success ? (
+                    <div className="flex items-center space-x-2 text-green-700">
+                      <CheckCircle className="w-4 h-4" />
+                      <span>
+                        Sync complete: {syncResult.pushedToGoogle} events pushed to Google, {syncResult.pulledFromGoogle} events pulled from Google
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center space-x-2 text-red-700">
+                      <AlertTriangle className="w-4 h-4" />
+                      <span>{syncResult.error || 'Sync failed'}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {!googleCalendarStatus?.connected && (
+                <p className="mt-3 text-sm text-gray-500">
+                  Google Calendar is not connected. The admin needs to configure the Google Calendar integration in the Replit dashboard.
+                </p>
+              )}
             </div>
+
+            <div className="card">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-display text-xl font-semibold text-slate-800">
+                  Calendar Events
+                </h2>
+                <button
+                  onClick={() => setShowEventForm(!showEventForm)}
+                  className="btn-primary text-sm py-2 px-4 flex items-center space-x-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>{showEventForm ? "Cancel" : "Add Event"}</span>
+                </button>
+              </div>
 
             {showEventForm && (
               <div className="bg-slate-50 rounded-lg p-4 mb-6 border border-slate-200">
@@ -1016,6 +1101,7 @@ export default function AdminDashboard() {
                 </table>
               </div>
             )}
+            </div>
           </div>
         )}
 

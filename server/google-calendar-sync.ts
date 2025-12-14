@@ -33,7 +33,12 @@ export async function syncCalendarEvents(): Promise<SyncResult> {
     const pullResult = await pullEventsFromGoogle(calendar);
     result.pulledFromGoogle = pullResult.count;
 
-    result.success = true;
+    if (pushResult.errors.length > 0) {
+      result.success = false;
+      result.error = `Some events failed to sync: ${pushResult.errors.join('; ')}`;
+    } else {
+      result.success = true;
+    }
     return result;
   } catch (error) {
     console.error('Calendar sync error:', error);
@@ -41,8 +46,15 @@ export async function syncCalendarEvents(): Promise<SyncResult> {
   }
 }
 
-async function pushEventsToGoogle(calendar: any): Promise<{ count: number }> {
+function getNextDay(date: Date): string {
+  const nextDay = new Date(date);
+  nextDay.setDate(nextDay.getDate() + 1);
+  return nextDay.toISOString().split('T')[0];
+}
+
+async function pushEventsToGoogle(calendar: any): Promise<{ count: number; errors: string[] }> {
   let count = 0;
+  const errors: string[] = [];
 
   const localEvents = await db.select().from(calendarEvents)
     .where(and(
@@ -52,20 +64,21 @@ async function pushEventsToGoogle(calendar: any): Promise<{ count: number }> {
 
   for (const event of localEvents) {
     try {
+      const startDateStr = event.startDate.toISOString().split('T')[0];
+      const endDateStr = event.endDate 
+        ? (event.allDay ? getNextDay(event.endDate) : event.endDate.toISOString())
+        : (event.allDay ? getNextDay(event.startDate) : new Date(event.startDate.getTime() + 60 * 60 * 1000).toISOString());
+
       const googleEvent = {
         summary: event.title,
         description: event.description || undefined,
         location: event.location || undefined,
         start: event.allDay 
-          ? { date: event.startDate.toISOString().split('T')[0] }
+          ? { date: startDateStr }
           : { dateTime: event.startDate.toISOString() },
-        end: event.endDate 
-          ? (event.allDay 
-              ? { date: event.endDate.toISOString().split('T')[0] }
-              : { dateTime: event.endDate.toISOString() })
-          : (event.allDay 
-              ? { date: event.startDate.toISOString().split('T')[0] }
-              : { dateTime: new Date(event.startDate.getTime() + 60 * 60 * 1000).toISOString() }),
+        end: event.allDay 
+          ? { date: endDateStr }
+          : { dateTime: endDateStr },
       };
 
       const response = await calendar.events.insert({
@@ -85,10 +98,11 @@ async function pushEventsToGoogle(calendar: any): Promise<{ count: number }> {
       }
     } catch (error) {
       console.error(`Failed to push event ${event.id} to Google:`, error);
+      errors.push(`Event "${event.title}": ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
-  return { count };
+  return { count, errors };
 }
 
 async function pullEventsFromGoogle(calendar: any): Promise<{ count: number }> {
