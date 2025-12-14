@@ -58,6 +58,11 @@ export const applications = pgTable("applications", {
   guardianPhone: text("guardian_phone"),
   guardianRelationship: text("guardian_relationship"),
   
+  // COPPA Compliance Fields
+  guardianConsentMethod: text("guardian_consent_method"), // e.g., 'e-signature', 'mail-in form', 'verbal'
+  guardianConsentVerified: boolean("guardian_consent_verified").default(false), // Staff verification flag
+  dataRetentionUntil: timestamp("data_retention_until"), // Date for data review/deletion
+  
   hasStoryToTell: boolean("has_story_to_tell").notNull().default(true),
   personalStruggles: text("personal_struggles").notNull(),
   expressionTypes: text("expression_types").notNull(),

@@ -66,6 +66,10 @@ The Indie Quill Collective is a 501(c)(3) non-profit organization platform desig
   - `personalStruggles` (text) - Their personal background and struggles
   - `expressionTypes` (text) - Comma-separated types: novel, short_story, poems, graphic_novel, other
   - `expressionOther` (text) - Details if "other" is selected
+  - **COPPA Compliance Fields:**
+    - `guardianConsentMethod` (text) - How consent was obtained (e.g., 'e-signature', 'mail-in form', 'verbal')
+    - `guardianConsentVerified` (boolean) - Staff has verified the consent process
+    - `dataRetentionUntil` (timestamp) - Date for data review/deletion
 - **contracts** - Publishing agreements with signature tracking
 - **publishingUpdates** - Publishing status from The Indie Quill LLC
 - **calendarEvents** - Shared calendar events for board meetings
