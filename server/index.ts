@@ -143,6 +143,10 @@ async function bootstrapFast() {
     },
   );
 
+  // Start the LLC sync worker (runs every 5 minutes)
+  const { startSyncWorker } = await import("./sync-worker");
+  startSyncWorker();
+
   (app as any).__initialized = true;
   console.log("App initialized");
 }
