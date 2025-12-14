@@ -173,7 +173,10 @@ export const calendarEvents = pgTable("calendar_events", {
   allDay: boolean("all_day").default(false).notNull(),
   eventType: text("event_type").notNull().default("meeting"),
   location: text("location"),
-  createdBy: integer("created_by").references(() => users.id).notNull(),
+  createdBy: integer("created_by").references(() => users.id),
+  googleCalendarEventId: text("google_calendar_event_id"),
+  lastSyncedAt: timestamp("last_synced_at"),
+  isFromGoogle: boolean("is_from_google").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

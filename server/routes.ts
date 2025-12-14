@@ -6,6 +6,7 @@ import { hash, compare } from "./auth";
 import { migrateAuthorToIndieQuill, retryFailedMigrations, sendApplicationToLLC, sendStatusUpdateToLLC, sendContractSignatureToLLC, sendUserRoleUpdateToLLC } from "./indie-quill-integration";
 import { sendApplicationReceivedEmail, sendApplicationAcceptedEmail, sendApplicationRejectedEmail } from "./email";
 import { logAuditEvent, logMinorDataAccess, getClientIp } from "./utils/auditLogger";
+import { syncCalendarEvents, getGoogleCalendarConnectionStatus, deleteGoogleCalendarEvent } from "./google-calendar-sync";
 
 declare module "express-session" {
   interface SessionData {
@@ -891,11 +892,45 @@ export function registerRoutes(app: Express) {
     }
 
     try {
+      const [event] = await db.select().from(calendarEvents).where(eq(calendarEvents.id, parseInt(req.params.id)));
+      
+      if (event?.googleCalendarEventId) {
+        await deleteGoogleCalendarEvent(event.googleCalendarEventId);
+      }
+      
       await db.delete(calendarEvents).where(eq(calendarEvents.id, parseInt(req.params.id)));
       return res.json({ message: "Event deleted" });
     } catch (error) {
       console.error("Delete calendar event error:", error);
       return res.status(500).json({ message: "Failed to delete event" });
+    }
+  });
+
+  app.get("/api/board/calendar/sync-status", async (req: Request, res: Response) => {
+    if (!req.session.userId || (req.session.userRole !== "board_member" && req.session.userRole !== "admin")) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    try {
+      const status = await getGoogleCalendarConnectionStatus();
+      return res.json(status);
+    } catch (error) {
+      console.error("Get calendar sync status error:", error);
+      return res.status(500).json({ message: "Failed to get sync status" });
+    }
+  });
+
+  app.post("/api/board/calendar/sync", async (req: Request, res: Response) => {
+    if (!req.session.userId || (req.session.userRole !== "board_member" && req.session.userRole !== "admin")) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    try {
+      const result = await syncCalendarEvents();
+      return res.json(result);
+    } catch (error) {
+      console.error("Calendar sync error:", error);
+      return res.status(500).json({ message: "Failed to sync calendar" });
     }
   });
 
