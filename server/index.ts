@@ -76,28 +76,16 @@ async function bootstrapFast() {
     }),
   );
 
+  // Request logging middleware - minimal in production for security and performance
   app.use((req, res, next) => {
     const start = Date.now();
     const reqPath = req.path;
-    let capturedJsonResponse: Record<string, any> | undefined = undefined;
-
-    const originalResJson = res.json;
-    res.json = function (bodyJson, ...args) {
-      capturedJsonResponse = bodyJson;
-      return originalResJson.apply(res, [bodyJson, ...args]);
-    };
 
     res.on("finish", () => {
       const duration = Date.now() - start;
       if (reqPath.startsWith("/api")) {
-        let logLine = `${req.method} ${reqPath} ${res.statusCode} in ${duration}ms`;
-        if (capturedJsonResponse) {
-          logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-        }
-        if (logLine.length > 80) {
-          logLine = logLine.slice(0, 79) + "…";
-        }
-        console.log(logLine);
+        // Production: log only method, path, status, duration (no response bodies)
+        console.log(`${req.method} ${reqPath} ${res.statusCode} in ${duration}ms`);
       }
     });
 
