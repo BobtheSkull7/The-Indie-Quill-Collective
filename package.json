@@ -27,6 +27,7 @@
     "drizzle-orm": "^0.39.3",
     "drizzle-zod": "^0.7.0",
     "express": "^4.21.2",
+    "express-rate-limit": "^8.2.1",
     "express-session": "^1.18.1",
     "googleapis": "^168.0.0",
     "lucide-react": "^0.475.0",
