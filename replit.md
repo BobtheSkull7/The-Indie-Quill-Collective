@@ -39,6 +39,7 @@ The Indie Quill Collective is a 501(c)(3) non-profit organization platform desig
 9. **Calendar Management** - Shared calendar for board meetings and events (accessible by admin and board members)
 10. **Google Calendar Integration** - Two-way sync between internal calendar and Google Calendar
 11. **GDPR Right to Erasure** - Users can delete their account and all associated data
+12. **GDPR Data Portability** - Users can export all their data as a downloadable JSON file
 
 ## Security Features
 - **Rate Limiting** - Protects login, registration, and contract signing endpoints (express-rate-limit)

@@ -133,6 +133,111 @@ export function registerRoutes(app: Express) {
     });
   });
 
+  // GDPR Data Portability - Export all user data as JSON
+  app.get("/api/auth/export-data", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    const userId = req.session.userId;
+
+    try {
+      // Fetch user profile (exclude password)
+      const [user] = await db.select({
+        id: users.id,
+        email: users.email,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        role: users.role,
+        createdAt: users.createdAt,
+      }).from(users).where(eq(users.id, userId));
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Fetch all applications
+      const userApplications = await db.select().from(applications)
+        .where(eq(applications.userId, userId))
+        .orderBy(desc(applications.createdAt));
+
+      // Get application IDs for related data
+      const applicationIds = userApplications.map(a => a.id);
+
+      // Fetch all contracts for user's applications
+      let userContracts: any[] = [];
+      if (applicationIds.length > 0) {
+        userContracts = await db.select().from(contracts)
+          .where(inArray(contracts.applicationId, applicationIds))
+          .orderBy(desc(contracts.createdAt));
+      }
+
+      // Fetch publishing updates for user's applications AND authored by user
+      let userPublishingUpdates: any[] = [];
+      if (applicationIds.length > 0) {
+        userPublishingUpdates = await db.select().from(publishingUpdates)
+          .where(inArray(publishingUpdates.applicationId, applicationIds))
+          .orderBy(desc(publishingUpdates.createdAt));
+      }
+      // Also fetch any publishing updates authored by this user (for completeness)
+      const authoredUpdates = await db.select().from(publishingUpdates)
+        .where(eq(publishingUpdates.userId, userId))
+        .orderBy(desc(publishingUpdates.createdAt));
+      // Merge and deduplicate
+      const allUpdateIds = new Set(userPublishingUpdates.map(u => u.id));
+      for (const update of authoredUpdates) {
+        if (!allUpdateIds.has(update.id)) {
+          userPublishingUpdates.push(update);
+        }
+      }
+
+      // Fetch audit logs for this user
+      const userAuditLogs = await db.select({
+        id: auditLogs.id,
+        action: auditLogs.action,
+        targetTable: auditLogs.targetTable,
+        targetId: auditLogs.targetId,
+        details: auditLogs.details,
+        ipAddress: auditLogs.ipAddress,
+        createdAt: auditLogs.createdAt,
+      }).from(auditLogs)
+        .where(eq(auditLogs.userId, userId))
+        .orderBy(desc(auditLogs.createdAt));
+
+      // Package all data
+      const exportData = {
+        exportedAt: new Date().toISOString(),
+        dataSubject: "The Indie Quill Collective - GDPR Data Export",
+        profile: user,
+        applications: userApplications,
+        contracts: userContracts.map(contract => ({
+          id: contract.id,
+          applicationId: contract.applicationId,
+          contractType: contract.contractType,
+          status: contract.status,
+          authorSignedAt: contract.authorSignedAt,
+          authorSignatureIp: contract.authorSignatureIp,
+          guardianSignedAt: contract.guardianSignedAt,
+          guardianSignatureIp: contract.guardianSignatureIp,
+          requiresGuardian: contract.requiresGuardian,
+          createdAt: contract.createdAt,
+          updatedAt: contract.updatedAt,
+        })),
+        publishingUpdates: userPublishingUpdates,
+        auditLogs: userAuditLogs,
+      };
+
+      // Set headers for JSON download
+      res.setHeader("Content-Type", "application/json");
+      res.setHeader("Content-Disposition", `attachment; filename="gdpr-export-${userId}-${Date.now()}.json"`);
+      
+      return res.json(exportData);
+    } catch (error) {
+      console.error("Data export error:", error);
+      return res.status(500).json({ message: "Failed to export data" });
+    }
+  });
+
   // GDPR Right to Erasure - Delete user account and all associated data
   app.delete("/api/auth/account", async (req: Request, res: Response) => {
     if (!req.session.userId) {
