@@ -28,8 +28,24 @@ server.listen(PORT, "0.0.0.0", () => {
 
 async function bootstrapFast() {
   const cors = (await import("cors")).default;
+  const helmet = (await import("helmet")).default;
   const session = (await import("express-session")).default;
   const pgSession = (await import("connect-pg-simple")).default(session);
+
+  // Security headers via Helmet
+  app.use(helmet({
+    contentSecurityPolicy: isProd ? {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:", "https:"],
+        fontSrc: ["'self'", "data:", "https:"],
+        connectSrc: ["'self'", "https:"],
+      },
+    } : false, // Disable CSP in development for Vite HMR
+    crossOriginEmbedderPolicy: false, // Allow embedding for Replit preview
+  }));
 
   app.use(cors());
   app.use(express.json());
@@ -95,14 +111,6 @@ async function bootstrapFast() {
     const path = await import("path");
     const distPath = path.resolve(process.cwd(), "dist/public");
     const indexPath = path.resolve(distPath, "index.html");
-
-    app.use((_req, res, next) => {
-      res.setHeader(
-        "Content-Security-Policy",
-        "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data: https:; connect-src 'self' https:;",
-      );
-      next();
-    });
 
     app.use(express.static(distPath));
 

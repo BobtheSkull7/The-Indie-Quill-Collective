@@ -42,11 +42,17 @@ The Indie Quill Collective is a 501(c)(3) non-profit organization platform desig
 12. **GDPR Data Portability** - Users can export all their data as a downloadable JSON file
 
 ## Security Features
+- **Security Headers (Helmet.js)** - Comprehensive HTTP security headers including:
+  - X-Frame-Options (clickjacking protection)
+  - X-Content-Type-Options (MIME sniffing prevention)
+  - Strict-Transport-Security (HTTPS enforcement)
+  - Cross-Origin policies (Spectre protection)
+  - Referrer-Policy (referrer leak prevention)
+  - Content-Security-Policy (XSS protection, production only)
 - **Rate Limiting** - Protects login, registration, and contract signing endpoints (express-rate-limit)
 - **Secure Session Cookies** - httpOnly and sameSite="strict" flags prevent XSS/CSRF attacks
 - **Password Hashing** - crypto.scrypt with random salt for secure password storage
 - **SQL Injection Protection** - Drizzle ORM with parameterized queries
-- **Content Security Policy** - CSP headers in production
 - **COPPA Compliance** - Audit logging for minor data access with data retention tracking
 
 ## Tech Stack
