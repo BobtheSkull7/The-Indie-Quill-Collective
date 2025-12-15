@@ -35,9 +35,18 @@ The Indie Quill Collective is a 501(c)(3) non-profit organization platform desig
 5. **Forensic Signature Metadata** - Captures and displays IP address and device info for legally defensible e-signatures
 6. **Admin Dashboard** - Review and manage applications, accept/reject workflow, calendar management
 7. **Publishing Status Tracking** - Visual progress tracker for accepted authors
-8. **User Authentication** - Secure registration and login system
+8. **User Authentication** - Secure registration and login system with rate limiting
 9. **Calendar Management** - Shared calendar for board meetings and events (accessible by admin and board members)
 10. **Google Calendar Integration** - Two-way sync between internal calendar and Google Calendar
+11. **GDPR Right to Erasure** - Users can delete their account and all associated data
+
+## Security Features
+- **Rate Limiting** - Protects login, registration, and contract signing endpoints (express-rate-limit)
+- **Secure Session Cookies** - httpOnly and sameSite="strict" flags prevent XSS/CSRF attacks
+- **Password Hashing** - crypto.scrypt with random salt for secure password storage
+- **SQL Injection Protection** - Drizzle ORM with parameterized queries
+- **Content Security Policy** - CSP headers in production
+- **COPPA Compliance** - Audit logging for minor data access with data retention tracking
 
 ## Tech Stack
 - **Frontend**: React 19, Vite, TailwindCSS 3
