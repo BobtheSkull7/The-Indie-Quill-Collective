@@ -1,7 +1,8 @@
 import type { Express, Request, Response } from "express";
+import rateLimit from "express-rate-limit";
 import { db } from "./db";
-import { users, applications, contracts, publishingUpdates, calendarEvents, fundraisingCampaigns, donations } from "@shared/schema";
-import { eq, desc, gte, sql } from "drizzle-orm";
+import { users, applications, contracts, publishingUpdates, calendarEvents, fundraisingCampaigns, donations, auditLogs } from "@shared/schema";
+import { eq, desc, gte, sql, inArray } from "drizzle-orm";
 import { hash, compare } from "./auth";
 import { migrateAuthorToIndieQuill, retryFailedMigrations, sendApplicationToLLC, sendStatusUpdateToLLC, sendContractSignatureToLLC, sendUserRoleUpdateToLLC } from "./indie-quill-integration";
 import { sendApplicationReceivedEmail, sendApplicationAcceptedEmail, sendApplicationRejectedEmail } from "./email";
@@ -9,6 +10,22 @@ import { logAuditEvent, logMinorDataAccess, getClientIp } from "./utils/auditLog
 import { syncCalendarEvents, getGoogleCalendarConnectionStatus, deleteGoogleCalendarEvent } from "./google-calendar-sync";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { ContractPDF } from "./pdf-templates/ContractTemplate";
+
+const authRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // 5 attempts per window
+  message: { message: "Too many attempts, please try again after 15 minutes" },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const contractSigningRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // 10 signing attempts per window
+  message: { message: "Too many signing attempts, please try again later" },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 declare module "express-session" {
   interface SessionData {
@@ -18,7 +35,7 @@ declare module "express-session" {
 }
 
 export function registerRoutes(app: Express) {
-  app.post("/api/auth/register", async (req: Request, res: Response) => {
+  app.post("/api/auth/register", authRateLimiter, async (req: Request, res: Response) => {
     try {
       const { email, password, firstName, lastName } = req.body;
       
@@ -54,7 +71,7 @@ export function registerRoutes(app: Express) {
     }
   });
 
-  app.post("/api/auth/login", async (req: Request, res: Response) => {
+  app.post("/api/auth/login", authRateLimiter, async (req: Request, res: Response) => {
     try {
       const { email, password } = req.body;
       
@@ -114,6 +131,83 @@ export function registerRoutes(app: Express) {
         role: user.role 
       } 
     });
+  });
+
+  // GDPR Right to Erasure - Delete user account and all associated data
+  app.delete("/api/auth/account", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    const userId = req.session.userId;
+
+    try {
+      // STEP 1: Nullify external FK references that allow NULL
+      await db.update(applications)
+        .set({ reviewedBy: null })
+        .where(eq(applications.reviewedBy, userId));
+      
+      await db.update(calendarEvents)
+        .set({ createdBy: null })
+        .where(eq(calendarEvents.createdBy, userId));
+      
+      // STEP 2: Delete records where user is required (NOT NULL FK constraints)
+      // First get campaigns created by this user
+      const userCampaigns = await db.select({ id: fundraisingCampaigns.id })
+        .from(fundraisingCampaigns)
+        .where(eq(fundraisingCampaigns.createdBy, userId));
+      
+      // Delete donations linked to user's campaigns
+      for (const campaign of userCampaigns) {
+        await db.delete(donations).where(eq(donations.campaignId, campaign.id));
+      }
+      
+      // Delete donations recorded by the user (recordedBy is NOT NULL)
+      await db.delete(donations).where(eq(donations.recordedBy, userId));
+      
+      // Delete campaigns created by the user (createdBy is NOT NULL)
+      await db.delete(fundraisingCampaigns).where(eq(fundraisingCampaigns.createdBy, userId));
+
+      // STEP 3: Get all applications for this user to cascade delete related data
+      const userApplications = await db.select({ id: applications.id })
+        .from(applications)
+        .where(eq(applications.userId, userId));
+      
+      const applicationIds = userApplications.map(a => a.id);
+
+      // STEP 4: Delete user's own data in order of dependencies (child tables first)
+      if (applicationIds.length > 0) {
+        // Delete publishing updates by applicationId (covers staff-created records too)
+        await db.delete(publishingUpdates).where(inArray(publishingUpdates.applicationId, applicationIds));
+        
+        // Delete contracts by applicationId (covers all contracts for user's applications)
+        await db.delete(contracts).where(inArray(contracts.applicationId, applicationIds));
+        
+        // Delete applications
+        await db.delete(applications).where(eq(applications.userId, userId));
+      }
+
+      // Also delete any publishing updates where this user is the author (covers edge cases)
+      await db.delete(publishingUpdates).where(eq(publishingUpdates.userId, userId));
+
+      // Delete audit logs for this user (GDPR Right to Erasure)
+      await db.delete(auditLogs).where(eq(auditLogs.userId, userId));
+
+      // STEP 5: Finally, delete the user
+      await db.delete(users).where(eq(users.id, userId));
+
+      // Destroy the session
+      req.session.destroy((err) => {
+        if (err) {
+          console.error("Session destroy error:", err);
+        }
+      });
+
+      return res.json({ message: "Account and all associated data deleted successfully" });
+    } catch (error) {
+      console.error("Account deletion error:", error);
+      return res.status(500).json({ message: "Failed to delete account" });
+    }
   });
 
   app.post("/api/applications", async (req: Request, res: Response) => {
@@ -581,7 +675,7 @@ export function registerRoutes(app: Express) {
     }
   });
 
-  app.post("/api/contracts/:id/sign", async (req: Request, res: Response) => {
+  app.post("/api/contracts/:id/sign", contractSigningRateLimiter, async (req: Request, res: Response) => {
     if (!req.session.userId) {
       return res.status(401).json({ message: "Not authenticated" });
     }

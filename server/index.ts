@@ -53,6 +53,8 @@ async function bootstrapFast() {
       saveUninitialized: false,
       cookie: {
         secure: isProd,
+        httpOnly: true,
+        sameSite: "strict",
         maxAge: 24 * 60 * 60 * 1000, // 1 day
       },
     }),
