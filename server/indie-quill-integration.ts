@@ -57,8 +57,9 @@ interface AuthorPayload {
   role: "npo_author";
 }
 
-function generateHmacSignature(payload: string, timestamp: number): string {
-  const message = `${timestamp}.${payload}`;
+function generateHmacSignature(payload: string, timestampMs: string): string {
+  // LLC expects: timestamp_in_ms + "." + json_body
+  const message = `${timestampMs}.${payload}`;
   return crypto
     .createHmac("sha256", INDIE_QUILL_API_SECRET)
     .update(message)
@@ -109,9 +110,9 @@ export async function sendApplicationToLLC(
     submittedAt: new Date(),
   };
 
-  const timestamp = Math.floor(Date.now() / 1000);
+  const timestampMs = Date.now().toString();
   const payloadJson = JSON.stringify(payload);
-  const signature = generateHmacSignature(payloadJson, timestamp);
+  const signature = generateHmacSignature(payloadJson, timestampMs);
 
   try {
     const response = await fetch(`${INDIE_QUILL_API_URL}/api/internal/npo-applications`, {
@@ -119,7 +120,7 @@ export async function sendApplicationToLLC(
       headers: {
         "Content-Type": "application/json",
         "X-API-Key": INDIE_QUILL_API_KEY,
-        "X-Timestamp": timestamp.toString(),
+        "X-Timestamp": timestampMs,
         "X-Signature": signature,
       },
       body: payloadJson,
@@ -159,9 +160,9 @@ export async function sendContractSignatureToLLC(
     signedAt: new Date(),
   };
 
-  const timestamp = Math.floor(Date.now() / 1000);
+  const timestampMs = Date.now().toString();
   const payloadJson = JSON.stringify(payload);
-  const signatureHash = generateHmacSignature(payloadJson, timestamp);
+  const signatureHash = generateHmacSignature(payloadJson, timestampMs);
 
   try {
     const response = await fetch(`${INDIE_QUILL_API_URL}/api/internal/npo-applications/${applicationId}/signature`, {
@@ -169,7 +170,7 @@ export async function sendContractSignatureToLLC(
       headers: {
         "Content-Type": "application/json",
         "X-API-Key": INDIE_QUILL_API_KEY,
-        "X-Timestamp": timestamp.toString(),
+        "X-Timestamp": timestampMs,
         "X-Signature": signatureHash,
       },
       body: payloadJson,
@@ -208,9 +209,9 @@ export async function sendStatusUpdateToLLC(
     updatedAt: new Date(),
   };
 
-  const timestamp = Math.floor(Date.now() / 1000);
+  const timestampMs = Date.now().toString();
   const payloadJson = JSON.stringify(payload);
-  const signature = generateHmacSignature(payloadJson, timestamp);
+  const signature = generateHmacSignature(payloadJson, timestampMs);
 
   try {
     const response = await fetch(`${INDIE_QUILL_API_URL}/api/internal/npo-applications/${applicationId}/status`, {
@@ -218,7 +219,7 @@ export async function sendStatusUpdateToLLC(
       headers: {
         "Content-Type": "application/json",
         "X-API-Key": INDIE_QUILL_API_KEY,
-        "X-Timestamp": timestamp.toString(),
+        "X-Timestamp": timestampMs,
         "X-Signature": signature,
       },
       body: payloadJson,
@@ -244,9 +245,9 @@ async function sendToIndieQuill(payload: AuthorPayload): Promise<{ success: bool
     return { success: false, error: "Integration not configured" };
   }
 
-  const timestamp = Math.floor(Date.now() / 1000);
+  const timestampMs = Date.now().toString();
   const payloadJson = JSON.stringify(payload);
-  const signature = generateHmacSignature(payloadJson, timestamp);
+  const signature = generateHmacSignature(payloadJson, timestampMs);
 
   try {
     const response = await fetch(`${INDIE_QUILL_API_URL}/api/internal/npo-authors`, {
@@ -254,7 +255,7 @@ async function sendToIndieQuill(payload: AuthorPayload): Promise<{ success: bool
       headers: {
         "Content-Type": "application/json",
         "X-API-Key": INDIE_QUILL_API_KEY,
-        "X-Timestamp": timestamp.toString(),
+        "X-Timestamp": timestampMs,
         "X-Signature": signature,
       },
       body: payloadJson,
@@ -416,9 +417,9 @@ export async function sendUserRoleUpdateToLLC(
     updatedAt: new Date(),
   };
 
-  const timestamp = Math.floor(Date.now() / 1000);
+  const timestampMs = Date.now().toString();
   const payloadJson = JSON.stringify(payload);
-  const signature = generateHmacSignature(payloadJson, timestamp);
+  const signature = generateHmacSignature(payloadJson, timestampMs);
 
   try {
     const response = await fetch(`${INDIE_QUILL_API_URL}/api/internal/npo-users/${userId}/role`, {
@@ -426,7 +427,7 @@ export async function sendUserRoleUpdateToLLC(
       headers: {
         "Content-Type": "application/json",
         "X-API-Key": INDIE_QUILL_API_KEY,
-        "X-Timestamp": timestamp.toString(),
+        "X-Timestamp": timestampMs,
         "X-Signature": signature,
       },
       body: payloadJson,
