@@ -60,7 +60,9 @@ interface AuthorPayload {
 }
 
 function generateSecureTemporaryPassword(): string {
-  return crypto.randomBytes(16).toString("hex");
+  // Generate password with letters, numbers, and special character for complexity requirements
+  const hex = crypto.randomBytes(12).toString("hex");
+  return `${hex}!Aa1`;
 }
 
 function generateHmacSignature(payload: string, timestampMs: string): string {
