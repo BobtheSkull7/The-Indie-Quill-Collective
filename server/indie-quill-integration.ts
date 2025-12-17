@@ -41,7 +41,9 @@ interface ApplicationPayload {
 
 interface AuthorPayload {
   collectiveAuthorId: number;
+  collectiveApplicationId: string;
   email: string;
+  password: string;
   firstName: string;
   lastName: string;
   penName: string | null;
@@ -55,6 +57,10 @@ interface AuthorPayload {
   expressionOther: string | null;
   contractSignedAt: Date;
   role: "npo_author";
+}
+
+function generateSecureTemporaryPassword(): string {
+  return crypto.randomBytes(16).toString("hex");
 }
 
 function generateHmacSignature(payload: string, timestampMs: string): string {
@@ -318,7 +324,9 @@ export async function migrateAuthorToIndieQuill(publishingUpdateId: number): Pro
 
     const payload: AuthorPayload = {
       collectiveAuthorId: user.id,
+      collectiveApplicationId: application.id.toString(),
       email: user.email,
+      password: generateSecureTemporaryPassword(),
       firstName: user.firstName,
       lastName: user.lastName,
       penName: application.penName,
