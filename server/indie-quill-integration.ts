@@ -9,8 +9,11 @@ const INDIE_QUILL_API_SECRET = process.env.INDIE_QUILL_API_SECRET || "";
 
 interface ApplicationPayload {
   source: "npo_collective";
-  collectiveApplicationId: number;
+  collectiveApplicationId: string;
   collectiveUserId: number;
+  email: string;
+  firstName: string;
+  lastName: string;
   author: {
     email: string;
     firstName: string;
@@ -88,8 +91,11 @@ export async function sendApplicationToLLC(
 
   const payload: ApplicationPayload = {
     source: "npo_collective",
-    collectiveApplicationId: applicationId,
+    collectiveApplicationId: applicationId.toString(),
     collectiveUserId: userId,
+    email: userData.email,
+    firstName: userData.firstName,
+    lastName: userData.lastName,
     author: {
       email: userData.email,
       firstName: userData.firstName,
