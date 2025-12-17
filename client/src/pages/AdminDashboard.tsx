@@ -789,7 +789,7 @@ export default function AdminDashboard() {
                           {record.syncAttempts}
                         </td>
                         <td className="py-3 px-4 flex items-center space-x-2">
-                          {record.syncStatus === "failed" && (
+                          {(record.syncStatus === "failed" || record.syncStatus === "pending") && (
                             <>
                               <button
                                 onClick={() => resyncApplication(record.applicationId, record.id)}
@@ -803,7 +803,7 @@ export default function AdminDashboard() {
                                 onClick={() => retrySync(record.id)}
                                 disabled={retrying === record.id}
                                 className="text-blue-600 hover:text-blue-800 transition-colors"
-                                title="Retry Author Migration"
+                                title="Trigger Author Migration Now"
                               >
                                 <RefreshCw className={`w-5 h-5 ${retrying === record.id ? "animate-spin" : ""}`} />
                               </button>
