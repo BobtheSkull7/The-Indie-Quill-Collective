@@ -828,10 +828,11 @@ export default function AdminDashboard() {
                               <button
                                 onClick={() => retrySync(record.id)}
                                 disabled={retrying === record.id}
-                                className="text-blue-600 hover:text-blue-800 transition-colors"
+                                className="text-blue-600 hover:text-blue-800 transition-colors text-xs px-2 py-1 border border-blue-300 rounded flex items-center space-x-1"
                                 title="3. Trigger Author Migration"
                               >
-                                <RefreshCw className={`w-5 h-5 ${retrying === record.id ? "animate-spin" : ""}`} />
+                                <RefreshCw className={`w-4 h-4 ${retrying === record.id ? "animate-spin" : ""}`} />
+                                <span>Migrate</span>
                               </button>
                             </>
                           )}
