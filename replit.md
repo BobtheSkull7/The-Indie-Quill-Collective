@@ -83,11 +83,21 @@ The Indie Quill Collective is a 501(c)(3) non-profit organization platform desig
 
 ## Database Schema
 - **users** - User accounts with role (applicant/admin/board_member)
+- **cohorts** - Author cohorts (10 authors per cohort):
+  - `label` (text) - Cohort label (e.g., "Cohort 1")
+  - `capacity` (integer) - Maximum authors (default 10)
+  - `currentCount` (integer) - Current number of assigned authors
+  - `status` (text) - "open" or "closed"
 - **applications** - Author applications with story expression details:
   - `hasStoryToTell` (boolean) - Whether applicant has a story to share
   - `personalStruggles` (text) - Their personal background and struggles
   - `expressionTypes` (text) - Comma-separated types: novel, short_story, poems, graphic_novel, other
   - `expressionOther` (text) - Details if "other" is selected
+  - **Cohort Assignment Fields:**
+    - `internalId` (text) - Generated ID: LastName+FirstInitial+M/A+YYYYMMDD (e.g., "SMITHJA20241217")
+    - `cohortId` (integer) - Foreign key to cohorts table
+    - `dateApproved` (timestamp) - Date application was accepted
+    - `dateMigrated` (timestamp) - Date author was synced to LLC
   - **COPPA Compliance Fields:**
     - `guardianConsentMethod` (text) - How consent was obtained (e.g., 'e-signature', 'mail-in form', 'verbal')
     - `guardianConsentVerified` (boolean) - Staff has verified the consent process
@@ -193,14 +203,29 @@ npm run db:studio    # Open Drizzle Studio for database management
 - `VITE_API_BASE_URL` - Base URL for API calls from frontend
 - `NODE_ENV=production` - Enable production mode
 
-## Integration with The Indie Quill LLC
-**All data is synced immediately to The Indie Quill LLC database.** The Collective keeps minimal local data (only session/login info) while all author and application data is stored in the LLC's production database.
+## Enterprise Sync Architecture (Collective → LLC)
 
-### Immediate Sync Points:
-1. **Application Submission** - Full application data sent to LLC immediately
-2. **Status Updates** - Accept/reject decisions synced to LLC in real-time
-3. **Contract Signatures** - Both author and guardian signatures synced immediately
-4. **Final Migration** - After contract signing, author is created in LLC system
+**Single-step atomic sync replaces the previous 3-step process.** When an admin accepts an application, the system:
+1. Assigns author to a cohort (auto-creates new cohort when 10 filled)
+2. Generates internal ID: `LastName+FirstInitial+M/A+YYYYMMDD` (e.g., "SMITHJA20241217")
+3. Creates sync job with consolidated payload
+4. Background worker processes sync to LLC with HMAC-signed request
+
+### Sync Services
+- **server/services/cohort-service.ts** - Cohort assignment with row-level locking, atomic transactions
+- **server/services/npo-sync-service.ts** - Consolidated one-step sync with retry logic
+
+### Sync Flow (Acceptance)
+1. `processAcceptance()` - Atomic transaction: cohort assignment + ID generation + application update
+2. Contract creation (pending_signature)
+3. `createSyncJob()` - Queue sync job
+4. `processSyncJob()` - Background worker sends to LLC
+5. Email notifications (author + guardian CC for minors)
+
+### Admin Dashboard Sync
+- Single "Retry Sync" button for failed syncs
+- Status display: pending → syncing → synced (or failed)
+- Sync worker runs every 5 minutes for pending jobs
 
 ### Integration Configuration (Required Environment Variables)
 - `INDIE_QUILL_API_URL` - Base URL of The Indie Quill LLC API
