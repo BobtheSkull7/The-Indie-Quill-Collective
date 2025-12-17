@@ -205,6 +205,7 @@ export async function sendContractSignatureToLLC(
 }
 
 // Send application status update to LLC (when admin accepts/rejects)
+// Uses collectiveApplicationId in body so LLC can lookup the correct record
 export async function sendStatusUpdateToLLC(
   applicationId: number,
   status: string,
@@ -217,7 +218,7 @@ export async function sendStatusUpdateToLLC(
 
   const payload = {
     source: "npo_collective",
-    collectiveApplicationId: applicationId,
+    collectiveApplicationId: applicationId.toString(),
     status,
     reviewNotes,
     updatedAt: new Date(),
@@ -228,7 +229,8 @@ export async function sendStatusUpdateToLLC(
   const signature = generateHmacSignature(payloadJson, timestampMs);
 
   try {
-    const response = await fetch(`${INDIE_QUILL_API_URL}/api/internal/npo-applications/${applicationId}/status`, {
+    // Use status endpoint that looks up by collectiveApplicationId in body
+    const response = await fetch(`${INDIE_QUILL_API_URL}/api/internal/npo-applications/status`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",

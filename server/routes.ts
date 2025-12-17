@@ -1056,6 +1056,41 @@ export function registerRoutes(app: Express) {
     }
   });
 
+  // Resync just the status update to LLC (for when application exists but status wasn't synced)
+  app.post("/api/admin/resync-status/:id", async (req: Request, res: Response) => {
+    if (!req.session.userId || req.session.userRole !== "admin") {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    try {
+      const applicationId = parseInt(req.params.id);
+      
+      const [application] = await db.select().from(applications)
+        .where(eq(applications.id, applicationId));
+      
+      if (!application) {
+        return res.status(404).json({ message: "Application not found" });
+      }
+
+      const syncResult = await sendStatusUpdateToLLC(
+        application.id,
+        application.status,
+        application.reviewNotes
+      );
+
+      if (syncResult.success) {
+        console.log(`Status for application ${applicationId} resynced to LLC`);
+        return res.json({ message: "Status synced to LLC" });
+      } else {
+        console.error(`Failed to resync status for ${applicationId}: ${syncResult.error}`);
+        return res.status(500).json({ message: `Status sync failed: ${syncResult.error}` });
+      }
+    } catch (error) {
+      console.error("Resync status error:", error);
+      return res.status(500).json({ message: "Failed to resync status" });
+    }
+  });
+
   app.get("/api/admin/users", async (req: Request, res: Response) => {
     if (!req.session.userId || req.session.userRole !== "admin") {
       return res.status(403).json({ message: "Not authorized" });
