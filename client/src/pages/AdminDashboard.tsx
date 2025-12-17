@@ -223,42 +223,6 @@ export default function AdminDashboard() {
     }
   };
 
-  const resyncApplication = async (applicationId: number, recordId: number) => {
-    setRetrying(recordId);
-    try {
-      const res = await fetch(`/api/admin/resync-application/${applicationId}`, { method: "POST" });
-      const data = await res.json();
-      if (res.ok) {
-        alert(`Application synced! Now resync the status, then retry the author migration.`);
-      } else {
-        alert(`Resync failed: ${data.message}`);
-      }
-      await loadData();
-    } catch (error) {
-      console.error("Resync application failed:", error);
-    } finally {
-      setRetrying(null);
-    }
-  };
-
-  const resyncStatus = async (applicationId: number, recordId: number) => {
-    setRetrying(recordId);
-    try {
-      const res = await fetch(`/api/admin/resync-status/${applicationId}`, { method: "POST" });
-      const data = await res.json();
-      if (res.ok) {
-        alert(`Status synced! Now retry the author migration.`);
-      } else {
-        alert(`Status sync failed: ${data.message}`);
-      }
-      await loadData();
-    } catch (error) {
-      console.error("Resync status failed:", error);
-    } finally {
-      setRetrying(null);
-    }
-  };
-
   const updateUserRole = async () => {
     if (!editingUser || !newRole) return;
     setUpdating(true);

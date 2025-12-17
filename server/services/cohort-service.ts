@@ -1,6 +1,6 @@
 import { db } from "../db";
 import { cohorts, applications } from "@shared/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, lt, sql } from "drizzle-orm";
 
 const COHORT_CAPACITY = 10;
 
@@ -21,29 +21,12 @@ export function generateInternalId(
   return `${lastNameClean}${firstInitial}${minorAdult}${dateStr}`;
 }
 
-export async function getOrCreateOpenCohort(): Promise<{ id: number; label: string }> {
-  const [openCohort] = await db.select()
-    .from(cohorts)
-    .where(and(
-      eq(cohorts.status, 'open'),
-    ))
-    .limit(1);
-
-  if (openCohort && openCohort.currentCount < openCohort.capacity) {
-    return { id: openCohort.id, label: openCohort.label };
-  }
-
-  if (openCohort) {
-    await db.update(cohorts)
-      .set({ status: 'closed' })
-      .where(eq(cohorts.id, openCohort.id));
-  }
-
-  const allCohorts = await db.select().from(cohorts);
+async function createNewCohort(tx: any): Promise<{ id: number; label: string; currentCount: number; capacity: number }> {
+  const allCohorts = await tx.select().from(cohorts);
   const nextNumber = allCohorts.length + 1;
   const newLabel = `Cohort ${nextNumber}`;
 
-  const [newCohort] = await db.insert(cohorts)
+  const [newCohort] = await tx.insert(cohorts)
     .values({
       label: newLabel,
       capacity: COHORT_CAPACITY,
@@ -52,24 +35,58 @@ export async function getOrCreateOpenCohort(): Promise<{ id: number; label: stri
     })
     .returning();
 
-  return { id: newCohort.id, label: newCohort.label };
+  return { 
+    id: newCohort.id, 
+    label: newCohort.label, 
+    currentCount: newCohort.currentCount,
+    capacity: newCohort.capacity 
+  };
 }
 
-export async function assignToCohort(applicationId: number): Promise<{ cohortId: number; cohortLabel: string }> {
-  const cohort = await getOrCreateOpenCohort();
+async function assignToCohortWithLock(tx: any): Promise<{ cohortId: number; cohortLabel: string }> {
+  const result = await tx.execute(sql`
+    SELECT id, label, current_count, capacity
+    FROM cohorts
+    WHERE status = 'open'
+    ORDER BY id
+    LIMIT 1
+    FOR UPDATE
+  `);
   
-  const [updatedCohort] = await db.select()
-    .from(cohorts)
-    .where(eq(cohorts.id, cohort.id));
+  let cohort = result.rows[0] as { id: number; label: string; current_count: number; capacity: number } | undefined;
   
-  const newCount = (updatedCohort?.currentCount || 0) + 1;
+  if (!cohort || cohort.current_count >= cohort.capacity) {
+    if (cohort) {
+      await tx.update(cohorts)
+        .set({ status: 'closed' })
+        .where(eq(cohorts.id, cohort.id));
+    }
+    const newCohort = await createNewCohort(tx);
+    cohort = { 
+      id: newCohort.id, 
+      label: newCohort.label, 
+      current_count: newCohort.currentCount,
+      capacity: newCohort.capacity 
+    };
+  }
   
-  await db.update(cohorts)
-    .set({ currentCount: newCount })
-    .where(eq(cohorts.id, cohort.id));
+  const updated = await tx.update(cohorts)
+    .set({ currentCount: sql`${cohorts.currentCount} + 1` })
+    .where(and(
+      eq(cohorts.id, cohort.id),
+      lt(cohorts.currentCount, cohort.capacity)
+    ))
+    .returning({ currentCount: cohorts.currentCount });
   
-  if (newCount >= COHORT_CAPACITY) {
-    await db.update(cohorts)
+  if (!updated.length) {
+    await tx.update(cohorts)
+      .set({ status: 'closed' })
+      .where(eq(cohorts.id, cohort.id));
+    return assignToCohortWithLock(tx);
+  }
+  
+  if (updated[0].currentCount >= cohort.capacity) {
+    await tx.update(cohorts)
       .set({ status: 'closed' })
       .where(eq(cohorts.id, cohort.id));
   }
@@ -89,25 +106,27 @@ export async function processAcceptance(
   cohortLabel: string;
   dateApproved: Date;
 }> {
-  const dateApproved = new Date();
-  
-  const internalId = generateInternalId(lastName, firstName, isMinor, dateApproved);
-  
-  const { cohortId, cohortLabel } = await assignToCohort(applicationId);
-  
-  await db.update(applications)
-    .set({
+  return await db.transaction(async (tx) => {
+    const dateApproved = new Date();
+    
+    const internalId = generateInternalId(lastName, firstName, isMinor, dateApproved);
+    
+    const { cohortId, cohortLabel } = await assignToCohortWithLock(tx);
+    
+    await tx.update(applications)
+      .set({
+        internalId,
+        cohortId,
+        dateApproved,
+        updatedAt: new Date(),
+      })
+      .where(eq(applications.id, applicationId));
+
+    return {
       internalId,
       cohortId,
+      cohortLabel,
       dateApproved,
-      updatedAt: new Date(),
-    })
-    .where(eq(applications.id, applicationId));
-
-  return {
-    internalId,
-    cohortId,
-    cohortLabel,
-    dateApproved,
-  };
+    };
+  });
 }
