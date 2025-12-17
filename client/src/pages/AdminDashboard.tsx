@@ -223,6 +223,24 @@ export default function AdminDashboard() {
     }
   };
 
+  const resyncApplication = async (applicationId: number, recordId: number) => {
+    setRetrying(recordId);
+    try {
+      const res = await fetch(`/api/admin/resync-application/${applicationId}`, { method: "POST" });
+      const data = await res.json();
+      if (res.ok) {
+        alert(`Application synced! Now retry the author migration.`);
+      } else {
+        alert(`Resync failed: ${data.message}`);
+      }
+      await loadData();
+    } catch (error) {
+      console.error("Resync application failed:", error);
+    } finally {
+      setRetrying(null);
+    }
+  };
+
   const updateUserRole = async () => {
     if (!editingUser || !newRole) return;
     setUpdating(true);
@@ -770,16 +788,26 @@ export default function AdminDashboard() {
                         <td className="py-3 px-4 text-gray-600 text-sm">
                           {record.syncAttempts}
                         </td>
-                        <td className="py-3 px-4">
+                        <td className="py-3 px-4 flex items-center space-x-2">
                           {record.syncStatus === "failed" && (
-                            <button
-                              onClick={() => retrySync(record.id)}
-                              disabled={retrying === record.id}
-                              className="text-blue-600 hover:text-blue-800 transition-colors"
-                              title="Retry Sync"
-                            >
-                              <RefreshCw className={`w-5 h-5 ${retrying === record.id ? "animate-spin" : ""}`} />
-                            </button>
+                            <>
+                              <button
+                                onClick={() => resyncApplication(record.applicationId, record.id)}
+                                disabled={retrying === record.id}
+                                className="text-orange-600 hover:text-orange-800 transition-colors text-xs px-2 py-1 border border-orange-300 rounded"
+                                title="Resync Application to LLC (run first if 404 error)"
+                              >
+                                Resync App
+                              </button>
+                              <button
+                                onClick={() => retrySync(record.id)}
+                                disabled={retrying === record.id}
+                                className="text-blue-600 hover:text-blue-800 transition-colors"
+                                title="Retry Author Migration"
+                              >
+                                <RefreshCw className={`w-5 h-5 ${retrying === record.id ? "animate-spin" : ""}`} />
+                              </button>
+                            </>
                           )}
                           {record.syncStatus === "synced" && (
                             <span title="Synced">

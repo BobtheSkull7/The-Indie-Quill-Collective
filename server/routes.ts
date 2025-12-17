@@ -1013,6 +1013,49 @@ export function registerRoutes(app: Express) {
     }
   });
 
+  // Resync initial application to LLC (in case it failed on first submission)
+  app.post("/api/admin/resync-application/:id", async (req: Request, res: Response) => {
+    if (!req.session.userId || req.session.userRole !== "admin") {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    try {
+      const applicationId = parseInt(req.params.id);
+      
+      const [application] = await db.select().from(applications)
+        .where(eq(applications.id, applicationId));
+      
+      if (!application) {
+        return res.status(404).json({ message: "Application not found" });
+      }
+
+      const [user] = await db.select().from(users)
+        .where(eq(users.id, application.userId));
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const syncResult = await sendApplicationToLLC(
+        application.id,
+        user.id,
+        application,
+        { email: user.email, firstName: user.firstName, lastName: user.lastName }
+      );
+
+      if (syncResult.success) {
+        console.log(`Application ${applicationId} resynced to LLC: ${syncResult.llcApplicationId}`);
+        return res.json({ message: "Application synced to LLC", llcApplicationId: syncResult.llcApplicationId });
+      } else {
+        console.error(`Failed to resync application ${applicationId}: ${syncResult.error}`);
+        return res.status(500).json({ message: `Sync failed: ${syncResult.error}` });
+      }
+    } catch (error) {
+      console.error("Resync application error:", error);
+      return res.status(500).json({ message: "Failed to resync application" });
+    }
+  });
+
   app.get("/api/admin/users", async (req: Request, res: Response) => {
     if (!req.session.userId || req.session.userRole !== "admin") {
       return res.status(403).json({ message: "Not authorized" });
