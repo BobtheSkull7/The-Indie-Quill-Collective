@@ -1,0 +1,277 @@
+The Indie Quill LLC - Complete Development to Production Process
+For The Indie Quill Collective Reference
+1. TECHNOLOGY STACK
+Frontend
+Framework: React 18 with TypeScript
+Routing: Wouter (lightweight alternative to React Router)
+State/Data Fetching: TanStack Query v5
+Forms: React Hook Form + Zod validation
+UI Components: Shadcn UI + Tailwind CSS
+Icons: Lucide React
+Backend
+Runtime: Node.js with Express.js
+ORM: Drizzle ORM (type-safe SQL)
+Language: TypeScript (compiled with tsx)
+Database
+Provider: PostgreSQL via Supabase (Session Pooler connection)
+Schema Management: Drizzle Kit (npm run db:push)
+Note: Development and production share the SAME database in Replit
+External Services
+Service	Purpose	Required Secrets
+Supabase	Database + Object Storage	DATABASE_URL, SUPABASE_URL, SUPABASE_SERVICE_KEY
+Stripe	Payment Processing	STRIPE_SECRET_KEY, STRIPE_PUBLISHABLE_KEY, STRIPE_WEBHOOK_SECRET
+OpenAI	Manuscript Analysis (AI detection, content moderation)	OPENAI_API_KEY
+Resend	Transactional Emails	Configured via Replit Connectors
+2. PROJECT STRUCTURE
+├── client/                    # React frontend
+│   ├── src/
+│   │   ├── components/        # Reusable UI components
+│   │   │   └── ui/           # Shadcn components
+│   │   ├── hooks/            # Custom React hooks
+│   │   ├── lib/              # Utilities (queryClient, etc.)
+│   │   ├── pages/            # Page components (one per route)
+│   │   └── App.tsx           # Main app with routes
+│   └── index.html
+├── server/                    # Express backend
+│   ├── routes.ts             # All API endpoints
+│   ├── storage.ts            # Database abstraction layer
+│   ├── db.ts                 # Database connection + pool
+│   ├── stripe.ts             # Stripe integration
+│   ├── email.ts              # Email service (Resend)
+│   ├── objectStorage.ts      # Supabase storage
+│   ├── collectiveAuth.ts     # HMAC auth for Collective API
+│   └── services/             # Business logic services
+│       └── manuscriptAnalyzer.ts
+├── shared/                    # Shared between frontend/backend
+│   ├── schema.ts             # Drizzle database schema + Zod types
+│   └── countries.ts          # Country/state data
+├── drizzle.config.ts         # Drizzle ORM configuration
+├── package.json
+├── replit.md                 # Project documentation
+└── design_guidelines.md      # UI/UX standards
+
+3. DATABASE SCHEMA MANAGEMENT
+Schema Definition
+All tables defined in shared/schema.ts using Drizzle ORM:
+
+// Example table definition
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  email: varchar("email", { length: 255 }).notNull().unique(),
+  password: varchar("password", { length: 255 }).notNull(),
+  firstName: varchar("first_name", { length: 100 }),
+  lastName: varchar("last_name", { length: 100 }),
+  role: varchar("role", { length: 50 }).default("retail_author"),
+  // ... more fields
+});
+// Insert schema for validation
+export const insertUserSchema = createInsertSchema(users).omit({ id: true });
+export type InsertUser = z.infer<typeof insertUserSchema>;
+export type User = typeof users.$inferSelect;
+
+Pushing Schema Changes
+# Safe schema sync (no destructive changes)
+npm run db:push
+# Force sync (use carefully)
+npm run db:push --force
+
+⚠️ CRITICAL RULE: Never change primary key ID column types. This breaks existing data.
+
+4. ENVIRONMENT CONFIGURATION
+Required Secrets (set in Replit Secrets tab)
+Secret Name	Description	Where to Get
+DATABASE_URL	PostgreSQL connection string	Supabase Dashboard → Settings → Database
+SUPABASE_URL	Supabase project URL	Supabase Dashboard → Settings → API
+SUPABASE_SERVICE_KEY	Supabase service role key (admin)	Supabase Dashboard → Settings → API
+SESSION_SECRET	Random string for session encryption	Generate: openssl rand -base64 32
+STRIPE_SECRET_KEY	Stripe API secret key	Stripe Dashboard → Developers → API keys
+STRIPE_PUBLISHABLE_KEY	Stripe publishable key	Stripe Dashboard → Developers → API keys
+STRIPE_WEBHOOK_SECRET	Webhook signing secret	Stripe Dashboard → Webhooks → Endpoint → Signing secret
+OPENAI_API_KEY	OpenAI API key	OpenAI Platform → API Keys
+COLLECTIVE_API_KEY	API key for Collective integration	You generate and share with Collective
+COLLECTIVE_API_SECRET	HMAC signing secret	You generate and share with Collective
+Supabase Storage Buckets
+Create these buckets in Supabase Storage:
+
+manuscripts - Private bucket for author manuscript uploads
+public-assets - Public bucket for book covers, author photos
+5. LOCAL DEVELOPMENT WORKFLOW
+Starting the Development Server
+npm run dev
+
+This starts:
+
+Express backend on port 5000
+Vite dev server (HMR) for frontend
+Both accessible at http://localhost:5000
+Adding New Features
+Step 1: Schema First
+
+// shared/schema.ts - Add new table
+export const myNewTable = pgTable("my_new_table", { ... });
+export const insertMyNewTableSchema = createInsertSchema(myNewTable).omit({ id: true });
+
+Step 2: Push Schema
+
+npm run db:push
+
+Step 3: Add Storage Methods
+
+// server/storage.ts - Add CRUD methods
+async createMyThing(data: InsertMyThing): Promise<MyThing> { ... }
+
+Step 4: Add API Routes
+
+// server/routes.ts - Add endpoints
+app.post("/api/my-things", async (req, res) => { ... });
+
+Step 5: Frontend Integration
+
+// client/src/pages/MyPage.tsx
+const { data } = useQuery({ queryKey: ["/api/my-things"] });
+
+6. AUTHENTICATION SYSTEM
+User Roles
+admin - Full platform access, manage all content
+retail_author - Standard paying authors (LLC customers)
+npo_author - Non-profit authors (from Collective)
+Session Management
+Sessions stored in PostgreSQL (sessions table)
+Cookie-based with connect-pg-simple
+Session duration: 24 hours
+Password Hashing
+import bcrypt from "bcryptjs";
+const hashed = await bcrypt.hash(password, 10);
+const valid = await bcrypt.compare(input, hashed);
+
+7. COLLECTIVE API INTEGRATION
+HMAC Authentication
+All Collective→LLC API calls require these headers:
+
+x-api-key: {COLLECTIVE_API_KEY}
+x-timestamp: {unix_timestamp_in_ms}
+x-signature: {hmac_sha256(timestamp + "." + json_body, COLLECTIVE_API_SECRET)}
+
+Available Endpoints for Collective
+Method	Endpoint	Purpose
+POST	/api/collective/migrate-author	Migrate approved NPO author to LLC platform
+GET	/api/collective/author/:email	Get author profile + stats
+POST	/api/collective/update-status	Suspend/activate NPO author
+POST	/api/internal/npo-applications	Submit new NPO application
+PATCH	/api/internal/npo-applications/:id/status	Approve/reject application
+POST	/api/internal/npo-applications/:id/signature	Submit signed agreement
+POST	/api/internal/npo-authors	Create NPO author account
+Example: Signing API Requests (for Collective to implement)
+import crypto from "crypto";
+function signRequest(body: object, apiSecret: string): { timestamp: string; signature: string } {
+  const timestamp = Date.now().toString();
+  const bodyString = JSON.stringify(body);
+  const dataToSign = `${timestamp}.${bodyString}`;
+  
+  const signature = crypto
+    .createHmac("sha256", apiSecret)
+    .update(dataToSign)
+    .digest("hex");
+    
+  return { timestamp, signature };
+}
+
+8. PAYMENT FLOW (STRIPE)
+Checkout Flow
+Customer clicks "Buy Now" → Frontend calls POST /api/stripe/checkout
+Server creates Stripe Checkout Session + pending purchase record
+Customer redirected to Stripe hosted checkout
+After payment:
+Primary: Redirect to /download?session_id={ID} → verify → show download
+Fallback: Webhook checkout.session.completed → generate token → send email
+Webhook Setup (Manual Step)
+Go to Stripe Dashboard → Webhooks
+Add endpoint: https://yourdomain.com/api/stripe/webhook
+Select event: checkout.session.completed
+Copy signing secret → set as STRIPE_WEBHOOK_SECRET
+Download Protection
+Unique token per purchase (32 characters)
+Max 5 downloads per token
+30-day expiration
+Token validated on each download
+9. MANUSCRIPT WORKFLOW
+Status Progression
+submitted → scanning → scanned → converting → pending_approval → awaiting_author_finalization → published
+                                      ↓
+                                 (rejected) → submitted (author revises)
+
+Analysis Scorecard (OpenAI-powered)
+Grammar & spelling score
+Content moderation (offensive language, sexual content, racial slurs)
+AI detection percentage
+Plagiarism indicators
+10. DEPLOYMENT TO PRODUCTION
+Pre-Deployment Checklist
+✅ Database
+
+ All schema changes pushed (npm run db:push)
+ Test data removed or marked appropriately
+ Indexes on frequently queried columns
+✅ Environment Variables
+
+ All production secrets set in Replit Secrets
+ NODE_ENV consideration (Replit handles this)
+ Verify Supabase is pointing to production project
+✅ Stripe
+
+ Switch from test keys to live keys
+ Production webhook endpoint configured
+ Webhook signing secret updated
+✅ Object Storage
+
+ Supabase buckets created with correct permissions
+ CORS configured for your domain
+✅ Email
+
+ Resend domain verified
+ From email configured
+Publishing Steps (Manual)
+Click "Publish" button in Replit
+Configure domain (either .replit.app subdomain or custom domain)
+Wait for build and deployment
+Verify health endpoint: GET /api/health
+Post-Deployment Verification
+Test user registration flow
+Test login/logout
+Test a small payment (use Stripe test card if still in test mode)
+Verify download link works
+Check webhook is receiving events (Stripe Dashboard → Webhooks → Events)
+11. MONITORING & HEALTH
+Health Check Endpoint
+GET /api/health
+Response:
+{
+  "status": "healthy",
+  "timestamp": "2025-12-17T02:50:55.908Z",
+  "database": {
+    "connected": true,
+    "circuitBreaker": "closed",
+    "recentFailures": 0
+  }
+}
+
+Database Resilience
+Connection pool: max 5, min 2 (optimized for Supabase)
+Circuit breaker pattern for transient failures
+Automatic retry with exponential backoff
+12. SECURITY MEASURES
+Authentication: bcrypt password hashing (cost factor 10)
+Sessions: Secure cookies, PostgreSQL storage
+CSRF: Implicit via same-origin policy + session cookies
+Input Validation: Zod schemas on all endpoints
+Rate Limiting: express-rate-limit on sensitive endpoints
+Helmet: Security headers configured
+CORS: Restricted to same origin
+File Uploads: Validated mime types, size limits
+13. GDPR COMPLIANCE
+Cookie consent banner with granular controls
+Privacy Policy page (/privacy-policy)
+Terms of Service page (/terms)
+Cookie Policy page (/cookie-policy)
+Newsletter unsubscribe (/unsubscribe)
+This document should give Collective everything they need to understand and replicate the architecture. Let me know if you want me to elaborate on any section!
