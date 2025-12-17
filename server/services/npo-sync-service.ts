@@ -1,0 +1,246 @@
+import crypto from "crypto";
+import { db } from "../db";
+import { applications, users, publishingUpdates, cohorts } from "@shared/schema";
+import { eq } from "drizzle-orm";
+
+const INDIE_QUILL_API_URL = process.env.INDIE_QUILL_API_URL || "";
+const INDIE_QUILL_API_KEY = process.env.INDIE_QUILL_API_KEY || "";
+const INDIE_QUILL_API_SECRET = process.env.INDIE_QUILL_API_SECRET || "";
+
+interface NPOAuthorPayload {
+  source: "npo_collective";
+  internalId: string;
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string;
+  minorAdultDesignation: "M" | "A";
+  guardian: {
+    name: string | null;
+    email: string | null;
+    phone: string | null;
+    relationship: string | null;
+  } | null;
+  dateApplied: string;
+  dateApproved: string;
+  dateMigrated: string;
+  cohortLabel: string;
+  profileAnswers: {
+    penName: string | null;
+    hasStoryToTell: boolean;
+    personalStruggles: string;
+    expressionTypes: string;
+    expressionOther: string | null;
+    whyCollective: string;
+    goals: string | null;
+    hearAboutUs: string | null;
+  };
+}
+
+function generateHmacSignature(payload: string, timestampMs: string): string {
+  const message = `${timestampMs}.${payload}`;
+  return crypto
+    .createHmac("sha256", INDIE_QUILL_API_SECRET)
+    .update(message)
+    .digest("hex");
+}
+
+export async function buildNPOAuthorPayload(applicationId: number): Promise<NPOAuthorPayload | null> {
+  const [application] = await db.select()
+    .from(applications)
+    .where(eq(applications.id, applicationId));
+
+  if (!application) {
+    console.error(`Application ${applicationId} not found`);
+    return null;
+  }
+
+  const [user] = await db.select()
+    .from(users)
+    .where(eq(users.id, application.userId));
+
+  if (!user) {
+    console.error(`User for application ${applicationId} not found`);
+    return null;
+  }
+
+  let cohortLabel = "Unknown";
+  if (application.cohortId) {
+    const [cohort] = await db.select()
+      .from(cohorts)
+      .where(eq(cohorts.id, application.cohortId));
+    if (cohort) {
+      cohortLabel = cohort.label;
+    }
+  }
+
+  const payload: NPOAuthorPayload = {
+    source: "npo_collective",
+    internalId: application.internalId || "",
+    firstName: user.firstName,
+    lastName: user.lastName,
+    dateOfBirth: application.dateOfBirth,
+    minorAdultDesignation: application.isMinor ? "M" : "A",
+    guardian: application.isMinor ? {
+      name: application.guardianName,
+      email: application.guardianEmail,
+      phone: application.guardianPhone,
+      relationship: application.guardianRelationship,
+    } : null,
+    dateApplied: application.createdAt.toISOString(),
+    dateApproved: application.dateApproved?.toISOString() || new Date().toISOString(),
+    dateMigrated: new Date().toISOString(),
+    cohortLabel,
+    profileAnswers: {
+      penName: application.penName,
+      hasStoryToTell: application.hasStoryToTell,
+      personalStruggles: application.personalStruggles,
+      expressionTypes: application.expressionTypes,
+      expressionOther: application.expressionOther,
+      whyCollective: application.whyCollective,
+      goals: application.goals,
+      hearAboutUs: application.hearAboutUs,
+    },
+  };
+
+  return payload;
+}
+
+export async function syncNPOAuthorToLLC(applicationId: number): Promise<{
+  success: boolean;
+  authorId?: string;
+  error?: string;
+}> {
+  if (!INDIE_QUILL_API_URL || !INDIE_QUILL_API_KEY || !INDIE_QUILL_API_SECRET) {
+    console.log("Indie Quill integration not configured - skipping sync");
+    return { success: false, error: "Integration not configured" };
+  }
+
+  const payload = await buildNPOAuthorPayload(applicationId);
+  if (!payload) {
+    return { success: false, error: "Failed to build payload" };
+  }
+
+  const timestampMs = Date.now().toString();
+  const payloadJson = JSON.stringify(payload);
+  const signature = generateHmacSignature(payloadJson, timestampMs);
+
+  try {
+    const response = await fetch(`${INDIE_QUILL_API_URL}/api/internal/npo-authors`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-Key": INDIE_QUILL_API_KEY,
+        "X-Timestamp": timestampMs,
+        "X-Signature": signature,
+      },
+      body: payloadJson,
+    });
+
+    const responseText = await response.text();
+    let responseData: any;
+    try {
+      responseData = JSON.parse(responseText);
+    } catch {
+      responseData = { message: responseText };
+    }
+
+    if (!response.ok) {
+      console.error("LLC sync error:", response.status, responseData);
+      return { success: false, error: `API error: ${response.status} - ${responseData.message || responseText}` };
+    }
+
+    if (responseData.status === "success" || response.status === 200 || response.status === 201) {
+      await db.update(applications)
+        .set({ 
+          dateMigrated: new Date(),
+          status: 'migrated',
+          updatedAt: new Date(),
+        })
+        .where(eq(applications.id, applicationId));
+
+      console.log(`NPO Author ${payload.internalId} synced to LLC successfully`);
+      return { success: true, authorId: responseData.authorId };
+    }
+
+    return { success: false, error: responseData.message || "Unknown error" };
+  } catch (error) {
+    console.error("LLC sync connection error:", error);
+    return { success: false, error: `Connection failed: ${error}` };
+  }
+}
+
+export async function createSyncJob(applicationId: number, userId: number): Promise<number> {
+  const [existingJob] = await db.select()
+    .from(publishingUpdates)
+    .where(eq(publishingUpdates.applicationId, applicationId));
+
+  if (existingJob) {
+    await db.update(publishingUpdates)
+      .set({
+        syncStatus: 'pending',
+        syncError: null,
+        syncAttempts: 0,
+        statusMessage: 'Queued for sync to The Indie Quill LLC...',
+        updatedAt: new Date(),
+      })
+      .where(eq(publishingUpdates.id, existingJob.id));
+    return existingJob.id;
+  }
+
+  const [newJob] = await db.insert(publishingUpdates)
+    .values({
+      applicationId,
+      userId,
+      status: 'not_started',
+      syncStatus: 'pending',
+      statusMessage: 'Queued for sync to The Indie Quill LLC...',
+    })
+    .returning();
+
+  return newJob.id;
+}
+
+export async function processSyncJob(jobId: number): Promise<{ success: boolean; error?: string }> {
+  const [job] = await db.select()
+    .from(publishingUpdates)
+    .where(eq(publishingUpdates.id, jobId));
+
+  if (!job) {
+    return { success: false, error: "Job not found" };
+  }
+
+  await db.update(publishingUpdates)
+    .set({
+      syncStatus: 'syncing',
+      lastSyncAttempt: new Date(),
+      syncAttempts: (job.syncAttempts || 0) + 1,
+      updatedAt: new Date(),
+    })
+    .where(eq(publishingUpdates.id, jobId));
+
+  const result = await syncNPOAuthorToLLC(job.applicationId);
+
+  if (result.success) {
+    await db.update(publishingUpdates)
+      .set({
+        syncStatus: 'synced',
+        syncError: null,
+        indieQuillAuthorId: result.authorId,
+        lastSyncedAt: new Date(),
+        statusMessage: 'Successfully synced to The Indie Quill LLC',
+        updatedAt: new Date(),
+      })
+      .where(eq(publishingUpdates.id, jobId));
+  } else {
+    await db.update(publishingUpdates)
+      .set({
+        syncStatus: 'failed',
+        syncError: result.error,
+        statusMessage: `Sync failed: ${result.error}`,
+        updatedAt: new Date(),
+      })
+      .where(eq(publishingUpdates.id, jobId));
+  }
+
+  return result;
+}

@@ -807,38 +807,30 @@ export default function AdminDashboard() {
                           {record.syncAttempts}
                         </td>
                         <td className="py-3 px-4 flex items-center space-x-2">
-                          {(record.syncStatus === "failed" || record.syncStatus === "pending") && (
-                            <>
-                              <button
-                                onClick={() => resyncApplication(record.applicationId, record.id)}
-                                disabled={retrying === record.id}
-                                className="text-orange-600 hover:text-orange-800 transition-colors text-xs px-2 py-1 border border-orange-300 rounded"
-                                title="1. Resync Application to LLC (if 404 error)"
-                              >
-                                Resync App
-                              </button>
-                              <button
-                                onClick={() => resyncStatus(record.applicationId, record.id)}
-                                disabled={retrying === record.id}
-                                className="text-purple-600 hover:text-purple-800 transition-colors text-xs px-2 py-1 border border-purple-300 rounded"
-                                title="2. Resync Status to LLC (if 'must be approved' error)"
-                              >
-                                Resync Status
-                              </button>
-                              <button
-                                onClick={() => retrySync(record.id)}
-                                disabled={retrying === record.id}
-                                className="text-blue-600 hover:text-blue-800 transition-colors text-xs px-2 py-1 border border-blue-300 rounded flex items-center space-x-1"
-                                title="3. Trigger Author Migration"
-                              >
-                                <RefreshCw className={`w-4 h-4 ${retrying === record.id ? "animate-spin" : ""}`} />
-                                <span>Migrate</span>
-                              </button>
-                            </>
+                          {record.syncStatus === "failed" && (
+                            <button
+                              onClick={() => retrySync(record.id)}
+                              disabled={retrying === record.id}
+                              className="bg-red-500 hover:bg-red-600 text-white text-xs px-3 py-1.5 rounded flex items-center space-x-1 transition-colors"
+                              title="Retry sync to LLC"
+                            >
+                              <RefreshCw className={`w-4 h-4 ${retrying === record.id ? "animate-spin" : ""}`} />
+                              <span>Retry Sync</span>
+                            </button>
+                          )}
+                          {record.syncStatus === "pending" && (
+                            <span className="text-xs text-gray-500 italic">Queued...</span>
+                          )}
+                          {record.syncStatus === "syncing" && (
+                            <span className="text-xs text-blue-500 flex items-center space-x-1">
+                              <RefreshCw className="w-4 h-4 animate-spin" />
+                              <span>Syncing...</span>
+                            </span>
                           )}
                           {record.syncStatus === "synced" && (
-                            <span title="Synced">
-                              <Zap className="w-5 h-5 text-green-500" />
+                            <span className="text-xs text-green-600 flex items-center space-x-1" title="Successfully synced">
+                              <Zap className="w-4 h-4" />
+                              <span>Synced</span>
                             </span>
                           )}
                         </td>

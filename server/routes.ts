@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import rateLimit from "express-rate-limit";
 import { db } from "./db";
-import { users, applications, contracts, publishingUpdates, calendarEvents, fundraisingCampaigns, donations, auditLogs } from "@shared/schema";
+import { users, applications, contracts, publishingUpdates, calendarEvents, fundraisingCampaigns, donations, auditLogs, cohorts } from "@shared/schema";
 import { eq, desc, gte, sql, inArray } from "drizzle-orm";
 import { hash, compare } from "./auth";
 import { migrateAuthorToIndieQuill, retryFailedMigrations, sendApplicationToLLC, sendStatusUpdateToLLC, sendContractSignatureToLLC, sendUserRoleUpdateToLLC } from "./indie-quill-integration";
@@ -10,6 +10,8 @@ import { logAuditEvent, logMinorDataAccess, getClientIp } from "./utils/auditLog
 import { syncCalendarEvents, getGoogleCalendarConnectionStatus, deleteGoogleCalendarEvent } from "./google-calendar-sync";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { ContractPDF } from "./pdf-templates/ContractTemplate";
+import { processAcceptance } from "./services/cohort-service";
+import { createSyncJob, processSyncJob } from "./services/npo-sync-service";
 
 const authRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -476,38 +478,38 @@ export function registerRoutes(app: Express) {
 
     try {
       const { status, reviewNotes } = req.body;
-      const [updated] = await db.update(applications)
-        .set({ 
-          status, 
-          reviewNotes,
-          reviewedBy: req.session.userId,
-          reviewedAt: new Date(),
-          updatedAt: new Date(),
-        })
-        .where(eq(applications.id, parseInt(req.params.id)))
-        .returning();
-
-      const [applicantUser] = await db.select().from(users).where(eq(users.id, updated.userId));
-
-      if (updated.isMinor) {
-        await logMinorDataAccess(
-          req.session.userId,
-          "status_change",
-          "applications",
-          updated.id,
-          getClientIp(req),
-          { newStatus: status, reviewNotes: reviewNotes || null }
-        );
+      const applicationId = parseInt(req.params.id);
+      
+      const [application] = await db.select().from(applications).where(eq(applications.id, applicationId));
+      if (!application) {
+        return res.status(404).json({ message: "Application not found" });
       }
-
-      // Sync status update to LLC immediately
-      try {
-        await sendStatusUpdateToLLC(updated.id, status, reviewNotes || null);
-      } catch (syncError) {
-        console.error("Failed to sync status to LLC:", syncError);
+      
+      const [applicantUser] = await db.select().from(users).where(eq(users.id, application.userId));
+      if (!applicantUser) {
+        return res.status(404).json({ message: "User not found" });
       }
 
       if (status === "accepted") {
+        const acceptanceResult = await processAcceptance(
+          applicationId,
+          application.userId,
+          applicantUser.lastName,
+          applicantUser.firstName,
+          application.isMinor
+        );
+
+        const [updated] = await db.update(applications)
+          .set({ 
+            status, 
+            reviewNotes,
+            reviewedBy: req.session.userId,
+            reviewedAt: new Date(),
+            updatedAt: new Date(),
+          })
+          .where(eq(applications.id, applicationId))
+          .returning();
+
         await db.insert(contracts).values({
           applicationId: updated.id,
           userId: updated.userId,
@@ -516,25 +518,99 @@ export function registerRoutes(app: Express) {
           requiresGuardian: updated.isMinor,
           status: "pending_signature",
         });
-        
-        if (applicantUser) {
-          try {
-            await sendApplicationAcceptedEmail(applicantUser.email, applicantUser.firstName);
-          } catch (emailError) {
-            console.error("Failed to send acceptance email:", emailError);
-          }
-        }
-      } else if (status === "rejected") {
-        if (applicantUser) {
-          try {
-            await sendApplicationRejectedEmail(applicantUser.email, applicantUser.firstName);
-          } catch (emailError) {
-            console.error("Failed to send rejection email:", emailError);
-          }
-        }
-      }
 
-      return res.json(updated);
+        const jobId = await createSyncJob(applicationId, application.userId);
+        
+        processSyncJob(jobId).catch(err => {
+          console.error("Background sync failed:", err);
+        });
+
+        try {
+          await sendApplicationAcceptedEmail(applicantUser.email, applicantUser.firstName);
+          if (updated.isMinor && updated.guardianEmail) {
+            await sendApplicationAcceptedEmail(updated.guardianEmail, applicantUser.firstName);
+          }
+        } catch (emailError) {
+          console.error("Failed to send acceptance email:", emailError);
+        }
+
+        console.log(`Application ${applicationId} accepted: Internal ID=${acceptanceResult.internalId}, Cohort=${acceptanceResult.cohortLabel}`);
+
+        if (updated.isMinor) {
+          await logMinorDataAccess(
+            req.session.userId,
+            "status_change",
+            "applications",
+            updated.id,
+            getClientIp(req),
+            { 
+              newStatus: status, 
+              reviewNotes: reviewNotes || null,
+              internalId: acceptanceResult.internalId,
+              cohortId: acceptanceResult.cohortId,
+            }
+          );
+        }
+
+        return res.json({ ...updated, internalId: acceptanceResult.internalId, cohortLabel: acceptanceResult.cohortLabel });
+      } else if (status === "rejected") {
+        const [updated] = await db.update(applications)
+          .set({ 
+            status, 
+            reviewNotes,
+            reviewedBy: req.session.userId,
+            reviewedAt: new Date(),
+            updatedAt: new Date(),
+          })
+          .where(eq(applications.id, applicationId))
+          .returning();
+
+        try {
+          await sendApplicationRejectedEmail(applicantUser.email, applicantUser.firstName);
+          if (updated.isMinor && updated.guardianEmail) {
+            await sendApplicationRejectedEmail(updated.guardianEmail, applicantUser.firstName);
+          }
+        } catch (emailError) {
+          console.error("Failed to send rejection email:", emailError);
+        }
+
+        if (updated.isMinor) {
+          await logMinorDataAccess(
+            req.session.userId,
+            "status_change",
+            "applications",
+            updated.id,
+            getClientIp(req),
+            { newStatus: status, reviewNotes: reviewNotes || null }
+          );
+        }
+
+        return res.json(updated);
+      } else {
+        const [updated] = await db.update(applications)
+          .set({ 
+            status, 
+            reviewNotes,
+            reviewedBy: req.session.userId,
+            reviewedAt: new Date(),
+            updatedAt: new Date(),
+          })
+          .where(eq(applications.id, applicationId))
+          .returning();
+
+        if (updated.isMinor) {
+          await logMinorDataAccess(
+            req.session.userId,
+            "status_change",
+            "applications",
+            updated.id,
+            getClientIp(req),
+            { newStatus: status, reviewNotes: reviewNotes || null }
+          );
+        }
+
+        return res.json(updated);
+      }
     } catch (error) {
       console.error("Update application status error:", error);
       return res.status(500).json({ message: "Failed to update application" });
@@ -986,12 +1062,12 @@ export function registerRoutes(app: Express) {
 
     try {
       const updateId = parseInt(req.params.id);
-      const success = await migrateAuthorToIndieQuill(updateId);
+      const result = await processSyncJob(updateId);
       
-      if (success) {
+      if (result.success) {
         return res.json({ message: "Sync successful" });
       } else {
-        return res.status(500).json({ message: "Sync failed - check error details" });
+        return res.status(500).json({ message: `Sync failed: ${result.error}` });
       }
     } catch (error) {
       console.error("Retry sync error:", error);

@@ -35,6 +35,20 @@ export const syncStatusEnum = pgEnum('sync_status', [
   'failed'
 ]);
 
+export const cohortStatusEnum = pgEnum('cohort_status', [
+  'open',
+  'closed'
+]);
+
+export const cohorts = pgTable("cohorts", {
+  id: serial("id").primaryKey(),
+  label: text("label").notNull(),
+  capacity: integer("capacity").notNull().default(10),
+  currentCount: integer("current_count").notNull().default(0),
+  status: cohortStatusEnum("status").default("open").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   email: text("email").notNull().unique(),
@@ -48,6 +62,11 @@ export const users = pgTable("users", {
 export const applications = pgTable("applications", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
+  
+  internalId: text("internal_id"),
+  cohortId: integer("cohort_id").references(() => cohorts.id),
+  dateApproved: timestamp("date_approved"),
+  dateMigrated: timestamp("date_migrated"),
   
   penName: text("pen_name"),
   dateOfBirth: text("date_of_birth").notNull(),
@@ -127,6 +146,10 @@ export const publishingUpdates = pgTable("publishing_updates", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const cohortsRelations = relations(cohorts, ({ many }) => ({
+  applications: many(applications),
+}));
+
 export const usersRelations = relations(users, ({ many }) => ({
   applications: many(applications),
   contracts: many(contracts),
@@ -141,6 +164,10 @@ export const applicationsRelations = relations(applications, ({ one, many }) => 
   reviewer: one(users, {
     fields: [applications.reviewedBy],
     references: [users.id],
+  }),
+  cohort: one(cohorts, {
+    fields: [applications.cohortId],
+    references: [cohorts.id],
   }),
   contracts: many(contracts),
   publishingUpdates: many(publishingUpdates),
@@ -258,6 +285,8 @@ export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
+export type Cohort = typeof cohorts.$inferSelect;
+export type InsertCohort = typeof cohorts.$inferInsert;
 export type Application = typeof applications.$inferSelect;
 export type InsertApplication = typeof applications.$inferInsert;
 export type Contract = typeof contracts.$inferSelect;
