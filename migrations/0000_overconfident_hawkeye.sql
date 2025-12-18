@@ -5,7 +5,7 @@ CREATE TYPE "public"."publishing_status" AS ENUM('not_started', 'manuscript_rece
 CREATE TYPE "public"."sync_status" AS ENUM('pending', 'syncing', 'synced', 'failed');--> statement-breakpoint
 CREATE TABLE "applications" (
 	"id" serial PRIMARY KEY NOT NULL,
-	"user_id" integer NOT NULL,
+	"user_id" varchar(36) NOT NULL,
 	"internal_id" text,
 	"cohort_id" integer,
 	"date_approved" timestamp,
@@ -29,7 +29,7 @@ CREATE TABLE "applications" (
 	"hear_about_us" text,
 	"status" "application_status" DEFAULT 'pending' NOT NULL,
 	"review_notes" text,
-	"reviewed_by" integer,
+	"reviewed_by" varchar(36),
 	"reviewed_at" timestamp,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
@@ -37,7 +37,7 @@ CREATE TABLE "applications" (
 --> statement-breakpoint
 CREATE TABLE "audit_logs" (
 	"id" serial PRIMARY KEY NOT NULL,
-	"user_id" integer NOT NULL,
+	"user_id" varchar(36) NOT NULL,
 	"action" text NOT NULL,
 	"target_table" text NOT NULL,
 	"target_id" text NOT NULL,
@@ -55,7 +55,7 @@ CREATE TABLE "calendar_events" (
 	"all_day" boolean DEFAULT false NOT NULL,
 	"event_type" text DEFAULT 'meeting' NOT NULL,
 	"location" text,
-	"created_by" integer,
+	"created_by" varchar(36),
 	"google_calendar_event_id" text,
 	"last_synced_at" timestamp,
 	"is_from_google" boolean DEFAULT false NOT NULL,
@@ -75,7 +75,7 @@ CREATE TABLE "cohorts" (
 CREATE TABLE "contracts" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"application_id" integer NOT NULL,
-	"user_id" integer NOT NULL,
+	"user_id" varchar(36) NOT NULL,
 	"contract_type" text NOT NULL,
 	"contract_content" text NOT NULL,
 	"author_signature" text,
@@ -101,7 +101,7 @@ CREATE TABLE "donations" (
 	"is_anonymous" boolean DEFAULT false NOT NULL,
 	"notes" text,
 	"donated_at" timestamp DEFAULT now() NOT NULL,
-	"recorded_by" integer NOT NULL,
+	"recorded_by" varchar(36) NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
@@ -114,7 +114,7 @@ CREATE TABLE "fundraising_campaigns" (
 	"start_date" timestamp NOT NULL,
 	"end_date" timestamp,
 	"is_active" boolean DEFAULT true NOT NULL,
-	"created_by" integer NOT NULL,
+	"created_by" varchar(36) NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
@@ -122,7 +122,7 @@ CREATE TABLE "fundraising_campaigns" (
 CREATE TABLE "publishing_updates" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"application_id" integer NOT NULL,
-	"user_id" integer NOT NULL,
+	"user_id" varchar(36) NOT NULL,
 	"indie_quill_author_id" text,
 	"status" "publishing_status" DEFAULT 'not_started' NOT NULL,
 	"status_message" text,
@@ -137,7 +137,7 @@ CREATE TABLE "publishing_updates" (
 );
 --> statement-breakpoint
 CREATE TABLE "users" (
-	"id" serial PRIMARY KEY NOT NULL,
+	"id" varchar(36) PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"email" text NOT NULL,
 	"password" text NOT NULL,
 	"first_name" text NOT NULL,

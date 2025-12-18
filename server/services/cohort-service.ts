@@ -96,7 +96,7 @@ async function assignToCohortWithLock(tx: any): Promise<{ cohortId: number; coho
 
 export async function processAcceptance(
   applicationId: number,
-  userId: number,
+  userId: string,
   lastName: string,
   firstName: string,
   isMinor: boolean

@@ -169,7 +169,7 @@ export async function syncNPOAuthorToLLC(applicationId: number): Promise<{
   }
 }
 
-export async function createSyncJob(applicationId: number, userId: number): Promise<number> {
+export async function createSyncJob(applicationId: number, userId: string): Promise<number> {
   const [existingJob] = await db.select()
     .from(publishingUpdates)
     .where(eq(publishingUpdates.applicationId, applicationId));

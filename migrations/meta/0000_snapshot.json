@@ -1,5 +1,5 @@
 {
-  "id": "0399d57a-943e-4b59-b5a8-ecf5ebe071a4",
+  "id": "b4261e0c-e558-403f-8dd6-b6bb452aacd1",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -16,7 +16,7 @@
         },
         "user_id": {
           "name": "user_id",
-          "type": "integer",
+          "type": "varchar(36)",
           "primaryKey": false,
           "notNull": true
         },
@@ -165,7 +165,7 @@
         },
         "reviewed_by": {
           "name": "reviewed_by",
-          "type": "integer",
+          "type": "varchar(36)",
           "primaryKey": false,
           "notNull": false
         },
@@ -250,7 +250,7 @@
         },
         "user_id": {
           "name": "user_id",
-          "type": "integer",
+          "type": "varchar(36)",
           "primaryKey": false,
           "notNull": true
         },
@@ -370,7 +370,7 @@
         },
         "created_by": {
           "name": "created_by",
-          "type": "integer",
+          "type": "varchar(36)",
           "primaryKey": false,
           "notNull": false
         },
@@ -502,7 +502,7 @@
         },
         "user_id": {
           "name": "user_id",
-          "type": "integer",
+          "type": "varchar(36)",
           "primaryKey": false,
           "notNull": true
         },
@@ -687,7 +687,7 @@
         },
         "recorded_by": {
           "name": "recorded_by",
-          "type": "integer",
+          "type": "varchar(36)",
           "primaryKey": false,
           "notNull": true
         },
@@ -790,7 +790,7 @@
         },
         "created_by": {
           "name": "created_by",
-          "type": "integer",
+          "type": "varchar(36)",
           "primaryKey": false,
           "notNull": true
         },
@@ -849,7 +849,7 @@
         },
         "user_id": {
           "name": "user_id",
-          "type": "integer",
+          "type": "varchar(36)",
           "primaryKey": false,
           "notNull": true
         },
@@ -968,9 +968,10 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "serial",
+          "type": "varchar(36)",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
         "email": {
           "name": "email",
