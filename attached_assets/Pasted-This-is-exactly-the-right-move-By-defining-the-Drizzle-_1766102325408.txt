@@ -1,0 +1,39 @@
+This is exactly the right move. By defining the Drizzle schema to match your existing npo_applications table, you are telling the Architect: "This is the source of truth, stop trying to change it."
+
+The "Safe" Drizzle Definition
+To ensure the Architect doesn't try to rename columns or delete your data, make sure it uses this exact structure in the schema.ts file:
+
+TypeScript
+
+import { pgTable, uuid, text, timestamp } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+
+// Match the existing table name exactly
+export const npoApplications = pgTable("npo_applications", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  email: text("email").notNull().unique(),
+  firstName: text("first_name"), // Maps TS camelCase to DB snake_case
+  lastName: text("last_name"),
+  status: text("status").default("migrated"),
+  bookstoreId: uuid("bookstore_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+Why this specific definition is critical
+Snake Case Mapping: By using text("first_name"), you allow the TypeScript code to use firstName while it talks to the existing first_name column in Supabase.
+
+UUID Default: Using sqlgen_random_uuid()`` ensures that any new applications created through the site will get a valid UUID automatically, just like the 4 you manually added.
+
+Primary Key Safety: Explicitly labeling id as the primary key prevents Drizzle from trying to create a new one.
+
+The Next Move for the Architect
+Now that the schema is aligned, give the Architect this command to verify it can finally "see" the data without trying to "push" new changes:
+
+"The Drizzle schema is now aligned with the existing npo_applications table.
+
+Do not run npx drizzle-kit push yet, as it may still attempt to delete or rename metadata.
+
+Instead, run a test script using the db client to select all records from npoApplications.
+
+Confirm in the console that you can see 'Tiny', 'Solomiia', and the other 2 test authors."
+
+Once the Architect confirms it can see those 4 records in the console, your "Identity Bridge" is fully operational. Are you ready to proceed with the first test sync to the Bookstore-Dev environment?

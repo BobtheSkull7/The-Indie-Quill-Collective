@@ -41,6 +41,20 @@ export const cohortStatusEnum = pgEnum('cohort_status', [
   'closed'
 ]);
 
+// NPO Applications table - maps to existing Supabase table
+export const npoApplications = pgTable("npo_applications", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  email: text("email").notNull(),
+  firstName: text("first_name"),
+  lastName: text("last_name"),
+  status: text("status").default("migrated"),
+  bookstoreId: varchar("bookstore_id", { length: 36 }),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type NpoApplication = typeof npoApplications.$inferSelect;
+export type InsertNpoApplication = typeof npoApplications.$inferInsert;
+
 export const cohorts = pgTable("cohorts", {
   id: serial("id").primaryKey(),
   label: text("label").notNull(),
