@@ -1,4 +1,5 @@
-import { pgTable, text, serial, integer, boolean, timestamp, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, pgEnum, varchar } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -50,7 +51,7 @@ export const cohorts = pgTable("cohorts", {
 });
 
 export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
   firstName: text("first_name").notNull(),
@@ -61,7 +62,7 @@ export const users = pgTable("users", {
 
 export const applications = pgTable("applications", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  userId: varchar("user_id", { length: 36 }).references(() => users.id).notNull(),
   
   internalId: text("internal_id"),
   cohortId: integer("cohort_id").references(() => cohorts.id),
@@ -77,10 +78,9 @@ export const applications = pgTable("applications", {
   guardianPhone: text("guardian_phone"),
   guardianRelationship: text("guardian_relationship"),
   
-  // COPPA Compliance Fields
-  guardianConsentMethod: text("guardian_consent_method"), // e.g., 'e-signature', 'mail-in form', 'verbal'
-  guardianConsentVerified: boolean("guardian_consent_verified").default(false), // Staff verification flag
-  dataRetentionUntil: timestamp("data_retention_until"), // Date for data review/deletion
+  guardianConsentMethod: text("guardian_consent_method"),
+  guardianConsentVerified: boolean("guardian_consent_verified").default(false),
+  dataRetentionUntil: timestamp("data_retention_until"),
   
   hasStoryToTell: boolean("has_story_to_tell").notNull().default(true),
   personalStruggles: text("personal_struggles").notNull(),
@@ -93,7 +93,7 @@ export const applications = pgTable("applications", {
   
   status: applicationStatusEnum("status").default("pending").notNull(),
   reviewNotes: text("review_notes"),
-  reviewedBy: integer("reviewed_by").references(() => users.id),
+  reviewedBy: varchar("reviewed_by", { length: 36 }).references(() => users.id),
   reviewedAt: timestamp("reviewed_at"),
   
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -103,7 +103,7 @@ export const applications = pgTable("applications", {
 export const contracts = pgTable("contracts", {
   id: serial("id").primaryKey(),
   applicationId: integer("application_id").references(() => applications.id).notNull(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  userId: varchar("user_id", { length: 36 }).references(() => users.id).notNull(),
   
   contractType: text("contract_type").notNull(),
   contractContent: text("contract_content").notNull(),
@@ -128,7 +128,7 @@ export const contracts = pgTable("contracts", {
 export const publishingUpdates = pgTable("publishing_updates", {
   id: serial("id").primaryKey(),
   applicationId: integer("application_id").references(() => applications.id).notNull(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  userId: varchar("user_id", { length: 36 }).references(() => users.id).notNull(),
   
   indieQuillAuthorId: text("indie_quill_author_id"),
   
@@ -204,7 +204,7 @@ export const calendarEvents = pgTable("calendar_events", {
   allDay: boolean("all_day").default(false).notNull(),
   eventType: text("event_type").notNull().default("meeting"),
   location: text("location"),
-  createdBy: integer("created_by").references(() => users.id),
+  createdBy: varchar("created_by", { length: 36 }).references(() => users.id),
   googleCalendarEventId: text("google_calendar_event_id"),
   lastSyncedAt: timestamp("last_synced_at"),
   isFromGoogle: boolean("is_from_google").default(false).notNull(),
@@ -221,7 +221,7 @@ export const fundraisingCampaigns = pgTable("fundraising_campaigns", {
   startDate: timestamp("start_date").notNull(),
   endDate: timestamp("end_date"),
   isActive: boolean("is_active").default(true).notNull(),
-  createdBy: integer("created_by").references(() => users.id).notNull(),
+  createdBy: varchar("created_by", { length: 36 }).references(() => users.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -235,7 +235,7 @@ export const donations = pgTable("donations", {
   isAnonymous: boolean("is_anonymous").default(false).notNull(),
   notes: text("notes"),
   donatedAt: timestamp("donated_at").defaultNow().notNull(),
-  recordedBy: integer("recorded_by").references(() => users.id).notNull(),
+  recordedBy: varchar("recorded_by", { length: 36 }).references(() => users.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -267,7 +267,7 @@ export const donationsRelations = relations(donations, ({ one }) => ({
 
 export const auditLogs = pgTable("audit_logs", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  userId: varchar("user_id", { length: 36 }).references(() => users.id).notNull(),
   action: text("action").notNull(),
   targetTable: text("target_table").notNull(),
   targetId: text("target_id").notNull(),
