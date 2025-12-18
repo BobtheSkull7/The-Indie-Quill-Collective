@@ -10,6 +10,7 @@ const INDIE_QUILL_API_SECRET = process.env.INDIE_QUILL_API_SECRET || "";
 interface NPOAuthorPayload {
   source: "npo_collective";
   collectiveApplicationId: string;
+  bookstoreAuthorId?: string;
   password: string;
   internalId: string;
   firstName: string;
@@ -114,6 +115,68 @@ export async function buildNPOAuthorPayload(applicationId: number): Promise<NPOA
   return payload;
 }
 
+async function registerAuthorWithLLC(
+  applicationId: number,
+  payload: NPOAuthorPayload,
+  userEmail: string
+): Promise<{ success: boolean; authorId?: string; error?: string }> {
+  const registrationPayload = {
+    source: "npo_collective",
+    collectiveApplicationId: payload.collectiveApplicationId,
+    email: userEmail,
+    password: payload.password,
+    firstName: payload.firstName,
+    lastName: payload.lastName,
+    penName: payload.profileAnswers.penName,
+    dateOfBirth: payload.dateOfBirth,
+    isMinor: payload.minorAdultDesignation === "M",
+    guardianName: payload.guardian?.name || null,
+    guardianEmail: payload.guardian?.email || null,
+    guardianPhone: payload.guardian?.phone || null,
+    internalId: payload.internalId,
+    cohortLabel: payload.cohortLabel,
+    role: "npo_author",
+  };
+
+  const timestampMs = Date.now().toString();
+  const payloadJson = JSON.stringify(registrationPayload);
+  const signature = generateHmacSignature(payloadJson, timestampMs);
+
+  console.log(`Registering new author with LLC: ${userEmail} (App ID: ${applicationId})`);
+
+  try {
+    const response = await fetch(`${INDIE_QUILL_API_URL}/api/authors/register`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-Key": INDIE_QUILL_API_KEY,
+        "X-Timestamp": timestampMs,
+        "X-Signature": signature,
+      },
+      body: payloadJson,
+    });
+
+    const responseText = await response.text();
+    let responseData: any;
+    try {
+      responseData = JSON.parse(responseText);
+    } catch {
+      responseData = { message: responseText };
+    }
+
+    if (!response.ok) {
+      console.error("LLC registration error:", response.status, responseData);
+      return { success: false, error: `Registration failed: ${response.status} - ${responseData.message || responseText}` };
+    }
+
+    console.log(`Author registered with LLC successfully. Author ID: ${responseData.authorId || responseData.id}`);
+    return { success: true, authorId: responseData.authorId || responseData.id };
+  } catch (error) {
+    console.error("LLC registration connection error:", error);
+    return { success: false, error: `Registration connection failed: ${error}` };
+  }
+}
+
 export async function syncNPOAuthorToLLC(applicationId: number): Promise<{
   success: boolean;
   authorId?: string;
@@ -124,10 +187,73 @@ export async function syncNPOAuthorToLLC(applicationId: number): Promise<{
     return { success: false, error: "Integration not configured" };
   }
 
+  const [existingUpdate] = await db.select()
+    .from(publishingUpdates)
+    .where(eq(publishingUpdates.applicationId, applicationId));
+
   const payload = await buildNPOAuthorPayload(applicationId);
   if (!payload) {
     return { success: false, error: "Failed to build payload" };
   }
+
+  const [application] = await db.select()
+    .from(applications)
+    .where(eq(applications.id, applicationId));
+  
+  if (!application) {
+    return { success: false, error: "Application not found" };
+  }
+
+  const [user] = await db.select()
+    .from(users)
+    .where(eq(users.id, application.userId));
+
+  if (!user) {
+    return { success: false, error: "User not found" };
+  }
+
+  let bookstoreAuthorId = existingUpdate?.indieQuillAuthorId || undefined;
+
+  if (!bookstoreAuthorId) {
+    console.log(`No LLC author ID found for app ${applicationId} - registering new author`);
+    const registrationResult = await registerAuthorWithLLC(applicationId, payload, user.email);
+    
+    if (!registrationResult.success) {
+      return registrationResult;
+    }
+
+    bookstoreAuthorId = registrationResult.authorId;
+
+    if (existingUpdate) {
+      await db.update(publishingUpdates)
+        .set({
+          indieQuillAuthorId: bookstoreAuthorId,
+          updatedAt: new Date(),
+        })
+        .where(eq(publishingUpdates.id, existingUpdate.id));
+    } else {
+      await db.insert(publishingUpdates)
+        .values({
+          applicationId,
+          userId: application.userId,
+          status: 'not_started',
+          syncStatus: 'syncing',
+          indieQuillAuthorId: bookstoreAuthorId,
+          statusMessage: 'Registered with LLC, syncing profile...',
+        })
+        .onConflictDoUpdate({
+          target: publishingUpdates.applicationId,
+          set: {
+            indieQuillAuthorId: bookstoreAuthorId,
+            updatedAt: new Date(),
+          },
+        });
+    }
+
+    console.log(`Author registered with ID ${bookstoreAuthorId}, now syncing full profile data...`);
+  }
+
+  payload.bookstoreAuthorId = bookstoreAuthorId;
 
   const timestampMs = Date.now().toString();
   const payloadJson = JSON.stringify(payload);
@@ -168,7 +294,7 @@ export async function syncNPOAuthorToLLC(applicationId: number): Promise<{
         .where(eq(applications.id, applicationId));
 
       console.log(`NPO Author ${payload.internalId} synced to LLC successfully`);
-      return { success: true, authorId: responseData.authorId };
+      return { success: true, authorId: bookstoreAuthorId || responseData.authorId };
     }
 
     return { success: false, error: responseData.message || "Unknown error" };
