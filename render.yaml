@@ -1,0 +1,99 @@
+# The Indie Quill Collective - Render Blueprint
+# Infrastructure-as-Code deployment configuration
+# 
+# This file defines the production service configuration for Render.
+# To use: Connect this repo to Render and it will auto-detect this blueprint.
+#
+# IMPORTANT: Some integrations (Resend, Google Calendar) use Replit Connectors
+# in development. For production on Render, you must configure these services
+# directly using the environment variables below.
+#
+# Documentation: https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: the-indie-quill-collective-frontend
+    runtime: node
+    region: oregon
+    plan: starter
+    branch: main
+    
+    # Build & Start Commands
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    
+    # Custom Domain
+    domains:
+      - theindiequillcollective.com
+    
+    # Health Check
+    healthCheckPath: /api/health
+    
+    # Environment Variables
+    envVars:
+      # ============================================
+      # APPLICATION SETTINGS
+      # ============================================
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      
+      # ============================================
+      # DATABASE (Neon PostgreSQL)
+      # Set these in Render dashboard from your Neon connection string
+      # ============================================
+      - key: DATABASE_URL
+        sync: false
+      - key: PGHOST
+        sync: false
+      - key: PGPORT
+        sync: false
+      - key: PGUSER
+        sync: false
+      - key: PGPASSWORD
+        sync: false
+      - key: PGDATABASE
+        sync: false
+      
+      # ============================================
+      # SESSION SECURITY
+      # Auto-generated 256-bit secret
+      # ============================================
+      - key: SESSION_SECRET
+        generateValue: true
+      
+      # ============================================
+      # LLC INTEGRATION (Enterprise Sync)
+      # Set these in Render dashboard
+      # ============================================
+      - key: INDIE_QUILL_API_URL
+        sync: false
+      - key: INDIE_QUILL_API_KEY
+        sync: false
+      - key: INDIE_QUILL_API_SECRET
+        sync: false
+      
+      # ============================================
+      # EMAIL SERVICE (Resend)
+      # Note: In development, this uses Replit Connectors.
+      # For production, set these directly in Render dashboard.
+      # Get your API key from https://resend.com/api-keys
+      # ============================================
+      - key: RESEND_API_KEY
+        sync: false
+      - key: RESEND_FROM_EMAIL
+        sync: false
+      
+      # ============================================
+      # GOOGLE CALENDAR (OAuth)
+      # Note: In development, this uses Replit Connectors.
+      # For production, set up Google OAuth credentials and
+      # configure these in Render dashboard.
+      # ============================================
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REFRESH_TOKEN
+        sync: false

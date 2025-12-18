@@ -42,9 +42,14 @@ The project utilizes a client-server architecture with a React 19, Vite, and Tai
 - **contracts:** Publishing agreements with signature tracking.
 - **audit_logs:** Comprehensive logging for COPPA compliance, tracking user actions on sensitive data.
 
+## Documentation
+
+- **[ARCHITECTURE.md](./ARCHITECTURE.md):** Comprehensive technical reference including naming conventions, data flow diagrams, infrastructure map, UUID architecture, security layers, and deployment configuration.
+- **[render.yaml](./render.yaml):** Infrastructure-as-Code blueprint for Render deployment with service configuration, custom domain, and environment variables.
+
 ## External Dependencies
 - **GitHub:** Source code version control and repository.
-- **Render:** Cloud platform for hosting production web services (frontend and backend).
+- **Render:** Cloud platform for hosting production web services (frontend and backend). See `render.yaml` for deployment blueprint.
 - **Neon:** Serverless PostgreSQL database for production.
 - **Google Calendar API:** Two-way synchronization for event management.
 - **The Indie Quill LLC API:** External API for synchronizing author application and status data, requiring HMAC-SHA256 signed requests for secure integration.
