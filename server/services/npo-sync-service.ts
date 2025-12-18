@@ -9,6 +9,8 @@ const INDIE_QUILL_API_SECRET = process.env.INDIE_QUILL_API_SECRET || "";
 
 interface NPOAuthorPayload {
   source: "npo_collective";
+  collectiveApplicationId: string;
+  password: string;
   internalId: string;
   firstName: string;
   lastName: string;
@@ -34,6 +36,11 @@ interface NPOAuthorPayload {
     goals: string | null;
     hearAboutUs: string | null;
   };
+}
+
+function generateSecureTemporaryPassword(): string {
+  const hex = crypto.randomBytes(12).toString("hex");
+  return `${hex}!Aa1`;
 }
 
 function generateHmacSignature(payload: string, timestampMs: string): string {
@@ -75,6 +82,8 @@ export async function buildNPOAuthorPayload(applicationId: number): Promise<NPOA
 
   const payload: NPOAuthorPayload = {
     source: "npo_collective",
+    collectiveApplicationId: application.id.toString(),
+    password: generateSecureTemporaryPassword(),
     internalId: application.internalId || "",
     firstName: user.firstName,
     lastName: user.lastName,
