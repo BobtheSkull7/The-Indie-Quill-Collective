@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, pgEnum, varchar } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, pgEnum, varchar, uuid } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
@@ -43,12 +43,12 @@ export const cohortStatusEnum = pgEnum('cohort_status', [
 
 // NPO Applications table - maps to existing Supabase table
 export const npoApplications = pgTable("npo_applications", {
-  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
-  email: text("email").notNull(),
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  email: text("email").notNull().unique(),
   firstName: text("first_name"),
   lastName: text("last_name"),
   status: text("status").default("migrated"),
-  bookstoreId: varchar("bookstore_id", { length: 36 }),
+  bookstoreId: uuid("bookstore_id"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
