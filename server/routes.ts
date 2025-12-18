@@ -31,7 +31,7 @@ const contractSigningRateLimiter = rateLimit({
 
 declare module "express-session" {
   interface SessionData {
-    userId?: number;
+    userId?: string;
     userRole?: string;
   }
 }
@@ -1086,6 +1086,96 @@ export function registerRoutes(app: Express) {
     } catch (error) {
       console.error("Retry all failed error:", error);
       return res.status(500).json({ message: "Failed to retry migrations" });
+    }
+  });
+
+  app.post("/api/admin/force-sync-all-migrated", async (req: Request, res: Response) => {
+    if (!req.session.userId || req.session.userRole !== "admin") {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    try {
+      const migratedApps = await db.select()
+        .from(applications)
+        .where(eq(applications.status, "migrated"));
+
+      const results = {
+        total: migratedApps.length,
+        queued: 0,
+        alreadySynced: 0,
+        failed: 0,
+        idsGenerated: 0,
+        errors: [] as string[],
+      };
+
+      for (const app of migratedApps) {
+        try {
+          const [existingUpdate] = await db.select()
+            .from(publishingUpdates)
+            .where(eq(publishingUpdates.applicationId, app.id));
+
+          if (existingUpdate?.syncStatus === "synced") {
+            results.alreadySynced++;
+            continue;
+          }
+
+          if (!app.internalId && !app.cohortId) {
+            const [user] = await db.select()
+              .from(users)
+              .where(eq(users.id, app.userId));
+            
+            if (user) {
+              const acceptanceResult = await processAcceptance(
+                app.id,
+                app.userId,
+                user.lastName,
+                user.firstName,
+                app.isMinor
+              );
+              console.log(`Generated internal ID for app ${app.id}: ${acceptanceResult.internalId}`);
+              results.idsGenerated++;
+            }
+          } else if (!app.internalId && app.cohortId) {
+            const [user] = await db.select()
+              .from(users)
+              .where(eq(users.id, app.userId));
+            
+            if (user) {
+              const { generateInternalId } = await import("./services/cohort-service");
+              const internalId = generateInternalId(
+                user.lastName,
+                user.firstName,
+                app.isMinor,
+                app.dateApproved || new Date()
+              );
+              await db.update(applications)
+                .set({ internalId, updatedAt: new Date() })
+                .where(eq(applications.id, app.id));
+              console.log(`Generated internal ID for app ${app.id} (existing cohort): ${internalId}`);
+              results.idsGenerated++;
+            }
+          }
+
+          const jobId = await createSyncJob(app.id, app.userId);
+          const syncResult = await processSyncJob(jobId);
+
+          if (syncResult.success) {
+            results.queued++;
+          } else {
+            results.failed++;
+            results.errors.push(`App ${app.id}: ${syncResult.error}`);
+          }
+        } catch (err) {
+          results.failed++;
+          results.errors.push(`App ${app.id}: ${err}`);
+        }
+      }
+
+      console.log(`Force sync completed: ${results.queued} synced, ${results.alreadySynced} already synced, ${results.failed} failed, ${results.idsGenerated} IDs generated`);
+      return res.json(results);
+    } catch (error) {
+      console.error("Force sync all migrated error:", error);
+      return res.status(500).json({ message: "Failed to force sync" });
     }
   });
 

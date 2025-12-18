@@ -121,6 +121,9 @@ export default function AdminDashboard() {
   const [coppaRetentionDate, setCoppaRetentionDate] = useState<string>("");
   const [updatingCoppa, setUpdatingCoppa] = useState(false);
   const [coppaOriginalState, setCoppaOriginalState] = useState({ method: "", verified: false, date: "" });
+  const [forceSyncing, setForceSyncing] = useState(false);
+  const [forceSyncResult, setForceSyncResult] = useState<{ total: number; queued: number; alreadySynced: number; failed: number; idsGenerated?: number; errors: string[] } | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -220,6 +223,55 @@ export default function AdminDashboard() {
       console.error("Retry all failed:", error);
     } finally {
       setRetrying(null);
+    }
+  };
+
+  const forceSyncAllMigrated = async () => {
+    setForceSyncing(true);
+    setForceSyncResult(null);
+    try {
+      const res = await fetch("/api/admin/force-sync-all-migrated", { method: "POST" });
+      if (res.ok) {
+        const result = await res.json();
+        setForceSyncResult(result);
+        await loadData();
+      } else {
+        setForceSyncResult({ total: 0, queued: 0, alreadySynced: 0, failed: 1, errors: ["Request failed"] });
+      }
+    } catch (error) {
+      console.error("Force sync failed:", error);
+      setForceSyncResult({ total: 0, queued: 0, alreadySynced: 0, failed: 1, errors: ["Connection error"] });
+    } finally {
+      setForceSyncing(false);
+    }
+  };
+
+  const handleTileClick = (filter: string) => {
+    switch (filter) {
+      case "total":
+        setActiveTab("applicants");
+        setStatusFilter(null);
+        break;
+      case "pending":
+        setActiveTab("applicants");
+        setStatusFilter("pending");
+        break;
+      case "synced":
+        setActiveTab("sync");
+        setStatusFilter("synced");
+        break;
+      case "migrated":
+        setActiveTab("applicants");
+        setStatusFilter("migrated");
+        break;
+      case "pendingSync":
+        setActiveTab("sync");
+        setStatusFilter("pending");
+        break;
+      case "failed":
+        setActiveTab("sync");
+        setStatusFilter("failed");
+        break;
     }
   };
 
@@ -521,7 +573,7 @@ export default function AdminDashboard() {
 
         {stats && (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-            <div className="card">
+            <div className="card cursor-pointer hover:shadow-lg transition-shadow" onClick={() => handleTileClick("total")}>
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
                   <FileText className="w-5 h-5 text-blue-600" />
@@ -532,7 +584,7 @@ export default function AdminDashboard() {
                 </div>
               </div>
             </div>
-            <div className="card">
+            <div className="card cursor-pointer hover:shadow-lg transition-shadow" onClick={() => handleTileClick("pending")}>
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
                   <Clock className="w-5 h-5 text-yellow-600" />
@@ -543,7 +595,7 @@ export default function AdminDashboard() {
                 </div>
               </div>
             </div>
-            <div className="card">
+            <div className="card cursor-pointer hover:shadow-lg transition-shadow" onClick={() => handleTileClick("synced")}>
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
                   <CheckCircle className="w-5 h-5 text-green-600" />
@@ -554,7 +606,7 @@ export default function AdminDashboard() {
                 </div>
               </div>
             </div>
-            <div className="card">
+            <div className="card cursor-pointer hover:shadow-lg transition-shadow" onClick={() => handleTileClick("migrated")}>
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
                   <Users className="w-5 h-5 text-purple-600" />
@@ -565,7 +617,7 @@ export default function AdminDashboard() {
                 </div>
               </div>
             </div>
-            <div className="card">
+            <div className="card cursor-pointer hover:shadow-lg transition-shadow" onClick={() => handleTileClick("pendingSync")}>
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
                   <TrendingUp className="w-5 h-5 text-orange-600" />
@@ -576,7 +628,7 @@ export default function AdminDashboard() {
                 </div>
               </div>
             </div>
-            <div className="card">
+            <div className="card cursor-pointer hover:shadow-lg transition-shadow" onClick={() => handleTileClick("failed")}>
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
                   <AlertTriangle className="w-5 h-5 text-red-600" />
@@ -636,7 +688,17 @@ export default function AdminDashboard() {
 
         {activeTab === "applicants" && (
           <div className="card">
-            <h2 className="font-display text-xl font-semibold text-slate-800 mb-4">Applicants</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-display text-xl font-semibold text-slate-800">Applicants</h2>
+              {statusFilter && (
+                <button
+                  onClick={() => setStatusFilter(null)}
+                  className="text-sm text-blue-600 hover:text-blue-800"
+                >
+                  Clear filter: {statusFilter} &times;
+                </button>
+              )}
+            </div>
             
             {applications.length === 0 ? (
               <p className="text-gray-500 text-center py-8">No applications yet.</p>
@@ -655,7 +717,9 @@ export default function AdminDashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {applications.map((app) => (
+                    {applications
+                      .filter(app => !statusFilter || app.status === statusFilter)
+                      .map((app) => (
                       <tr key={app.id} className="border-b border-gray-100 hover:bg-gray-50">
                         <td className="py-3 px-4">
                           <div>
@@ -714,24 +778,63 @@ export default function AdminDashboard() {
         {activeTab === "sync" && (
           <div className="card">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-display text-xl font-semibold text-slate-800">
-                The Indie Quill LLC Sync Status
-              </h2>
-              {stats && stats.failedSync > 0 && (
+              <div>
+                <h2 className="font-display text-xl font-semibold text-slate-800">
+                  The Indie Quill LLC Sync Status
+                </h2>
+                {statusFilter && (
+                  <button
+                    onClick={() => setStatusFilter(null)}
+                    className="text-sm text-blue-600 hover:text-blue-800 mt-1"
+                  >
+                    Clear filter: {statusFilter} &times;
+                  </button>
+                )}
+              </div>
+              <div className="flex items-center space-x-2">
                 <button
-                  onClick={retryAllFailed}
-                  disabled={retrying === -1}
-                  className="btn-primary text-sm py-2 px-4 flex items-center space-x-2"
+                  onClick={forceSyncAllMigrated}
+                  disabled={forceSyncing}
+                  className="bg-purple-600 text-white text-sm py-2 px-4 rounded-lg hover:bg-purple-700 disabled:opacity-50 flex items-center space-x-2"
                 >
-                  <RefreshCw className={`w-4 h-4 ${retrying === -1 ? "animate-spin" : ""}`} />
-                  <span>Retry All Failed</span>
+                  <Zap className={`w-4 h-4 ${forceSyncing ? "animate-pulse" : ""}`} />
+                  <span>{forceSyncing ? "Syncing..." : "Force Sync All Migrated"}</span>
                 </button>
-              )}
+                {stats && stats.failedSync > 0 && (
+                  <button
+                    onClick={retryAllFailed}
+                    disabled={retrying === -1}
+                    className="btn-primary text-sm py-2 px-4 flex items-center space-x-2"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${retrying === -1 ? "animate-spin" : ""}`} />
+                    <span>Retry All Failed</span>
+                  </button>
+                )}
+              </div>
             </div>
+
+            {forceSyncResult && (
+              <div className={`p-4 rounded-lg mb-4 ${forceSyncResult.failed > 0 ? "bg-yellow-50 border border-yellow-200" : "bg-green-50 border border-green-200"}`}>
+                <p className="font-medium text-slate-800">
+                  Force Sync Complete: {forceSyncResult.queued} synced, {forceSyncResult.alreadySynced} already synced, {forceSyncResult.failed} failed
+                  {forceSyncResult.idsGenerated ? `, ${forceSyncResult.idsGenerated} IDs generated` : ""}
+                </p>
+                {forceSyncResult.errors.length > 0 && (
+                  <ul className="text-sm text-red-600 mt-2 list-disc list-inside">
+                    {forceSyncResult.errors.slice(0, 5).map((err, i) => (
+                      <li key={i}>{err}</li>
+                    ))}
+                    {forceSyncResult.errors.length > 5 && (
+                      <li>...and {forceSyncResult.errors.length - 5} more</li>
+                    )}
+                  </ul>
+                )}
+              </div>
+            )}
 
             {syncRecords.length === 0 ? (
               <p className="text-gray-500 text-center py-8">
-                No sync records yet. Authors will appear here once contracts are signed.
+                No sync records yet. Use "Force Sync All Migrated" to queue migrated authors for sync.
               </p>
             ) : (
               <div className="overflow-x-auto">
@@ -747,7 +850,9 @@ export default function AdminDashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {syncRecords.map((record) => (
+                    {syncRecords
+                      .filter(record => !statusFilter || record.syncStatus === statusFilter)
+                      .map((record) => (
                       <tr key={record.id} className="border-b border-gray-100 hover:bg-gray-50">
                         <td className="py-3 px-4">
                           <p className="font-medium text-slate-800">{record.authorName}</p>
