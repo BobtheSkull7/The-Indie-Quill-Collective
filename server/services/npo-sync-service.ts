@@ -338,8 +338,6 @@ export async function createSyncJob(applicationId: number, userId: string): Prom
 /**
  * Register an author from npo_applications table with the LLC Bookstore.
  * This function is specifically for migrated authors in Supabase.
- * 
- * CONSTRAINT: Currently hardcoded to only sync tiny@test.com for first test run.
  */
 export async function registerNpoAuthorWithLLC(email: string): Promise<{
   success: boolean;
@@ -347,14 +345,6 @@ export async function registerNpoAuthorWithLLC(email: string): Promise<{
   error?: string;
   fullResponse?: any;
 }> {
-  // CONSTRAINT: Only allow tiny@test.com for this first test run
-  if (email !== "tiny@test.com") {
-    return { 
-      success: false, 
-      error: `Sync currently restricted to tiny@test.com only. Received: ${email}` 
-    };
-  }
-
   if (!INDIE_QUILL_API_URL || !INDIE_QUILL_API_KEY || !INDIE_QUILL_API_SECRET) {
     console.log("Indie Quill integration not configured - skipping sync");
     return { success: false, error: "Integration not configured" };
