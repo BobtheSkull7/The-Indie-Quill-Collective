@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import { db } from "../db";
-import { applications, users, publishingUpdates, cohorts } from "@shared/schema";
+import { applications, users, publishingUpdates, cohorts, npoApplications } from "@shared/schema";
 import { eq } from "drizzle-orm";
 
 const INDIE_QUILL_API_URL = process.env.INDIE_QUILL_API_URL || "";
