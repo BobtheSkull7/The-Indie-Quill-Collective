@@ -1,7 +1,7 @@
 import { registerNpoAuthorWithLLC } from './server/services/npo-sync-service';
 import { db } from './server/db';
 import { npoApplications } from './shared/schema';
-import { eq, isNull, and } from 'drizzle-orm';
+import { eq, isNull, and, or } from 'drizzle-orm';
 
 interface SyncResult {
   email: string;
@@ -10,21 +10,44 @@ interface SyncResult {
   error?: string;
 }
 
+function getStatusFilter(): string | null {
+  const statusArg = process.argv.find(arg => arg.startsWith('--status='));
+  if (statusArg) {
+    return statusArg.split('=')[1];
+  }
+  return null;
+}
+
 async function bulkAuthorSync() {
   const isDryRun = process.argv.includes('--dry-run');
+  const statusFilter = getStatusFilter();
   const startTime = Date.now();
   
   console.log('========================================');
   console.log('BULK AUTHOR SYNC TO BOOKSTORE');
   console.log(`Mode: ${isDryRun ? 'DRY RUN (no changes)' : 'LIVE SYNC'}`);
+  console.log(`Status Filter: ${statusFilter || 'approved (default)'}`);
   console.log('========================================\n');
 
-  // Query for authors that need syncing: status = 'approved' AND bookstore_id IS NULL
+  // Build the query based on status filter
+  let statusCondition;
+  if (statusFilter === 'migrated') {
+    statusCondition = eq(npoApplications.status, 'migrated');
+  } else if (statusFilter === 'both') {
+    statusCondition = or(
+      eq(npoApplications.status, 'approved'),
+      eq(npoApplications.status, 'migrated')
+    );
+  } else {
+    statusCondition = eq(npoApplications.status, 'approved');
+  }
+
+  // Query for authors that need syncing: status matches AND bookstore_id IS NULL
   const pendingAuthors = await db.select()
     .from(npoApplications)
     .where(
       and(
-        eq(npoApplications.status, 'approved'),
+        statusCondition,
         isNull(npoApplications.bookstoreId)
       )
     );
