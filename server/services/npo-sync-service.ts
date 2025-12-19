@@ -391,14 +391,18 @@ export async function registerNpoAuthorWithLLC(email: string): Promise<{
   const payloadJson = JSON.stringify(registrationPayload);
   const signature = generateHmacSignature(payloadJson, timestampMs);
 
+  // Normalize URL - remove trailing /api if present to avoid double /api/api
+  const baseUrl = INDIE_QUILL_API_URL.replace(/\/api\/?$/, '');
+  const endpoint = `${baseUrl}/api/authors/register`;
+
   console.log(`\n========== NPO AUTHOR REGISTRATION ==========`);
   console.log(`Registering: ${email}`);
   console.log(`Collective Application ID (UUID): ${author.id}`);
-  console.log(`Endpoint: POST ${INDIE_QUILL_API_URL}/api/authors/register`);
+  console.log(`Endpoint: POST ${endpoint}`);
   console.log(`Payload:`, JSON.stringify(registrationPayload, null, 2));
 
   try {
-    const response = await fetch(`${INDIE_QUILL_API_URL}/api/authors/register`, {
+    const response = await fetch(endpoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
