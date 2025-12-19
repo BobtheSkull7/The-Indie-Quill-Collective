@@ -11,7 +11,7 @@ import { syncCalendarEvents, getGoogleCalendarConnectionStatus, deleteGoogleCale
 import { renderToBuffer } from "@react-pdf/renderer";
 import { ContractPDF } from "./pdf-templates/ContractTemplate";
 import { processAcceptance } from "./services/cohort-service";
-import { createSyncJob, processSyncJob } from "./services/npo-sync-service";
+import { createSyncJob, processSyncJob, registerNpoAuthorWithLLC } from "./services/npo-sync-service";
 
 const authRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -1176,6 +1176,41 @@ export function registerRoutes(app: Express) {
     } catch (error) {
       console.error("Force sync all migrated error:", error);
       return res.status(500).json({ message: "Failed to force sync" });
+    }
+  });
+
+  // Register NPO author from Supabase npo_applications table with LLC Bookstore
+  // Currently hardcoded to only allow tiny@test.com for testing
+  app.post("/api/admin/register-npo-author", async (req: Request, res: Response) => {
+    if (!req.session.userId || req.session.userRole !== "admin") {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    try {
+      console.log(`[Admin] Triggering NPO author registration for: ${email}`);
+      const result = await registerNpoAuthorWithLLC(email);
+      
+      if (result.success) {
+        return res.json({
+          message: "Author registered successfully",
+          bookstoreId: result.bookstoreId,
+          fullResponse: result.fullResponse,
+        });
+      } else {
+        return res.status(400).json({
+          message: result.error,
+          fullResponse: result.fullResponse,
+        });
+      }
+    } catch (error) {
+      console.error("Register NPO author error:", error);
+      return res.status(500).json({ message: "Failed to register author" });
     }
   });
 

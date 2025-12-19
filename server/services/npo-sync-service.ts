@@ -335,6 +335,135 @@ export async function createSyncJob(applicationId: number, userId: string): Prom
   return newJob.id;
 }
 
+/**
+ * Register an author from npo_applications table with the LLC Bookstore.
+ * This function is specifically for migrated authors in Supabase.
+ * 
+ * CONSTRAINT: Currently hardcoded to only sync tiny@test.com for first test run.
+ */
+export async function registerNpoAuthorWithLLC(email: string): Promise<{
+  success: boolean;
+  bookstoreId?: string;
+  error?: string;
+  fullResponse?: any;
+}> {
+  // CONSTRAINT: Only allow tiny@test.com for this first test run
+  if (email !== "tiny@test.com") {
+    return { 
+      success: false, 
+      error: `Sync currently restricted to tiny@test.com only. Received: ${email}` 
+    };
+  }
+
+  if (!INDIE_QUILL_API_URL || !INDIE_QUILL_API_KEY || !INDIE_QUILL_API_SECRET) {
+    console.log("Indie Quill integration not configured - skipping sync");
+    return { success: false, error: "Integration not configured" };
+  }
+
+  // Fetch the author from npo_applications
+  const [author] = await db.select()
+    .from(npoApplications)
+    .where(eq(npoApplications.email, email));
+
+  if (!author) {
+    return { success: false, error: `Author with email ${email} not found in npo_applications` };
+  }
+
+  // Check if already synced
+  if (author.bookstoreId) {
+    console.log(`Author ${email} already has bookstoreId: ${author.bookstoreId}`);
+    return { success: true, bookstoreId: author.bookstoreId, error: "Already synced" };
+  }
+
+  // Build the registration payload using the UUID from npo_applications.id
+  const registrationPayload = {
+    source: "npo_collective",
+    collectiveApplicationId: author.id, // This is the UUID from Supabase
+    email: author.email,
+    password: generateSecureTemporaryPassword(),
+    firstName: author.firstName || "",
+    lastName: author.lastName || "",
+    status: author.status || "migrated",
+    role: "npo_author",
+  };
+
+  const timestampMs = Date.now().toString();
+  const payloadJson = JSON.stringify(registrationPayload);
+  const signature = generateHmacSignature(payloadJson, timestampMs);
+
+  console.log(`\n========== NPO AUTHOR REGISTRATION ==========`);
+  console.log(`Registering: ${email}`);
+  console.log(`Collective Application ID (UUID): ${author.id}`);
+  console.log(`Endpoint: POST ${INDIE_QUILL_API_URL}/api/authors/register`);
+  console.log(`Payload:`, JSON.stringify(registrationPayload, null, 2));
+
+  try {
+    const response = await fetch(`${INDIE_QUILL_API_URL}/api/authors/register`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-Key": INDIE_QUILL_API_KEY,
+        "X-Timestamp": timestampMs,
+        "X-Signature": signature,
+      },
+      body: payloadJson,
+    });
+
+    const responseText = await response.text();
+    let responseData: any;
+    try {
+      responseData = JSON.parse(responseText);
+    } catch {
+      responseData = { rawText: responseText };
+    }
+
+    console.log(`\n---------- BOOKSTORE RESPONSE ----------`);
+    console.log(`Status: ${response.status} ${response.statusText}`);
+    console.log(`Full Response:`, JSON.stringify(responseData, null, 2));
+    console.log(`==========================================\n`);
+
+    if (!response.ok) {
+      return { 
+        success: false, 
+        error: `Registration failed: ${response.status} - ${responseData.message || responseText}`,
+        fullResponse: responseData 
+      };
+    }
+
+    // Extract the bookstore author ID from the response
+    const bookstoreId = responseData.authorId || responseData.id || responseData.userId;
+
+    if (!bookstoreId) {
+      console.error("No author ID returned from Bookstore API");
+      return { 
+        success: false, 
+        error: "No author ID in response",
+        fullResponse: responseData 
+      };
+    }
+
+    // Save the bookstoreId back to npo_applications
+    await db.update(npoApplications)
+      .set({ bookstoreId: bookstoreId })
+      .where(eq(npoApplications.id, author.id));
+
+    console.log(`✓ Successfully saved bookstoreId ${bookstoreId} to npo_applications for ${email}`);
+
+    return { 
+      success: true, 
+      bookstoreId,
+      fullResponse: responseData 
+    };
+
+  } catch (error) {
+    console.error("LLC registration connection error:", error);
+    return { 
+      success: false, 
+      error: `Connection failed: ${error}`,
+    };
+  }
+}
+
 export async function processSyncJob(jobId: number): Promise<{ success: boolean; error?: string }> {
   const [job] = await db.select()
     .from(publishingUpdates)
