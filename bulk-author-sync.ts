@@ -3,6 +3,8 @@ import { db } from './server/db';
 import { npoApplications } from './shared/schema';
 import { eq, isNull, and, or } from 'drizzle-orm';
 
+const BOOKSTORE_API = 'https://indie-quill-bookstore.onrender.com';
+
 interface SyncResult {
   email: string;
   success: boolean;
@@ -18,8 +20,26 @@ function getStatusFilter(): string | null {
   return null;
 }
 
+async function checkBookstoreHealth(): Promise<{ healthy: boolean; message: string }> {
+  try {
+    console.log('Checking Bookstore API health...');
+    const response = await fetch(`${BOOKSTORE_API}/api/health`, {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' },
+    });
+    
+    if (response.ok) {
+      return { healthy: true, message: 'Bookstore API is healthy' };
+    }
+    return { healthy: false, message: `Bookstore returned ${response.status}` };
+  } catch (error) {
+    return { healthy: false, message: `Cannot reach Bookstore: ${error}` };
+  }
+}
+
 async function bulkAuthorSync() {
   const isDryRun = process.argv.includes('--dry-run');
+  const skipHealthCheck = process.argv.includes('--force');
   const statusFilter = getStatusFilter();
   const startTime = Date.now();
   
@@ -78,6 +98,26 @@ async function bulkAuthorSync() {
     console.log('Run without --dry-run flag to perform actual sync.');
     console.log('========================================');
     process.exit(0);
+  }
+
+  // Pre-flight health check (unless --force is used)
+  if (!skipHealthCheck) {
+    const health = await checkBookstoreHealth();
+    console.log(`Health check: ${health.message}\n`);
+    
+    if (!health.healthy) {
+      console.log('========================================');
+      console.log('SYNC BLOCKED - BOOKSTORE UNAVAILABLE');
+      console.log('========================================');
+      console.log('The Bookstore API is not responding correctly.');
+      console.log('Please fix the Bookstore deployment before retrying.');
+      console.log('');
+      console.log('Use --force to skip this check (not recommended).');
+      console.log('========================================');
+      process.exit(1);
+    }
+  } else {
+    console.log('Health check skipped (--force flag)\n');
   }
 
   // Live sync mode
