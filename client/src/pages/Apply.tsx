@@ -263,8 +263,8 @@ export default function Apply() {
                 )}
 
                 <div className="flex justify-between">
-                  <button type="button" onClick={() => setLocation("/dashboard")} className="btn-secondary">
-                    Cancel
+                  <button type="button" onClick={() => setLocation("/")} className="btn-secondary">
+                    Back to Home
                   </button>
                   <button type="button" onClick={() => setStep(2)} className="btn-primary">
                     Next: Your Story
