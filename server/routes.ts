@@ -114,7 +114,7 @@ export function registerRoutes(app: Express) {
 
       const hashedPassword = await hash(password);
       const [newUser] = await db.insert(users).values({
-        email,
+        email: email.toLowerCase(),
         password: hashedPassword,
         firstName,
         lastName,
