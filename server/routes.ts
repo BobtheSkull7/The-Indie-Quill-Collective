@@ -13,6 +13,72 @@ import { ContractPDF } from "./pdf-templates/ContractTemplate";
 import { processAcceptance } from "./services/cohort-service";
 import { createSyncJob, processSyncJob, registerNpoAuthorWithLLC } from "./services/npo-sync-service";
 
+// Helper function to generate and store contract PDF
+async function generateAndStorePDF(contractId: number): Promise<Buffer | null> {
+  try {
+    const [contract] = await db.select().from(contracts)
+      .where(eq(contracts.id, contractId));
+    
+    if (!contract) return null;
+
+    const [application] = await db.select().from(applications)
+      .where(eq(applications.id, contract.applicationId));
+    
+    if (!application) return null;
+
+    const [user] = await db.select().from(users)
+      .where(eq(users.id, contract.userId));
+    
+    if (!user) return null;
+
+    const pdfBuffer = await renderToBuffer(
+      ContractPDF({
+        contract: {
+          id: contract.id,
+          contractType: contract.contractType,
+          contractContent: contract.contractContent,
+          authorSignature: contract.authorSignature,
+          authorSignedAt: contract.authorSignedAt?.toISOString() || null,
+          guardianSignature: contract.guardianSignature,
+          guardianSignedAt: contract.guardianSignedAt?.toISOString() || null,
+          requiresGuardian: contract.requiresGuardian,
+          status: contract.status,
+          createdAt: contract.createdAt.toISOString(),
+        },
+        application: {
+          penName: application.penName,
+          dateOfBirth: application.dateOfBirth,
+          isMinor: application.isMinor,
+          guardianName: application.guardianName,
+          guardianEmail: application.guardianEmail,
+          guardianRelationship: application.guardianRelationship,
+        },
+        user: {
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+        },
+      })
+    );
+
+    // Store PDF as Base64 in database
+    const pdfBase64 = pdfBuffer.toString('base64');
+    await db.update(contracts)
+      .set({ 
+        pdfData: pdfBase64, 
+        pdfGeneratedAt: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(contracts.id, contractId));
+
+    console.log(`[PDF Storage] Contract ${contractId} PDF generated and stored (${pdfBuffer.length} bytes)`);
+    return pdfBuffer;
+  } catch (error) {
+    console.error(`[PDF Storage] Failed to generate/store PDF for contract ${contractId}:`, error);
+    return null;
+  }
+}
+
 const authRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 5, // 5 attempts per window
@@ -783,13 +849,6 @@ export function registerRoutes(app: Express) {
         return res.status(404).json({ message: "Application not found" });
       }
 
-      const [user] = await db.select().from(users)
-        .where(eq(users.id, contract.userId));
-
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-
       if (contract.requiresGuardian || application.isMinor) {
         await logMinorDataAccess(
           req.session.userId,
@@ -808,42 +867,64 @@ export function registerRoutes(app: Express) {
       }
 
       let pdfBuffer: Buffer;
-      try {
-        pdfBuffer = await renderToBuffer(
-          ContractPDF({
-            contract: {
-              id: contract.id,
-              contractType: contract.contractType,
-              contractContent: contract.contractContent,
-              authorSignature: contract.authorSignature,
-              authorSignedAt: contract.authorSignedAt?.toISOString() || null,
-              guardianSignature: contract.guardianSignature,
-              guardianSignedAt: contract.guardianSignedAt?.toISOString() || null,
-              requiresGuardian: contract.requiresGuardian,
-              status: contract.status,
-              createdAt: contract.createdAt.toISOString(),
-            },
-            application: {
-              penName: application.penName,
-              dateOfBirth: application.dateOfBirth,
-              isMinor: application.isMinor,
-              guardianName: application.guardianName,
-              guardianEmail: application.guardianEmail,
-              guardianRelationship: application.guardianRelationship,
-            },
-            user: {
-              firstName: user.firstName,
-              lastName: user.lastName,
-              email: user.email,
-            },
-          })
-        );
-      } catch (renderError) {
-        console.error("PDF render error:", renderError);
-        return res.status(500).json({ message: "Failed to render PDF document" });
-      }
-
       const filename = `contract-${contract.id}-${contract.contractType.replace(/_/g, "-")}.pdf`;
+
+      // Try to serve from database first (stored on signing)
+      if (contract.pdfData) {
+        console.log(`[PDF Download] Serving contract ${contract.id} from database storage`);
+        pdfBuffer = Buffer.from(contract.pdfData, 'base64');
+      } else {
+        // Regenerate if missing (legacy contracts or failed storage)
+        console.log(`[PDF Download] Regenerating PDF for contract ${contract.id} (not in database)`);
+        const [user] = await db.select().from(users)
+          .where(eq(users.id, contract.userId));
+
+        if (!user) {
+          return res.status(404).json({ message: "User not found" });
+        }
+
+        try {
+          pdfBuffer = await renderToBuffer(
+            ContractPDF({
+              contract: {
+                id: contract.id,
+                contractType: contract.contractType,
+                contractContent: contract.contractContent,
+                authorSignature: contract.authorSignature,
+                authorSignedAt: contract.authorSignedAt?.toISOString() || null,
+                guardianSignature: contract.guardianSignature,
+                guardianSignedAt: contract.guardianSignedAt?.toISOString() || null,
+                requiresGuardian: contract.requiresGuardian,
+                status: contract.status,
+                createdAt: contract.createdAt.toISOString(),
+              },
+              application: {
+                penName: application.penName,
+                dateOfBirth: application.dateOfBirth,
+                isMinor: application.isMinor,
+                guardianName: application.guardianName,
+                guardianEmail: application.guardianEmail,
+                guardianRelationship: application.guardianRelationship,
+              },
+              user: {
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.email,
+              },
+            })
+          );
+
+          // Store for future requests
+          const pdfBase64 = pdfBuffer.toString('base64');
+          await db.update(contracts)
+            .set({ pdfData: pdfBase64, pdfGeneratedAt: new Date(), updatedAt: new Date() })
+            .where(eq(contracts.id, contract.id));
+          console.log(`[PDF Download] Stored regenerated PDF for contract ${contract.id}`);
+        } catch (renderError) {
+          console.error("PDF render error:", renderError);
+          return res.status(500).json({ message: "Failed to render PDF document" });
+        }
+      }
 
       res.setHeader("Content-Type", "application/pdf");
       res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
@@ -921,6 +1002,11 @@ export function registerRoutes(app: Express) {
       }
 
       if (updated.status === "signed") {
+        // Generate and store PDF immediately when contract is fully signed
+        generateAndStorePDF(contract.id).catch(err => {
+          console.error("Background PDF generation failed:", err);
+        });
+
         await db.update(applications)
           .set({ status: "migrated", updatedAt: new Date() })
           .where(eq(applications.id, contract.applicationId));
