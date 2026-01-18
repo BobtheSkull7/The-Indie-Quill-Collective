@@ -69,10 +69,14 @@ async function bootstrapFast() {
     console.warn("Warning: No Supabase URL configured, using in-memory sessions");
   }
 
+  if (!process.env.SESSION_SECRET) {
+    throw new Error("SESSION_SECRET must be configured - refusing to start with default secret");
+  }
+
   app.use(
     session({
       store: sessionStore,
-      secret: process.env.SESSION_SECRET || "indie-quill-collective-secret-key",
+      secret: process.env.SESSION_SECRET,
       resave: false,
       saveUninitialized: false,
       cookie: {
