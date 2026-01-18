@@ -51,15 +51,23 @@ async function bootstrapFast() {
   app.use(express.json());
   app.use(express.urlencoded({ extended: false }));
 
-  // Use Postgres-backed session store in production, memory in dev
-  // Note: SSL is configured via the DATABASE_URL connection string (sslmode=require)
-  const sessionStore = isProd
+  // Use Supabase-backed session store for both environments
+  // This ensures sessions persist across Replit restarts
+  const supabaseUrl = isProd 
+    ? process.env.SUPABASE_PROD_URL 
+    : process.env.SUPABASE_DEV_URL;
+  
+  const sessionStore = supabaseUrl
     ? new pgSession({
-        conString: process.env.DATABASE_URL,
-        tableName: "session",
+        conString: supabaseUrl,
+        tableName: "user_sessions",
         createTableIfMissing: true,
       })
     : undefined;
+  
+  if (!supabaseUrl) {
+    console.warn("Warning: No Supabase URL configured, using in-memory sessions");
+  }
 
   app.use(
     session({

@@ -135,6 +135,10 @@ export const contracts = pgTable("contracts", {
   
   status: contractStatusEnum("status").default("pending_signature").notNull(),
   
+  // PDF storage - base64 encoded PDF generated on signing
+  pdfData: text("pdf_data"),
+  pdfGeneratedAt: timestamp("pdf_generated_at"),
+  
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
