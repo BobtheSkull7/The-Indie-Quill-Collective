@@ -1,0 +1,57 @@
+This prompt tells the Replit agent to build the specific modules that justify your role as Program Director and prove the Collective is a "Safe Investment" for grants.
+
+The Replit Agent Instructions
+Copy and paste this to the Replit Agent:
+
+"We are entering Phase 3 of the Indie Quill Collective: The Foundation Readiness Layer.
+
+The Goal: Build an 'Impact & Compliance' module that justifies a founder's salary by proving operational efficiency and 100% legal safety for minor authors.
+
+Strict Architecture Rule: All data must be pulled from the SUPABASE_DEV_URL. Do not store impact metrics locally.
+
+Task 1: The 'Minor-Safety' UI Logic (Zero-PII)
+
+Update the Author display components to implement a 'Minor-Safe' filter.
+
+If is_minor is true, the UI must automatically:
+
+Truncate names to 'First Name + Last Initial' (e.g., Jon S.).
+
+Replace profile photos with a default 'assigned emoji' (e.g., ✍️).
+
+Hide specific ages, replacing them with a 'Youth Author' badge.
+
+Task 2: The 'Program Director' Operations Dashboard
+
+Create an Admin-only 'Operations Metrics' view that tracks:
+
+Throughput: Average time authors spend in each status (Manuscript → Editing → Published).
+
+Cohort Velocity: % of current cohort (10 authors) that have reached the 'Contract Signed' milestone.
+
+Scale Indicator: A counter showing 'Total Active Authors Managed' to prove one admin can handle 50+ authors using this stack.
+
+Task 3: The 'Grant-Ready' Compliance Export
+
+Build a feature to export a 'Compliance Audit Log' as a PDF.
+
+This PDF must pull from our forensic metadata: Guardian contact dates, IP addresses/User Agents for signatures, and the admin attestation timestamp.
+
+Note: This is the 'Proof of Safety' for grant officers.
+
+Task 4: The 'Live Impact' Widget
+
+Create a public-facing (but Zero-PII) widget that shows real-time progress of the Collective:
+
+'Total Words Processed' (Sum of all manuscript metadata).
+
+'Books in Pipeline' (Count of authors in status > Onboarding).
+
+Verify: Ensure no DATABASE_URL is used and all new tables (if needed for metrics) are created in Supabase via Drizzle."
+
+Why this works for you (The Strategy)
+Concurrence: The agent will see this as a logical extension of the "Empire Stack."
+
+Salary Justification: When a foundation asks, "Why are we paying you a salary?" you show them Task 2. You aren't just an author; you are a Systems Architect managing a high-throughput machine.
+
+Risk Mitigation: Task 3 kills the foundation's biggest fear (legal liability with kids) before they even ask.
