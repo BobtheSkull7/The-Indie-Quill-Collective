@@ -7,7 +7,7 @@ The Indie Quill Collective is a 501(c)(3) non-profit platform supporting emergin
 I prefer clear, concise explanations and a direct communication style. For coding tasks, I value modularity and well-structured code. When making changes, please prioritize security, compliance, and maintainability. Always ask for confirmation before implementing major architectural changes or significant code refactoring. I prefer an iterative development approach, with regular updates and opportunities for feedback.
 
 ## System Architecture
-The project utilizes a client-server architecture with a React 19, Vite, and TailwindCSS 3 frontend and an Express.js (TypeScript) backend. Data is persisted in a PostgreSQL database managed by Neon and Drizzle ORM. Routing is handled client-side with Wouter.
+The project utilizes a client-server architecture with a React 19, Vite, and TailwindCSS 3 frontend and an Express.js (TypeScript) backend. Data is persisted in a PostgreSQL database managed by Supabase and Drizzle ORM. Routing is handled client-side with Wouter.
 
 **Key Features:**
 - **Author Application & Management:** Multi-step NPO author application system, minor author support with guardian information, and digital contract management with PDF generation and forensic signature metadata.
@@ -33,7 +33,7 @@ The project utilizes a client-server architecture with a React 19, Vite, and Tai
 - **Development:** Replit for local development.
 - **Source Control:** GitHub as the source of truth.
 - **Production Hosting:** Render for backend and frontend web services.
-- **Database:** Neon for production PostgreSQL.
+- **Database:** Supabase for development and production PostgreSQL (SUPABASE_DEV_URL / SUPABASE_PROD_URL).
 - **Schema Management:** Drizzle for schema and migrations. Production schema updates require generating and applying migrations, never `db:push`.
 
 **Core Database Schema Highlights:**
@@ -51,6 +51,6 @@ The project utilizes a client-server architecture with a React 19, Vite, and Tai
 ## External Dependencies
 - **GitHub:** Source code version control and repository.
 - **Render:** Cloud platform for hosting production web services (frontend and backend). See `render.yaml` for deployment blueprint.
-- **Neon:** Serverless PostgreSQL database for production.
+- **Supabase:** PostgreSQL database provider for development and production environments.
 - **Google Calendar API:** Two-way synchronization for event management.
 - **The Indie Quill LLC API:** External API for synchronizing author application and status data, requiring HMAC-SHA256 signed requests for secure integration.
