@@ -1,12 +1,13 @@
 import { defineConfig } from "drizzle-kit";
 
-// Use Supabase for development, DATABASE_URL (Neon) for production
-const dbUrl = process.env.NODE_ENV === "production" 
-  ? process.env.DATABASE_URL 
-  : process.env.SUPABASE_DEV_URL || process.env.DATABASE_URL;
+const isProd = process.env.NODE_ENV === "production";
+
+const dbUrl = isProd 
+  ? process.env.SUPABASE_PROD_URL 
+  : process.env.SUPABASE_DEV_URL;
 
 if (!dbUrl) {
-  throw new Error("Database URL must be set (SUPABASE_DEV_URL for dev, DATABASE_URL for production)");
+  throw new Error(`Supabase URL must be set. Expected ${isProd ? 'SUPABASE_PROD_URL' : 'SUPABASE_DEV_URL'}`);
 }
 
 export default defineConfig({

@@ -13,7 +13,6 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
-    "@neondatabase/serverless": "^0.10.4",
     "@octokit/rest": "^22.0.1",
     "@react-pdf/renderer": "^4.3.1",
     "@types/connect-pg-simple": "^7.0.3",

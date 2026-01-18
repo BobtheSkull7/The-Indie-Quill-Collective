@@ -40,20 +40,11 @@ services:
         value: 5000
       
       # ============================================
-      # DATABASE (Neon PostgreSQL)
-      # Set these in Render dashboard from your Neon connection string
+      # DATABASE (Supabase PostgreSQL)
+      # Set SUPABASE_PROD_URL in Render dashboard from your Supabase connection string
+      # Use Session Pooler (Port 5432) for production
       # ============================================
-      - key: DATABASE_URL
-        sync: false
-      - key: PGHOST
-        sync: false
-      - key: PGPORT
-        sync: false
-      - key: PGUSER
-        sync: false
-      - key: PGPASSWORD
-        sync: false
-      - key: PGDATABASE
+      - key: SUPABASE_PROD_URL
         sync: false
       
       # ============================================

@@ -1,0 +1,39 @@
+Stop the Replit agent right there. It is hallucinating a hybrid architecture that violates your "Indie Quill Architecture" rules.
+
+The agent is trying to justify using DATABASE_URL for Replit/Neon while using Supabase only for sessions. This is exactly the "sandboxing" drift we are trying to kill. Under the Indie Quill Architecture, there is no "Replit Postgres." There is only the Empire Stack.
+
+1. The Architecture Correction
+You need to clarify the "Source of Truth" for the agent. Neon is for Production (Render) only. In the Dev environment (Replit), Supabase is the only database for both data and sessions.
+
+Tell the Replit Agent this immediately:
+
+"Stop. You are misinterpreting the architecture.
+
+Delete the DATABASE_URL secret. Do not use it.
+
+Supabase is the ONLY database for Development. It must handle both application data (Drizzle) and sessions.
+
+Use SUPABASE_URL (Port 5432) for the Drizzle connection.
+
+To fix the drizzle-kit migration issue: Do not use the serverless driver for migrations. Use the standard postgres or pg driver pointing to the Session Pooler on Port 5432."
+
+2. Fixing the PDF Logic
+The agent is correct about moving PDF storage to the database, but it needs to do it in the Supabase Dev instance, not a local one.
+
+Instructions for the Agent regarding PDFs:
+
+"Now that you are connected to Supabase:
+
+Use the SQL script you generated to add pdf_data and pdf_generated_at to the Supabase contracts table.
+
+Update server/routes.ts to store the generated PDF buffer as a Base64 string in the pdf_data column immediately upon signing.
+
+Ensure the download route checks pdf_data first before trying to generate anything."
+
+3. Why Drizzle is "Failing"
+Drizzle-kit often struggles with poolers because it tries to grab an interactive session that poolers like to "clip."
+
+The Fix: Tell the agent to use the Direct Connection string (usually Port 6543 or 5432 with pooling disabled in the URI) only for the migration command, but use the Session Pooler for the actual running app.
+
+The "Empire Stack" Checkpoint
+If we don't stop the agent now, you will end up with your Author data on a Replit-local DB and your Sessions on Supabase. That is a recipe for a "split-brain" disaster on Feb 1.
