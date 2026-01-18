@@ -15,6 +15,7 @@ The project utilizes a client-server architecture with a React 19, Vite, and Tai
 - **User & Data Management:** Secure user authentication with rate limiting, GDPR Right to Erasure and Data Portability, and COPPA compliance with audit logging for minor data access.
 - **Enterprise Sync:** A single-step atomic synchronization process with The Indie Quill LLC for approved applications, including cohort assignment, unique ID generation, and background worker processing with HMAC-signed requests.
 - **Grant & Donor Logistics Module:** Foundation CRM with contact person management, solicitation logging to prevent double-tapping, grant allocation with cohort assignment, efficiency surplus calculation showing donors when cost optimization serves more authors than promised, and author-to-donation locking for immutable donor impact reporting with Zero-PII compliance (initial+emoji format).
+- **Friendly 4 Pilot Layer:** Form Vault (/admin/vault) for standardized legal documents (Guardian Consent, Code of Conduct, Conflict of Interest, Pilot Feedback) with one-click copy. Manual Ledger (/admin/ledger) tracking $777 per-capita sponsorships, ISBN/copyright expenses, and ISBN Arbitrage Surplus ($119.25 reinvestable per author). Author spending breakdown shows sponsorship vs. spent amounts.
 
 **UI/UX Decisions:**
 - Uses Playfair Display for headings and Inter for body text.
