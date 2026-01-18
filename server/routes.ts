@@ -1728,6 +1728,208 @@ export function registerRoutes(app: Express) {
       return res.status(500).json({ message: "Failed to record donation" });
     }
   });
+
+  // ============================================
+  // PUBLIC IMPACT ENDPOINTS (Zero-PII)
+  // Grant-Ready "Proof of Life" metrics
+  // ============================================
+
+  let impactCache: { data: any; timestamp: number } | null = null;
+  const IMPACT_CACHE_TTL = 60000; // 60 seconds
+
+  app.get("/api/public/impact", async (req: Request, res: Response) => {
+    try {
+      // Return cached data if fresh
+      if (impactCache && Date.now() - impactCache.timestamp < IMPACT_CACHE_TTL) {
+        return res.json(impactCache.data);
+      }
+
+      // Calculate aggregate metrics (Zero-PII)
+      const allApps = await db.select().from(applications);
+      const allUpdates = await db.select().from(publishingUpdates);
+      const allContracts = await db.select().from(contracts);
+
+      // Total words processed (from manuscripts)
+      const totalWordsProcessed = allApps.reduce((sum, app) => sum + (app.manuscriptWordCount || 0), 0);
+      
+      // Books in pipeline (status > pending)
+      const booksInPipeline = allApps.filter(a => 
+        a.status === 'accepted' || a.status === 'migrated' || a.status === 'under_review'
+      ).length;
+
+      // Authors actively publishing
+      const activeAuthors = allUpdates.filter(u => 
+        u.status !== 'not_started' && u.status !== 'published'
+      ).length;
+
+      // Published books count
+      const publishedBooks = allUpdates.filter(u => u.status === 'published').length;
+
+      // Contracts signed
+      const signedContracts = allContracts.filter(c => c.status === 'signed').length;
+
+      // Youth authors supported (minors)
+      const youthAuthorsSupported = allApps.filter(a => a.isMinor).length;
+
+      const impactData = {
+        totalWordsProcessed,
+        booksInPipeline,
+        activeAuthors,
+        publishedBooks,
+        signedContracts,
+        youthAuthorsSupported,
+        lastUpdated: new Date().toISOString(),
+      };
+
+      // Cache the result
+      impactCache = { data: impactData, timestamp: Date.now() };
+
+      return res.json(impactData);
+    } catch (error) {
+      console.error("Fetch impact metrics error:", error);
+      return res.status(500).json({ message: "Failed to fetch impact metrics" });
+    }
+  });
+
+  // ============================================
+  // ADMIN OPERATIONS ENDPOINTS
+  // Program Director Metrics Dashboard
+  // ============================================
+
+  app.get("/api/admin/operations/metrics", async (req: Request, res: Response) => {
+    if (!req.session.userId || req.session.userRole !== "admin") {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    try {
+      const allApps = await db.select().from(applications);
+      const allUpdates = await db.select().from(publishingUpdates);
+      const allContracts = await db.select().from(contracts);
+      const allCohorts = await db.select().from(cohorts);
+
+      // Find current active cohort
+      const activeCohort = allCohorts.find(c => c.status === 'open');
+      
+      // Cohort Velocity: % of current cohort with signed contracts
+      let cohortVelocity = 0;
+      if (activeCohort) {
+        const cohortApps = allApps.filter(a => a.cohortId === activeCohort.id);
+        const cohortSigned = cohortApps.filter(a => {
+          const contract = allContracts.find(c => c.applicationId === a.id);
+          return contract && contract.status === 'signed';
+        }).length;
+        cohortVelocity = cohortApps.length > 0 ? Math.round((cohortSigned / cohortApps.length) * 100) : 0;
+      }
+
+      // Scale Indicator: Total Active Authors Managed
+      const totalActiveAuthors = allApps.filter(a => 
+        a.status !== 'rejected' && a.status !== 'pending'
+      ).length;
+
+      // Status distribution for throughput analysis
+      const statusDistribution = {
+        pending: allApps.filter(a => a.status === 'pending').length,
+        under_review: allApps.filter(a => a.status === 'under_review').length,
+        accepted: allApps.filter(a => a.status === 'accepted').length,
+        migrated: allApps.filter(a => a.status === 'migrated').length,
+        rejected: allApps.filter(a => a.status === 'rejected').length,
+      };
+
+      // Publishing pipeline status
+      const publishingPipeline = {
+        not_started: allUpdates.filter(u => u.status === 'not_started').length,
+        manuscript_received: allUpdates.filter(u => u.status === 'manuscript_received').length,
+        editing: allUpdates.filter(u => u.status === 'editing').length,
+        cover_design: allUpdates.filter(u => u.status === 'cover_design').length,
+        formatting: allUpdates.filter(u => u.status === 'formatting').length,
+        review: allUpdates.filter(u => u.status === 'review').length,
+        published: allUpdates.filter(u => u.status === 'published').length,
+      };
+
+      // Minor authors stats
+      const minorStats = {
+        total: allApps.filter(a => a.isMinor).length,
+        withGuardianConsent: allApps.filter(a => a.isMinor && a.guardianConsentVerified).length,
+        pendingConsent: allApps.filter(a => a.isMinor && !a.guardianConsentVerified).length,
+      };
+
+      // Sync health
+      const syncStats = {
+        synced: allUpdates.filter(u => u.syncStatus === 'synced').length,
+        pending: allUpdates.filter(u => u.syncStatus === 'pending').length,
+        failed: allUpdates.filter(u => u.syncStatus === 'failed').length,
+      };
+
+      return res.json({
+        cohortVelocity,
+        activeCohort: activeCohort ? {
+          label: activeCohort.label,
+          currentCount: activeCohort.currentCount,
+          capacity: activeCohort.capacity,
+        } : null,
+        totalActiveAuthors,
+        statusDistribution,
+        publishingPipeline,
+        minorStats,
+        syncStats,
+        totalApplications: allApps.length,
+        totalContracts: allContracts.length,
+        signedContracts: allContracts.filter(c => c.status === 'signed').length,
+      });
+    } catch (error) {
+      console.error("Fetch operations metrics error:", error);
+      return res.status(500).json({ message: "Failed to fetch metrics" });
+    }
+  });
+
+  app.get("/api/admin/operations/history", async (req: Request, res: Response) => {
+    if (!req.session.userId || req.session.userRole !== "admin") {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    try {
+      // Get audit logs for status change history
+      const statusLogs = await db.select().from(auditLogs)
+        .where(sql`${auditLogs.action} LIKE '%status%'`)
+        .orderBy(desc(auditLogs.createdAt))
+        .limit(100);
+
+      // Calculate average time in each status (simplified - using creation dates)
+      const allApps = await db.select().from(applications);
+      
+      // Group by month for trend analysis
+      const monthlyStats: Record<string, { applications: number; accepted: number; migrated: number }> = {};
+      
+      allApps.forEach(app => {
+        const month = app.createdAt.toISOString().substring(0, 7); // YYYY-MM
+        if (!monthlyStats[month]) {
+          monthlyStats[month] = { applications: 0, accepted: 0, migrated: 0 };
+        }
+        monthlyStats[month].applications++;
+        if (app.status === 'accepted' || app.status === 'migrated') {
+          monthlyStats[month].accepted++;
+        }
+        if (app.status === 'migrated') {
+          monthlyStats[month].migrated++;
+        }
+      });
+
+      return res.json({
+        recentActivity: statusLogs.slice(0, 20).map(log => ({
+          action: log.action,
+          resource: log.resourceType,
+          timestamp: log.createdAt,
+        })),
+        monthlyTrends: Object.entries(monthlyStats).map(([month, stats]) => ({
+          month,
+          ...stats,
+        })).sort((a, b) => a.month.localeCompare(b.month)),
+      });
+    } catch (error) {
+      console.error("Fetch operations history error:", error);
+      return res.status(500).json({ message: "Failed to fetch history" });
+    }
+  });
 }
 
 function formatExpressionTypes(types: string): string {

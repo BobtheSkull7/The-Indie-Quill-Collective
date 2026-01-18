@@ -1,5 +1,6 @@
 import { Link } from "wouter";
 import { Heart, ArrowRight, Sparkles, Shield, Rocket } from "lucide-react";
+import ImpactWidget from "../components/ImpactWidget";
 
 export default function Home() {
   return (
@@ -109,6 +110,12 @@ export default function Home() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      <section className="py-16 bg-gray-100">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <ImpactWidget />
         </div>
       </section>
 
