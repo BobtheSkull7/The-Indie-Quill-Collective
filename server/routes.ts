@@ -2,7 +2,7 @@ import type { Express, Request, Response } from "express";
 import rateLimit from "express-rate-limit";
 import { db } from "./db";
 import { users, applications, contracts, publishingUpdates, calendarEvents, fundraisingCampaigns, donations, auditLogs, cohorts, operatingCosts } from "@shared/schema";
-import { eq, desc, gte, sql, inArray } from "drizzle-orm";
+import { eq, desc, gte, sql, inArray, lt, and } from "drizzle-orm";
 import { hash, compare } from "./auth";
 import { migrateAuthorToIndieQuill, retryFailedMigrations, sendApplicationToLLC, sendStatusUpdateToLLC, sendContractSignatureToLLC, sendUserRoleUpdateToLLC } from "./indie-quill-integration";
 import { sendApplicationReceivedEmail, sendApplicationAcceptedEmail, sendApplicationRejectedEmail } from "./email";
@@ -2111,6 +2111,156 @@ export function registerRoutes(app: Express) {
     } catch (error) {
       console.error("Compliance export error:", error);
       return res.status(500).json({ message: "Failed to generate compliance report" });
+    }
+  });
+
+  app.get("/api/admin/cohorts", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    const [currentUser] = await db.select().from(users).where(eq(users.id, req.session.userId));
+    if (!currentUser || currentUser.role !== "admin") {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+
+    try {
+      const { sanitizeAuthorProfile } = await import("./utils/minor-safety");
+      
+      const allCohorts = await db.select().from(cohorts).orderBy(cohorts.id);
+      
+      const cohortsWithMembers = await Promise.all(
+        allCohorts.map(async (cohort) => {
+          const cohortApplications = await db
+            .select({
+              id: applications.id,
+              firstName: users.firstName,
+              lastName: users.lastName,
+              isMinor: applications.isMinor,
+              penName: applications.penName,
+              status: applications.status,
+              dateApproved: applications.dateApproved,
+            })
+            .from(applications)
+            .innerJoin(users, eq(applications.userId, users.id))
+            .where(eq(applications.cohortId, cohort.id))
+            .orderBy(applications.dateApproved);
+
+          const members = cohortApplications.map((app) => {
+            const sanitized = sanitizeAuthorProfile({
+              id: app.id,
+              firstName: app.firstName,
+              lastName: app.lastName,
+              isMinor: app.isMinor,
+              penName: app.penName,
+            });
+            return {
+              id: app.id,
+              applicationId: app.id,
+              displayName: sanitized.displayName,
+              avatar: sanitized.avatar,
+              isMinor: app.isMinor,
+              status: app.status,
+              joinedAt: app.dateApproved?.toISOString() || "",
+            };
+          });
+
+          return {
+            ...cohort,
+            members,
+          };
+        })
+      );
+
+      return res.json(cohortsWithMembers);
+    } catch (error) {
+      console.error("Failed to fetch cohorts:", error);
+      return res.status(500).json({ message: "Failed to fetch cohorts" });
+    }
+  });
+
+  app.get("/api/admin/cohorts/available", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    const [currentUser] = await db.select().from(users).where(eq(users.id, req.session.userId));
+    if (!currentUser || currentUser.role !== "admin") {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+
+    try {
+      const openCohorts = await db
+        .select()
+        .from(cohorts)
+        .where(eq(cohorts.status, "open"))
+        .orderBy(cohorts.id);
+
+      return res.json(openCohorts);
+    } catch (error) {
+      console.error("Failed to fetch available cohorts:", error);
+      return res.status(500).json({ message: "Failed to fetch available cohorts" });
+    }
+  });
+
+  app.post("/api/admin/applications/:id/assign-cohort", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    const [currentUser] = await db.select().from(users).where(eq(users.id, req.session.userId));
+    if (!currentUser || currentUser.role !== "admin") {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+
+    const applicationId = parseInt(req.params.id);
+    const { cohortId } = req.body;
+
+    try {
+      let targetCohortId = cohortId;
+
+      if (!targetCohortId) {
+        const firstAvailableCohort = await db
+          .select()
+          .from(cohorts)
+          .where(and(eq(cohorts.status, "open"), lt(cohorts.currentCount, cohorts.capacity)))
+          .orderBy(cohorts.id)
+          .limit(1);
+
+        if (firstAvailableCohort.length === 0) {
+          const [{ maxId }] = await db.select({ maxId: sql<number>`COALESCE(MAX(${cohorts.id}), 0)` }).from(cohorts);
+          const newLabel = `Cohort ${maxId + 1}`;
+          const [newCohort] = await db
+            .insert(cohorts)
+            .values({
+              label: newLabel,
+              capacity: 10,
+              currentCount: 0,
+              status: "open",
+            })
+            .returning();
+          targetCohortId = newCohort.id;
+        } else {
+          targetCohortId = firstAvailableCohort[0].id;
+        }
+      }
+
+      await db
+        .update(applications)
+        .set({ cohortId: targetCohortId, dateApproved: new Date() })
+        .where(eq(applications.id, applicationId));
+
+      await db
+        .update(cohorts)
+        .set({ currentCount: sql`${cohorts.currentCount} + 1` })
+        .where(eq(cohorts.id, targetCohortId));
+
+      const [updatedCohort] = await db.select().from(cohorts).where(eq(cohorts.id, targetCohortId));
+      if (updatedCohort && updatedCohort.currentCount >= updatedCohort.capacity) {
+        await db.update(cohorts).set({ status: "closed" }).where(eq(cohorts.id, targetCohortId));
+      }
+
+      return res.json({ message: "Cohort assigned successfully", cohortId: targetCohortId });
+    } catch (error) {
+      console.error("Failed to assign cohort:", error);
+      return res.status(500).json({ message: "Failed to assign cohort" });
     }
   });
 }

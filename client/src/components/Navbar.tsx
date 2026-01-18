@@ -89,12 +89,20 @@ export default function Navbar() {
                   Publishing Status
                 </Link>
                 {user.role === "admin" && (
-                  <Link 
-                    href="/admin" 
-                    className={`text-sm font-medium transition-colors ${location === "/admin" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`}
-                  >
-                    Admin
-                  </Link>
+                  <>
+                    <Link 
+                      href="/admin" 
+                      className={`text-sm font-medium transition-colors ${location === "/admin" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`}
+                    >
+                      Admin
+                    </Link>
+                    <Link 
+                      href="/admin/cohorts" 
+                      className={`text-sm font-medium transition-colors ${location === "/admin/cohorts" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`}
+                    >
+                      Cohorts
+                    </Link>
+                  </>
                 )}
                 <div className="flex items-center space-x-3 border-l pl-6 border-gray-200">
                   <div className="flex items-center space-x-2">
@@ -144,7 +152,10 @@ export default function Navbar() {
               <Link href="/contracts" className="block text-gray-600 hover:text-slate-800 py-2">Contracts</Link>
               <Link href="/publishing-status" className="block text-gray-600 hover:text-slate-800 py-2">Publishing Status</Link>
               {user.role === "admin" && (
-                <Link href="/admin" className="block text-gray-600 hover:text-slate-800 py-2">Admin</Link>
+                <>
+                  <Link href="/admin" className="block text-gray-600 hover:text-slate-800 py-2">Admin</Link>
+                  <Link href="/admin/cohorts" className="block text-gray-600 hover:text-slate-800 py-2">Cohorts</Link>
+                </>
               )}
               <button onClick={handleLogout} className="block w-full text-left text-red-500 py-2">Logout</button>
             </>

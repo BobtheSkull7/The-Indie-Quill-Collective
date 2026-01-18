@@ -125,6 +125,8 @@ export default function AdminDashboard() {
   const [forceSyncing, setForceSyncing] = useState(false);
   const [forceSyncResult, setForceSyncResult] = useState<{ total: number; queued: number; alreadySynced: number; failed: number; idsGenerated?: number; errors: string[] } | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [availableCohorts, setAvailableCohorts] = useState<Array<{ id: number; label: string; currentCount: number; capacity: number }>>([]);
+  const [selectedCohortId, setSelectedCohortId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -176,6 +178,25 @@ export default function AdminDashboard() {
     }
   };
 
+  const fetchAvailableCohorts = async () => {
+    try {
+      const res = await fetch("/api/admin/cohorts/available", { credentials: "include" });
+      if (res.ok) {
+        const cohorts = await res.json();
+        setAvailableCohorts(cohorts);
+      }
+    } catch (error) {
+      console.error("Failed to fetch cohorts:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedApp && (selectedApp.status === "pending" || selectedApp.status === "under_review")) {
+      fetchAvailableCohorts();
+      setSelectedCohortId(null);
+    }
+  }, [selectedApp]);
+
   const updateStatus = async (status: string) => {
     if (!selectedApp) return;
     setUpdating(true);
@@ -189,11 +210,22 @@ export default function AdminDashboard() {
 
       if (res.ok) {
         const updated = await res.json();
+        
+        if (status === "accepted") {
+          await fetch(`/api/admin/applications/${selectedApp.id}/assign-cohort`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ cohortId: selectedCohortId }),
+          });
+        }
+        
         setApplications((prev) =>
           prev.map((a) => (a.id === updated.id ? { ...a, ...updated } : a))
         );
         setSelectedApp(null);
         setReviewNotes("");
+        setSelectedCohortId(null);
         loadData();
       }
     } catch (error) {
@@ -1522,6 +1554,25 @@ export default function AdminDashboard() {
                       value={reviewNotes}
                       onChange={(e) => setReviewNotes(e.target.value)}
                     />
+
+                    <div className="mt-4">
+                      <label className="label">Assign to Cohort (optional)</label>
+                      <select
+                        className="input-field"
+                        value={selectedCohortId || ""}
+                        onChange={(e) => setSelectedCohortId(e.target.value ? parseInt(e.target.value) : null)}
+                      >
+                        <option value="">Auto-assign to first available</option>
+                        {availableCohorts.map((cohort) => (
+                          <option key={cohort.id} value={cohort.id}>
+                            {cohort.label} ({cohort.currentCount}/{cohort.capacity} slots filled)
+                          </option>
+                        ))}
+                      </select>
+                      <p className="text-xs text-gray-500 mt-1">
+                        If no cohort is selected, the system will assign to the first open cohort with available space.
+                      </p>
+                    </div>
 
                     <div className="flex space-x-3 mt-4">
                       <button
