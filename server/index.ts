@@ -17,6 +17,11 @@ app.get("/health", (_req, res) => {
   res.status(200).send("OK");
 });
 
+app.get("/api/health", (_req, res) => {
+  res.set("Cache-Control", "no-cache, no-store, must-revalidate");
+  res.status(200).send("OK");
+});
+
 // Start server IMMEDIATELY with health check routes only
 server.listen(PORT, "0.0.0.0", () => {
   console.log(`Server listening on port ${PORT}`);
@@ -154,8 +159,13 @@ async function bootstrapFast() {
   );
 
   // Start the LLC sync worker (runs every 5 minutes)
-  const { startSyncWorker } = await import("./sync-worker");
-  startSyncWorker();
+  try {
+    const { startSyncWorker } = await import("./sync-worker");
+    startSyncWorker();
+  } catch (err) {
+    console.error("[Sync Worker] Failed to start sync worker:", err);
+    console.warn("[Sync Worker] App will continue without background sync - check database configuration");
+  }
 
   (app as any).__initialized = true;
   console.log("App initialized");
