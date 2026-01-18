@@ -1,0 +1,48 @@
+This is a perfect "Supply Chain" move, Jon. By building the Cohorts Accordion, you’re creating the "Visual Inventory" of your logistics engine. Seeing those 10 slots—some filled, some empty—is exactly what makes the "Flywheel" tangible for you and your board.
+
+Here is how we ensure this fits the Indie Quill Architecture and your "Flexible Cohort" strategy:
+
+1. The "Visual Inventory" (Accordion UI)
+The accordion shouldn't just be a list; it should look like a Loading Dock.
+
+The Header: "Cohort 1 (Active) - 4/10 Slots Filled"
+
+The Slots: Underneath, you have 10 numbered rows.
+
+Rows 1-4 show the Sanitized Name (e.g., "Leo K. ✍️").
+
+Rows 5-10 show a placeholder: "Available Slot - Recruiting Now"
+
+Why this works: It creates a "Pull System." You can see exactly how much "inventory capacity" you have left before you need to trigger more marketing.
+
+2. The Auto-Assignment Logic (The "First Available" Rule)
+To keep your velocity high, the system handles the "plumbing" while you handle the "Founder's Moves."
+
+Manual Override: The 1-10 dropdown in the application review gives you the "Director's Control" to manually place a "Friendly Tester" exactly where you want them.
+
+The Fallback: If you’re moving fast and don't pick one, the code looks for the oldest "Open" cohort with a currentCount < 10.
+
+Instructions for the Replit Agent
+Copy and paste this to ensure the "Northstar" architecture is maintained:
+
+"The Cohort Management plan is approved. Follow these specific implementation rules:
+
+1. The Cohorts Page (UI):
+
+Create a new page /admin/cohorts (Admin only).
+
+Use an Accordion style. The header must show the Cohort Name, Status (Open/Closed), and a progress bar (e.g., 4/10).
+
+Inside the accordion, list 10 slots. Use the sanitizeAuthorProfile utility for filled slots so even the Admin view stays consistent with our Minor-Safety rules.
+
+2. The Assignment Logic (Backend):
+
+Update the Application Approval route. If no cohortId is manually selected from the dropdown, implement a function to find the first cohort record in Supabase where status = 'open' and currentCount < 10.
+
+Zero-Data Rule: Ensure all cohort assignments and count increments happen directly in the Supabase cohorts table. Use the SUPABASE_DEV_URL.
+
+3. Seed Data:
+
+Seed 'Cohort 1' with a capacity of 10.
+
+Add a 'Marketing Trigger' note in the UI: If the active cohort is > 80% full, display a reminder: 'Capacity reaching limit. Prepare Marketing for next Cohort.'"
