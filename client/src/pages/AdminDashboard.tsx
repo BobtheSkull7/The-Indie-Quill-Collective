@@ -4,8 +4,9 @@ import { useAuth } from "../App";
 import { 
   Users, FileText, CheckCircle, Clock, TrendingUp, 
   Eye, Check, X, RefreshCw, AlertTriangle, Zap, Calendar, Mail, User, BookOpen, Shield,
-  Plus, Trash2, MapPin
+  Plus, Trash2, MapPin, BarChart3, Download, Activity
 } from "lucide-react";
+import OperationsPanel from "../components/OperationsPanel";
 
 interface Application {
   id: number;
@@ -94,7 +95,7 @@ export default function AdminDashboard() {
   const [reviewNotes, setReviewNotes] = useState("");
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
-  const [activeTab, setActiveTab] = useState<"applicants" | "sync" | "users" | "calendar">("applicants");
+  const [activeTab, setActiveTab] = useState<"applicants" | "sync" | "users" | "calendar" | "operations">("applicants");
   const [retrying, setRetrying] = useState<number | null>(null);
   const [allUsers, setAllUsers] = useState<UserRecord[]>([]);
   const [editingUser, setEditingUser] = useState<UserRecord | null>(null);
@@ -684,6 +685,17 @@ export default function AdminDashboard() {
             <Calendar className="w-4 h-4" />
             <span>Calendar</span>
           </button>
+          <button
+            onClick={() => setActiveTab("operations")}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2 ${
+              activeTab === "operations"
+                ? "bg-red-500 text-white"
+                : "bg-white text-gray-600 hover:bg-gray-100"
+            }`}
+          >
+            <BarChart3 className="w-4 h-4" />
+            <span>Operations</span>
+          </button>
         </div>
 
         {activeTab === "applicants" && (
@@ -1219,6 +1231,10 @@ export default function AdminDashboard() {
             )}
             </div>
           </div>
+        )}
+
+        {activeTab === "operations" && (
+          <OperationsPanel />
         )}
 
         {editingUser && (

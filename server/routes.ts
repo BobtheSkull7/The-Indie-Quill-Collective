@@ -1930,6 +1930,124 @@ export function registerRoutes(app: Express) {
       return res.status(500).json({ message: "Failed to fetch history" });
     }
   });
+
+  // ============================================
+  // COMPLIANCE EXPORT ENDPOINT
+  // Grant-Ready PDF Audit Report
+  // ============================================
+
+  app.post("/api/admin/compliance/export", async (req: Request, res: Response) => {
+    if (!req.session.userId || req.session.userRole !== "admin") {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    try {
+      const { ComplianceReport } = await import("./pdf-templates/ComplianceReport");
+      const { truncateName } = await import("./utils/minor-safety");
+
+      // Get admin user info
+      const [adminUser] = await db.select().from(users)
+        .where(eq(users.id, req.session.userId));
+
+      // Get all applications with minor data
+      const allApps = await db.select().from(applications);
+      const minorApps = allApps.filter(a => a.isMinor);
+
+      // Get all contracts with forensic data
+      const allContracts = await db.select().from(contracts);
+      const signedContracts = allContracts.filter(c => c.status === 'signed');
+
+      // Get recent audit logs
+      const recentAuditLogs = await db.select().from(auditLogs)
+        .orderBy(desc(auditLogs.createdAt))
+        .limit(20);
+
+      // Get user info for display names
+      const userIds = [...new Set(allApps.map(a => a.userId))];
+      const appUsers = userIds.length > 0 
+        ? await db.select().from(users).where(inArray(users.id, userIds))
+        : [];
+      const userMap = new Map(appUsers.map(u => [u.id, u]));
+
+      // Prepare minor records (sanitized)
+      const minorRecords = minorApps.map(app => {
+        const user = userMap.get(app.userId);
+        return {
+          id: app.id,
+          displayName: user ? truncateName(user.firstName, user.lastName) : `Author ${app.id}`,
+          guardianName: app.guardianName,
+          guardianEmail: app.guardianEmail,
+          consentMethod: app.guardianConsentMethod,
+          consentVerified: app.guardianConsentVerified || false,
+          dataRetentionUntil: app.dataRetentionUntil?.toISOString() || null,
+          createdAt: app.createdAt.toISOString(),
+        };
+      });
+
+      // Prepare contract forensics
+      const contractForensics = signedContracts.map(contract => {
+        const app = allApps.find(a => a.id === contract.applicationId);
+        const user = app ? userMap.get(app.userId) : null;
+        return {
+          id: contract.id,
+          displayName: user ? truncateName(user.firstName, user.lastName) : `Contract ${contract.id}`,
+          signedAt: contract.authorSignedAt?.toISOString() || null,
+          signatureIp: contract.authorSignatureIp,
+          signatureUserAgent: contract.authorSignatureUserAgent?.substring(0, 50) || null,
+          guardianSignedAt: contract.guardianSignedAt?.toISOString() || null,
+          guardianSignatureIp: contract.guardianSignatureIp,
+        };
+      });
+
+      // Prepare audit sample
+      const auditSample = recentAuditLogs.map(log => ({
+        id: log.id,
+        action: log.action,
+        resourceType: log.resourceType,
+        userId: log.userId,
+        ipAddress: log.ipAddress,
+        createdAt: log.createdAt.toISOString(),
+      }));
+
+      // Generate PDF
+      const pdfBuffer = await renderToBuffer(
+        ComplianceReport({
+          generatedAt: new Date().toISOString(),
+          generatedBy: adminUser ? `${adminUser.firstName} ${adminUser.lastName}` : 'Admin',
+          stats: {
+            totalMinors: minorApps.length,
+            verifiedConsent: minorApps.filter(a => a.guardianConsentVerified).length,
+            pendingConsent: minorApps.filter(a => !a.guardianConsentVerified).length,
+            totalContracts: allContracts.length,
+            signedContracts: signedContracts.length,
+          },
+          minorRecords,
+          contractForensics,
+          auditSample,
+        })
+      );
+
+      // Log audit event
+      await logAuditEvent(
+        req.session.userId,
+        "compliance_export",
+        "audit_logs",
+        0,
+        getClientIp(req),
+        { exportType: "compliance_report", recordCount: minorRecords.length }
+      );
+
+      const filename = `compliance-audit-${new Date().toISOString().split('T')[0]}.pdf`;
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+      res.setHeader("Content-Length", pdfBuffer.length);
+
+      return res.send(pdfBuffer);
+    } catch (error) {
+      console.error("Compliance export error:", error);
+      return res.status(500).json({ message: "Failed to generate compliance report" });
+    }
+  });
 }
 
 function formatExpressionTypes(types: string): string {
