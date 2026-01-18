@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import rateLimit from "express-rate-limit";
 import { db } from "./db";
-import { users, applications, contracts, publishingUpdates, calendarEvents, fundraisingCampaigns, donations, auditLogs, cohorts, operatingCosts } from "@shared/schema";
+import { users, applications, contracts, publishingUpdates, calendarEvents, fundraisingCampaigns, donations, auditLogs, cohorts, operatingCosts, foundations, solicitationLogs, foundationGrants } from "@shared/schema";
 import { eq, desc, gte, sql, inArray, lt, and } from "drizzle-orm";
 import { hash, compare } from "./auth";
 import { migrateAuthorToIndieQuill, retryFailedMigrations, sendApplicationToLLC, sendStatusUpdateToLLC, sendContractSignatureToLLC, sendUserRoleUpdateToLLC } from "./indie-quill-integration";
@@ -2074,6 +2074,60 @@ export function registerRoutes(app: Express) {
         createdAt: log.createdAt.toISOString(),
       }));
 
+      // Prepare donor impact data
+      const lockedGrants = await db.select()
+        .from(foundationGrants)
+        .where(sql`${foundationGrants.donorLockedAt} IS NOT NULL`);
+
+      const donorImpacts = await Promise.all(
+        lockedGrants.map(async (grant) => {
+          const [foundation] = await db.select().from(foundations).where(eq(foundations.id, grant.foundationId));
+          
+          let authorsImpacted: { displayName: string; status: string }[] = [];
+          let actualAuthors = 0;
+          
+          if (grant.assignedCohortId) {
+            const cohortApps = await db.select({
+              firstName: users.firstName,
+              status: applications.status,
+            })
+            .from(applications)
+            .leftJoin(users, eq(applications.userId, users.id))
+            .where(eq(applications.cohortId, grant.assignedCohortId));
+            
+            actualAuthors = cohortApps.length;
+            const emojis = ["✍️", "📚", "🌟", "📖", "🎭", "🖋️", "💫", "📝", "🎨", "🚀"];
+            authorsImpacted = cohortApps.map((app, idx) => ({
+              displayName: `${app.firstName?.charAt(0) || "A"}. ${emojis[idx % emojis.length]}`,
+              status: app.status || "active",
+            }));
+          }
+
+          // Calculate potential authors based on cost efficiency
+          const latestCost = await db.select()
+            .from(operatingCosts)
+            .orderBy(desc(operatingCosts.year), desc(operatingCosts.quarterNum))
+            .limit(1);
+
+          const totalAuthors = allApps.filter(a => a.status === "accepted").length || 1;
+          const totalCost = latestCost[0]?.totalCost || 0;
+          const costPerAuthor = totalAuthors > 0 ? Math.round(totalCost / totalAuthors) : 0;
+          const potentialAuthors = costPerAuthor > 0 
+            ? Math.floor(grant.amount / costPerAuthor) 
+            : grant.targetAuthorCount;
+
+          return {
+            foundationName: foundation?.name || "Unknown Foundation",
+            grantAmount: grant.amount,
+            targetAuthors: grant.targetAuthorCount,
+            actualAuthors,
+            potentialAuthors,
+            exceededExpectations: actualAuthors > grant.targetAuthorCount,
+            authorsImpacted,
+          };
+        })
+      );
+
       // Generate PDF
       const pdfBuffer = await renderToBuffer(
         ComplianceReport({
@@ -2089,6 +2143,7 @@ export function registerRoutes(app: Express) {
           minorRecords,
           contractForensics,
           auditSample,
+          donorImpacts,
         })
       );
 
@@ -2263,6 +2318,9 @@ export function registerRoutes(app: Express) {
       return res.status(500).json({ message: "Failed to assign cohort" });
     }
   });
+
+  // Register Grant & Donor Logistics routes
+  registerGrantRoutes(app);
 }
 
 function formatExpressionTypes(types: string): string {
@@ -2323,4 +2381,527 @@ By signing below, all parties agree to the terms and conditions set forth in thi
 
 This contract is provided by The Indie Quill Collective, dedicated to empowering emerging authors.
   `.trim();
+}
+
+// ==================== GRANT & DONOR LOGISTICS API ====================
+
+export function registerGrantRoutes(app: Express) {
+  // --------- FOUNDATIONS CRM ---------
+  
+  // Get all foundations with last contact info
+  app.get("/api/admin/grants/foundations", async (req: Request, res: Response) => {
+    if (!req.session?.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    const [currentUser] = await db.select().from(users).where(eq(users.id, req.session.userId));
+    if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "board_member")) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    try {
+      const allFoundations = await db.select().from(foundations).orderBy(desc(foundations.createdAt));
+      
+      // Get last contact for each foundation
+      const foundationsWithLastContact = await Promise.all(
+        allFoundations.map(async (foundation) => {
+          const lastLog = await db.select()
+            .from(solicitationLogs)
+            .where(eq(solicitationLogs.foundationId, foundation.id))
+            .orderBy(desc(solicitationLogs.contactDate))
+            .limit(1);
+          
+          const grants = await db.select()
+            .from(foundationGrants)
+            .where(eq(foundationGrants.foundationId, foundation.id));
+          
+          const totalGranted = grants.reduce((sum, g) => sum + g.amount, 0);
+          
+          return {
+            ...foundation,
+            lastContact: lastLog[0] || null,
+            totalGranted,
+            grantCount: grants.length,
+          };
+        })
+      );
+      
+      return res.json(foundationsWithLastContact);
+    } catch (error) {
+      console.error("Failed to fetch foundations:", error);
+      return res.status(500).json({ message: "Failed to fetch foundations" });
+    }
+  });
+
+  // Create new foundation
+  app.post("/api/admin/grants/foundations", async (req: Request, res: Response) => {
+    if (!req.session?.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    const [currentUser] = await db.select().from(users).where(eq(users.id, req.session.userId));
+    if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "board_member")) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    const { name, contactPerson, contactEmail, contactPhone, mission, website, notes } = req.body;
+    
+    if (!name) {
+      return res.status(400).json({ message: "Foundation name is required" });
+    }
+
+    try {
+      const [newFoundation] = await db.insert(foundations).values({
+        name,
+        contactPerson,
+        contactEmail,
+        contactPhone,
+        mission,
+        website,
+        notes,
+        createdBy: req.session.userId,
+      }).returning();
+
+      await logAuditEvent(
+        req.session.userId,
+        "create_foundation",
+        "foundations",
+        newFoundation.id.toString(),
+        `Created foundation: ${name}`,
+        getClientIp(req),
+      );
+
+      return res.status(201).json(newFoundation);
+    } catch (error) {
+      console.error("Failed to create foundation:", error);
+      return res.status(500).json({ message: "Failed to create foundation" });
+    }
+  });
+
+  // Update foundation
+  app.put("/api/admin/grants/foundations/:id", async (req: Request, res: Response) => {
+    if (!req.session?.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    const [currentUser] = await db.select().from(users).where(eq(users.id, req.session.userId));
+    if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "board_member")) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    const foundationId = parseInt(req.params.id);
+    const { name, contactPerson, contactEmail, contactPhone, mission, website, notes } = req.body;
+
+    try {
+      const [updated] = await db.update(foundations)
+        .set({
+          name,
+          contactPerson,
+          contactEmail,
+          contactPhone,
+          mission,
+          website,
+          notes,
+          updatedAt: new Date(),
+        })
+        .where(eq(foundations.id, foundationId))
+        .returning();
+
+      if (!updated) {
+        return res.status(404).json({ message: "Foundation not found" });
+      }
+
+      return res.json(updated);
+    } catch (error) {
+      console.error("Failed to update foundation:", error);
+      return res.status(500).json({ message: "Failed to update foundation" });
+    }
+  });
+
+  // --------- SOLICITATION LOGS ---------
+
+  // Get solicitation logs for a foundation
+  app.get("/api/admin/grants/foundations/:id/logs", async (req: Request, res: Response) => {
+    if (!req.session?.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    const [currentUser] = await db.select().from(users).where(eq(users.id, req.session.userId));
+    if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "board_member")) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    const foundationId = parseInt(req.params.id);
+
+    try {
+      const logs = await db.select()
+        .from(solicitationLogs)
+        .where(eq(solicitationLogs.foundationId, foundationId))
+        .orderBy(desc(solicitationLogs.contactDate));
+
+      // Enrich with contacter info
+      const enrichedLogs = await Promise.all(
+        logs.map(async (log) => {
+          const [contacter] = await db.select({
+            firstName: users.firstName,
+            lastName: users.lastName,
+          }).from(users).where(eq(users.id, log.contactedBy));
+          return {
+            ...log,
+            contacterName: contacter ? `${contacter.firstName} ${contacter.lastName}` : "Unknown",
+          };
+        })
+      );
+
+      return res.json(enrichedLogs);
+    } catch (error) {
+      console.error("Failed to fetch solicitation logs:", error);
+      return res.status(500).json({ message: "Failed to fetch solicitation logs" });
+    }
+  });
+
+  // Add solicitation log
+  app.post("/api/admin/grants/foundations/:id/logs", async (req: Request, res: Response) => {
+    if (!req.session?.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    const [currentUser] = await db.select().from(users).where(eq(users.id, req.session.userId));
+    if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "board_member")) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    const foundationId = parseInt(req.params.id);
+    const { contactDate, contactMethod, purpose, response, responseDate, notes } = req.body;
+
+    if (!contactDate || !contactMethod || !purpose) {
+      return res.status(400).json({ message: "Contact date, method, and purpose are required" });
+    }
+
+    try {
+      const [newLog] = await db.insert(solicitationLogs).values({
+        foundationId,
+        contactDate: new Date(contactDate),
+        contactMethod,
+        contactedBy: req.session.userId,
+        purpose,
+        response,
+        responseDate: responseDate ? new Date(responseDate) : null,
+        notes,
+      }).returning();
+
+      await logAuditEvent(
+        req.session.userId,
+        "log_solicitation",
+        "solicitation_logs",
+        newLog.id.toString(),
+        `Logged contact with foundation ${foundationId}: ${contactMethod}`,
+        getClientIp(req),
+      );
+
+      return res.status(201).json(newLog);
+    } catch (error) {
+      console.error("Failed to add solicitation log:", error);
+      return res.status(500).json({ message: "Failed to add solicitation log" });
+    }
+  });
+
+  // --------- FOUNDATION GRANTS ---------
+
+  // Get all grants with efficiency calculations
+  app.get("/api/admin/grants", async (req: Request, res: Response) => {
+    if (!req.session?.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    const [currentUser] = await db.select().from(users).where(eq(users.id, req.session.userId));
+    if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "board_member")) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    try {
+      const allGrants = await db.select()
+        .from(foundationGrants)
+        .orderBy(desc(foundationGrants.grantDate));
+
+      // Get cost per author from latest operating cost
+      const latestCost = await db.select()
+        .from(operatingCosts)
+        .orderBy(desc(operatingCosts.year), desc(operatingCosts.quarterNum))
+        .limit(1);
+
+      // Get total authors for cost calculation
+      const authorStats = await db.select({
+        count: sql<number>`count(*)`.mapWith(Number),
+      }).from(applications).where(eq(applications.status, "accepted"));
+
+      const totalAuthors = authorStats[0]?.count || 1;
+      const totalCost = latestCost[0]?.totalCost || 0;
+      const costPerAuthor = totalAuthors > 0 ? Math.round(totalCost / totalAuthors) : 0;
+
+      // Enrich grants with foundation info and efficiency metrics
+      const enrichedGrants = await Promise.all(
+        allGrants.map(async (grant) => {
+          const [foundation] = await db.select({
+            name: foundations.name,
+          }).from(foundations).where(eq(foundations.id, grant.foundationId));
+
+          let cohortInfo = null;
+          let actualAuthorsServed = 0;
+          
+          if (grant.assignedCohortId) {
+            const [cohort] = await db.select().from(cohorts).where(eq(cohorts.id, grant.assignedCohortId));
+            if (cohort) {
+              cohortInfo = {
+                id: cohort.id,
+                label: cohort.label,
+                currentCount: cohort.currentCount,
+              };
+              actualAuthorsServed = cohort.currentCount;
+            }
+          }
+
+          // Calculate efficiency surplus
+          const potentialAuthors = costPerAuthor > 0 
+            ? Math.floor(grant.amount / costPerAuthor) 
+            : grant.targetAuthorCount;
+          const surplusAuthors = potentialAuthors - grant.targetAuthorCount;
+          const hasSurplus = surplusAuthors > 0;
+
+          return {
+            ...grant,
+            foundationName: foundation?.name || "Unknown Foundation",
+            cohort: cohortInfo,
+            actualAuthorsServed,
+            costPerAuthor,
+            potentialAuthors,
+            surplusAuthors,
+            hasSurplus,
+          };
+        })
+      );
+
+      return res.json({
+        grants: enrichedGrants,
+        metrics: {
+          costPerAuthor,
+          totalAuthors,
+          totalGrantsReceived: allGrants.reduce((sum, g) => sum + g.amount, 0),
+        },
+      });
+    } catch (error) {
+      console.error("Failed to fetch grants:", error);
+      return res.status(500).json({ message: "Failed to fetch grants" });
+    }
+  });
+
+  // Create new grant
+  app.post("/api/admin/grants", async (req: Request, res: Response) => {
+    if (!req.session?.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    const [currentUser] = await db.select().from(users).where(eq(users.id, req.session.userId));
+    if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "board_member")) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    const { foundationId, amount, targetAuthorCount, assignedCohortId, grantDate, grantPurpose } = req.body;
+
+    if (!foundationId || !amount || !targetAuthorCount || !grantDate) {
+      return res.status(400).json({ message: "Foundation, amount, target author count, and grant date are required" });
+    }
+
+    try {
+      const [newGrant] = await db.insert(foundationGrants).values({
+        foundationId,
+        amount,
+        targetAuthorCount,
+        assignedCohortId: assignedCohortId || null,
+        grantDate: new Date(grantDate),
+        grantPurpose,
+        recordedBy: req.session.userId,
+      }).returning();
+
+      // Update solicitation log to "funded" if there's a recent one
+      await db.update(solicitationLogs)
+        .set({ 
+          response: "funded",
+          responseDate: new Date(),
+        })
+        .where(
+          and(
+            eq(solicitationLogs.foundationId, foundationId),
+            eq(solicitationLogs.response, "interested")
+          )
+        );
+
+      await logAuditEvent(
+        req.session.userId,
+        "record_grant",
+        "foundation_grants",
+        newGrant.id.toString(),
+        `Recorded grant of $${(amount / 100).toFixed(2)} from foundation ${foundationId} for ${targetAuthorCount} authors`,
+        getClientIp(req),
+      );
+
+      return res.status(201).json(newGrant);
+    } catch (error) {
+      console.error("Failed to create grant:", error);
+      return res.status(500).json({ message: "Failed to create grant" });
+    }
+  });
+
+  // Lock authors to donor for impact reporting
+  app.put("/api/admin/grants/:id/lock", async (req: Request, res: Response) => {
+    if (!req.session?.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    const [currentUser] = await db.select().from(users).where(eq(users.id, req.session.userId));
+    if (!currentUser || currentUser.role !== "admin") {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    const grantId = parseInt(req.params.id);
+
+    try {
+      const [grant] = await db.select().from(foundationGrants).where(eq(foundationGrants.id, grantId));
+      
+      if (!grant) {
+        return res.status(404).json({ message: "Grant not found" });
+      }
+
+      if (grant.donorLockedAt) {
+        return res.status(400).json({ message: "Grant is already locked" });
+      }
+
+      if (!grant.assignedCohortId) {
+        return res.status(400).json({ message: "Grant must be assigned to a cohort before locking" });
+      }
+
+      const [updated] = await db.update(foundationGrants)
+        .set({
+          donorLockedAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(foundationGrants.id, grantId))
+        .returning();
+
+      await logAuditEvent(
+        req.session.userId,
+        "lock_grant_authors",
+        "foundation_grants",
+        grantId.toString(),
+        `Locked authors to grant for donor impact reporting`,
+        getClientIp(req),
+      );
+
+      return res.json(updated);
+    } catch (error) {
+      console.error("Failed to lock grant:", error);
+      return res.status(500).json({ message: "Failed to lock grant" });
+    }
+  });
+
+  // Get donor impact report for a specific grant
+  app.get("/api/admin/grants/:id/impact", async (req: Request, res: Response) => {
+    if (!req.session?.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    const [currentUser] = await db.select().from(users).where(eq(users.id, req.session.userId));
+    if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "board_member")) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    const grantId = parseInt(req.params.id);
+
+    try {
+      const [grant] = await db.select().from(foundationGrants).where(eq(foundationGrants.id, grantId));
+      
+      if (!grant) {
+        return res.status(404).json({ message: "Grant not found" });
+      }
+
+      const [foundation] = await db.select().from(foundations).where(eq(foundations.id, grant.foundationId));
+
+      let authorsImpacted: any[] = [];
+      let cohortInfo = null;
+
+      if (grant.assignedCohortId) {
+        const [cohort] = await db.select().from(cohorts).where(eq(cohorts.id, grant.assignedCohortId));
+        cohortInfo = cohort;
+
+        // Get authors in this cohort with sanitized names
+        const cohortApplications = await db.select({
+          id: applications.id,
+          penName: applications.penName,
+          isMinor: applications.isMinor,
+          status: applications.status,
+          firstName: users.firstName,
+        })
+        .from(applications)
+        .leftJoin(users, eq(applications.userId, users.id))
+        .where(eq(applications.cohortId, grant.assignedCohortId));
+
+        // Sanitize author profiles for donor report
+        const emojis = ["✍️", "📚", "🌟", "📖", "🎭", "🖋️", "💫", "📝", "🎨", "🚀"];
+        authorsImpacted = cohortApplications.map((app, index) => ({
+          displayName: `${app.firstName?.charAt(0) || "A"}. ${emojis[index % emojis.length]}`,
+          penName: app.penName,
+          isMinor: app.isMinor,
+          status: app.status,
+        }));
+      }
+
+      // Calculate efficiency
+      const latestCost = await db.select()
+        .from(operatingCosts)
+        .orderBy(desc(operatingCosts.year), desc(operatingCosts.quarterNum))
+        .limit(1);
+
+      const authorStats = await db.select({
+        count: sql<number>`count(*)`.mapWith(Number),
+      }).from(applications).where(eq(applications.status, "accepted"));
+
+      const totalAuthors = authorStats[0]?.count || 1;
+      const totalCost = latestCost[0]?.totalCost || 0;
+      const costPerAuthor = totalAuthors > 0 ? Math.round(totalCost / totalAuthors) : 0;
+
+      const potentialAuthors = costPerAuthor > 0 
+        ? Math.floor(grant.amount / costPerAuthor) 
+        : grant.targetAuthorCount;
+      const surplusAuthors = potentialAuthors - grant.targetAuthorCount;
+
+      return res.json({
+        grant: {
+          id: grant.id,
+          amount: grant.amount,
+          grantDate: grant.grantDate,
+          targetAuthorCount: grant.targetAuthorCount,
+          grantPurpose: grant.grantPurpose,
+          isLocked: !!grant.donorLockedAt,
+          lockedAt: grant.donorLockedAt,
+        },
+        foundation: foundation ? {
+          name: foundation.name,
+          contactPerson: foundation.contactPerson,
+        } : null,
+        cohort: cohortInfo,
+        authorsImpacted,
+        metrics: {
+          targetAuthors: grant.targetAuthorCount,
+          actualAuthors: authorsImpacted.length,
+          potentialAuthors,
+          surplusAuthors,
+          costPerAuthor,
+          exceededExpectations: authorsImpacted.length > grant.targetAuthorCount,
+        },
+      });
+    } catch (error) {
+      console.error("Failed to generate impact report:", error);
+      return res.status(500).json({ message: "Failed to generate impact report" });
+    }
+  });
 }

@@ -301,6 +301,85 @@ export const auditLogs = pgTable("audit_logs", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Grant & Donor Logistics - Foundation CRM
+export const foundations = pgTable("foundations", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  contactPerson: text("contact_person"),
+  contactEmail: text("contact_email"),
+  contactPhone: text("contact_phone"),
+  mission: text("mission"),
+  website: text("website"),
+  notes: text("notes"),
+  createdBy: varchar("created_by", { length: 36 }).references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Solicitation logs - prevents double-tapping foundations
+export const solicitationLogs = pgTable("solicitation_logs", {
+  id: serial("id").primaryKey(),
+  foundationId: integer("foundation_id").references(() => foundations.id).notNull(),
+  contactDate: timestamp("contact_date").notNull(),
+  contactMethod: text("contact_method").notNull(), // email, phone, in-person, letter
+  contactedBy: varchar("contacted_by", { length: 36 }).references(() => users.id).notNull(),
+  purpose: text("purpose").notNull(),
+  response: text("response"), // pending, interested, declined, funded
+  responseDate: timestamp("response_date"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Foundation grants - linked to cohorts for impact tracking
+export const foundationGrants = pgTable("foundation_grants", {
+  id: serial("id").primaryKey(),
+  foundationId: integer("foundation_id").references(() => foundations.id).notNull(),
+  amount: integer("amount").notNull(), // In cents
+  targetAuthorCount: integer("target_author_count").notNull(),
+  assignedCohortId: integer("assigned_cohort_id").references(() => cohorts.id),
+  grantDate: timestamp("grant_date").notNull(),
+  grantPurpose: text("grant_purpose"),
+  donorLockedAt: timestamp("donor_locked_at"), // When authors are locked to this grant for reporting
+  recordedBy: varchar("recorded_by", { length: 36 }).references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const foundationsRelations = relations(foundations, ({ one, many }) => ({
+  creator: one(users, {
+    fields: [foundations.createdBy],
+    references: [users.id],
+  }),
+  solicitationLogs: many(solicitationLogs),
+  grants: many(foundationGrants),
+}));
+
+export const solicitationLogsRelations = relations(solicitationLogs, ({ one }) => ({
+  foundation: one(foundations, {
+    fields: [solicitationLogs.foundationId],
+    references: [foundations.id],
+  }),
+  contacter: one(users, {
+    fields: [solicitationLogs.contactedBy],
+    references: [users.id],
+  }),
+}));
+
+export const foundationGrantsRelations = relations(foundationGrants, ({ one }) => ({
+  foundation: one(foundations, {
+    fields: [foundationGrants.foundationId],
+    references: [foundations.id],
+  }),
+  cohort: one(cohorts, {
+    fields: [foundationGrants.assignedCohortId],
+    references: [cohorts.id],
+  }),
+  recorder: one(users, {
+    fields: [foundationGrants.recordedBy],
+    references: [users.id],
+  }),
+}));
+
 // Flywheel Metrics - Operating costs tracking for grant reporting
 export const operatingCosts = pgTable("operating_costs", {
   id: serial("id").primaryKey(),
@@ -348,3 +427,9 @@ export type AuditLog = typeof auditLogs.$inferSelect;
 export type InsertAuditLog = typeof auditLogs.$inferInsert;
 export type OperatingCost = typeof operatingCosts.$inferSelect;
 export type InsertOperatingCost = typeof operatingCosts.$inferInsert;
+export type Foundation = typeof foundations.$inferSelect;
+export type InsertFoundation = typeof foundations.$inferInsert;
+export type SolicitationLog = typeof solicitationLogs.$inferSelect;
+export type InsertSolicitationLog = typeof solicitationLogs.$inferInsert;
+export type FoundationGrant = typeof foundationGrants.$inferSelect;
+export type InsertFoundationGrant = typeof foundationGrants.$inferInsert;

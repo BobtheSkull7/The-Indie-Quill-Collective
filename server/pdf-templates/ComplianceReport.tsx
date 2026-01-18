@@ -103,6 +103,19 @@ const styles = StyleSheet.create({
   },
 });
 
+interface DonorImpact {
+  foundationName: string;
+  grantAmount: number;
+  targetAuthors: number;
+  actualAuthors: number;
+  potentialAuthors: number;
+  exceededExpectations: boolean;
+  authorsImpacted: Array<{
+    displayName: string;
+    status: string;
+  }>;
+}
+
 interface ComplianceReportProps {
   generatedAt: string;
   generatedBy: string;
@@ -140,6 +153,7 @@ interface ComplianceReportProps {
     ipAddress: string | null;
     createdAt: string;
   }>;
+  donorImpacts?: DonorImpact[];
 }
 
 export function ComplianceReport({
@@ -149,7 +163,9 @@ export function ComplianceReport({
   minorRecords,
   contractForensics,
   auditSample,
+  donorImpacts = [],
 }: ComplianceReportProps) {
+  const formatCurrency = (cents: number) => `$${(cents / 100).toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
   return (
     <Document>
       <Page size="A4" style={styles.page}>
@@ -272,6 +288,76 @@ export function ComplianceReport({
           theindiequillcollective.com
         </Text>
       </Page>
+
+      {donorImpacts.length > 0 && (
+        <Page size="A4" style={styles.page}>
+          <View style={styles.header}>
+            <Text style={styles.title}>Donor Impact Report</Text>
+            <Text style={styles.subtitle}>
+              Grant Efficiency & Author Outcomes - The Indie Quill Collective
+            </Text>
+            <Text style={styles.metaInfo}>
+              Generated: {new Date(generatedAt).toLocaleString()}
+            </Text>
+          </View>
+
+          {donorImpacts.map((impact, index) => (
+            <View key={index} style={styles.section}>
+              <Text style={styles.sectionTitle}>{impact.foundationName}</Text>
+              
+              <View style={styles.statsGrid}>
+                <View style={styles.statBox}>
+                  <Text style={styles.statNumber}>{formatCurrency(impact.grantAmount)}</Text>
+                  <Text style={styles.statLabel}>Grant Amount</Text>
+                </View>
+                <View style={styles.statBox}>
+                  <Text style={styles.statNumber}>{impact.targetAuthors}</Text>
+                  <Text style={styles.statLabel}>Target Authors</Text>
+                </View>
+                <View style={styles.statBox}>
+                  <Text style={{ ...styles.statNumber, color: impact.exceededExpectations ? "#16a34a" : "#1e293b" }}>
+                    {impact.actualAuthors}
+                  </Text>
+                  <Text style={styles.statLabel}>Actual Authors</Text>
+                </View>
+                <View style={{ ...styles.statBox, marginRight: 0 }}>
+                  <Text style={{ ...styles.statNumber, color: "#16a34a" }}>
+                    {impact.potentialAuthors > impact.targetAuthors ? `+${impact.potentialAuthors - impact.targetAuthors}` : "0"}
+                  </Text>
+                  <Text style={styles.statLabel}>Surplus Impact</Text>
+                </View>
+              </View>
+
+              {impact.exceededExpectations && (
+                <View style={{ backgroundColor: "#dcfce7", padding: 10, marginBottom: 10, borderRadius: 4 }}>
+                  <Text style={{ fontSize: 10, color: "#166534", fontFamily: "Helvetica-Bold" }}>
+                    Exceeded Expectations: Target {impact.targetAuthors}, Delivered {impact.actualAuthors} authors
+                  </Text>
+                </View>
+              )}
+
+              <Text style={{ fontSize: 11, fontFamily: "Helvetica-Bold", marginBottom: 6, color: "#475569" }}>
+                Authors Empowered by This Grant:
+              </Text>
+              <View style={styles.row}>
+                <Text style={styles.cellHeader}>Author</Text>
+                <Text style={styles.cellHeader}>Status</Text>
+              </View>
+              {impact.authorsImpacted.map((author, authorIndex) => (
+                <View key={authorIndex} style={styles.row}>
+                  <Text style={styles.cell}>{author.displayName}</Text>
+                  <Text style={styles.cell}>{author.status}</Text>
+                </View>
+              ))}
+            </View>
+          ))}
+
+          <Text style={styles.footer}>
+            This Donor Impact Report demonstrates your contribution to literacy empowerment. 
+            Cost efficiency allows us to serve more authors with your generous support.
+          </Text>
+        </Page>
+      )}
     </Document>
   );
 }

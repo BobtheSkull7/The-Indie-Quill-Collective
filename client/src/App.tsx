@@ -11,6 +11,7 @@ import Contracts from "./pages/Contracts";
 import ContractSign from "./pages/ContractSign";
 import PublishingStatus from "./pages/PublishingStatus";
 import Cohorts from "./pages/Cohorts";
+import Grants from "./pages/Grants";
 import Navbar from "./components/Navbar";
 
 interface User {
@@ -70,6 +71,7 @@ function App() {
           <Route path="/dashboard" component={Dashboard} />
           <Route path="/admin" component={AdminDashboard} />
           <Route path="/admin/cohorts" component={Cohorts} />
+          <Route path="/admin/grants" component={Grants} />
           <Route path="/board" component={Board} />
           <Route path="/contracts" component={Contracts} />
           <Route path="/contracts/:id" component={ContractSign} />
