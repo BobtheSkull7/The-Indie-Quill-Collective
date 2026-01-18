@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import rateLimit from "express-rate-limit";
 import { db } from "./db";
-import { users, applications, contracts, publishingUpdates, calendarEvents, fundraisingCampaigns, donations, auditLogs, cohorts } from "@shared/schema";
+import { users, applications, contracts, publishingUpdates, calendarEvents, fundraisingCampaigns, donations, auditLogs, cohorts, operatingCosts } from "@shared/schema";
 import { eq, desc, gte, sql, inArray } from "drizzle-orm";
 import { hash, compare } from "./auth";
 import { migrateAuthorToIndieQuill, retryFailedMigrations, sendApplicationToLLC, sendStatusUpdateToLLC, sendContractSignatureToLLC, sendUserRoleUpdateToLLC } from "./indie-quill-integration";
@@ -1791,6 +1791,56 @@ export function registerRoutes(app: Express) {
     }
   });
 
+  // Flywheel Metrics - Public endpoint for visualization
+  let flywheelCache: { data: any; timestamp: number } | null = null;
+  const FLYWHEEL_CACHE_TTL = 60000; // 60 seconds
+
+  app.get("/api/public/flywheel", async (req: Request, res: Response) => {
+    try {
+      if (flywheelCache && Date.now() - flywheelCache.timestamp < FLYWHEEL_CACHE_TTL) {
+        return res.json(flywheelCache.data);
+      }
+
+      const allApps = await db.select().from(applications);
+      const allUpdates = await db.select().from(publishingUpdates);
+      const allDonations = await db.select().from(donations);
+      const allCosts = await db.select().from(operatingCosts);
+
+      // Active authors (accepted or migrated)
+      const activeAuthors = allApps.filter(a => 
+        a.status === 'accepted' || a.status === 'migrated'
+      ).length;
+
+      // Calculate efficiency: Total Operating Cost / Active Authors
+      const totalCosts = allCosts.reduce((sum, c) => sum + c.totalCost, 0);
+      const efficiencyRatio = activeAuthors > 0 ? totalCosts / activeAuthors / 100 : 0;
+
+      // Published this quarter
+      const now = new Date();
+      const quarterStart = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1);
+      const quarterlyPublished = allUpdates.filter(u => 
+        u.status === 'published' && u.updatedAt && u.updatedAt >= quarterStart
+      ).length;
+
+      // Total donations
+      const totalDonations = allDonations.reduce((sum, d) => sum + d.amount, 0);
+
+      const flywheelData = {
+        efficiencyRatio,
+        quarterlyPublished,
+        activeAuthors,
+        totalDonations,
+        lastUpdated: new Date().toISOString(),
+      };
+
+      flywheelCache = { data: flywheelData, timestamp: Date.now() };
+      return res.json(flywheelData);
+    } catch (error) {
+      console.error("Fetch flywheel metrics error:", error);
+      return res.status(500).json({ message: "Failed to fetch flywheel metrics" });
+    }
+  });
+
   // ============================================
   // ADMIN OPERATIONS ENDPOINTS
   // Program Director Metrics Dashboard
@@ -1860,6 +1910,18 @@ export function registerRoutes(app: Express) {
         failed: allUpdates.filter(u => u.syncStatus === 'failed').length,
       };
 
+      // Flywheel Efficiency Metrics
+      const allCosts = await db.select().from(operatingCosts);
+      const totalOperatingCosts = allCosts.reduce((sum, c) => sum + c.totalCost, 0);
+      const efficiencyRatio = totalActiveAuthors > 0 ? totalOperatingCosts / totalActiveAuthors / 100 : 0;
+
+      // Quarterly throughput
+      const now = new Date();
+      const quarterStart = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1);
+      const quarterlyPublished = allUpdates.filter(u => 
+        u.status === 'published' && u.updatedAt && u.updatedAt >= quarterStart
+      ).length;
+
       return res.json({
         cohortVelocity,
         activeCohort: activeCohort ? {
@@ -1875,6 +1937,9 @@ export function registerRoutes(app: Express) {
         totalApplications: allApps.length,
         totalContracts: allContracts.length,
         signedContracts: allContracts.filter(c => c.status === 'signed').length,
+        efficiencyRatio,
+        quarterlyPublished,
+        totalOperatingCosts,
       });
     } catch (error) {
       console.error("Fetch operations metrics error:", error);

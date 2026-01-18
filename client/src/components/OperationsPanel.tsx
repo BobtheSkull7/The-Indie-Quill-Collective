@@ -41,6 +41,9 @@ interface OperationsMetrics {
   totalApplications: number;
   totalContracts: number;
   signedContracts: number;
+  efficiencyRatio: number;
+  quarterlyPublished: number;
+  totalOperatingCosts: number;
 }
 
 export default function OperationsPanel() {
@@ -188,6 +191,41 @@ export default function OperationsPanel() {
           </div>
           <p className="text-sm text-purple-100">
             {metrics.totalContracts} total contracts
+          </p>
+        </div>
+      </div>
+
+      <div className="card border-2 border-teal-200 bg-gradient-to-r from-teal-50 to-cyan-50">
+        <h3 className="font-display text-lg font-semibold text-slate-800 mb-4 flex items-center space-x-2">
+          <Zap className="w-5 h-5 text-teal-600" />
+          <span>Flywheel Metrics - Grant Proof Points</span>
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="text-center p-4 bg-white rounded-lg shadow-sm">
+            <p className="text-3xl font-bold text-teal-700">
+              ${metrics.efficiencyRatio.toFixed(0)}
+            </p>
+            <p className="text-sm text-gray-600 mt-1">Cost per Author</p>
+            <p className="text-xs text-gray-500 mt-1">Lower = More Efficient</p>
+          </div>
+          <div className="text-center p-4 bg-white rounded-lg shadow-sm">
+            <p className="text-3xl font-bold text-cyan-700">
+              {metrics.quarterlyPublished}
+            </p>
+            <p className="text-sm text-gray-600 mt-1">Published This Quarter</p>
+            <p className="text-xs text-gray-500 mt-1">Throughput Metric</p>
+          </div>
+          <div className="text-center p-4 bg-white rounded-lg shadow-sm">
+            <p className="text-3xl font-bold text-blue-700">
+              ${(metrics.totalOperatingCosts / 100).toLocaleString()}
+            </p>
+            <p className="text-sm text-gray-600 mt-1">Total Operating Costs</p>
+            <p className="text-xs text-gray-500 mt-1">YTD Budget Spend</p>
+          </div>
+        </div>
+        <div className="mt-4 pt-4 border-t border-teal-200">
+          <p className="text-sm text-teal-700 text-center">
+            The Flywheel: Low Cost Structure enables Better Author Experience, driving more Selection, fueling Growth
           </p>
         </div>
       </div>

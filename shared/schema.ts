@@ -301,6 +301,26 @@ export const auditLogs = pgTable("audit_logs", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Flywheel Metrics - Operating costs tracking for grant reporting
+export const operatingCosts = pgTable("operating_costs", {
+  id: serial("id").primaryKey(),
+  quarter: text("quarter").notNull(), // Format: "2026-Q1"
+  year: integer("year").notNull(),
+  quarterNum: integer("quarter_num").notNull(), // 1-4
+  totalCost: integer("total_cost").notNull().default(0), // In cents
+  description: text("description"),
+  recordedBy: varchar("recorded_by", { length: 36 }).references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const operatingCostsRelations = relations(operatingCosts, ({ one }) => ({
+  recorder: one(users, {
+    fields: [operatingCosts.recordedBy],
+    references: [users.id],
+  }),
+}));
+
 export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
   user: one(users, {
     fields: [auditLogs.userId],
@@ -326,3 +346,5 @@ export type Donation = typeof donations.$inferSelect;
 export type InsertDonation = typeof donations.$inferInsert;
 export type AuditLog = typeof auditLogs.$inferSelect;
 export type InsertAuditLog = typeof auditLogs.$inferInsert;
+export type OperatingCost = typeof operatingCosts.$inferSelect;
+export type InsertOperatingCost = typeof operatingCosts.$inferInsert;
