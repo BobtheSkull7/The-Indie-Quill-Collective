@@ -92,7 +92,7 @@ export default function FlywheelVisualization() {
 
   return (
     <div className="relative w-full max-w-lg mx-auto py-8">
-      <div className="text-center mb-12">
+      <div className="text-center mb-20">
         <h3 className="font-display text-2xl font-bold text-slate-800 mb-2">
           The Collective Flywheel
         </h3>
@@ -101,7 +101,7 @@ export default function FlywheelVisualization() {
         </p>
       </div>
 
-      <div className="relative w-80 h-80 mx-auto">
+      <div className="relative w-80 h-80 mx-auto mt-8">
         <svg
           className="absolute inset-0 w-full h-full"
           viewBox="0 0 200 200"
