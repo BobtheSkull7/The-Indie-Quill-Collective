@@ -110,6 +110,10 @@ export const applications = pgTable("applications", {
   reviewedBy: varchar("reviewed_by", { length: 36 }).references(() => users.id),
   reviewedAt: timestamp("reviewed_at"),
   
+  // Grant metrics - manuscript tracking
+  manuscriptWordCount: integer("manuscript_word_count").default(0),
+  manuscriptTitle: text("manuscript_title"),
+  
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -158,6 +162,9 @@ export const publishingUpdates = pgTable("publishing_updates", {
   syncError: text("sync_error"),
   syncAttempts: integer("sync_attempts").default(0).notNull(),
   lastSyncAttempt: timestamp("last_sync_attempt"),
+  
+  // Grant metrics - words processed tracking
+  wordsProcessed: integer("words_processed").default(0),
   
   lastSyncedAt: timestamp("last_synced_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
