@@ -12,6 +12,8 @@ import ContractSign from "./pages/ContractSign";
 import PublishingStatus from "./pages/PublishingStatus";
 import Cohorts from "./pages/Cohorts";
 import Grants from "./pages/Grants";
+import Vault from "./pages/Vault";
+import Ledger from "./pages/Ledger";
 import Navbar from "./components/Navbar";
 
 interface User {
@@ -72,6 +74,8 @@ function App() {
           <Route path="/admin" component={AdminDashboard} />
           <Route path="/admin/cohorts" component={Cohorts} />
           <Route path="/admin/grants" component={Grants} />
+          <Route path="/admin/vault" component={Vault} />
+          <Route path="/admin/ledger" component={Ledger} />
           <Route path="/board" component={Board} />
           <Route path="/contracts" component={Contracts} />
           <Route path="/contracts/:id" component={ContractSign} />

@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import rateLimit from "express-rate-limit";
 import { db } from "./db";
-import { users, applications, contracts, publishingUpdates, calendarEvents, fundraisingCampaigns, donations, auditLogs, cohorts, operatingCosts, foundations, solicitationLogs, foundationGrants } from "@shared/schema";
+import { users, applications, contracts, publishingUpdates, calendarEvents, fundraisingCampaigns, donations, auditLogs, cohorts, operatingCosts, foundations, solicitationLogs, foundationGrants, pilotLedger } from "@shared/schema";
 import { eq, desc, gte, sql, inArray, lt, and } from "drizzle-orm";
 import { hash, compare } from "./auth";
 import { migrateAuthorToIndieQuill, retryFailedMigrations, sendApplicationToLLC, sendStatusUpdateToLLC, sendContractSignatureToLLC, sendUserRoleUpdateToLLC } from "./indie-quill-integration";
@@ -97,7 +97,7 @@ const contractSigningRateLimiter = rateLimit({
 
 declare module "express-session" {
   interface SessionData {
-    userId?: string;
+    userId?: number;
     userRole?: string;
   }
 }
@@ -2902,6 +2902,170 @@ export function registerGrantRoutes(app: Express) {
     } catch (error) {
       console.error("Failed to generate impact report:", error);
       return res.status(500).json({ message: "Failed to generate impact report" });
+    }
+  });
+
+  // ============================================
+  // PILOT LEDGER ENDPOINTS
+  // ============================================
+
+  app.get("/api/admin/ledger", async (req: Request, res: Response) => {
+    if (!req.session?.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    const [currentUser] = await db.select().from(users).where(eq(users.id, req.session.userId));
+    if (!currentUser || currentUser.role !== "admin") {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+
+    try {
+      const allEntries = await db.select().from(pilotLedger).orderBy(desc(pilotLedger.transactionDate));
+
+      const entriesWithAuthors = await Promise.all(
+        allEntries.map(async (entry) => {
+          let authorName = null;
+          if (entry.linkedAuthorId) {
+            const [app] = await db.select({
+              firstName: users.firstName,
+              lastName: users.lastName,
+            })
+            .from(applications)
+            .leftJoin(users, eq(applications.userId, users.id))
+            .where(eq(applications.id, entry.linkedAuthorId));
+            
+            if (app) {
+              authorName = `${app.firstName} ${app.lastName}`;
+            }
+          }
+          
+          return {
+            id: entry.id,
+            transactionDate: entry.transactionDate.toISOString(),
+            type: entry.type,
+            amount: entry.amount,
+            description: entry.description,
+            category: entry.category,
+            linkedAuthorId: entry.linkedAuthorId,
+            authorName,
+            createdAt: entry.createdAt.toISOString(),
+          };
+        })
+      );
+
+      const totalIncome = allEntries
+        .filter(e => e.type === "income")
+        .reduce((sum, e) => sum + e.amount, 0);
+      
+      const totalExpenses = allEntries
+        .filter(e => e.type === "expense")
+        .reduce((sum, e) => sum + e.amount, 0);
+
+      const isbnExpenses = allEntries.filter(e => e.category === "isbn").length;
+      const isbnArbitrageSurplus = isbnExpenses * 11925;
+
+      const authorBreakdown: Record<number, {
+        authorId: number;
+        authorName: string;
+        penName: string | null;
+        sponsorshipReceived: number;
+        totalSpent: number;
+        transactions: typeof entriesWithAuthors;
+      }> = {};
+
+      for (const entry of entriesWithAuthors) {
+        if (entry.linkedAuthorId) {
+          if (!authorBreakdown[entry.linkedAuthorId]) {
+            const [app] = await db.select({
+              firstName: users.firstName,
+              lastName: users.lastName,
+              penName: applications.penName,
+            })
+            .from(applications)
+            .leftJoin(users, eq(applications.userId, users.id))
+            .where(eq(applications.id, entry.linkedAuthorId));
+
+            authorBreakdown[entry.linkedAuthorId] = {
+              authorId: entry.linkedAuthorId,
+              authorName: app ? `${app.firstName} ${app.lastName}` : `Author ${entry.linkedAuthorId}`,
+              penName: app?.penName || null,
+              sponsorshipReceived: 0,
+              totalSpent: 0,
+              transactions: [],
+            };
+          }
+
+          authorBreakdown[entry.linkedAuthorId].transactions.push(entry);
+          if (entry.type === "income" && entry.category === "sponsorship") {
+            authorBreakdown[entry.linkedAuthorId].sponsorshipReceived += entry.amount;
+          } else if (entry.type === "expense") {
+            authorBreakdown[entry.linkedAuthorId].totalSpent += entry.amount;
+          }
+        }
+      }
+
+      const authorBreakdownArray = Object.values(authorBreakdown).map(author => ({
+        ...author,
+        remaining: author.sponsorshipReceived - author.totalSpent,
+      }));
+
+      return res.json({
+        entries: entriesWithAuthors,
+        metrics: {
+          totalIncome,
+          totalExpenses,
+          netBalance: totalIncome - totalExpenses,
+          isbnArbitrageSurplus,
+          reinvestableFunds: isbnArbitrageSurplus,
+          authorBreakdown: authorBreakdownArray,
+        },
+      });
+    } catch (error) {
+      console.error("Failed to fetch ledger:", error);
+      return res.status(500).json({ message: "Failed to fetch ledger data" });
+    }
+  });
+
+  app.post("/api/admin/ledger", async (req: Request, res: Response) => {
+    if (!req.session?.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    const [currentUser] = await db.select().from(users).where(eq(users.id, req.session.userId));
+    if (!currentUser || currentUser.role !== "admin") {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+
+    try {
+      const { transactionDate, type, amount, description, category, linkedAuthorId } = req.body;
+
+      if (!transactionDate || !type || !amount || !description) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+
+      const [newEntry] = await db.insert(pilotLedger).values({
+        transactionDate: new Date(transactionDate),
+        type,
+        amount,
+        description,
+        category: category || null,
+        linkedAuthorId: linkedAuthorId || null,
+        recordedBy: req.session.userId,
+      }).returning();
+
+      await logAuditEvent(
+        req.session.userId,
+        "ledger_entry_created",
+        "pilot_ledger",
+        newEntry.id,
+        getClientIp(req),
+        { type, amount, description }
+      );
+
+      return res.json({ message: "Transaction recorded", entry: newEntry });
+    } catch (error) {
+      console.error("Failed to add ledger entry:", error);
+      return res.status(500).json({ message: "Failed to add transaction" });
     }
   });
 }

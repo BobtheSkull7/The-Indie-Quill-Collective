@@ -407,6 +407,34 @@ export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
   }),
 }));
 
+export const ledgerTypeEnum = pgEnum('ledger_type', [
+  'income',
+  'expense'
+]);
+
+export const pilotLedger = pgTable("pilot_ledger", {
+  id: serial("id").primaryKey(),
+  transactionDate: timestamp("transaction_date").notNull(),
+  type: ledgerTypeEnum("type").notNull(),
+  amount: integer("amount").notNull(), // In cents
+  description: text("description").notNull(),
+  linkedAuthorId: integer("linked_author_id").references(() => applications.id),
+  category: text("category"), // e.g., "sponsorship", "isbn", "copyright"
+  recordedBy: integer("recorded_by").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const pilotLedgerRelations = relations(pilotLedger, ({ one }) => ({
+  author: one(applications, {
+    fields: [pilotLedger.linkedAuthorId],
+    references: [applications.id],
+  }),
+  recorder: one(users, {
+    fields: [pilotLedger.recordedBy],
+    references: [users.id],
+  }),
+}));
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 export type Cohort = typeof cohorts.$inferSelect;
@@ -433,3 +461,5 @@ export type SolicitationLog = typeof solicitationLogs.$inferSelect;
 export type InsertSolicitationLog = typeof solicitationLogs.$inferInsert;
 export type FoundationGrant = typeof foundationGrants.$inferSelect;
 export type InsertFoundationGrant = typeof foundationGrants.$inferInsert;
+export type PilotLedgerEntry = typeof pilotLedger.$inferSelect;
+export type InsertPilotLedgerEntry = typeof pilotLedger.$inferInsert;
