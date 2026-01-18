@@ -14,6 +14,7 @@ The project utilizes a client-server architecture with a React 19, Vite, and Tai
 - **Admin & Board Dashboards:** Tools for reviewing applications, managing workflows, tracking publishing status, and shared calendar management with Google Calendar integration.
 - **User & Data Management:** Secure user authentication with rate limiting, GDPR Right to Erasure and Data Portability, and COPPA compliance with audit logging for minor data access.
 - **Enterprise Sync:** A single-step atomic synchronization process with The Indie Quill LLC for approved applications, including cohort assignment, unique ID generation, and background worker processing with HMAC-signed requests.
+- **Grant & Donor Logistics Module:** Foundation CRM with contact person management, solicitation logging to prevent double-tapping, grant allocation with cohort assignment, efficiency surplus calculation showing donors when cost optimization serves more authors than promised, and author-to-donation locking for immutable donor impact reporting with Zero-PII compliance (initial+emoji format).
 
 **UI/UX Decisions:**
 - Uses Playfair Display for headings and Inter for body text.
