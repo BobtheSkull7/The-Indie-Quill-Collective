@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { TrendingDown, Users, BookOpen, TrendingUp, Zap } from "lucide-react";
 
 interface FlywheelMetrics {
   efficiencyRatio: number;
@@ -11,14 +10,9 @@ interface FlywheelMetrics {
 export default function FlywheelVisualization() {
   const [metrics, setMetrics] = useState<FlywheelMetrics | null>(null);
   const [loading, setLoading] = useState(true);
-  const [rotation, setRotation] = useState(0);
 
   useEffect(() => {
     fetchMetrics();
-    const interval = setInterval(() => {
-      setRotation(prev => (prev + 0.5) % 360);
-    }, 50);
-    return () => clearInterval(interval);
   }, []);
 
   const fetchMetrics = async () => {
@@ -35,53 +29,6 @@ export default function FlywheelVisualization() {
     }
   };
 
-  const quadrants = [
-    {
-      id: 'cost',
-      label: 'Low Cost',
-      sublabel: 'Structure',
-      icon: TrendingDown,
-      color: 'from-emerald-500 to-emerald-600',
-      bgColor: 'bg-emerald-50',
-      textColor: 'text-emerald-700',
-      position: 'top-0 left-1/2 -translate-x-1/2 -translate-y-1/2',
-      metric: metrics?.efficiencyRatio ? `$${metrics.efficiencyRatio.toFixed(0)}/author` : '-',
-    },
-    {
-      id: 'experience',
-      label: 'Author',
-      sublabel: 'Experience',
-      icon: Users,
-      color: 'from-blue-500 to-blue-600',
-      bgColor: 'bg-blue-50',
-      textColor: 'text-blue-700',
-      position: 'top-1/2 right-0 translate-x-1/2 -translate-y-1/2',
-      metric: `${metrics?.activeAuthors || 0} active`,
-    },
-    {
-      id: 'selection',
-      label: 'Selection',
-      sublabel: '& Publishing',
-      icon: BookOpen,
-      color: 'from-purple-500 to-purple-600',
-      bgColor: 'bg-purple-50',
-      textColor: 'text-purple-700',
-      position: 'bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2',
-      metric: `${metrics?.quarterlyPublished || 0} this quarter`,
-    },
-    {
-      id: 'growth',
-      label: 'Growth',
-      sublabel: '& Donations',
-      icon: TrendingUp,
-      color: 'from-amber-500 to-amber-600',
-      bgColor: 'bg-amber-50',
-      textColor: 'text-amber-700',
-      position: 'top-1/2 left-0 -translate-x-1/2 -translate-y-1/2',
-      metric: `$${((metrics?.totalDonations || 0) / 100).toLocaleString()}`,
-    },
-  ];
-
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -91,8 +38,8 @@ export default function FlywheelVisualization() {
   }
 
   return (
-    <div className="relative w-full max-w-lg mx-auto py-8">
-      <div className="text-center mb-20">
+    <div className="relative w-full max-w-2xl mx-auto py-8">
+      <div className="text-center mb-16">
         <h3 className="font-display text-2xl font-bold text-slate-800 mb-2">
           The Collective Flywheel
         </h3>
@@ -101,80 +48,140 @@ export default function FlywheelVisualization() {
         </p>
       </div>
 
-      <div className="relative w-80 h-80 mx-auto mt-8">
+      <div className="relative w-full" style={{ paddingBottom: '85%' }}>
         <svg
           className="absolute inset-0 w-full h-full"
-          viewBox="0 0 200 200"
-          style={{ transform: `rotate(${rotation}deg)` }}
+          viewBox="0 0 500 420"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
         >
-          <defs>
-            <linearGradient id="arrowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#14b8a6" />
-              <stop offset="100%" stopColor="#0891b2" />
-            </linearGradient>
-          </defs>
           <circle
-            cx="100"
-            cy="100"
-            r="85"
+            cx="250"
+            cy="230"
+            r="120"
+            stroke="#1f2937"
+            strokeWidth="2"
             fill="none"
-            stroke="url(#arrowGradient)"
-            strokeWidth="3"
-            strokeDasharray="12 6"
-            opacity="0.6"
+          />
+          
+          <defs>
+            <marker
+              id="arrowhead"
+              markerWidth="10"
+              markerHeight="7"
+              refX="9"
+              refY="3.5"
+              orient="auto"
+            >
+              <polygon points="0 0, 10 3.5, 0 7" fill="#1f2937" />
+            </marker>
+            <marker
+              id="arrowhead-dashed"
+              markerWidth="10"
+              markerHeight="7"
+              refX="9"
+              refY="3.5"
+              orient="auto"
+            >
+              <polygon points="0 0, 10 3.5, 0 7" fill="#14b8a6" />
+            </marker>
+          </defs>
+
+          <path
+            d="M 250 110 Q 370 110 370 230"
+            stroke="#1f2937"
+            strokeWidth="2"
+            fill="none"
+            markerEnd="url(#arrowhead)"
           />
           <path
-            d="M 100 15 L 108 25 L 92 25 Z"
-            fill="url(#arrowGradient)"
-            transform="rotate(45 100 100)"
+            d="M 370 230 Q 370 350 250 350"
+            stroke="#1f2937"
+            strokeWidth="2"
+            fill="none"
+            markerEnd="url(#arrowhead)"
           />
           <path
-            d="M 100 15 L 108 25 L 92 25 Z"
-            fill="url(#arrowGradient)"
-            transform="rotate(135 100 100)"
+            d="M 250 350 Q 130 350 130 230"
+            stroke="#1f2937"
+            strokeWidth="2"
+            fill="none"
+            markerEnd="url(#arrowhead)"
           />
           <path
-            d="M 100 15 L 108 25 L 92 25 Z"
-            fill="url(#arrowGradient)"
-            transform="rotate(225 100 100)"
+            d="M 130 230 Q 130 110 250 110"
+            stroke="#1f2937"
+            strokeWidth="2"
+            fill="none"
+            markerEnd="url(#arrowhead)"
           />
+
           <path
-            d="M 100 15 L 108 25 L 92 25 Z"
-            fill="url(#arrowGradient)"
-            transform="rotate(315 100 100)"
+            d="M 100 45 L 400 45"
+            stroke="#14b8a6"
+            strokeWidth="2"
+            strokeDasharray="8 4"
+            fill="none"
+            markerEnd="url(#arrowhead-dashed)"
           />
+          
+          <path
+            d="M 60 75 L 60 180"
+            stroke="#14b8a6"
+            strokeWidth="2"
+            strokeDasharray="8 4"
+            fill="none"
+            markerEnd="url(#arrowhead-dashed)"
+          />
+
+          <circle
+            cx="250"
+            cy="230"
+            r="55"
+            fill="#e0f2fe"
+            stroke="#0ea5e9"
+            strokeWidth="2"
+          />
+          <text x="250" y="225" textAnchor="middle" className="text-xs" fill="#0369a1" fontWeight="600">
+            SUSTAINABLE
+          </text>
+          <text x="250" y="242" textAnchor="middle" className="text-sm" fill="#0369a1" fontWeight="700">
+            IMPACT
+          </text>
+
+          <rect x="60" y="10" width="100" height="50" rx="4" fill="#ccfbf1" stroke="#14b8a6" strokeWidth="2" />
+          <text x="110" y="32" textAnchor="middle" fill="#0f766e" fontSize="11" fontWeight="600">LOWER</text>
+          <text x="110" y="48" textAnchor="middle" fill="#0f766e" fontSize="11" fontWeight="600">COSTS</text>
+
+          <rect x="340" y="10" width="100" height="50" rx="4" fill="#ccfbf1" stroke="#14b8a6" strokeWidth="2" />
+          <text x="390" y="32" textAnchor="middle" fill="#0f766e" fontSize="11" fontWeight="600">BETTER</text>
+          <text x="390" y="48" textAnchor="middle" fill="#0f766e" fontSize="11" fontWeight="600">SUPPORT</text>
+
+          <rect x="190" y="85" width="120" height="50" rx="4" fill="#fda4af" stroke="#e11d48" strokeWidth="2" />
+          <text x="250" y="107" textAnchor="middle" fill="#9f1239" fontSize="11" fontWeight="600">SELECTION</text>
+          <text x="250" y="123" textAnchor="middle" fill="#9f1239" fontSize="10">{metrics?.quarterlyPublished || 0} published</text>
+
+          <rect x="360" y="205" width="120" height="50" rx="4" fill="#fda4af" stroke="#e11d48" strokeWidth="2" />
+          <text x="420" y="222" textAnchor="middle" fill="#9f1239" fontSize="10" fontWeight="600">AUTHOR</text>
+          <text x="420" y="237" textAnchor="middle" fill="#9f1239" fontSize="10" fontWeight="600">EXPERIENCE</text>
+          <text x="420" y="252" textAnchor="middle" fill="#9f1239" fontSize="9">{metrics?.activeAuthors || 0} active</text>
+
+          <rect x="190" y="355" width="120" height="50" rx="4" fill="#fda4af" stroke="#e11d48" strokeWidth="2" />
+          <text x="250" y="377" textAnchor="middle" fill="#9f1239" fontSize="11" fontWeight="600">VISIBILITY</text>
+          <text x="250" y="393" textAnchor="middle" fill="#9f1239" fontSize="10">& Reach</text>
+
+          <rect x="20" y="205" width="100" height="50" rx="4" fill="#fde68a" stroke="#f59e0b" strokeWidth="2" />
+          <text x="70" y="222" textAnchor="middle" fill="#92400e" fontSize="10" fontWeight="600">GROWTH</text>
+          <text x="70" y="237" textAnchor="middle" fill="#92400e" fontSize="10" fontWeight="600">& DONATIONS</text>
+          <text x="70" y="252" textAnchor="middle" fill="#92400e" fontSize="9">${((metrics?.totalDonations || 0) / 100).toLocaleString()}</text>
+
+          <text x="250" y="75" textAnchor="middle" fill="#14b8a6" fontSize="9" fontStyle="italic">
+            ${metrics?.efficiencyRatio ? `$${metrics.efficiencyRatio.toFixed(0)}/author` : '-'}
+          </text>
         </svg>
-
-        <div className="absolute inset-12 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-full flex items-center justify-center shadow-lg">
-          <div className="text-center text-white">
-            <Zap className="w-8 h-8 mx-auto mb-1" />
-            <p className="text-xs font-medium opacity-90">Sustainable</p>
-            <p className="text-lg font-bold">Impact</p>
-          </div>
-        </div>
-
-        {quadrants.map((quadrant) => (
-          <div
-            key={quadrant.id}
-            className={`absolute ${quadrant.position} z-10`}
-          >
-            <div className={`${quadrant.bgColor} rounded-xl p-4 shadow-lg border border-white/50 backdrop-blur-sm min-w-[120px] text-center transform hover:scale-105 transition-transform`}>
-              <div className={`w-10 h-10 mx-auto mb-2 rounded-lg bg-gradient-to-br ${quadrant.color} flex items-center justify-center`}>
-                <quadrant.icon className="w-5 h-5 text-white" />
-              </div>
-              <p className={`font-semibold ${quadrant.textColor} text-sm`}>
-                {quadrant.label}
-              </p>
-              <p className="text-xs text-gray-500">{quadrant.sublabel}</p>
-              <p className={`mt-1 text-xs font-medium ${quadrant.textColor}`}>
-                {quadrant.metric}
-              </p>
-            </div>
-          </div>
-        ))}
       </div>
 
-      <div className="mt-16 text-center max-w-md mx-auto">
+      <div className="mt-8 text-center max-w-md mx-auto">
         <p className="text-sm text-gray-600 leading-relaxed">
           Lower costs enable better author experiences, which attracts more submissions, 
           leading to growth and donations that further reduce per-author costs. 
