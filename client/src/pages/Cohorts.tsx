@@ -135,7 +135,7 @@ export default function Cohorts() {
                   >
                     <div className="flex items-center space-x-4">
                       <div className="flex items-center space-x-2">
-                        <h3 className="font-display text-lg font-semibold text-slate-800">
+                        <h3 className="text-lg font-semibold text-slate-800 tracking-wide">
                           {cohort.label}
                         </h3>
                         <span
