@@ -291,6 +291,22 @@ export default function AdminDashboard() {
     }
   };
 
+  const resetSync = async (id: number) => {
+    setRetrying(id);
+    try {
+      const res = await fetch(`/api/admin/reset-sync/${id}`, { method: "POST" });
+      if (res.ok) {
+        await loadData();
+      } else {
+        console.error("Reset failed");
+      }
+    } catch (error) {
+      console.error("Reset failed:", error);
+    } finally {
+      setRetrying(null);
+    }
+  };
+
   const updatePublishingStage = async (id: number, newStatus: string) => {
     setUpdatingStage(id);
     try {
@@ -999,15 +1015,25 @@ export default function AdminDashboard() {
                         </td>
                         <td className="py-3 px-4 flex items-center space-x-2">
                           {record.syncStatus === "failed" && (
-                            <button
-                              onClick={() => retrySync(record.id)}
-                              disabled={retrying === record.id}
-                              className="bg-red-500 hover:bg-red-600 text-white text-xs px-3 py-1.5 rounded flex items-center space-x-1 transition-colors"
-                              title="Retry sync to LLC"
-                            >
-                              <RefreshCw className={`w-4 h-4 ${retrying === record.id ? "animate-spin" : ""}`} />
-                              <span>Retry Sync</span>
-                            </button>
+                            <>
+                              <button
+                                onClick={() => retrySync(record.id)}
+                                disabled={retrying === record.id}
+                                className="bg-red-500 hover:bg-red-600 text-white text-xs px-3 py-1.5 rounded flex items-center space-x-1 transition-colors"
+                                title="Retry sync to LLC"
+                              >
+                                <RefreshCw className={`w-4 h-4 ${retrying === record.id ? "animate-spin" : ""}`} />
+                                <span>Retry</span>
+                              </button>
+                              <button
+                                onClick={() => resetSync(record.id)}
+                                disabled={retrying === record.id}
+                                className="bg-gray-500 hover:bg-gray-600 text-white text-xs px-3 py-1.5 rounded flex items-center space-x-1 transition-colors"
+                                title="Reset sync (clear attempts and start fresh)"
+                              >
+                                <span>Reset</span>
+                              </button>
+                            </>
                           )}
                           {record.syncStatus === "pending" && (
                             <span className="text-xs text-gray-500 italic">Queued...</span>

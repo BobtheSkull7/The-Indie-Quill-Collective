@@ -1175,6 +1175,58 @@ export function registerRoutes(app: Express) {
     }
   });
 
+  // Reset a publishing update for fresh sync (clears attempts, resets status to pending)
+  app.post("/api/admin/reset-sync/:id", async (req: Request, res: Response) => {
+    if (!req.session.userId || req.session.userRole !== "admin") {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    try {
+      const updateId = parseInt(req.params.id);
+      
+      const [existingUpdate] = await db.select()
+        .from(publishingUpdates)
+        .where(eq(publishingUpdates.id, updateId));
+
+      if (!existingUpdate) {
+        return res.status(404).json({ message: "Publishing update not found" });
+      }
+
+      // Reset the sync state for a fresh attempt
+      const [updated] = await db.update(publishingUpdates)
+        .set({
+          syncStatus: "pending",
+          syncError: null,
+          syncAttempts: 0,
+          lastSyncAttempt: null,
+          indieQuillAuthorId: null,
+          statusMessage: "Reset for fresh sync attempt",
+          updatedAt: new Date(),
+        })
+        .where(eq(publishingUpdates.id, updateId))
+        .returning();
+
+      await db.insert(auditLogs).values({
+        userId: req.session.userId,
+        action: "reset_sync",
+        resourceType: "publishing_updates",
+        resourceId: updateId.toString(),
+        ipAddress: getClientIp(req),
+        metadata: {
+          previousSyncStatus: existingUpdate.syncStatus,
+          previousAttempts: existingUpdate.syncAttempts,
+          previousError: existingUpdate.syncError,
+        },
+      });
+
+      console.log(`Sync reset for publishing update ${updateId} by admin ${req.session.userId}`);
+      return res.json({ message: "Sync reset successfully", update: updated });
+    } catch (error) {
+      console.error("Reset sync error:", error);
+      return res.status(500).json({ message: "Failed to reset sync" });
+    }
+  });
+
   app.put("/api/admin/publishing-status/:id", async (req: Request, res: Response) => {
     if (!req.session.userId || req.session.userRole !== "admin") {
       return res.status(403).json({ message: "Not authorized" });
