@@ -1035,13 +1035,6 @@ export function registerRoutes(app: Express) {
         );
       }
 
-      // Sync signature to LLC immediately
-      try {
-        await sendContractSignatureToLLC(contract.applicationId, signatureType, signature);
-      } catch (syncError) {
-        console.error("Failed to sync signature to LLC:", syncError);
-      }
-
       if (updated.status === "signed") {
         // Generate and store PDF immediately when contract is fully signed
         generateAndStorePDF(contract.id).catch(err => {
@@ -1065,7 +1058,13 @@ export function registerRoutes(app: Express) {
         });
       }
 
-      return res.json(updated);
+      return res.json({
+        ...updated,
+        authorLegalName,
+        guardianLegalName: application.guardianName || null,
+        penName: application.penName || null,
+        identityMode: application.publicIdentityEnabled ? "public" : "safe",
+      });
     } catch (error) {
       console.error("Sign contract error:", error);
       return res.status(500).json({ message: "Failed to sign contract" });
