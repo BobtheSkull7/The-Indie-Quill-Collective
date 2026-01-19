@@ -2,6 +2,7 @@ import crypto from "crypto";
 import { db } from "../db";
 import { applications, users, publishingUpdates, cohorts, npoApplications } from "@shared/schema";
 import { eq } from "drizzle-orm";
+import { sendActiveAuthorEmail } from "../email";
 
 const INDIE_QUILL_API_URL = process.env.INDIE_QUILL_API_URL || "";
 const INDIE_QUILL_API_KEY = process.env.INDIE_QUILL_API_KEY || "";
@@ -470,6 +471,31 @@ export async function processSyncJob(jobId: number): Promise<{ success: boolean;
         updatedAt: new Date(),
       })
       .where(eq(publishingUpdates.id, jobId));
+
+    try {
+      const [application] = await db.select()
+        .from(applications)
+        .where(eq(applications.id, job.applicationId));
+      
+      if (application) {
+        const [user] = await db.select()
+          .from(users)
+          .where(eq(users.id, application.userId));
+        
+        if (user) {
+          const pseudonym = application.penName || `Author ${application.internalId || application.id}`;
+          await sendActiveAuthorEmail(
+            user.email,
+            user.firstName,
+            pseudonym,
+            application.isMinor
+          );
+          console.log(`Active Author email sent to ${user.email} after successful sync`);
+        }
+      }
+    } catch (emailError) {
+      console.error("Failed to send Active Author email:", emailError);
+    }
   } else {
     await db.update(publishingUpdates)
       .set({
