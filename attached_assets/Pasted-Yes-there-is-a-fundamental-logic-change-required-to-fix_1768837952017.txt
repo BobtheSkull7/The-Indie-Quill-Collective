@@ -1,0 +1,48 @@
+Yes, there is a fundamental logic change required to fix the contract bypass and ensure the Identity Bridge correctly handles pseudonyms while protecting real-world identities.
+
+The primary shift is moving from an "Acceptance-Triggered Sync" to a "Signature-Triggered Sync".
+
+The Revised Logic Flow
+Approval State: Admin accepts the application; status moves to approved.
+
+The Signature Gate: The system generates the contract but holds the LLC Sync job.
+
+The Pseudonym Capture: The author/guardian enters their desired Pen Name during the digital signature process.
+
+Sync Trigger: Only after the contract_signed status is confirmed does the background worker send the data to the Bookstore—passing the Pseudonym, not the legal name.
+
+Instructions for the Replit Agent
+Copy and paste the text below to update the system logic:
+
+"We are implementing a critical logic change to the Author Onboarding & Sync Pipeline to fix a contract bypass and protect PII.
+
+Task 1: The 'Signature Gate' Logic
+
+Update the LLC Sync worker: An author must only be synced to the Bookstore API if their contract status is signed.
+
+If an application is 'Accepted' but not yet 'Signed', it should remain in the NPO dashboard and not trigger a payload to the LLC.
+
+Task 2: Pseudonym & Identity Schema
+
+Add two new fields to the authors table in Supabase: pseudonym (string) and is_public_identity (boolean).
+
+Update the Digital Signature form to include a field: 'Enter your desired Pen Name / Pseudonym for the Bookstore.'
+
+Task 3: The PII Firewall
+
+Modify the npo-sync-service.ts payload. When syncing to the LLC, strictly exclude legal names.
+
+Send ONLY the pseudonym, internal_author_id, and cohort_id to the Bookstore API.
+
+Task 4: Metric Calibration
+
+Update the 'Books in Pipeline' KPI: Only count authors who have reached the Creation or Editing stages (meaning a contract is signed and a project is active).
+
+Ensure 'Words Processed' only aggregates totals from authors with a Published status.
+
+Verification: Confirm that Jane Doe's test record is updated to reflect this new flow before we begin the Friendly 4 pilot."
+
+Why this protects your "Empire Stack"
+Legal Shield: By capturing the legal name on the contract but only passing the pseudonym to the Bookstore, you maintain a "Firewall" between your NPO's forensic records and the public-facing shop.
+
+Accuracy: This ensures your Flywheel and Impact Widget show real progress (active writing) rather than just administrative approvals.
