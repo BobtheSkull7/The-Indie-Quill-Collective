@@ -261,12 +261,31 @@ async function sendToIndieQuill(payload: AuthorPayload): Promise<{ success: bool
     return { success: false, error: "Integration not configured" };
   }
 
+  // Build payload for LLC's /api/collective/migrate-author endpoint
+  const migratePayload = {
+    email: payload.email,
+    firstName: payload.firstName,
+    lastName: payload.lastName,
+    password: payload.password,
+    collectiveUserId: payload.collectiveApplicationId, // LLC expects collectiveUserId
+    guardianName: payload.guardianName || null,
+    guardianEmail: payload.guardianEmail || null,
+    dateOfBirth: payload.dateOfBirth || null,
+  };
+
   const timestampMs = Date.now().toString();
-  const payloadJson = JSON.stringify(payload);
+  const payloadJson = JSON.stringify(migratePayload);
   const signature = generateHmacSignature(payloadJson, timestampMs);
 
+  // Normalize URL - remove trailing /api if present to avoid double /api/api
+  const baseUrl = INDIE_QUILL_API_URL.replace(/\/api\/?$/, '');
+  const endpoint = `${baseUrl}/api/collective/migrate-author`;
+
+  console.log(`Sending author to LLC: ${payload.email}`);
+  console.log(`Endpoint: POST ${endpoint}`);
+
   try {
-    const response = await fetch(`${INDIE_QUILL_API_URL}/api/internal/npo-authors`, {
+    const response = await fetch(endpoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -284,7 +303,10 @@ async function sendToIndieQuill(payload: AuthorPayload): Promise<{ success: bool
     }
 
     const data = await response.json();
-    return { success: true, authorId: data.authorId };
+    // LLC returns: { message: "...", user: { id, email, ... } }
+    const authorId = data.user?.id || data.authorId || data.id;
+    console.log(`Author synced successfully. LLC Author ID: ${authorId}`);
+    return { success: true, authorId: authorId?.toString() };
   } catch (error) {
     console.error("Failed to connect to Indie Quill API:", error);
     return { success: false, error: `Connection failed: ${error}` };
