@@ -940,7 +940,7 @@ export function registerRoutes(app: Express) {
     }
 
     try {
-      const { signature, signatureType } = req.body;
+      const { signature, signatureType, penName } = req.body;
       const [contract] = await db.select().from(contracts)
         .where(eq(contracts.id, parseInt(req.params.id)));
 
@@ -958,6 +958,12 @@ export function registerRoutes(app: Express) {
         updateData.authorSignedAt = new Date();
         updateData.authorSignatureIp = clientIp;
         updateData.authorSignatureUserAgent = userAgent;
+        
+        if (penName) {
+          await db.update(applications)
+            .set({ penName: penName, updatedAt: new Date() })
+            .where(eq(applications.id, contract.applicationId));
+        }
         if (!contract.requiresGuardian) {
           updateData.status = "signed";
         } else if (contract.guardianSignature) {

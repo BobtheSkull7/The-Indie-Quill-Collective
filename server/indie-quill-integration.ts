@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import { db } from "./db";
-import { publishingUpdates, applications, users, contracts } from "@shared/schema";
+import { publishingUpdates, applications, users, contracts, cohorts } from "@shared/schema";
 import { eq } from "drizzle-orm";
 
 const INDIE_QUILL_API_URL = process.env.INDIE_QUILL_API_URL || "";
@@ -12,52 +12,23 @@ interface ApplicationPayload {
   collectiveApplicationId: string;
   collectiveUserId: number;
   email: string;
-  firstName: string;
-  lastName: string;
-  author: {
-    email: string;
-    firstName: string;
-    lastName: string;
-    penName: string | null;
-    dateOfBirth: string;
-    isMinor: boolean;
-  };
-  guardian: {
-    name: string | null;
-    email: string | null;
-    phone: string | null;
-    relationship: string | null;
-  } | null;
-  story: {
-    hasStoryToTell: boolean;
-    personalStruggles: string;
-    expressionTypes: string;
-    expressionOther: string | null;
-  };
-  motivation: {
-    whyCollective: string;
-    goals: string | null;
-    hearAboutUs: string | null;
-  };
+  pseudonym: string;
+  minorAdultDesignation: "M" | "A";
+  expressionTypes: string;
   submittedAt: Date;
 }
 
 interface AuthorPayload {
-  collectiveAuthorId: number;
+  collectiveAuthorId: string;
   collectiveApplicationId: string;
+  internalId: string;
   email: string;
   password: string;
-  firstName: string;
-  lastName: string;
-  penName: string | null;
-  dateOfBirth: string;
-  isMinor: boolean;
-  guardianName: string | null;
-  guardianEmail: string | null;
-  hasStoryToTell: boolean;
-  personalStruggles: string;
+  pseudonym: string;
+  cohortId: number | null;
+  cohortLabel: string;
+  minorAdultDesignation: "M" | "A";
   expressionTypes: string;
-  expressionOther: string | null;
   contractSignedAt: Date;
   role: "npo_author";
 }
@@ -77,50 +48,29 @@ function generateHmacSignature(payload: string, timestampMs: string): string {
     .digest("hex");
 }
 
-// Send application data to LLC immediately upon submission
+// Send application notification to LLC upon submission (PII-safe: no legal names)
+// NOTE: userData.firstName/lastName are accepted for legacy compatibility but NEVER sent to LLC
 export async function sendApplicationToLLC(
   applicationId: number,
   userId: number,
   applicationData: any,
-  userData: { email: string; firstName: string; lastName: string }
+  userData: { email: string; firstName?: string; lastName?: string }
 ): Promise<{ success: boolean; llcApplicationId?: string; error?: string }> {
   if (!INDIE_QUILL_API_URL || !INDIE_QUILL_API_KEY || !INDIE_QUILL_API_SECRET) {
     console.log("Indie Quill integration not configured - skipping immediate sync");
     return { success: false, error: "Integration not configured" };
   }
 
+  const pseudonym = applicationData.penName || `Applicant ${applicationId}`;
+
   const payload: ApplicationPayload = {
     source: "npo_collective",
     collectiveApplicationId: applicationId.toString(),
     collectiveUserId: userId,
     email: userData.email,
-    firstName: userData.firstName,
-    lastName: userData.lastName,
-    author: {
-      email: userData.email,
-      firstName: userData.firstName,
-      lastName: userData.lastName,
-      penName: applicationData.penName || null,
-      dateOfBirth: applicationData.dateOfBirth,
-      isMinor: applicationData.isMinor,
-    },
-    guardian: applicationData.isMinor ? {
-      name: applicationData.guardianName || null,
-      email: applicationData.guardianEmail || null,
-      phone: applicationData.guardianPhone || null,
-      relationship: applicationData.guardianRelationship || null,
-    } : null,
-    story: {
-      hasStoryToTell: applicationData.hasStoryToTell,
-      personalStruggles: applicationData.personalStruggles,
-      expressionTypes: applicationData.expressionTypes,
-      expressionOther: applicationData.expressionOther || null,
-    },
-    motivation: {
-      whyCollective: applicationData.whyCollective,
-      goals: applicationData.goals || null,
-      hearAboutUs: applicationData.hearAboutUs || null,
-    },
+    pseudonym,
+    minorAdultDesignation: applicationData.isMinor ? "M" : "A",
+    expressionTypes: applicationData.expressionTypes,
     submittedAt: new Date(),
   };
 
@@ -261,17 +211,18 @@ async function sendToIndieQuill(payload: AuthorPayload): Promise<{ success: bool
     return { success: false, error: "Integration not configured" };
   }
 
-  // Build payload for LLC's /api/collective/migrate-author endpoint
   const migratePayload = {
+    source: "npo_collective",
+    collectiveUserId: payload.collectiveApplicationId,
+    internalId: payload.internalId,
+    pseudonym: payload.pseudonym,
+    cohortId: payload.cohortId,
+    cohortLabel: payload.cohortLabel,
+    minorAdultDesignation: payload.minorAdultDesignation,
+    expressionTypes: payload.expressionTypes,
     email: payload.email,
-    firstName: payload.firstName,
-    lastName: payload.lastName,
     password: payload.password,
-    collectiveUserId: payload.collectiveApplicationId, // LLC expects collectiveUserId
-    guardianName: payload.guardianName || null,
-    guardianEmail: payload.guardianEmail || null,
-    dateOfBirth: payload.dateOfBirth || null,
-    status: "approved", // Tell LLC this application is approved
+    status: "approved",
     approved: true,
   };
 
@@ -356,22 +307,29 @@ export async function migrateAuthorToIndieQuill(publishingUpdateId: number): Pro
     const [contract] = await db.select().from(contracts)
       .where(eq(contracts.applicationId, application.id));
 
+    let cohortLabel = "Unknown";
+    if (application.cohortId) {
+      const [cohort] = await db.select()
+        .from(cohorts)
+        .where(eq(cohorts.id, application.cohortId));
+      if (cohort) {
+        cohortLabel = cohort.label;
+      }
+    }
+
+    const pseudonym = application.penName || `Author ${application.internalId || application.id}`;
+
     const payload: AuthorPayload = {
       collectiveAuthorId: user.id,
       collectiveApplicationId: application.id.toString(),
+      internalId: application.internalId || "",
       email: user.email,
       password: generateSecureTemporaryPassword(),
-      firstName: user.firstName,
-      lastName: user.lastName,
-      penName: application.penName,
-      dateOfBirth: application.dateOfBirth,
-      isMinor: application.isMinor,
-      guardianName: application.guardianName,
-      guardianEmail: application.guardianEmail,
-      hasStoryToTell: application.hasStoryToTell,
-      personalStruggles: application.personalStruggles,
+      pseudonym,
+      cohortId: application.cohortId,
+      cohortLabel,
+      minorAdultDesignation: application.isMinor ? "M" : "A",
       expressionTypes: application.expressionTypes,
-      expressionOther: application.expressionOther,
       contractSignedAt: contract?.authorSignedAt || new Date(),
       role: "npo_author",
     };

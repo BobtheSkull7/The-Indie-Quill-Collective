@@ -27,6 +27,7 @@ export default function ContractSign() {
   const params = useParams<{ id: string }>();
   const [contract, setContract] = useState<Contract | null>(null);
   const [signature, setSignature] = useState("");
+  const [penName, setPenName] = useState("");
   const [signatureType, setSignatureType] = useState<"author" | "guardian">("author");
   const [loading, setLoading] = useState(true);
   const [signing, setSigning] = useState(false);
@@ -54,6 +55,11 @@ export default function ContractSign() {
       return;
     }
 
+    if (signatureType === "author" && !penName.trim()) {
+      setError("Please enter your pen name / pseudonym for the bookstore");
+      return;
+    }
+
     setSigning(true);
     setError("");
 
@@ -61,7 +67,11 @@ export default function ContractSign() {
       const res = await fetch(`/api/contracts/${params.id}/sign`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ signature, signatureType }),
+        body: JSON.stringify({ 
+          signature, 
+          signatureType,
+          penName: signatureType === "author" ? penName.trim() : undefined 
+        }),
       });
 
       if (!res.ok) {
@@ -235,6 +245,22 @@ export default function ContractSign() {
                     <span className={contract.guardianSignature ? "text-gray-400" : ""}>Guardian</span>
                   </label>
                 </div>
+              </div>
+            )}
+
+            {signatureType === "author" && (
+              <div className="mb-4">
+                <label className="label">Pen Name / Pseudonym for Bookstore</label>
+                <input
+                  type="text"
+                  className="input-field"
+                  placeholder="Enter how you want your name to appear on published works"
+                  value={penName}
+                  onChange={(e) => setPenName(e.target.value)}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  This is the name that will appear on the bookstore and published materials. Your legal name remains private.
+                </p>
               </div>
             )}
 

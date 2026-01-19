@@ -13,30 +13,14 @@ interface NPOAuthorPayload {
   bookstoreAuthorId?: string;
   password: string;
   internalId: string;
-  firstName: string;
-  lastName: string;
-  dateOfBirth: string;
+  pseudonym: string;
   minorAdultDesignation: "M" | "A";
-  guardian: {
-    name: string | null;
-    email: string | null;
-    phone: string | null;
-    relationship: string | null;
-  } | null;
   dateApplied: string;
   dateApproved: string;
   dateMigrated: string;
   cohortLabel: string;
-  profileAnswers: {
-    penName: string | null;
-    hasStoryToTell: boolean;
-    personalStruggles: string;
-    expressionTypes: string;
-    expressionOther: string | null;
-    whyCollective: string;
-    goals: string | null;
-    hearAboutUs: string | null;
-  };
+  cohortId: number | null;
+  expressionTypes: string;
 }
 
 function generateSecureTemporaryPassword(): string {
@@ -81,35 +65,21 @@ export async function buildNPOAuthorPayload(applicationId: number): Promise<NPOA
     }
   }
 
+  const pseudonym = application.penName || `Author ${application.internalId || application.id}`;
+
   const payload: NPOAuthorPayload = {
     source: "npo_collective",
     collectiveApplicationId: application.id.toString(),
     password: generateSecureTemporaryPassword(),
     internalId: application.internalId || "",
-    firstName: user.firstName,
-    lastName: user.lastName,
-    dateOfBirth: application.dateOfBirth,
+    pseudonym,
     minorAdultDesignation: application.isMinor ? "M" : "A",
-    guardian: application.isMinor ? {
-      name: application.guardianName,
-      email: application.guardianEmail,
-      phone: application.guardianPhone,
-      relationship: application.guardianRelationship,
-    } : null,
     dateApplied: application.createdAt.toISOString(),
     dateApproved: application.dateApproved?.toISOString() || new Date().toISOString(),
     dateMigrated: new Date().toISOString(),
     cohortLabel,
-    profileAnswers: {
-      penName: application.penName,
-      hasStoryToTell: application.hasStoryToTell,
-      personalStruggles: application.personalStruggles,
-      expressionTypes: application.expressionTypes,
-      expressionOther: application.expressionOther,
-      whyCollective: application.whyCollective,
-      goals: application.goals,
-      hearAboutUs: application.hearAboutUs,
-    },
+    cohortId: application.cohortId,
+    expressionTypes: application.expressionTypes,
   };
 
   return payload;
@@ -120,17 +90,21 @@ async function registerAuthorWithLLC(
   payload: NPOAuthorPayload,
   userEmail: string
 ): Promise<{ success: boolean; authorId?: string; error?: string }> {
-  // Payload format expected by LLC's /api/collective/migrate-author endpoint
   const registrationPayload = {
+    source: payload.source,
+    collectiveUserId: payload.collectiveApplicationId,
+    internalId: payload.internalId,
+    pseudonym: payload.pseudonym,
+    cohortId: payload.cohortId,
+    cohortLabel: payload.cohortLabel,
+    minorAdultDesignation: payload.minorAdultDesignation,
+    expressionTypes: payload.expressionTypes,
     email: userEmail,
-    firstName: payload.firstName,
-    lastName: payload.lastName,
     password: payload.password,
-    collectiveUserId: payload.collectiveApplicationId, // LLC expects collectiveUserId
-    guardianName: payload.guardian?.name || null,
-    guardianEmail: payload.guardian?.email || null,
-    dateOfBirth: payload.dateOfBirth,
-    status: "approved", // Tell LLC this application is approved
+    dateApplied: payload.dateApplied,
+    dateApproved: payload.dateApproved,
+    dateMigrated: payload.dateMigrated,
+    status: "approved",
     approved: true,
   };
 
@@ -368,16 +342,19 @@ export async function registerNpoAuthorWithLLC(email: string): Promise<{
     return { success: true, bookstoreId: author.bookstoreId, error: "Already synced" };
   }
 
-  // Build the registration payload for LLC's /api/collective/migrate-author endpoint
+  // Build the registration payload for LLC (PII-safe: pseudonym only, no legal names)
+  const pseudonym = `Author NPO-${author.id.substring(0, 8)}`;
+  
   const registrationPayload = {
+    source: "npo_collective",
     email: author.email,
-    firstName: author.firstName || "",
-    lastName: author.lastName || "",
+    pseudonym,
     password: generateSecureTemporaryPassword(),
-    collectiveUserId: author.id, // LLC expects collectiveUserId (UUID from Supabase)
-    guardianName: null,
-    guardianEmail: null,
-    dateOfBirth: null,
+    collectiveUserId: author.id,
+    internalId: author.id.substring(0, 8),
+    minorAdultDesignation: "A" as const,
+    status: "approved",
+    approved: true,
   };
 
   const timestampMs = Date.now().toString();

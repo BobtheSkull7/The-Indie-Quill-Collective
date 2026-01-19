@@ -29,6 +29,8 @@ The project utilizes a client-server architecture with a React 19, Vite, and Tai
 - **Password Security:** `crypto.scrypt` with random salt for hashing.
 - **Database Security:** Drizzle ORM for SQL injection protection via parameterized queries.
 - **COPPA Compliance:** Audit logging for all access to minor data.
+- **PII Firewall:** All sync payloads to The Indie Quill LLC use ONLY pseudonym/pen name - never legal names (firstName, lastName), guardian info, or dateOfBirth. Legal names are stored in NPO contracts for forensic records but never transmitted externally.
+- **Signature Gate:** Enterprise sync to LLC is deferred until contract is fully signed (both author and guardian when required).
 
 **Deployment & Development:**
 - **Development:** Replit for local development.
