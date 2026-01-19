@@ -118,6 +118,11 @@ export const applications = pgTable("applications", {
   manuscriptWordCount: integer("manuscript_word_count").default(0),
   manuscriptTitle: text("manuscript_title"),
   
+  // Identity visibility toggle - Zero-PII safety (default: false = Safe Mode with emoji + truncated name)
+  // When true, author opts in to use full name and photo for marketing
+  // For minors, this requires guardian counter-signature in the contract
+  publicIdentityEnabled: boolean("public_identity_enabled").default(false).notNull(),
+  
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

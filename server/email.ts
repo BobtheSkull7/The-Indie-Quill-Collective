@@ -109,10 +109,16 @@ export async function sendApplicationAcceptedEmail(toEmail: string, firstName: s
   try {
     const { client, fromEmail } = await getResendClient();
     
+    // Use the Replit dev domain or production domain
+    const baseUrl = process.env.REPLIT_DEV_DOMAIN 
+      ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
+      : 'https://indie-quill-collective.replit.app';
+    const contractUrl = `${baseUrl}/contracts`;
+    
     await client.emails.send({
       from: fromEmail || 'The Indie Quill Collective <noreply@resend.dev>',
       to: toEmail,
-      subject: 'Congratulations! Your Application Has Been Accepted - The Indie Quill Collective',
+      subject: 'Congratulations! You Have Been Accepted - The Indie Quill Collective',
       html: `
         <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
           <div style="text-align: center; margin-bottom: 30px;">
@@ -125,23 +131,29 @@ export async function sendApplicationAcceptedEmail(toEmail: string, firstName: s
           <div style="background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); color: white; padding: 30px; border-radius: 12px; margin-bottom: 30px;">
             <h2 style="margin: 0 0 15px 0; font-size: 24px;">Congratulations, ${firstName}!</h2>
             <p style="margin: 0; font-size: 16px; line-height: 1.6;">
-              Your application has been accepted!
+              You have been accepted into the Collective!
             </p>
           </div>
           
           <div style="padding: 0 10px;">
             <p style="color: #374151; font-size: 16px; line-height: 1.8;">
-              We're thrilled to welcome you to The Indie Quill Collective! We can't wait to help you share your story with the world.
+              We're thrilled to welcome you to The Indie Quill Collective! The first step in your journey is to sign your publishing agreement.
             </p>
             
             <p style="color: #374151; font-size: 16px; line-height: 1.8;">
-              Your next step is to sign your publishing agreement. Please log in to your account to review and sign your contract.
+              Please log in to review and sign your contract:
             </p>
             
             <div style="text-align: center; margin: 30px 0;">
-              <a href="#" style="display: inline-block; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; text-decoration: none; padding: 15px 30px; border-radius: 8px; font-weight: 600;">
-                View Your Contract
+              <a href="${contractUrl}" style="display: inline-block; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; text-decoration: none; padding: 15px 30px; border-radius: 8px; font-weight: 600;">
+                Sign Your Publishing Agreement
               </a>
+            </div>
+            
+            <div style="background: #fef2f2; border-left: 4px solid #ef4444; padding: 20px; margin: 25px 0; border-radius: 0 8px 8px 0;">
+              <p style="margin: 0; color: #991b1b; font-size: 14px;">
+                <strong>Important:</strong> Your publishing journey cannot begin until you sign your contract. This agreement outlines our commitment to supporting your work.
+              </p>
             </div>
             
             <p style="color: #374151; font-size: 16px; line-height: 1.8; margin-top: 30px;">
@@ -190,19 +202,15 @@ export async function sendApplicationRejectedEmail(toEmail: string, firstName: s
             </p>
             
             <p style="color: #374151; font-size: 16px; line-height: 1.8;">
-              Thank you for your interest in The Indie Quill Collective and for sharing your story with us.
+              Thank you for sharing your story with us.
             </p>
             
             <p style="color: #374151; font-size: 16px; line-height: 1.8;">
-              After careful consideration, we regret to inform you that we are unable to accept your application at this time. This decision was not easy, and we want you to know that it does not reflect on the value of your story.
+              At this time, we are unable to move forward with your application. This decision was not easy, and we want you to know that it does not reflect on the value of your story.
             </p>
             
             <p style="color: #374151; font-size: 16px; line-height: 1.8;">
-              We encourage you to continue pursuing your writing dreams, and you are welcome to apply again in the future.
-            </p>
-            
-            <p style="color: #374151; font-size: 16px; line-height: 1.8;">
-              If you have questions or would like more information about this decision, please email us at <a href="mailto:jon@theindiequill.com" style="color: #ef4444;">jon@theindiequill.com</a>.
+              If you have questions or would like feedback, please contact Jon at <a href="mailto:jon@theindiequill.com" style="color: #ef4444;">jon@theindiequill.com</a>.
             </p>
             
             <p style="color: #374151; font-size: 16px; line-height: 1.8; margin-top: 30px;">

@@ -585,11 +585,8 @@ export function registerRoutes(app: Express) {
           status: "pending_signature",
         });
 
-        const jobId = await createSyncJob(applicationId, application.userId);
-        
-        processSyncJob(jobId).catch(err => {
-          console.error("Background sync failed:", err);
-        });
+        // NOTE: Sync to LLC is deferred until contract is signed (see contract signing endpoint)
+        // This ensures the Manual Ledger and Forensic Audit Trail are accurate before touching the Bookstore
 
         try {
           await sendApplicationAcceptedEmail(applicantUser.email, applicantUser.firstName);
@@ -1911,27 +1908,37 @@ export function registerRoutes(app: Express) {
       const allUpdates = await db.select().from(publishingUpdates);
       const allContracts = await db.select().from(contracts);
 
-      // Total words processed (from manuscripts)
-      const totalWordsProcessed = allApps.reduce((sum, app) => sum + (app.manuscriptWordCount || 0), 0);
+      // Total words processed - from books that reached "published" or "marketing" stage
+      // This aggregates wordsProcessed from publishingUpdates once a book is published
+      const totalWordsProcessed = allUpdates
+        .filter(u => u.status === 'published' || u.status === 'marketing')
+        .reduce((sum, u) => sum + (u.wordsProcessed || 0), 0);
       
-      // Books in pipeline (status > pending)
+      // Books in pipeline - ONLY accepted/migrated authors who have submitted a manuscript
+      // (manuscriptWordCount > 0 or manuscriptTitle set)
+      // This counts actual manuscript submissions, not just synced/accepted authors
       const booksInPipeline = allApps.filter(a => 
-        a.status === 'accepted' || a.status === 'migrated' || a.status === 'under_review'
+        (a.status === 'accepted' || a.status === 'migrated') &&
+        ((a.manuscriptWordCount && a.manuscriptWordCount > 0) || a.manuscriptTitle)
       ).length;
 
-      // Authors actively publishing
+      // Authors actively publishing (in any stage between agreement and marketing, excluding published)
       const activeAuthors = allUpdates.filter(u => 
-        u.status !== 'not_started' && u.status !== 'published'
+        u.status !== 'not_started' && u.status !== 'published' && u.status !== 'marketing'
       ).length;
 
-      // Published books count
-      const publishedBooks = allUpdates.filter(u => u.status === 'published').length;
+      // Published books count (reached "published" or "marketing" stage)
+      const publishedBooks = allUpdates.filter(u => 
+        u.status === 'published' || u.status === 'marketing'
+      ).length;
 
       // Contracts signed
       const signedContracts = allContracts.filter(c => c.status === 'signed').length;
 
-      // Youth authors supported (minors)
-      const youthAuthorsSupported = allApps.filter(a => a.isMinor).length;
+      // Youth authors supported (minors with accepted/migrated status)
+      const youthAuthorsSupported = allApps.filter(a => 
+        a.isMinor && (a.status === 'accepted' || a.status === 'migrated')
+      ).length;
 
       const impactData = {
         totalWordsProcessed,
@@ -2531,10 +2538,34 @@ The Author warrants that the Work is original and does not infringe on any copyr
 5. MINOR AUTHORS
 ${application.isMinor ? "This agreement requires guardian/parent consent and signature." : "N/A - Author is of legal age."}
 
-6. TERM
+6. IDENTITY VISIBILITY & PRIVACY PROTECTION
+
+By default, the Author's identity will be protected using our Zero-PII (Personally Identifiable 
+Information) safety measures. This means:
+- The Author's name will appear as "First Name + Last Initial" (e.g., "Jane D.")
+- A randomly assigned emoji avatar will be used instead of a photo
+- No full name, photo, or identifying information will be shared publicly
+
+PUBLIC IDENTITY OPT-IN: The Author may choose to enable "Public Identity Mode" in their 
+dashboard settings. By doing so, the Author grants permission to The Indie Quill Collective 
+and The Indie Quill LLC to use the Author's:
+- Full pen name or legal name
+- Profile photograph (if provided)
+- Biographical information for marketing and promotional purposes
+
+${application.isMinor ? `GUARDIAN CONSENT FOR MINOR IDENTITY VISIBILITY:
+As the guardian of a minor author, I understand that enabling "Public Identity Mode" will 
+allow the use of my child's name and photograph for marketing purposes. I hereby consent 
+to this use if enabled in the Author's dashboard settings.
+
+Guardian Signature Required: _________________________
+Guardian Name: _________________________
+Date: _________________________` : ""}
+
+7. TERM
 This agreement shall remain in effect for a period of three (3) years from the date of publication.
 
-7. TERMINATION
+8. TERMINATION
 Either party may terminate this agreement with 30 days written notice.
 
 By signing below, all parties agree to the terms and conditions set forth in this agreement.

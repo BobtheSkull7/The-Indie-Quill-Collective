@@ -13,7 +13,7 @@ The project utilizes a client-server architecture with a React 19, Vite, and Tai
 - **Author Application & Management:** Multi-step NPO author application system, minor author support with guardian information, and digital contract management with PDF generation and forensic signature metadata.
 - **Admin & Board Dashboards:** Tools for reviewing applications, managing workflows, tracking publishing status, and shared calendar management with Google Calendar integration.
 - **User & Data Management:** Secure user authentication with rate limiting, GDPR Right to Erasure and Data Portability, and COPPA compliance with audit logging for minor data access.
-- **Enterprise Sync:** A single-step atomic synchronization process with The Indie Quill LLC for approved applications, including cohort assignment, unique ID generation, and background worker processing with HMAC-signed requests.
+- **Enterprise Sync:** A single-step atomic synchronization process with The Indie Quill LLC for approved applications, including cohort assignment, unique ID generation, and background worker processing with HMAC-signed requests. **Sync is deferred until contract is fully signed** to ensure Manual Ledger and Forensic Audit Trail accuracy.
 - **Grant & Donor Logistics Module:** Foundation CRM with contact person management, solicitation logging to prevent double-tapping, grant allocation with cohort assignment, efficiency surplus calculation showing donors when cost optimization serves more authors than promised, and author-to-donation locking for immutable donor impact reporting with Zero-PII compliance (initial+emoji format).
 - **Friendly 4 Pilot Layer:** Form Vault (/admin/vault) for standardized legal documents (Guardian Consent, Code of Conduct, Conflict of Interest, Pilot Feedback) with one-click copy. Manual Ledger (/admin/ledger) tracking $777 per-capita sponsorships, ISBN/copyright expenses, and ISBN Arbitrage Surplus ($119.25 reinvestable per author). Author spending breakdown shows sponsorship vs. spent amounts.
 
@@ -40,7 +40,7 @@ The project utilizes a client-server architecture with a React 19, Vite, and Tai
 **Core Database Schema Highlights:**
 - **users:** User accounts with roles (applicant, admin, board_member).
 - **cohorts:** Manages author cohorts (10 authors per cohort).
-- **applications:** Stores author application details, including COPPA compliance fields (guardian consent, data retention).
+- **applications:** Stores author application details, including COPPA compliance fields (guardian consent, data retention), and `public_identity_enabled` for Zero-PII identity visibility toggle.
 - **contracts:** Publishing agreements with signature tracking.
 - **audit_logs:** Comprehensive logging for COPPA compliance, tracking user actions on sensitive data.
 

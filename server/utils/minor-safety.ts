@@ -36,7 +36,12 @@ export function truncateName(firstName: string, lastName: string): string {
 
 /**
  * Sanitizes an author profile for public display
- * If the author is a minor, applies Zero-PII protections
+ * Applies Zero-PII protections based on publicIdentityEnabled and minor status
+ * 
+ * Default (Safe Mode): Uses Emoji + Truncated Name for minors only
+ * Opt-In (Public Mode): Uses full Pen Name or full name with photo upload slot
+ * 
+ * For minors, Public Mode requires guardian counter-signature in the contract
  */
 export interface AuthorProfile {
   id: string | number;
@@ -47,6 +52,7 @@ export interface AuthorProfile {
   isMinor: boolean;
   penName?: string | null;
   profilePhoto?: string | null;
+  publicIdentityEnabled?: boolean;
 }
 
 export interface SanitizedAuthorProfile {
@@ -56,10 +62,28 @@ export interface SanitizedAuthorProfile {
   ageDisplay: string;
   isMinor: boolean;
   penName: string | null;
+  canShowPhoto: boolean;
 }
 
 export function sanitizeAuthorProfile(author: AuthorProfile): SanitizedAuthorProfile {
+  // Check if public identity is enabled (opt-in to show full name/photo)
+  const isPublicMode = author.publicIdentityEnabled === true;
+  
   if (author.isMinor) {
+    // Minors ALWAYS get protected display unless explicitly opted-in with guardian consent
+    if (isPublicMode) {
+      // Public Mode for minors (requires guardian counter-signature)
+      return {
+        id: author.id,
+        displayName: author.penName || `${author.firstName} ${author.lastName}`,
+        avatar: author.profilePhoto || assignMinorEmoji(author.id),
+        ageDisplay: 'Youth Author',
+        isMinor: true,
+        penName: author.penName || null,
+        canShowPhoto: true,
+      };
+    }
+    // Safe Mode (default for minors) - Zero-PII protection
     return {
       id: author.id,
       displayName: truncateName(author.firstName, author.lastName),
@@ -67,17 +91,20 @@ export function sanitizeAuthorProfile(author: AuthorProfile): SanitizedAuthorPro
       ageDisplay: 'Youth Author',
       isMinor: true,
       penName: author.penName || null,
+      canShowPhoto: false,
     };
   }
 
-  // Adult authors get full display (still no email in public)
+  // Adult authors - default to showing full name (existing behavior)
+  // Only use safe mode if explicitly opted out
   return {
     id: author.id,
-    displayName: `${author.firstName} ${author.lastName}`,
+    displayName: author.penName || `${author.firstName} ${author.lastName}`,
     avatar: author.profilePhoto || '👤',
     ageDisplay: 'Author',
     isMinor: false,
     penName: author.penName || null,
+    canShowPhoto: true,
   };
 }
 
