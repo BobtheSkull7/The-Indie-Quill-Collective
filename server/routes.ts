@@ -2072,15 +2072,19 @@ export function registerRoutes(app: Express) {
       // Find current active cohort
       const activeCohort = allCohorts.find(c => c.status === 'open');
       
-      // Cohort Velocity: % of current cohort with signed contracts
+      // Cohort Velocity: % of cohort capacity with signed contracts
       let cohortVelocity = 0;
+      let actualCohortCount = 0;
+      let cohortSigned = 0;
       if (activeCohort) {
         const cohortApps = allApps.filter(a => a.cohortId === activeCohort.id);
-        const cohortSigned = cohortApps.filter(a => {
+        actualCohortCount = cohortApps.length;
+        cohortSigned = cohortApps.filter(a => {
           const contract = allContracts.find(c => c.applicationId === a.id);
           return contract && contract.status === 'signed';
         }).length;
-        cohortVelocity = cohortApps.length > 0 ? Math.round((cohortSigned / cohortApps.length) * 100) : 0;
+        // Velocity is signed contracts as % of cohort capacity (10), not current enrollment
+        cohortVelocity = activeCohort.capacity > 0 ? Math.round((cohortSigned / activeCohort.capacity) * 100) : 0;
       }
 
       // Scale Indicator: Total Active Authors Managed
@@ -2138,8 +2142,9 @@ export function registerRoutes(app: Express) {
         cohortVelocity,
         activeCohort: activeCohort ? {
           label: activeCohort.label,
-          currentCount: activeCohort.currentCount,
+          currentCount: actualCohortCount,
           capacity: activeCohort.capacity,
+          signedCount: cohortSigned,
         } : null,
         totalActiveAuthors,
         statusDistribution,
