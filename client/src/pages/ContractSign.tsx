@@ -19,6 +19,10 @@ interface Contract {
   guardianSignatureIp: string | null;
   guardianSignatureUserAgent: string | null;
   createdAt: string;
+  authorLegalName?: string;
+  guardianLegalName?: string;
+  penName?: string;
+  identityMode?: "safe" | "public";
 }
 
 export default function ContractSign() {
@@ -27,8 +31,6 @@ export default function ContractSign() {
   const params = useParams<{ id: string }>();
   const [contract, setContract] = useState<Contract | null>(null);
   const [signature, setSignature] = useState("");
-  const [penName, setPenName] = useState("");
-  const [identityMode, setIdentityMode] = useState<"safe" | "public">("safe");
   const [signatureType, setSignatureType] = useState<"author" | "guardian">("author");
   const [loading, setLoading] = useState(true);
   const [signing, setSigning] = useState(false);
@@ -66,11 +68,6 @@ export default function ContractSign() {
       return;
     }
 
-    if (signatureType === "author" && !penName.trim()) {
-      setError("Please enter your pen name / pseudonym for the bookstore");
-      return;
-    }
-
     setSigning(true);
     setError("");
 
@@ -80,18 +77,17 @@ export default function ContractSign() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           signature, 
-          signatureType,
-          penName: signatureType === "author" ? penName.trim() : undefined,
-          identityMode: signatureType === "author" ? identityMode : undefined
+          signatureType
         }),
       });
 
+      const data = await res.json();
+      
       if (!res.ok) {
-        throw new Error("Failed to sign contract");
+        throw new Error(data.message || "Failed to sign contract");
       }
 
-      const updated = await res.json();
-      setContract(updated);
+      setContract(data);
       setSignature("");
     } catch (err: any) {
       setError(err.message);
@@ -281,71 +277,52 @@ export default function ContractSign() {
               </div>
             )}
 
-            {signatureType === "author" && (
-              <>
-                <div className="mb-4">
-                  <label className="label">Pen Name / Pseudonym (Creative Identity)</label>
-                  <input
-                    type="text"
-                    className="input-field"
-                    placeholder="Enter how you want your name to appear on published works"
-                    value={penName}
-                    onChange={(e) => setPenName(e.target.value)}
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    This is your Creative Identity that will be transmitted to The Publisher for bookstore distribution.
-                  </p>
+            <div className="mb-4 p-4 bg-slate-50 border border-slate-200 rounded-lg">
+              <h3 className="font-medium text-slate-800 mb-3">Defined Parties (Locked from Application)</h3>
+              
+              <div className="space-y-3">
+                <div className="flex justify-between items-center p-2 bg-white rounded border">
+                  <span className="text-sm text-gray-600">Author (Legal Identity):</span>
+                  <span className="font-medium text-slate-800">{contract.authorLegalName || "Loading..."}</span>
                 </div>
-
-                <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                  <h3 className="font-medium text-slate-800 mb-2">Identity Visibility & Safety (COPPA Compliance)</h3>
-                  <p className="text-sm text-gray-600 mb-3">
-                    We follow COPPA (Children's Online Privacy Protection Act) to ensure that all minors are protected at all times.
-                  </p>
-                  <p className="text-sm text-gray-600 mb-3">
-                    <strong>Pseudonym Bridge:</strong> Only your elected Pen Name (Creative Identity) will be shared with The Publisher for bookstore distribution.
-                  </p>
-                  
-                  <div className="space-y-3">
-                    <label className="flex items-start space-x-3 cursor-pointer p-2 rounded hover:bg-amber-100">
-                      <input
-                        type="radio"
-                        name="identityMode"
-                        checked={identityMode === "safe"}
-                        onChange={() => setIdentityMode("safe")}
-                        className="w-4 h-4 mt-1 text-teal-500"
-                      />
-                      <div>
-                        <span className="font-medium text-slate-800">Safe Mode (Default)</span>
-                        <p className="text-xs text-gray-600">
-                          Your identity will be masked using a truncated name and emoji avatar in all public materials. Only your Pseudonym will be shared with the Bookstore.
-                        </p>
-                      </div>
-                    </label>
-                    
-                    <label className="flex items-start space-x-3 cursor-pointer p-2 rounded hover:bg-amber-100">
-                      <input
-                        type="radio"
-                        name="identityMode"
-                        checked={identityMode === "public"}
-                        onChange={() => setIdentityMode("public")}
-                        className="w-4 h-4 mt-1 text-teal-500"
-                      />
-                      <div>
-                        <span className="font-medium text-slate-800">Public Mode</span>
-                        <p className="text-xs text-gray-600">
-                          I grant permission to use my full legal name and photograph for marketing and promotional purposes.
-                        </p>
-                      </div>
-                    </label>
+                
+                {contract.requiresGuardian && (
+                  <div className="flex justify-between items-center p-2 bg-white rounded border">
+                    <span className="text-sm text-gray-600">Guardian (Legal Identity):</span>
+                    <span className="font-medium text-slate-800">{contract.guardianLegalName || "Not specified"}</span>
                   </div>
-                  
-                  <p className="text-xs text-gray-500 mt-3">
-                    <strong>Correction Protocol:</strong> If any legal PII appears incorrectly in a public area, please notify jon@theindiequill.com immediately.
-                  </p>
+                )}
+                
+                <div className="flex justify-between items-center p-2 bg-white rounded border">
+                  <span className="text-sm text-gray-600">Creative Identity (Pen Name):</span>
+                  <span className="font-medium text-teal-600">{contract.penName || "Not specified"}</span>
                 </div>
-              </>
-            )}
+                
+                <div className="flex justify-between items-center p-2 bg-white rounded border">
+                  <span className="text-sm text-gray-600">Identity Mode:</span>
+                  <span className={`font-medium ${contract.identityMode === "public" ? "text-blue-600" : "text-green-600"}`}>
+                    {contract.identityMode === "public" ? "Public Mode" : "Safe Mode (Protected)"}
+                  </span>
+                </div>
+              </div>
+              
+              <p className="text-xs text-gray-500 mt-3">
+                These values were captured during your application and cannot be changed here. If you need to update them, please contact jon@theindiequill.com.
+              </p>
+            </div>
+
+            <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <h3 className="font-medium text-slate-800 mb-2">Signature Validation</h3>
+              <p className="text-sm text-gray-600">
+                {signatureType === "author" 
+                  ? `Please type your full legal name exactly as: "${contract.authorLegalName || 'Loading...'}"`
+                  : `Please type your full legal name exactly as: "${contract.guardianLegalName || 'Loading...'}"`
+                }
+              </p>
+              <p className="text-xs text-gray-500 mt-2">
+                This ensures the forensic integrity of the signature record.
+              </p>
+            </div>
 
             <div className="mb-4">
               <label className="label">Type Your Full Legal Name</label>

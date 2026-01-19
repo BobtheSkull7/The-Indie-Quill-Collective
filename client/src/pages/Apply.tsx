@@ -13,6 +13,7 @@ export default function Apply() {
 
   const [formData, setFormData] = useState({
     penName: "",
+    identityMode: "safe" as "safe" | "public",
     dateOfBirth: "",
     isMinor: false,
     guardianName: "",
@@ -62,6 +63,7 @@ export default function Apply() {
         body: JSON.stringify({
           ...formData,
           expressionTypes: formData.expressionTypes.join(","),
+          publicIdentityEnabled: formData.identityMode === "public",
         }),
       });
 
@@ -172,15 +174,57 @@ export default function Apply() {
                 </div>
 
                 <div>
-                  <label className="label">Pen Name (Optional)</label>
+                  <label className="label">Pen Name / Pseudonym (Creative Identity) *</label>
                   <input
                     type="text"
+                    required
                     className="input-field"
-                    placeholder="Your author pen name"
+                    placeholder="Your author pen name for the bookstore"
                     value={formData.penName}
                     onChange={(e) => setFormData({ ...formData, penName: e.target.value })}
                   />
-                  <p className="text-xs text-gray-500 mt-1">Leave blank to use your real name</p>
+                  <p className="text-xs text-gray-500 mt-1">This is how your name will appear on published works. Your legal name remains private.</p>
+                </div>
+
+                <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
+                  <h3 className="font-medium text-slate-800 mb-2">Identity Visibility & Safety (COPPA Compliance)</h3>
+                  <p className="text-sm text-gray-600 mb-3">
+                    We follow COPPA to ensure that all minors are protected at all times. Choose how your identity will appear publicly:
+                  </p>
+                  
+                  <div className="space-y-3">
+                    <label className="flex items-start space-x-3 cursor-pointer p-2 rounded hover:bg-amber-100">
+                      <input
+                        type="radio"
+                        name="identityMode"
+                        checked={formData.identityMode === "safe"}
+                        onChange={() => setFormData({ ...formData, identityMode: "safe" })}
+                        className="w-4 h-4 mt-1 text-teal-500"
+                      />
+                      <div>
+                        <span className="font-medium text-slate-800">Safe Mode (Default)</span>
+                        <p className="text-xs text-gray-600">
+                          Your identity will be masked using a truncated name and emoji avatar in all public materials. Only your Pseudonym will be shared with the Bookstore.
+                        </p>
+                      </div>
+                    </label>
+                    
+                    <label className="flex items-start space-x-3 cursor-pointer p-2 rounded hover:bg-amber-100">
+                      <input
+                        type="radio"
+                        name="identityMode"
+                        checked={formData.identityMode === "public"}
+                        onChange={() => setFormData({ ...formData, identityMode: "public" })}
+                        className="w-4 h-4 mt-1 text-teal-500"
+                      />
+                      <div>
+                        <span className="font-medium text-slate-800">Public Mode</span>
+                        <p className="text-xs text-gray-600">
+                          I grant permission to use my full legal name and photograph for marketing and promotional purposes.
+                        </p>
+                      </div>
+                    </label>
+                  </div>
                 </div>
 
                 <div>

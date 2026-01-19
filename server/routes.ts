@@ -800,6 +800,12 @@ export function registerRoutes(app: Express) {
         return res.status(403).json({ message: "Not authorized" });
       }
 
+      const [application] = await db.select().from(applications)
+        .where(eq(applications.id, contract.applicationId));
+      
+      const [user] = await db.select().from(users)
+        .where(eq(users.id, contract.userId));
+
       if (contract.requiresGuardian) {
         await logMinorDataAccess(
           req.session.userId,
@@ -811,7 +817,13 @@ export function registerRoutes(app: Express) {
         );
       }
 
-      return res.json(contract);
+      return res.json({
+        ...contract,
+        authorLegalName: user ? `${user.firstName} ${user.lastName}` : null,
+        guardianLegalName: application?.guardianName || null,
+        penName: application?.penName || null,
+        identityMode: application?.publicIdentityEnabled ? "public" : "safe",
+      });
     } catch (error) {
       console.error("Fetch contract error:", error);
       return res.status(500).json({ message: "Failed to fetch contract" });
@@ -940,12 +952,43 @@ export function registerRoutes(app: Express) {
     }
 
     try {
-      const { signature, signatureType, penName, identityMode } = req.body;
+      const { signature, signatureType } = req.body;
       const [contract] = await db.select().from(contracts)
         .where(eq(contracts.id, parseInt(req.params.id)));
 
       if (!contract) {
         return res.status(404).json({ message: "Contract not found" });
+      }
+
+      const [application] = await db.select().from(applications)
+        .where(eq(applications.id, contract.applicationId));
+      
+      const [user] = await db.select().from(users)
+        .where(eq(users.id, contract.userId));
+
+      if (!application || !user) {
+        return res.status(404).json({ message: "Application or user not found" });
+      }
+
+      const authorLegalName = `${user.firstName} ${user.lastName}`;
+      const guardianLegalName = application.guardianName || "";
+
+      const normalizedSignature = signature.trim().toLowerCase();
+
+      if (signatureType === "author") {
+        const normalizedAuthorName = authorLegalName.trim().toLowerCase();
+        if (normalizedSignature !== normalizedAuthorName) {
+          return res.status(400).json({ 
+            message: `Identity Mismatch: The name entered does not match the Author's Legal Name. Please enter your name exactly as "${authorLegalName}". This is required to maintain the Zero-PII safety of your account.`
+          });
+        }
+      } else if (signatureType === "guardian") {
+        const normalizedGuardianName = guardianLegalName.trim().toLowerCase();
+        if (normalizedSignature !== normalizedGuardianName) {
+          return res.status(400).json({ 
+            message: `Identity Mismatch: The name entered does not match the Guardian's Legal Name. Please enter your name exactly as "${guardianLegalName}". This is required to maintain the Zero-PII safety of your account.`
+          });
+        }
       }
 
       const clientIp = getClientIp(req) || "unknown";
@@ -959,18 +1002,6 @@ export function registerRoutes(app: Express) {
         updateData.authorSignatureIp = clientIp;
         updateData.authorSignatureUserAgent = userAgent;
         
-        const appUpdateData: any = { updatedAt: new Date() };
-        if (penName) {
-          appUpdateData.penName = penName;
-        }
-        if (identityMode) {
-          appUpdateData.publicIdentityEnabled = identityMode === "public";
-        }
-        if (penName || identityMode) {
-          await db.update(applications)
-            .set(appUpdateData)
-            .where(eq(applications.id, contract.applicationId));
-        }
         if (!contract.requiresGuardian) {
           updateData.status = "signed";
         } else if (contract.guardianSignature) {
