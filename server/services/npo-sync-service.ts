@@ -120,32 +120,31 @@ async function registerAuthorWithLLC(
   payload: NPOAuthorPayload,
   userEmail: string
 ): Promise<{ success: boolean; authorId?: string; error?: string }> {
+  // Payload format expected by LLC's /api/collective/migrate-author endpoint
   const registrationPayload = {
-    source: "npo_collective",
-    collectiveApplicationId: payload.collectiveApplicationId,
     email: userEmail,
-    password: payload.password,
     firstName: payload.firstName,
     lastName: payload.lastName,
-    penName: payload.profileAnswers.penName,
-    dateOfBirth: payload.dateOfBirth,
-    isMinor: payload.minorAdultDesignation === "M",
+    password: payload.password,
+    collectiveUserId: payload.collectiveApplicationId, // LLC expects collectiveUserId
     guardianName: payload.guardian?.name || null,
     guardianEmail: payload.guardian?.email || null,
-    guardianPhone: payload.guardian?.phone || null,
-    internalId: payload.internalId,
-    cohortLabel: payload.cohortLabel,
-    role: "npo_author",
+    dateOfBirth: payload.dateOfBirth,
   };
 
   const timestampMs = Date.now().toString();
   const payloadJson = JSON.stringify(registrationPayload);
   const signature = generateHmacSignature(payloadJson, timestampMs);
 
+  // Normalize URL - remove trailing /api if present to avoid double /api/api
+  const baseUrl = INDIE_QUILL_API_URL.replace(/\/api\/?$/, '');
+  const endpoint = `${baseUrl}/api/collective/migrate-author`;
+
   console.log(`Registering new author with LLC: ${userEmail} (App ID: ${applicationId})`);
+  console.log(`Endpoint: POST ${endpoint}`);
 
   try {
-    const response = await fetch(`${INDIE_QUILL_API_URL}/api/authors/register`, {
+    const response = await fetch(endpoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -169,8 +168,10 @@ async function registerAuthorWithLLC(
       return { success: false, error: `Registration failed: ${response.status} - ${responseData.message || responseText}` };
     }
 
-    console.log(`Author registered with LLC successfully. Author ID: ${responseData.authorId || responseData.id}`);
-    return { success: true, authorId: responseData.authorId || responseData.id };
+    // LLC returns: { message: "...", user: { id, email, ... } }
+    const authorId = responseData.user?.id || responseData.authorId || responseData.id;
+    console.log(`Author registered with LLC successfully. Author ID: ${authorId}`);
+    return { success: true, authorId: authorId?.toString() };
   } catch (error) {
     console.error("LLC registration connection error:", error);
     return { success: false, error: `Registration connection failed: ${error}` };
@@ -365,16 +366,16 @@ export async function registerNpoAuthorWithLLC(email: string): Promise<{
     return { success: true, bookstoreId: author.bookstoreId, error: "Already synced" };
   }
 
-  // Build the registration payload using the UUID from npo_applications.id
+  // Build the registration payload for LLC's /api/collective/migrate-author endpoint
   const registrationPayload = {
-    source: "npo_collective",
-    collectiveApplicationId: author.id, // This is the UUID from Supabase
     email: author.email,
-    password: generateSecureTemporaryPassword(),
     firstName: author.firstName || "",
     lastName: author.lastName || "",
-    status: author.status || "migrated",
-    role: "npo_author",
+    password: generateSecureTemporaryPassword(),
+    collectiveUserId: author.id, // LLC expects collectiveUserId (UUID from Supabase)
+    guardianName: null,
+    guardianEmail: null,
+    dateOfBirth: null,
   };
 
   const timestampMs = Date.now().toString();
@@ -383,7 +384,7 @@ export async function registerNpoAuthorWithLLC(email: string): Promise<{
 
   // Normalize URL - remove trailing /api if present to avoid double /api/api
   const baseUrl = INDIE_QUILL_API_URL.replace(/\/api\/?$/, '');
-  const endpoint = `${baseUrl}/api/authors/register`;
+  const endpoint = `${baseUrl}/api/collective/migrate-author`;
 
   console.log(`\n========== NPO AUTHOR REGISTRATION ==========`);
   console.log(`Registering: ${email}`);
@@ -425,7 +426,8 @@ export async function registerNpoAuthorWithLLC(email: string): Promise<{
     }
 
     // Extract the bookstore author ID from the response
-    const bookstoreId = responseData.authorId || responseData.id || responseData.userId;
+    // LLC returns: { message: "...", user: { id, email, ... } }
+    const bookstoreId = responseData.user?.id || responseData.authorId || responseData.id || responseData.userId;
 
     if (!bookstoreId) {
       console.error("No author ID returned from Bookstore API");
