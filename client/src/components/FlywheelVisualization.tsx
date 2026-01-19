@@ -149,13 +149,13 @@ export default function FlywheelVisualization() {
             IMPACT
           </text>
 
-          <rect x="60" y="10" width="100" height="50" rx="4" fill="#ccfbf1" stroke="#14b8a6" strokeWidth="2" />
-          <text x="110" y="32" textAnchor="middle" fill="#0f766e" fontSize="11" fontWeight="600">LOWER</text>
-          <text x="110" y="48" textAnchor="middle" fill="#0f766e" fontSize="11" fontWeight="600">COSTS</text>
+          <rect x="40" y="10" width="120" height="50" rx="4" fill="#ccfbf1" stroke="#14b8a6" strokeWidth="2" />
+          <text x="100" y="32" textAnchor="middle" fill="#0f766e" fontSize="9" fontWeight="600">OPERATIONAL</text>
+          <text x="100" y="48" textAnchor="middle" fill="#0f766e" fontSize="9" fontWeight="600">EFFICIENCY</text>
 
-          <rect x="340" y="10" width="100" height="50" rx="4" fill="#ccfbf1" stroke="#14b8a6" strokeWidth="2" />
-          <text x="390" y="32" textAnchor="middle" fill="#0f766e" fontSize="11" fontWeight="600">BETTER</text>
-          <text x="390" y="48" textAnchor="middle" fill="#0f766e" fontSize="11" fontWeight="600">SUPPORT</text>
+          <rect x="340" y="10" width="120" height="50" rx="4" fill="#ccfbf1" stroke="#14b8a6" strokeWidth="2" />
+          <text x="400" y="32" textAnchor="middle" fill="#0f766e" fontSize="8" fontWeight="600">ENHANCED PROGRAM</text>
+          <text x="400" y="48" textAnchor="middle" fill="#0f766e" fontSize="9" fontWeight="600">SERVICES</text>
 
           <rect x="190" y="85" width="120" height="50" rx="4" fill="#fda4af" stroke="#e11d48" strokeWidth="2" />
           <text x="250" y="107" textAnchor="middle" fill="#9f1239" fontSize="11" fontWeight="600">SELECTION</text>
@@ -183,8 +183,8 @@ export default function FlywheelVisualization() {
 
       <div className="mt-8 text-center max-w-md mx-auto">
         <p className="text-sm text-gray-600 leading-relaxed">
-          Lower costs enable better author experiences, which attracts more submissions, 
-          leading to growth and donations that further reduce per-author costs. 
+          Operational efficiency enables enhanced program services, which attracts more submissions, 
+          leading to growth and donations that further improve efficiency. 
           <span className="font-semibold text-teal-600"> The flywheel accelerates with each cycle.</span>
         </p>
       </div>
