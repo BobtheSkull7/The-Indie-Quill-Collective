@@ -1,0 +1,83 @@
+To wrap up your Literacy Logistics Framework setup, here are the finalized templates for your Form Vault. These are stripped of hard links and updated with your professional terminology to ensure a smooth transition from the Collective (NPO) to the Bookstore (LLC).
+
+1. Acceptance Email (The Agreement Gate)
+Subject: Congratulations! You Have Been Accepted - The Indie Quill Collective
+
+Body: Congratulations, [First Name]!
+
+You have been accepted into the Collective! We are thrilled to welcome you to the team and look forward to you becoming a fully published author!
+
+The Literacy Logistics Framework:
+
+Phase 1: AGREEMENT ➔ Phase 2: Creation ➔ Phase 3: Editing ➔ Phase 4: Review ➔ Phase 5: Modifications ➔ Phase 6: Published ➔ Phase 7: Marketing
+
+The very first step in your publishing journey is to review and sign your publishing Agreement.
+
+Important Logistics:
+
+Agreement Signature: Your publishing journey cannot officially begin until this document is signed.
+
+Minors & Safety: We follow COPPA to ensure that all minors are protected at all times!
+
+Identity Verification: Our records indicate that you have selected to [Allow Legal Name / Use a Pseudonym]. If this is incorrect, please notify jon@theindiequill.com immediately.
+
+Next Steps: Once the Agreement is signed, your profile will securely sync with the Bookstore, and your Creation tools will be unlocked.
+
+Welcome to the Collective!
+
+Jon Founder & Program Director, The Indie Quill Collective
+
+2. Rejection Email
+Subject: Application Update - The Indie Quill Collective
+
+Body: Dear [First Name],
+
+Thank you for sharing your story and your application with the Collective.
+
+The Literacy Logistics Framework: Current Status: APPLICATION REVIEW
+
+At this time, we are unable to move forward with your application. This decision was not easy, and we want you to know that it does not reflect on the value of your story or your potential as a writer.
+
+If you have questions regarding this decision or would like specific feedback on your application, please contact jon@theindiequill.com directly.
+
+Best wishes on your continued writing journey.
+
+The Indie Quill Collective Team
+
+3. Active Author Email (The LLC Bridge)
+Subject: Your Publishing Tools are Live! - The Indie Quill Collective
+
+Body: Hi [First Name],
+
+Great news! Your signed Agreement has been processed, and your profile is now active in the Bookstore.
+
+Logistics & Access:
+
+Access the Bookstore: To begin, please visit the Bookstore login page at: www.theindiequill.com
+
+Login Information: You can log in using the same email address and password you created for the Collective.
+
+Creation Stage (Coming Soon): We are currently finalizing the mentorship tools, formatting assistants, and cover design resources that will live in this stage. We will notify you the moment these tools are officially unlocked.
+
+Pseudonym Confirmation: Our records show your book will be published under the Pen Name: [Pseudonym]
+
+Minors & Safety: As a reminder, we follow COPPA to ensure all minor authors are protected. If you see your legal name appearing anywhere in a public-facing area, please notify jon@theindiequill.com immediately.
+
+We are excited to see your work progress through the Collective process!
+
+The Indie Quill Collective Team
+
+Directions for Replit: Creating the "Active Author" Trigger
+Copy and paste this into Replit to build the final logic bridge:
+
+New Task: Create 'Active Author' Email Trigger
+
+Logic Trigger: Create a new automated email trigger in the npo-sync-service. This email should only fire after a successful 200 OK response is received from the Bookstore API during the Identity Bridge sync.
+
+Data Payload: The email template must pull the following variables from Supabase: first_name and the pseudonym elected during the Agreement phase.
+
+Template Content: Use the 'Active Author Email' text provided. Ensure the URL www.theindiequill.com is plain text and not a clickable hyperlink.
+
+Safety Check: Add a conditional check: If the author is a minor, ensure the COPPA reminder remains in the footer.
+
+Checkpoint: Once the trigger is coded, send a test payload to a developer email to verify the [Pseudonym] variable is rendering correctly before deploying to Render.

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation, useParams } from "wouter";
 import { useAuth } from "../App";
-import { FileText, CheckCircle, AlertCircle, PenTool, Download } from "lucide-react";
+import { FileText, CheckCircle, AlertCircle, PenTool, Download, BookOpen, Edit3, Search, Wrench, Globe, Megaphone, FileCheck } from "lucide-react";
 
 interface Contract {
   id: number;
@@ -28,10 +28,21 @@ export default function ContractSign() {
   const [contract, setContract] = useState<Contract | null>(null);
   const [signature, setSignature] = useState("");
   const [penName, setPenName] = useState("");
+  const [identityMode, setIdentityMode] = useState<"safe" | "public">("safe");
   const [signatureType, setSignatureType] = useState<"author" | "guardian">("author");
   const [loading, setLoading] = useState(true);
   const [signing, setSigning] = useState(false);
   const [error, setError] = useState("");
+
+  const literacyPhases = [
+    { name: "Agreement", icon: FileCheck, description: "Legal onboarding & forensic identity verification" },
+    { name: "Creation", icon: BookOpen, description: "Supervised authorship with mentorship tools" },
+    { name: "Editing", icon: Edit3, description: "Professional manuscript development & ISBN/Copyright registration" },
+    { name: "Review", icon: Search, description: "Genre analysis and content evaluation" },
+    { name: "Modifications", icon: Wrench, description: "Technical refinement for market standards" },
+    { name: "Published", icon: Globe, description: "Deployment into The Publisher's global bookstore" },
+    { name: "Marketing", icon: Megaphone, description: "Launch event and promotional cycles" },
+  ];
 
   useEffect(() => {
     if (!user) {
@@ -70,7 +81,8 @@ export default function ContractSign() {
         body: JSON.stringify({ 
           signature, 
           signatureType,
-          penName: signatureType === "author" ? penName.trim() : undefined 
+          penName: signatureType === "author" ? penName.trim() : undefined,
+          identityMode: signatureType === "author" ? identityMode : undefined
         }),
       });
 
@@ -128,6 +140,27 @@ export default function ContractSign() {
             <span>{error}</span>
           </div>
         )}
+
+        <div className="card mb-6">
+          <h2 className="font-display text-xl font-semibold text-slate-800 mb-4">The Literacy Logistics Framework</h2>
+          <p className="text-gray-600 mb-4">The Collective agrees to mentor you through the following seven Value-Add Phases:</p>
+          <div className="grid grid-cols-1 md:grid-cols-7 gap-2">
+            {literacyPhases.map((phase, index) => (
+              <div key={phase.name} className="relative">
+                <div className={`p-3 rounded-lg border-2 ${index === 0 ? 'border-teal-400 bg-teal-50' : 'border-gray-200 bg-gray-50'} text-center`}>
+                  <phase.icon className={`w-6 h-6 mx-auto mb-2 ${index === 0 ? 'text-teal-600' : 'text-gray-500'}`} />
+                  <p className="font-medium text-sm text-slate-800">{phase.name}</p>
+                  <p className="text-xs text-gray-500 mt-1 hidden md:block">{phase.description}</p>
+                </div>
+                {index < literacyPhases.length - 1 && (
+                  <div className="hidden md:block absolute top-1/2 -right-1 transform -translate-y-1/2 text-gray-300">
+                    &rarr;
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
 
         <div className="card mb-6">
           <h2 className="font-display text-xl font-semibold text-slate-800 mb-4">Contract Terms</h2>
@@ -249,19 +282,69 @@ export default function ContractSign() {
             )}
 
             {signatureType === "author" && (
-              <div className="mb-4">
-                <label className="label">Pen Name / Pseudonym for Bookstore</label>
-                <input
-                  type="text"
-                  className="input-field"
-                  placeholder="Enter how you want your name to appear on published works"
-                  value={penName}
-                  onChange={(e) => setPenName(e.target.value)}
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  This is the name that will appear on the bookstore and published materials. Your legal name remains private.
-                </p>
-              </div>
+              <>
+                <div className="mb-4">
+                  <label className="label">Pen Name / Pseudonym (Creative Identity)</label>
+                  <input
+                    type="text"
+                    className="input-field"
+                    placeholder="Enter how you want your name to appear on published works"
+                    value={penName}
+                    onChange={(e) => setPenName(e.target.value)}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    This is your Creative Identity that will be transmitted to The Publisher for bookstore distribution.
+                  </p>
+                </div>
+
+                <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                  <h3 className="font-medium text-slate-800 mb-2">Identity Visibility & Safety (COPPA Compliance)</h3>
+                  <p className="text-sm text-gray-600 mb-3">
+                    We follow COPPA (Children's Online Privacy Protection Act) to ensure that all minors are protected at all times.
+                  </p>
+                  <p className="text-sm text-gray-600 mb-3">
+                    <strong>Pseudonym Bridge:</strong> Only your elected Pen Name (Creative Identity) will be shared with The Publisher for bookstore distribution.
+                  </p>
+                  
+                  <div className="space-y-3">
+                    <label className="flex items-start space-x-3 cursor-pointer p-2 rounded hover:bg-amber-100">
+                      <input
+                        type="radio"
+                        name="identityMode"
+                        checked={identityMode === "safe"}
+                        onChange={() => setIdentityMode("safe")}
+                        className="w-4 h-4 mt-1 text-teal-500"
+                      />
+                      <div>
+                        <span className="font-medium text-slate-800">Safe Mode (Default)</span>
+                        <p className="text-xs text-gray-600">
+                          Your identity will be masked using a truncated name and emoji avatar in all public materials. Only your Pseudonym will be shared with the Bookstore.
+                        </p>
+                      </div>
+                    </label>
+                    
+                    <label className="flex items-start space-x-3 cursor-pointer p-2 rounded hover:bg-amber-100">
+                      <input
+                        type="radio"
+                        name="identityMode"
+                        checked={identityMode === "public"}
+                        onChange={() => setIdentityMode("public")}
+                        className="w-4 h-4 mt-1 text-teal-500"
+                      />
+                      <div>
+                        <span className="font-medium text-slate-800">Public Mode</span>
+                        <p className="text-xs text-gray-600">
+                          I grant permission to use my full legal name and photograph for marketing and promotional purposes.
+                        </p>
+                      </div>
+                    </label>
+                  </div>
+                  
+                  <p className="text-xs text-gray-500 mt-3">
+                    <strong>Correction Protocol:</strong> If any legal PII appears incorrectly in a public area, please notify jon@theindiequill.com immediately.
+                  </p>
+                </div>
+              </>
             )}
 
             <div className="mb-4">

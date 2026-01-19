@@ -940,7 +940,7 @@ export function registerRoutes(app: Express) {
     }
 
     try {
-      const { signature, signatureType, penName } = req.body;
+      const { signature, signatureType, penName, identityMode } = req.body;
       const [contract] = await db.select().from(contracts)
         .where(eq(contracts.id, parseInt(req.params.id)));
 
@@ -959,9 +959,16 @@ export function registerRoutes(app: Express) {
         updateData.authorSignatureIp = clientIp;
         updateData.authorSignatureUserAgent = userAgent;
         
+        const appUpdateData: any = { updatedAt: new Date() };
         if (penName) {
+          appUpdateData.penName = penName;
+        }
+        if (identityMode) {
+          appUpdateData.publicIdentityEnabled = identityMode === "public";
+        }
+        if (penName || identityMode) {
           await db.update(applications)
-            .set({ penName: penName, updatedAt: new Date() })
+            .set(appUpdateData)
             .where(eq(applications.id, contract.applicationId));
         }
         if (!contract.requiresGuardian) {
@@ -2510,71 +2517,82 @@ function formatExpressionTypes(types: string): string {
 }
 
 function generateContract(application: any): string {
+  const guardianSection = application.isMinor ? `
+The Guardian: [Required for all Minor Authors]` : "";
+
+  const minorNotice = application.isMinor ? `
+Note: This agreement requires guardian/parent consent and signature.` : "";
+
+  const guardianConsentSection = application.isMinor ? `
+
+GUARDIAN CONSENT FOR MINOR IDENTITY VISIBILITY:
+As the guardian of a minor author, I understand that enabling "Public Mode" will 
+allow the use of my child's full legal name and photograph for marketing and promotional 
+purposes. I hereby consent to this use if elected above.` : "";
+
   return `
-THE INDIE QUILL COLLECTIVE
 AUTHOR PUBLISHING AGREEMENT
+Version: Friendly 4 Pilot (Frozen for Launch)
 
-This Agreement is entered into as of ${new Date().toLocaleDateString()} between:
+1. DEFINED TERMS & PARTIES
+This Agreement is entered into between the following parties:
 
-THE INDIE QUILL COLLECTIVE (a 501(c)(3) non-profit organization)
-and
-AUTHOR: ${application.penName || "Author"}
+The Collective: The Indie Quill Collective, a 501(c)(3) non-profit organization.
 
-REGARDING THE AUTHOR'S CREATIVE WORK:
-Expression Format(s): ${formatExpressionTypes(application.expressionTypes)}
-${application.expressionOther ? `Additional Details: ${application.expressionOther}` : ""}
+The Publisher: The Indie Quill LLC, the authorized publishing partner of The Collective.
 
-TERMS AND CONDITIONS:
+The Author (Legal Identity): [Full Legal Name - Stored in Forensic Vault Only]
 
-1. GRANT OF RIGHTS
-The Author grants to The Indie Quill Collective and its publishing partner, The Indie Quill LLC, 
-the non-exclusive right to publish, distribute, and promote the Work in all formats.
+The Author (Creative Identity): ${application.penName || "[Pseudonym/Pen Name - Transmitted to The Publisher]"}
+${guardianSection}
 
-2. AUTHOR ROYALTIES
-The Author shall receive royalties as per the standard Indie Quill publishing agreement, 
-with special provisions for NPO-supported authors.
+2. THE LITERACY LOGISTICS FRAMEWORK
+The Collective agrees to mentor the Author through the following seven Value-Add Phases:
 
-3. EDITORIAL SERVICES
-The Collective will provide professional editing, cover design, and formatting services 
-at no cost to the Author as part of our mission to support emerging writers.
+  1. Agreement: Legal onboarding, forensic identity verification, and pseudonym election.
+  2. Creation: Supervised authorship facilitated by proprietary mentorship and formatting tools (Coming Soon).
+  3. Editing: Professional manuscript development and official registration of ISBN and Copyright in the Author's legal name.
+  4. Review: Quality assurance phase involving genre analysis and content evaluation.
+  5. Modifications: Technical refinement stage to ensure the work meets professional market standards.
+  6. Published: Official deployment into The Publisher's global bookstore.
+  7. Marketing: Post-launch support including a launch event and dedicated promotional cycles.
 
-4. AUTHOR OBLIGATIONS
-The Author warrants that the Work is original and does not infringe on any copyrights.
+3. IDENTITY VISIBILITY & SAFETY (COPPA COMPLIANCE)
+We follow COPPA (Children's Online Privacy Protection Act) to ensure that all minors are protected at all times.
 
-5. MINOR AUTHORS
-${application.isMinor ? "This agreement requires guardian/parent consent and signature." : "N/A - Author is of legal age."}
+Default "Safe Mode": The Author's identity will be masked using a truncated name and emoji avatar in all public materials.
 
-6. IDENTITY VISIBILITY & PRIVACY PROTECTION
+Pseudonym Bridge: Only the elected Pen Name (Creative Identity) will be shared with The Publisher for bookstore distribution.
 
-By default, the Author's identity will be protected using our Zero-PII (Personally Identifiable 
-Information) safety measures. This means:
-- The Author's name will appear as "First Name + Last Initial" (e.g., "Jane D.")
-- A randomly assigned emoji avatar will be used instead of a photo
-- No full name, photo, or identifying information will be shared publicly
+Identity Opt-In:
+[ ] Safe Mode: I elect to remain in "Safe Mode." Only my Pseudonym will be shared with the Bookstore.
+[ ] Public Mode: I grant permission to use the Author's full legal name and photograph for marketing and promotional purposes.
 
-PUBLIC IDENTITY OPT-IN: The Author may choose to enable "Public Identity Mode" in their 
-dashboard settings. By doing so, the Author grants permission to The Indie Quill Collective 
-and The Indie Quill LLC to use the Author's:
-- Full pen name or legal name
-- Profile photograph (if provided)
-- Biographical information for marketing and promotional purposes
+Correction Protocol: If any legal PII appears incorrectly in a public area, please notify jon@theindiequill.com immediately.
+${guardianConsentSection}
 
-${application.isMinor ? `GUARDIAN CONSENT FOR MINOR IDENTITY VISIBILITY:
-As the guardian of a minor author, I understand that enabling "Public Identity Mode" will 
-allow the use of my child's name and photograph for marketing purposes. I hereby consent 
-to this use if enabled in the Author's dashboard settings.
+4. RIGHTS, OWNERSHIP & REFUSAL
 
-Guardian Signature Required: _________________________
-Guardian Name: _________________________
-Date: _________________________` : ""}
+100% Author Ownership: The Author shall retain one hundred percent (100%) of all copyrights and legal ownership of the Work.
 
-7. TERM
-This agreement shall remain in effect for a period of three (3) years from the date of publication.
+Legal Registration: The Collective will facilitate the professional filing of the ISBN and Copyright on behalf of the Author; however, these legal identifiers will be registered exclusively in the Author's legal name, ensuring they remain the sole owner of record.
 
-8. TERMINATION
-Either party may terminate this agreement with 30 days written notice.
+Non-Exclusive Publishing License: The Author grants The Collective and The Publisher a non-exclusive license to publish, distribute, and promote the Work in digital and physical formats.
 
-By signing below, all parties agree to the terms and conditions set forth in this agreement.
+Originality & AI Policy: The Author warrants the Work is their own original creation. The Collective scans all submissions for AI-generated content. Based on the results, The Collective reserves the right to either reject the work or require a mandatory "AI-Assisted" badge to be displayed on the published version.
+
+Mission-Aligned Services: The Collective provides professional editing and filing services at no cost to the Author, supported by our donor-funded sponsorship model.
+
+Right of Refusal & Editorial Discretion: The Collective reserves the absolute right to refuse any application or decline to publish any Work that does not align with our mission, safety standards, or quality guidelines.
+${minorNotice}
+
+5. FORENSIC SIGNATURES
+
+Author Signature: ____________________ Date: __________
+
+Guardian Signature (If Minor): ____________________ Date: __________
+
+System Metadata: IP Address [Captured], Timestamp [UTC]
 
 ---
 
