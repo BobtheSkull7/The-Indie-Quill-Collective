@@ -130,6 +130,8 @@ async function registerAuthorWithLLC(
     guardianName: payload.guardian?.name || null,
     guardianEmail: payload.guardian?.email || null,
     dateOfBirth: payload.dateOfBirth,
+    status: "approved", // Tell LLC this application is approved
+    approved: true,
   };
 
   const timestampMs = Date.now().toString();

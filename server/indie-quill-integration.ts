@@ -271,6 +271,8 @@ async function sendToIndieQuill(payload: AuthorPayload): Promise<{ success: bool
     guardianName: payload.guardianName || null,
     guardianEmail: payload.guardianEmail || null,
     dateOfBirth: payload.dateOfBirth || null,
+    status: "approved", // Tell LLC this application is approved
+    approved: true,
   };
 
   const timestampMs = Date.now().toString();
