@@ -124,6 +124,7 @@ export default function AdminDashboard() {
   const [coppaOriginalState, setCoppaOriginalState] = useState({ method: "", verified: false, date: "" });
   const [forceSyncing, setForceSyncing] = useState(false);
   const [forceSyncResult, setForceSyncResult] = useState<{ total: number; queued: number; alreadySynced: number; failed: number; idsGenerated?: number; errors: string[] } | null>(null);
+  const [retryAllResult, setRetryAllResult] = useState<{ retried: number; succeeded: number; error?: string } | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [availableCohorts, setAvailableCohorts] = useState<Array<{ id: number; label: string; currentCount: number; capacity: number }>>([]);
   const [selectedCohortId, setSelectedCohortId] = useState<number | null>(null);
@@ -249,11 +250,20 @@ export default function AdminDashboard() {
 
   const retryAllFailed = async () => {
     setRetrying(-1);
+    setRetryAllResult(null);
     try {
-      await fetch("/api/admin/retry-all-failed", { method: "POST" });
+      const res = await fetch("/api/admin/retry-all-failed", { method: "POST" });
+      if (res.ok) {
+        const result = await res.json();
+        setRetryAllResult(result);
+      } else {
+        const errorData = await res.json().catch(() => ({ message: "Unknown error" }));
+        setRetryAllResult({ retried: 0, succeeded: 0, error: errorData.message || "Request failed" });
+      }
       await loadData();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Retry all failed:", error);
+      setRetryAllResult({ retried: 0, succeeded: 0, error: error.message || "Connection failed" });
     } finally {
       setRetrying(null);
     }
@@ -851,7 +861,7 @@ export default function AdminDashboard() {
                     className="btn-primary text-sm py-2 px-4 flex items-center space-x-2"
                   >
                     <RefreshCw className={`w-4 h-4 ${retrying === -1 ? "animate-spin" : ""}`} />
-                    <span>Retry All Failed</span>
+                    <span>{retrying === -1 ? "Retrying..." : "Retry All Failed"}</span>
                   </button>
                 )}
               </div>
@@ -873,6 +883,17 @@ export default function AdminDashboard() {
                     )}
                   </ul>
                 )}
+              </div>
+            )}
+
+            {retryAllResult && (
+              <div className={`p-4 rounded-lg mb-4 ${retryAllResult.error || retryAllResult.succeeded === 0 ? "bg-red-50 border border-red-200" : "bg-green-50 border border-green-200"}`}>
+                <p className="font-medium text-slate-800">
+                  {retryAllResult.error 
+                    ? `Retry Failed: ${retryAllResult.error}` 
+                    : `Retry Complete: ${retryAllResult.retried} attempted, ${retryAllResult.succeeded} succeeded, ${retryAllResult.retried - retryAllResult.succeeded} failed`
+                  }
+                </p>
               </div>
             )}
 
