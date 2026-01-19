@@ -290,9 +290,9 @@ export default function AdminDashboard() {
 
   const handleTileClick = (filter: string) => {
     switch (filter) {
-      case "pending":
+      case "applications":
         setActiveTab("applicants");
-        setStatusFilter("pending");
+        setStatusFilter("pending_review");
         break;
       case "pendingSync":
         setActiveTab("sync");
@@ -607,7 +607,7 @@ export default function AdminDashboard() {
 
         {stats && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <div className="card cursor-pointer hover:shadow-lg transition-shadow" onClick={() => handleTileClick("pending")}>
+            <div className="card cursor-pointer hover:shadow-lg transition-shadow" onClick={() => handleTileClick("applications")}>
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
                   <Clock className="w-5 h-5 text-yellow-600" />
@@ -718,7 +718,7 @@ export default function AdminDashboard() {
                   onClick={() => setStatusFilter(null)}
                   className="text-sm text-blue-600 hover:text-blue-800"
                 >
-                  Clear filter: {statusFilter} &times;
+                  Clear filter: {statusFilter === "pending_review" ? "Pending Review" : statusFilter} &times;
                 </button>
               )}
             </div>
@@ -741,7 +741,8 @@ export default function AdminDashboard() {
                   </thead>
                   <tbody>
                     {applications
-                      .filter(app => !statusFilter || app.status === statusFilter)
+                      .filter(app => !statusFilter || 
+                        (statusFilter === "pending_review" ? (app.status === "pending" || app.status === "under_review") : app.status === statusFilter))
                       .map((app) => (
                       <tr key={app.id} className="border-b border-gray-100 hover:bg-gray-50">
                         <td className="py-3 px-4">

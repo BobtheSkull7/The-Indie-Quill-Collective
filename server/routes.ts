@@ -1059,9 +1059,8 @@ export function registerRoutes(app: Express) {
       
       const stats = {
         totalApplications: allApps.length,
-        pendingApplications: allApps.filter(a => a.status === "pending").length,
+        pendingApplications: allApps.filter(a => a.status === "pending" || a.status === "under_review").length,
         acceptedApplications: allApps.filter(a => a.status === "accepted").length,
-        migratedAuthors: allApps.filter(a => a.status === "migrated").length,
         signedContracts: allContracts.filter(c => c.status === "signed").length,
         pendingContracts: allContracts.filter(c => c.status !== "signed" && c.status !== "rejected").length,
         syncedToLLC: allUpdates.filter(u => u.syncStatus === "synced").length,
@@ -1503,9 +1502,8 @@ export function registerRoutes(app: Express) {
       
       const stats = {
         totalApplications: allApps.length,
-        pendingApplications: allApps.filter(a => a.status === "pending").length,
+        pendingApplications: allApps.filter(a => a.status === "pending" || a.status === "under_review").length,
         acceptedApplications: allApps.filter(a => a.status === "accepted").length,
-        migratedAuthors: allApps.filter(a => a.status === "migrated").length,
         signedContracts: allContracts.filter(c => c.status === "signed").length,
         pendingContracts: allContracts.filter(c => c.status !== "signed" && c.status !== "rejected").length,
         syncedToLLC: allUpdates.filter(u => u.syncStatus === "synced").length,
