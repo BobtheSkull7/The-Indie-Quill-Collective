@@ -201,6 +201,10 @@ export async function sendApplicationRejectedEmail(toEmail: string, firstName: s
               We encourage you to continue pursuing your writing dreams, and you are welcome to apply again in the future.
             </p>
             
+            <p style="color: #374151; font-size: 16px; line-height: 1.8;">
+              If you have questions or would like more information about this decision, please email us at <a href="mailto:jon@theindiequill.com" style="color: #ef4444;">jon@theindiequill.com</a>.
+            </p>
+            
             <p style="color: #374151; font-size: 16px; line-height: 1.8; margin-top: 30px;">
               Best wishes,<br>
               <strong>The Indie Quill Collective Team</strong>

@@ -38,7 +38,6 @@ interface Stats {
   totalApplications: number;
   pendingApplications: number;
   acceptedApplications: number;
-  migratedAuthors: number;
   signedContracts: number;
   pendingContracts: number;
   syncedToLLC: number;
@@ -291,25 +290,17 @@ export default function AdminDashboard() {
 
   const handleTileClick = (filter: string) => {
     switch (filter) {
-      case "total":
-        setActiveTab("applicants");
-        setStatusFilter(null);
-        break;
       case "pending":
         setActiveTab("applicants");
+        setStatusFilter("pending");
+        break;
+      case "pendingSync":
+        setActiveTab("sync");
         setStatusFilter("pending");
         break;
       case "synced":
         setActiveTab("sync");
         setStatusFilter("synced");
-        break;
-      case "migrated":
-        setActiveTab("applicants");
-        setStatusFilter("migrated");
-        break;
-      case "pendingSync":
-        setActiveTab("sync");
-        setStatusFilter("pending");
         break;
       case "failed":
         setActiveTab("sync");
@@ -615,18 +606,7 @@ export default function AdminDashboard() {
         <h1 className="font-display text-3xl font-bold text-slate-800 mb-8">Admin Dashboard</h1>
 
         {stats && (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-            <div className="card cursor-pointer hover:shadow-lg transition-shadow" onClick={() => handleTileClick("total")}>
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <FileText className="w-5 h-5 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-slate-800">{stats.totalApplications}</p>
-                  <p className="text-xs text-gray-500">Total Apps</p>
-                </div>
-              </div>
-            </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
             <div className="card cursor-pointer hover:shadow-lg transition-shadow" onClick={() => handleTileClick("pending")}>
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
@@ -634,29 +614,7 @@ export default function AdminDashboard() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-slate-800">{stats.pendingApplications}</p>
-                  <p className="text-xs text-gray-500">Pending</p>
-                </div>
-              </div>
-            </div>
-            <div className="card cursor-pointer hover:shadow-lg transition-shadow" onClick={() => handleTileClick("synced")}>
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-slate-800">{stats.syncedToLLC}</p>
-                  <p className="text-xs text-gray-500">Synced to LLC</p>
-                </div>
-              </div>
-            </div>
-            <div className="card cursor-pointer hover:shadow-lg transition-shadow" onClick={() => handleTileClick("migrated")}>
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <Users className="w-5 h-5 text-purple-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-slate-800">{stats.migratedAuthors}</p>
-                  <p className="text-xs text-gray-500">Migrated</p>
+                  <p className="text-xs text-gray-500">Applications</p>
                 </div>
               </div>
             </div>
@@ -671,6 +629,17 @@ export default function AdminDashboard() {
                 </div>
               </div>
             </div>
+            <div className="card cursor-pointer hover:shadow-lg transition-shadow" onClick={() => handleTileClick("synced")}>
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                  <CheckCircle className="w-5 h-5 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-slate-800">{stats.syncedToLLC}</p>
+                  <p className="text-xs text-gray-500">Done</p>
+                </div>
+              </div>
+            </div>
             <div className="card cursor-pointer hover:shadow-lg transition-shadow" onClick={() => handleTileClick("failed")}>
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
@@ -678,7 +647,7 @@ export default function AdminDashboard() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-slate-800">{stats.failedSync}</p>
-                  <p className="text-xs text-gray-500">Failed Sync</p>
+                  <p className="text-xs text-gray-500">Failed</p>
                 </div>
               </div>
             </div>
