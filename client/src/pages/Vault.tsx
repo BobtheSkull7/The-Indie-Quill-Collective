@@ -41,28 +41,32 @@ Contact: privacy@theindiequillcollective.com`,
     id: "code-of-conduct",
     title: "Author Code of Conduct",
     icon: <Users className="w-5 h-5" />,
-    description: "The 'Chevron' roadmap - our three-stage publishing journey.",
+    description: "The 'Chevron' roadmap - our seven-stage publishing journey.",
     content: `THE INDIE QUILL COLLECTIVE - AUTHOR CODE OF CONDUCT
 
 THE CHEVRON PATH TO PUBLICATION
 
-Stage 1: SIGN ✍️
-• Complete your author application
-• Sign the publishing agreement
-• Provide guardian consent (if under 18)
-• Submit your manuscript
+Stage 1: AGREEMENT ✍️
+You and your guardian will sign your publishing agreement.
 
-Stage 2: EDIT 📝
-• Work with our editing team
-• Revise based on feedback
-• Approve final manuscript
-• Participate in cover design selection
+Stage 2: CREATION 📝
+We mentor you through your writing journey with helpful tools to assist with formatting, book cover, and specific page insertions.
 
-Stage 3: PUBLISH 📚
-• Final review and formatting
-• ISBN and copyright registration
-• Publication to distribution channels
-• Author copies delivered
+Stage 3: EDITING 📖
+We edit your manuscript and set up your professional ISBN and Copyright filing.
+
+Stage 4: REVIEW 🔍
+We provide a thorough review of the manuscript and suggest genres or specific changes.
+
+Stage 5: MODIFICATIONS ✏️
+The writer performs changes to finalize the book.
+(Note: This stage can be repeated as needed to ensure excellence.)
+
+Stage 6: PUBLISHED 📚
+Your book goes live in the Bookstore!
+
+Stage 7: MARKETING 🎉
+We provide the launch day party and throw in a round of free marketing to kickstart your success.
 
 AUTHOR COMMITMENTS:
 ✓ Respond to communications within 7 days
@@ -242,7 +246,7 @@ export default function Vault() {
                 </div>
                 <div className="flex gap-2">
                   <span className="font-medium text-blue-800">The Chevron Path:</span>
-                  <span className="text-blue-700">"Stage 1: Sign → Stage 2: Edit → Stage 3: Publish. Momentum is our goal."</span>
+                  <span className="text-blue-700">"Agreement → Creation → Editing → Review → Modifications → Published → Marketing. Momentum is our goal."</span>
                 </div>
                 <div className="flex gap-2">
                   <span className="font-medium text-blue-800">Director Statement:</span>

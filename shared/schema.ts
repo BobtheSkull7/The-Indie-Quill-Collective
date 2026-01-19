@@ -22,11 +22,15 @@ export const contractStatusEnum = pgEnum('contract_status', [
 export const publishingStatusEnum = pgEnum('publishing_status', [
   'not_started',
   'manuscript_received',
-  'editing',
   'cover_design',
   'formatting',
+  'agreement',
+  'creation',
+  'editing',
   'review',
-  'published'
+  'modifications',
+  'published',
+  'marketing'
 ]);
 
 export const syncStatusEnum = pgEnum('sync_status', [

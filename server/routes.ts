@@ -1014,7 +1014,7 @@ export function registerRoutes(app: Express) {
         const [publishingUpdate] = await db.insert(publishingUpdates).values({
           applicationId: contract.applicationId,
           userId: contract.userId,
-          status: "not_started",
+          status: "agreement",
           syncStatus: "pending",
           statusMessage: "Your application has been accepted and contract signed. Syncing with The Indie Quill LLC...",
         }).returning();
@@ -1091,6 +1091,7 @@ export function registerRoutes(app: Express) {
         syncAttempts: publishingUpdates.syncAttempts,
         lastSyncAttempt: publishingUpdates.lastSyncAttempt,
         lastSyncedAt: publishingUpdates.lastSyncedAt,
+        status: publishingUpdates.status,
       }).from(publishingUpdates).orderBy(desc(publishingUpdates.updatedAt));
 
       const updatesWithDetails = await Promise.all(
@@ -1171,6 +1172,59 @@ export function registerRoutes(app: Express) {
     } catch (error) {
       console.error("Retry all failed error:", error);
       return res.status(500).json({ message: "Failed to retry migrations" });
+    }
+  });
+
+  app.put("/api/admin/publishing-status/:id", async (req: Request, res: Response) => {
+    if (!req.session.userId || req.session.userRole !== "admin") {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    try {
+      const updateId = parseInt(req.params.id);
+      const { status } = req.body;
+
+      const validStatuses = ['agreement', 'creation', 'editing', 'review', 'modifications', 'published', 'marketing'];
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({ message: "Invalid status" });
+      }
+
+      const [existingUpdate] = await db.select()
+        .from(publishingUpdates)
+        .where(eq(publishingUpdates.id, updateId));
+
+      if (!existingUpdate) {
+        return res.status(404).json({ message: "Publishing update not found" });
+      }
+
+      const previousStatus = existingUpdate.status;
+
+      const [updated] = await db.update(publishingUpdates)
+        .set({ 
+          status,
+          statusMessage: `Stage updated to ${status} by admin`,
+          updatedAt: new Date()
+        })
+        .where(eq(publishingUpdates.id, updateId))
+        .returning();
+
+      await db.insert(auditLogs).values({
+        userId: req.session.userId,
+        action: "update_publishing_stage",
+        resourceType: "publishing_updates",
+        resourceId: updateId.toString(),
+        ipAddress: getClientIp(req),
+        metadata: {
+          previousStatus,
+          newStatus: status,
+          applicationId: existingUpdate.applicationId,
+        },
+      });
+
+      return res.json({ message: "Status updated", status: updated.status });
+    } catch (error) {
+      console.error("Update publishing status error:", error);
+      return res.status(500).json({ message: "Failed to update status" });
     }
   });
 
@@ -1883,15 +1937,15 @@ export function registerRoutes(app: Express) {
         rejected: allApps.filter(a => a.status === 'rejected').length,
       };
 
-      // Publishing pipeline status
+      // Publishing pipeline status - New Chevron Path stages
       const publishingPipeline = {
-        not_started: allUpdates.filter(u => u.status === 'not_started').length,
-        manuscript_received: allUpdates.filter(u => u.status === 'manuscript_received').length,
-        editing: allUpdates.filter(u => u.status === 'editing').length,
-        cover_design: allUpdates.filter(u => u.status === 'cover_design').length,
-        formatting: allUpdates.filter(u => u.status === 'formatting').length,
+        agreement: allUpdates.filter(u => u.status === 'agreement' || u.status === 'not_started').length,
+        creation: allUpdates.filter(u => u.status === 'creation' || u.status === 'manuscript_received').length,
+        editing: allUpdates.filter(u => u.status === 'editing' || u.status === 'cover_design' || u.status === 'formatting').length,
         review: allUpdates.filter(u => u.status === 'review').length,
+        modifications: allUpdates.filter(u => u.status === 'modifications').length,
         published: allUpdates.filter(u => u.status === 'published').length,
+        marketing: allUpdates.filter(u => u.status === 'marketing').length,
       };
 
       // Minor authors stats

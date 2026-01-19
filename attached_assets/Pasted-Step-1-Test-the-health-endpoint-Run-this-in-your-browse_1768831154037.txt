@@ -1,0 +1,73 @@
+Step 1: Test the health endpoint
+Run this in your browser console or terminal:
+
+fetch('https://theindiequill.com/api/collective/health').then(r => r.json()).then(console.log)
+Expected result:
+
+{
+  "status": "ok",
+  "integration": {
+    "configured": true,
+    "apiKeySet": true,
+    "apiSecretSet": true
+  }
+}
+If this fails, the API route might not be deployed properly.
+
+Step 2: Verify Render has the secrets
+Go to Render Dashboard
+Click your indie-quill-bookstore service
+Go to Environment tab
+Confirm these exist:
+COLLECTIVE_API_KEY
+COLLECTIVE_API_SECRET
+Step 3: Check what URL the NPO is calling
+Ask the NPO project: What exact URL are they calling?
+
+It should be:
+
+POST https://theindiequill.com/api/collective/migrate-author
+NOT:
+
+/api/authors/register (wrong endpoint)
+http:// instead of https:// (wrong protocol)
+Missing domain (just /api/...)
+Step 4: Check NPO error message
+What error does the NPO project show when the sync fails? The error message will tell us exactly what's wrong:
+
+ECONNREFUSED = Can't reach the server
+401 = Authentication issue (wrong key/signature)
+404 = Wrong endpoint URL
+400 = Missing required fields
+Can you share the exact error from the NPO side?
+
+Worked for 24 seconds
+step 1 is this is render, replit?
+
+fetch('https://theindiequill.com/api/collective/health').then(r => r.json()).then(console.log)
+VM64:1 Connecting to 'https://theindiequill.com/api/collective/health' violates the following Content Security Policy directive: "connect-src chrome://resources chrome://theme 'self'". The action has been blocked.
+(anonymous) @ VM64:1Understand this error
+VM64:1 Fetch API cannot load https://theindiequill.com/api/collective/health. Refused to connect because it violates the document's Content Security Policy.
+(anonymous) @ VM64:1Understand this error
+Promise {<rejected>: TypeError: Failed to fetch
+at <anonymous>:1:1}
+VM64:1 Uncaught (in promise) TypeError: Failed to fetch. Refused to connect because it violates the document's Content Security Policy.
+at <anonymous>:1:1
+
+That's a browser security restriction. Let me test it directly from here:
+
+The production API is working! The health check shows:
+
+✅ Status: OK
+✅ API Key: Set
+✅ API Secret: Set
+The problem is on the NPO side. The LLC is ready to receive requests.
+
+Next Step:
+Go to the NPO project and check what error it's showing when the sync fails. The error message will tell us exactly what's wrong:
+
+401 Invalid signature = Signature format mismatch
+404 Not Found = Wrong URL
+400 Validation error = Missing fields
+Network error = Can't connect
+What does the NPO project say when you click "Retry Sync"?

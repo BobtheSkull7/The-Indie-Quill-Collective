@@ -4,7 +4,7 @@ import { useAuth } from "../App";
 import { 
   Users, FileText, CheckCircle, Clock, TrendingUp, 
   Eye, Check, X, RefreshCw, AlertTriangle, Zap, Calendar, Mail, User, BookOpen, Shield,
-  Plus, Trash2, MapPin, BarChart3, Download, Activity
+  Plus, Trash2, MapPin, BarChart3, Download, Activity, ChevronLeft, ChevronRight
 } from "lucide-react";
 import OperationsPanel from "../components/OperationsPanel";
 
@@ -58,7 +58,29 @@ interface SyncRecord {
   expressionTypes: string;
   authorName: string;
   email: string;
+  status: string;
 }
+
+const PUBLISHING_STAGES = [
+  { key: "agreement", label: "Agreement" },
+  { key: "creation", label: "Creation" },
+  { key: "editing", label: "Editing" },
+  { key: "review", label: "Review" },
+  { key: "modifications", label: "Modifications" },
+  { key: "published", label: "Published" },
+  { key: "marketing", label: "Marketing" },
+];
+
+const legacyToNewStageMap: Record<string, string> = {
+  'not_started': 'agreement',
+  'manuscript_received': 'creation',
+  'cover_design': 'editing',
+  'formatting': 'editing',
+};
+
+const normalizeStage = (status: string): string => {
+  return legacyToNewStageMap[status] || status;
+};
 
 interface UserRecord {
   id: number;
@@ -96,6 +118,7 @@ export default function AdminDashboard() {
   const [updating, setUpdating] = useState(false);
   const [activeTab, setActiveTab] = useState<"applicants" | "sync" | "users" | "calendar" | "operations">("applicants");
   const [retrying, setRetrying] = useState<number | null>(null);
+  const [updatingStage, setUpdatingStage] = useState<number | null>(null);
   const [allUsers, setAllUsers] = useState<UserRecord[]>([]);
   const [editingUser, setEditingUser] = useState<UserRecord | null>(null);
   const [newRole, setNewRole] = useState<string>("");
@@ -266,6 +289,29 @@ export default function AdminDashboard() {
     } finally {
       setRetrying(null);
     }
+  };
+
+  const updatePublishingStage = async (id: number, newStatus: string) => {
+    setUpdatingStage(id);
+    try {
+      const res = await fetch(`/api/admin/publishing-status/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (res.ok) {
+        await loadData();
+      }
+    } catch (error) {
+      console.error("Update stage failed:", error);
+    } finally {
+      setUpdatingStage(null);
+    }
+  };
+
+  const getStageIndex = (status: string) => {
+    const normalized = normalizeStage(status);
+    return PUBLISHING_STAGES.findIndex(s => s.key === normalized);
   };
 
   const forceSyncAllMigrated = async () => {
@@ -879,6 +925,7 @@ export default function AdminDashboard() {
                       <th className="text-left py-3 px-4 font-medium text-gray-600">Author</th>
                       <th className="text-left py-3 px-4 font-medium text-gray-600">Expression Type</th>
                       <th className="text-left py-3 px-4 font-medium text-gray-600">Sync Status</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">Chevron Stage</th>
                       <th className="text-left py-3 px-4 font-medium text-gray-600">LLC Author ID</th>
                       <th className="text-left py-3 px-4 font-medium text-gray-600">Attempts</th>
                       <th className="text-left py-3 px-4 font-medium text-gray-600">Actions</th>
@@ -902,6 +949,46 @@ export default function AdminDashboard() {
                             <p className="text-xs text-red-500 mt-1 max-w-xs truncate" title={record.syncError}>
                               {record.syncError}
                             </p>
+                          )}
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center space-x-1">
+                            <button
+                              onClick={() => {
+                                const currentIdx = getStageIndex(record.status);
+                                if (currentIdx > 0) {
+                                  updatePublishingStage(record.id, PUBLISHING_STAGES[currentIdx - 1].key);
+                                }
+                              }}
+                              disabled={updatingStage === record.id || getStageIndex(record.status) <= 0}
+                              className="p-1 rounded hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed"
+                              title="Move to previous stage"
+                            >
+                              <ChevronLeft className="w-4 h-4 text-gray-600" />
+                            </button>
+                            <span className={`text-xs px-2 py-1 rounded capitalize ${
+                              normalizeStage(record.status) === 'published' || normalizeStage(record.status) === 'marketing' ? 'bg-green-100 text-green-700' :
+                              normalizeStage(record.status) === 'review' || normalizeStage(record.status) === 'modifications' ? 'bg-purple-100 text-purple-700' :
+                              'bg-blue-100 text-blue-700'
+                            }`}>
+                              {PUBLISHING_STAGES.find(s => s.key === normalizeStage(record.status))?.label || normalizeStage(record.status) || 'Agreement'}
+                            </span>
+                            <button
+                              onClick={() => {
+                                const currentIdx = getStageIndex(record.status);
+                                if (currentIdx < PUBLISHING_STAGES.length - 1) {
+                                  updatePublishingStage(record.id, PUBLISHING_STAGES[currentIdx + 1].key);
+                                }
+                              }}
+                              disabled={updatingStage === record.id || getStageIndex(record.status) >= PUBLISHING_STAGES.length - 1}
+                              className="p-1 rounded hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed"
+                              title="Move to next stage"
+                            >
+                              <ChevronRight className="w-4 h-4 text-gray-600" />
+                            </button>
+                          </div>
+                          {updatingStage === record.id && (
+                            <p className="text-xs text-blue-500 mt-1">Updating...</p>
                           )}
                         </td>
                         <td className="py-3 px-4 text-gray-600 font-mono text-sm">

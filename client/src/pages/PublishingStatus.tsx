@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "../App";
 import { 
-  BookOpen, FileText, Edit3, Palette, Layout, 
-  CheckCircle, Clock, Rocket, ArrowRight 
+  BookOpen, FileText, Edit3, Layout, 
+  CheckCircle, Clock, Rocket, ArrowRight, Megaphone, PenTool
 } from "lucide-react";
 
 interface PublishingUpdate {
@@ -19,14 +19,21 @@ interface PublishingUpdate {
 }
 
 const statusSteps = [
-  { key: "not_started", label: "Getting Started", icon: Clock },
-  { key: "manuscript_received", label: "Manuscript Received", icon: FileText },
-  { key: "editing", label: "Professional Editing", icon: Edit3 },
-  { key: "cover_design", label: "Cover Design", icon: Palette },
-  { key: "formatting", label: "Book Formatting", icon: Layout },
-  { key: "review", label: "Final Review", icon: CheckCircle },
-  { key: "published", label: "Published", icon: Rocket },
+  { key: "agreement", label: "Agreement", icon: FileText, description: "You and your guardian will sign your publishing agreement." },
+  { key: "creation", label: "Creation", icon: PenTool, description: "We mentor you through your writing journey with helpful tools for formatting, book cover, and page insertions." },
+  { key: "editing", label: "Editing", icon: Edit3, description: "We edit your manuscript and set up your professional ISBN and Copyright filing." },
+  { key: "review", label: "Review", icon: CheckCircle, description: "We provide a thorough review and suggest genres or specific changes." },
+  { key: "modifications", label: "Modifications", icon: Layout, description: "The writer performs changes to finalize the book (can repeat as needed)." },
+  { key: "published", label: "Published", icon: Rocket, description: "Your book goes live in the Bookstore!" },
+  { key: "marketing", label: "Marketing", icon: Megaphone, description: "We provide the launch day party and free marketing to kickstart your success." },
 ];
+
+const legacyToNewStageMap: Record<string, string> = {
+  'not_started': 'agreement',
+  'manuscript_received': 'creation',
+  'cover_design': 'editing',
+  'formatting': 'editing',
+};
 
 export default function PublishingStatus() {
   const { user } = useAuth();

@@ -20,13 +20,13 @@ interface OperationsMetrics {
     rejected: number;
   };
   publishingPipeline: {
-    not_started: number;
-    manuscript_received: number;
+    agreement: number;
+    creation: number;
     editing: number;
-    cover_design: number;
-    formatting: number;
     review: number;
+    modifications: number;
     published: number;
+    marketing: number;
   };
   minorStats: {
     total: number;
