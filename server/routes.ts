@@ -1228,6 +1228,64 @@ export function registerRoutes(app: Express) {
     }
   });
 
+  // Test endpoint to verify NPO can connect to LLC
+  app.get("/api/admin/test-llc-connection", async (req: Request, res: Response) => {
+    if (!req.session.userId || req.session.userRole !== "admin") {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    const INDIE_QUILL_API_URL = process.env.INDIE_QUILL_API_URL || "";
+    const INDIE_QUILL_API_KEY = process.env.INDIE_QUILL_API_KEY || "";
+    const INDIE_QUILL_API_SECRET = process.env.INDIE_QUILL_API_SECRET || "";
+
+    // Check if env vars are set
+    if (!INDIE_QUILL_API_URL || !INDIE_QUILL_API_KEY || !INDIE_QUILL_API_SECRET) {
+      return res.json({
+        configured: false,
+        error: "Missing environment variables",
+        details: {
+          hasUrl: !!INDIE_QUILL_API_URL,
+          hasKey: !!INDIE_QUILL_API_KEY,
+          hasSecret: !!INDIE_QUILL_API_SECRET,
+        }
+      });
+    }
+
+    // Normalize URL
+    const baseUrl = INDIE_QUILL_API_URL.replace(/\/api\/?$/, '');
+    const healthEndpoint = `${baseUrl}/api/collective/health`;
+
+    console.log(`Testing LLC connection to: ${healthEndpoint}`);
+
+    try {
+      const response = await fetch(healthEndpoint);
+      const data = await response.json();
+      
+      return res.json({
+        configured: true,
+        llcHealthCheck: data,
+        npoConfig: {
+          apiUrl: baseUrl,
+          endpoint: healthEndpoint,
+          hasKey: true,
+          hasSecret: true,
+        },
+        status: response.ok ? "connected" : "error",
+      });
+    } catch (error) {
+      console.error("LLC connection test failed:", error);
+      return res.json({
+        configured: true,
+        status: "connection_failed",
+        error: String(error),
+        npoConfig: {
+          apiUrl: baseUrl,
+          endpoint: healthEndpoint,
+        }
+      });
+    }
+  });
+
   app.post("/api/admin/force-sync-all-migrated", async (req: Request, res: Response) => {
     if (!req.session.userId || req.session.userRole !== "admin") {
       return res.status(403).json({ message: "Not authorized" });
