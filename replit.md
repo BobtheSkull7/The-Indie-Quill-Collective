@@ -40,7 +40,7 @@ The project utilizes a client-server architecture with a React 19, Vite, and Tai
 - **Schema Management:** Drizzle for schema and migrations. Production schema updates require generating and applying migrations, never `db:push`.
 
 **Author Self-Service & Transparency:**
-- **About Page (/about):** Public-facing donor transparency with Impact Analytics (Total Authors Supported, Identity Protection Rate, Active Cohort Size, Published Books, Signed Contracts, Youth Authors).
+- **Consolidated Home Page (/):** Single-page landing experience optimized for donor conversion and author onboarding with 5 sections: Hero (mission statement), Identity Bridge (Legal Name vs Pseudonym visual), Chevron Path (7-phase publishing flywheel), Impact Analytics (4 key metrics side-by-side), and Unified CTA Footer (Apply + Donations). The /about route redirects to /.
 - **Author Dashboard:** 4-step pipeline tracker (Applied → Under Review → Contract Ready → Signed), Download Contract button for signed agreements, Kill Switch for application rescission.
 - **Kill Switch (Rescind Application):** Soft-delete pattern - sets status='rescinded', nulls PII fields (dateOfBirth, guardianName, guardianEmail, guardianPhone, personalStruggles, whyCollective), preserves pseudonym/createdAt/id for audit trail.
 - **Auditor Role & Dashboard (/auditor):** Zero-PII Analytics Command Center with conversion funnel metrics, identity mode distribution, forensic health indicators - aggregate data only, no individual identifiers. Active Cohort Progress shows n/10 denominator.
