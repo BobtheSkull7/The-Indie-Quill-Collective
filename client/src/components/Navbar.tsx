@@ -35,6 +35,12 @@ export default function Navbar() {
             >
               Home
             </Link>
+            <Link 
+              href="/about" 
+              className={`text-sm font-medium transition-colors ${location === "/about" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`}
+            >
+              About
+            </Link>
             
             {!user ? (
               <>
@@ -57,6 +63,29 @@ export default function Navbar() {
                   <div className="flex items-center space-x-2">
                     <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
                       <User className="w-4 h-4 text-red-600" />
+                    </div>
+                    <span className="text-sm font-medium text-gray-700">{user.firstName}</span>
+                  </div>
+                  <button 
+                    onClick={handleLogout}
+                    className="text-gray-500 hover:text-red-500 transition-colors"
+                  >
+                    <LogOut className="w-5 h-5" />
+                  </button>
+                </div>
+              </>
+            ) : user.role === "auditor" ? (
+              <>
+                <Link 
+                  href="/auditor" 
+                  className={`text-sm font-medium transition-colors ${location === "/auditor" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`}
+                >
+                  Analytics
+                </Link>
+                <div className="flex items-center space-x-3 border-l pl-6 border-gray-200">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center">
+                      <User className="w-4 h-4 text-teal-600" />
                     </div>
                     <span className="text-sm font-medium text-gray-700">{user.firstName}</span>
                   </div>
@@ -148,6 +177,7 @@ export default function Navbar() {
       {mobileMenuOpen && (
         <div className="md:hidden bg-white border-t border-gray-100 py-4 px-4 space-y-3">
           <Link href="/" className="block text-gray-600 hover:text-slate-800 py-2">Home</Link>
+          <Link href="/about" className="block text-gray-600 hover:text-slate-800 py-2">About</Link>
           {!user ? (
             <>
               <Link href="/login" className="block text-gray-600 hover:text-slate-800 py-2">Sign In</Link>
@@ -156,6 +186,11 @@ export default function Navbar() {
           ) : user.role === "board_member" ? (
             <>
               <Link href="/board" className="block text-gray-600 hover:text-slate-800 py-2">Board</Link>
+              <button onClick={handleLogout} className="block w-full text-left text-red-500 py-2">Logout</button>
+            </>
+          ) : user.role === "auditor" ? (
+            <>
+              <Link href="/auditor" className="block text-gray-600 hover:text-slate-800 py-2">Analytics</Link>
               <button onClick={handleLogout} className="block w-full text-left text-red-500 py-2">Logout</button>
             </>
           ) : (

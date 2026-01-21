@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "../App";
-import { FileText, Copy, Check, ExternalLink, Shield, Users, Scale, MessageSquare } from "lucide-react";
+import { FileText, Copy, Check, ExternalLink, Shield, Users, Scale, MessageSquare, Link2, Eye, RefreshCw } from "lucide-react";
 
 interface VaultDocument {
   id: string;
@@ -10,6 +10,18 @@ interface VaultDocument {
   description: string;
   content: string;
   externalLink?: string;
+}
+
+interface PIIBridgeEntry {
+  applicationId: number;
+  penName: string | null;
+  legalName: string;
+  email: string;
+  identityMode: string;
+  status: string;
+  contractStatus: string | null;
+  cohortLabel: string | null;
+  createdAt: string;
 }
 
 const VAULT_DOCUMENTS: VaultDocument[] = [
@@ -137,9 +149,25 @@ export default function Vault() {
   const [, setLocation] = useLocation();
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [expandedDoc, setExpandedDoc] = useState<string | null>(null);
+  const [piiBridge, setPiiBridge] = useState<PIIBridgeEntry[]>([]);
+  const [loadingBridge, setLoadingBridge] = useState(true);
+  const [showBridge, setShowBridge] = useState(false);
+
+  useEffect(() => {
+    if (!user || user.role !== "admin") {
+      setLocation("/");
+      return;
+    }
+
+    // Fetch PII Bridge data
+    fetch("/api/admin/pii-bridge")
+      .then((res) => res.json())
+      .then(setPiiBridge)
+      .catch(console.error)
+      .finally(() => setLoadingBridge(false));
+  }, [user, setLocation]);
 
   if (!user || user.role !== "admin") {
-    setLocation("/");
     return null;
   }
 
@@ -153,15 +181,136 @@ export default function Vault() {
     }
   };
 
+  const refreshBridge = () => {
+    setLoadingBridge(true);
+    fetch("/api/admin/pii-bridge")
+      .then((res) => res.json())
+      .then(setPiiBridge)
+      .catch(console.error)
+      .finally(() => setLoadingBridge(false));
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "accepted": return "bg-green-100 text-green-700";
+      case "migrated": return "bg-purple-100 text-purple-700";
+      case "pending": return "bg-yellow-100 text-yellow-700";
+      case "under_review": return "bg-blue-100 text-blue-700";
+      case "rejected": return "bg-red-100 text-red-700";
+      case "rescinded": return "bg-gray-100 text-gray-700";
+      default: return "bg-gray-100 text-gray-700";
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-5xl mx-auto px-4">
+      <div className="max-w-6xl mx-auto px-4">
         <div className="mb-8">
           <h1 className="text-3xl font-display font-bold text-gray-900">Documentation</h1>
           <p className="text-gray-600 mt-2">
-            Admin Resource Center - Standardized documents and templates
+            Admin Resource Center - Standardized documents, templates, and PII Bridge
           </p>
         </div>
+
+        <div className="mb-8 bg-gradient-to-r from-slate-800 to-slate-700 rounded-xl p-6 text-white">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-3">
+              <Link2 className="w-6 h-6" />
+              <h2 className="text-xl font-semibold">PII Bridge Master View</h2>
+            </div>
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={refreshBridge}
+                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                title="Refresh data"
+              >
+                <RefreshCw className={`w-5 h-5 ${loadingBridge ? "animate-spin" : ""}`} />
+              </button>
+              <button
+                onClick={() => setShowBridge(!showBridge)}
+                className="flex items-center space-x-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
+              >
+                <Eye className="w-4 h-4" />
+                <span>{showBridge ? "Hide" : "Show"} Bridge</span>
+              </button>
+            </div>
+          </div>
+          <p className="text-slate-300 text-sm">
+            The single source of truth linking Pen Names to Legal Names. Only you can see this data and trigger LLC sync.
+          </p>
+        </div>
+
+        {showBridge && (
+          <div className="mb-8 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            {loadingBridge ? (
+              <div className="p-8 flex justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
+              </div>
+            ) : piiBridge.length === 0 ? (
+              <div className="p-8 text-center text-gray-500">
+                No applications found
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">Pen Name</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">Legal Name</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">Email</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">Identity</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">Status</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">Contract</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">Cohort</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {piiBridge.map((entry) => (
+                      <tr key={entry.applicationId} className="border-b border-gray-100 hover:bg-gray-50">
+                        <td className="py-3 px-4 font-medium text-teal-600">
+                          {entry.penName || <span className="text-gray-400 italic">No pen name</span>}
+                        </td>
+                        <td className="py-3 px-4 text-gray-900">{entry.legalName}</td>
+                        <td className="py-3 px-4 text-gray-600">{entry.email}</td>
+                        <td className="py-3 px-4">
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                            entry.identityMode === "safe" ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700"
+                          }`}>
+                            {entry.identityMode === "safe" ? "Safe" : "Public"}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(entry.status)}`}>
+                            {entry.status.replace("_", " ")}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          {entry.contractStatus ? (
+                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                              entry.contractStatus === "signed" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
+                            }`}>
+                              {entry.contractStatus.replace("_", " ")}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400">—</span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-gray-600">
+                          {entry.cohortLabel || <span className="text-gray-400">—</span>}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            <div className="p-4 bg-amber-50 border-t border-amber-200">
+              <p className="text-xs text-amber-700">
+                <strong>PII Firewall Reminder:</strong> Only pseudonyms are synced to the LLC. Legal names remain in NPO records only.
+              </p>
+            </div>
+          </div>
+        )}
 
         <div className="grid gap-6">
           {VAULT_DOCUMENTS.map((doc) => (

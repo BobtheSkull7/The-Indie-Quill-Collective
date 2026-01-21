@@ -537,6 +537,75 @@ export function registerRoutes(app: Express) {
     }
   });
 
+  // Author Kill Switch - Rescind Application (Soft-Delete with PII Wipe)
+  app.post("/api/applications/:id/rescind", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    try {
+      const applicationId = parseInt(req.params.id);
+      const [application] = await db.select().from(applications)
+        .where(eq(applications.id, applicationId));
+
+      if (!application) {
+        return res.status(404).json({ message: "Application not found" });
+      }
+
+      // Only the author can rescind their own application
+      if (application.userId !== req.session.userId) {
+        return res.status(403).json({ message: "Not authorized to rescind this application" });
+      }
+
+      // Can only rescind pending or under_review applications
+      if (application.status !== "pending" && application.status !== "under_review") {
+        return res.status(400).json({ 
+          message: "Cannot rescind an application that has already been accepted or processed" 
+        });
+      }
+
+      // Soft-delete: Set status to rescinded and wipe PII fields
+      // Keep: pen_name, created_at, id for audit trail
+      const [updated] = await db.update(applications)
+        .set({
+          status: "rescinded",
+          // Wipe guardian PII
+          guardianName: null,
+          guardianEmail: null,
+          guardianPhone: null,
+          guardianRelationship: null,
+          // Clear sensitive data
+          dateOfBirth: "RESCINDED",
+          personalStruggles: "RESCINDED",
+          whyCollective: "RESCINDED",
+          goals: null,
+          hearAboutUs: null,
+          expressionOther: null,
+          updatedAt: new Date(),
+        })
+        .where(eq(applications.id, applicationId))
+        .returning();
+
+      // Log the rescind action for audit trail
+      await db.insert(auditLogs).values({
+        userId: req.session.userId,
+        action: "rescind",
+        resourceType: "applications",
+        resourceId: applicationId,
+        ipAddress: getClientIp(req),
+        metadata: { 
+          reason: "author_initiated",
+          penNamePreserved: application.penName,
+        },
+      });
+
+      return res.json({ message: "Application rescinded successfully", application: updated });
+    } catch (error) {
+      console.error("Rescind application error:", error);
+      return res.status(500).json({ message: "Failed to rescind application" });
+    }
+  });
+
   app.patch("/api/applications/:id/status", async (req: Request, res: Response) => {
     if (!req.session.userId || req.session.userRole !== "admin") {
       return res.status(403).json({ message: "Not authorized" });
@@ -1581,6 +1650,58 @@ export function registerRoutes(app: Express) {
     }
   });
 
+  // PII Bridge Master View - Admin Only
+  app.get("/api/admin/pii-bridge", async (req: Request, res: Response) => {
+    if (!req.session.userId || req.session.userRole !== "admin") {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    try {
+      const allApps = await db.select().from(applications)
+        .orderBy(desc(applications.createdAt));
+      const allContracts = await db.select().from(contracts);
+      const allCohorts = await db.select().from(cohorts);
+
+      const bridgeEntries = await Promise.all(
+        allApps.map(async (app) => {
+          const [user] = await db.select().from(users).where(eq(users.id, app.userId));
+          const contract = allContracts.find(c => c.applicationId === app.id);
+          const cohort = allCohorts.find(c => c.id === app.cohortId);
+
+          return {
+            applicationId: app.id,
+            penName: app.penName,
+            legalName: user ? `${user.firstName} ${user.lastName}` : "Unknown",
+            email: user?.email || "Unknown",
+            identityMode: app.publicIdentityEnabled ? "public" : "safe",
+            status: app.status,
+            contractStatus: contract?.status || null,
+            cohortLabel: cohort?.label || null,
+            createdAt: app.createdAt.toISOString(),
+          };
+        })
+      );
+
+      // Log access to PII Bridge for audit
+      await db.insert(auditLogs).values({
+        userId: req.session.userId,
+        action: "view",
+        resourceType: "pii_bridge",
+        resourceId: 0,
+        ipAddress: getClientIp(req),
+        metadata: { 
+          entriesViewed: bridgeEntries.length,
+          viewedByRole: "admin"
+        },
+      });
+
+      return res.json(bridgeEntries);
+    } catch (error) {
+      console.error("Fetch PII bridge error:", error);
+      return res.status(500).json({ message: "Failed to fetch PII bridge data" });
+    }
+  });
+
   app.get("/api/admin/users", async (req: Request, res: Response) => {
     if (!req.session.userId || req.session.userRole !== "admin") {
       return res.status(403).json({ message: "Not authorized" });
@@ -1642,7 +1763,7 @@ export function registerRoutes(app: Express) {
       const userId = parseInt(req.params.id);
       const { role } = req.body;
 
-      if (!["applicant", "admin", "board_member"].includes(role)) {
+      if (!["applicant", "admin", "board_member", "auditor"].includes(role)) {
         return res.status(400).json({ message: "Invalid role" });
       }
 
@@ -1691,6 +1812,103 @@ export function registerRoutes(app: Express) {
     } catch (error) {
       console.error("Update user role error:", error);
       return res.status(500).json({ message: "Failed to update user role" });
+    }
+  });
+
+  // ============================================
+  // AUDITOR ENDPOINTS (Zero-PII Analytics)
+  // ============================================
+
+  app.get("/api/auditor/metrics", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    // Only auditors and admins can access this endpoint
+    if (req.session.userRole !== "auditor" && req.session.userRole !== "admin") {
+      return res.status(403).json({ message: "Not authorized - Auditor access required" });
+    }
+
+    try {
+      const allApps = await db.select().from(applications);
+      const allContracts = await db.select().from(contracts);
+      const allCohorts = await db.select().from(cohorts);
+
+      // Status distribution
+      const statusDistribution = {
+        pending: allApps.filter(a => a.status === "pending").length,
+        under_review: allApps.filter(a => a.status === "under_review").length,
+        accepted: allApps.filter(a => a.status === "accepted").length,
+        rejected: allApps.filter(a => a.status === "rejected").length,
+        migrated: allApps.filter(a => a.status === "migrated").length,
+        rescinded: allApps.filter(a => a.status === "rescinded").length,
+      };
+
+      // Identity mode distribution
+      const nonRescinded = allApps.filter(a => a.status !== "rescinded");
+      const identityModeDistribution = {
+        safe: nonRescinded.filter(a => !a.publicIdentityEnabled).length,
+        public: nonRescinded.filter(a => a.publicIdentityEnabled).length,
+      };
+
+      // Conversion rate (applications to signed contracts)
+      const signedContracts = allContracts.filter(c => c.status === "signed");
+      const totalApps = allApps.filter(a => a.status !== "rescinded").length;
+      const conversionRate = totalApps > 0 
+        ? Math.round((signedContracts.length / totalApps) * 100) 
+        : 0;
+
+      // Active cohort health
+      const activeCohort = allCohorts.find(c => c.status === "open");
+      let cohortHealth = {
+        activeCohortLabel: null as string | null,
+        activeCohortSize: 0,
+        totalCohorts: allCohorts.length,
+        signedInActiveCohort: 0,
+      };
+
+      if (activeCohort) {
+        const cohortApps = allApps.filter(a => a.cohortId === activeCohort.id);
+        const cohortContractsSigned = cohortApps.filter(app => {
+          const contract = allContracts.find(c => c.applicationId === app.id);
+          return contract && contract.status === "signed";
+        }).length;
+
+        cohortHealth = {
+          activeCohortLabel: activeCohort.label,
+          activeCohortSize: cohortApps.length,
+          totalCohorts: allCohorts.length,
+          signedInActiveCohort: cohortContractsSigned,
+        };
+      }
+
+      // Contract forensics (Zero-PII: only pen names, timestamps, and IP verification status)
+      const contractForensics = await Promise.all(
+        signedContracts.slice(0, 10).map(async (contract) => {
+          const [app] = await db.select().from(applications)
+            .where(eq(applications.id, contract.applicationId));
+          
+          return {
+            id: contract.id,
+            penName: app?.penName || "Unknown",
+            signedAt: contract.authorSignedAt?.toISOString() || null,
+            hasIpVerification: !!contract.authorSignatureIp,
+          };
+        })
+      );
+
+      return res.json({
+        totalApplications: totalApps,
+        conversionRate,
+        identityModeDistribution,
+        statusDistribution,
+        contractForensics,
+        cohortHealth,
+        lastUpdated: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error("Fetch auditor metrics error:", error);
+      return res.status(500).json({ message: "Failed to fetch auditor metrics" });
     }
   });
 
@@ -1983,6 +2201,22 @@ export function registerRoutes(app: Express) {
         a.isMinor && (a.status === 'accepted' || a.status === 'migrated')
       ).length;
 
+      // NEW DONOR-FOCUSED METRICS
+      // Total Authors Supported - all-time applications (any status except rescinded)
+      const totalAuthorsSupported = allApps.filter(a => a.status !== 'rescinded').length;
+      
+      // Identity Protection Rate - % of authors in Safe Mode (publicIdentityEnabled = false)
+      const safeModeCounts = allApps.filter(a => a.status !== 'rescinded');
+      const safeModeAuthors = safeModeCounts.filter(a => !a.publicIdentityEnabled).length;
+      const identityProtectionRate = safeModeCounts.length > 0 
+        ? Math.round((safeModeAuthors / safeModeCounts.length) * 100) 
+        : 100;
+      
+      // Active Cohort Size - currently accepted/migrated authors
+      const activeCohortSize = allApps.filter(a => 
+        a.status === 'accepted' || a.status === 'migrated'
+      ).length;
+
       const impactData = {
         totalWordsProcessed,
         booksInPipeline,
@@ -1990,6 +2224,10 @@ export function registerRoutes(app: Express) {
         publishedBooks,
         signedContracts,
         youthAuthorsSupported,
+        // New donor metrics
+        totalAuthorsSupported,
+        identityProtectionRate,
+        activeCohortSize,
         lastUpdated: new Date().toISOString(),
       };
 

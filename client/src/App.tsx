@@ -14,6 +14,8 @@ import Cohorts from "./pages/Cohorts";
 import Grants from "./pages/Grants";
 import Vault from "./pages/Vault";
 import Ledger from "./pages/Ledger";
+import About from "./pages/About";
+import Auditor from "./pages/Auditor";
 import Navbar from "./components/Navbar";
 
 interface User {
@@ -67,6 +69,7 @@ function App() {
         <Navbar />
         <Switch>
           <Route path="/" component={Home} />
+          <Route path="/about" component={About} />
           <Route path="/apply" component={Apply} />
           <Route path="/login" component={Login} />
           <Route path="/register" component={Register} />
@@ -76,6 +79,7 @@ function App() {
           <Route path="/admin/grants" component={Grants} />
           <Route path="/admin/vault" component={Vault} />
           <Route path="/admin/ledger" component={Ledger} />
+          <Route path="/auditor" component={Auditor} />
           <Route path="/board" component={Board} />
           <Route path="/contracts" component={Contracts} />
           <Route path="/contracts/:id" component={ContractSign} />

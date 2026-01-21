@@ -9,7 +9,8 @@ export const applicationStatusEnum = pgEnum('application_status', [
   'under_review', 
   'accepted',
   'rejected',
-  'migrated'
+  'migrated',
+  'rescinded'
 ]);
 
 export const contractStatusEnum = pgEnum('contract_status', [
