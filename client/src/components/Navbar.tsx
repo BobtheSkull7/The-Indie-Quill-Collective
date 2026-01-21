@@ -106,7 +106,7 @@ export default function Navbar() {
                       href="/admin/vault" 
                       className={`text-sm font-medium transition-colors ${location === "/admin/vault" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`}
                     >
-                      Vault
+                      Documentation
                     </Link>
                     <Link 
                       href="/admin/ledger" 
@@ -167,7 +167,7 @@ export default function Navbar() {
                 <>
                   <Link href="/admin" className="block text-gray-600 hover:text-slate-800 py-2">Admin</Link>
                   <Link href="/admin/cohorts" className="block text-gray-600 hover:text-slate-800 py-2">Cohorts</Link>
-                  <Link href="/admin/vault" className="block text-gray-600 hover:text-slate-800 py-2">Vault</Link>
+                  <Link href="/admin/vault" className="block text-gray-600 hover:text-slate-800 py-2">Documentation</Link>
                   <Link href="/admin/ledger" className="block text-gray-600 hover:text-slate-800 py-2">Ledger</Link>
                 </>
               )}
