@@ -137,10 +137,10 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-4">
           <div className="text-center mb-10">
             <h2 className="font-display text-2xl font-bold text-slate-800 mb-2">
-              The Chevron Path
+              The Publishing Journey
             </h2>
             <p className="text-gray-600 text-sm">
-              Your 7-phase journey from manuscript to published author
+              Your seven-step journey from idea to published author
             </p>
           </div>
           
