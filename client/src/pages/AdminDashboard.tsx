@@ -150,6 +150,8 @@ export default function AdminDashboard() {
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [availableCohorts, setAvailableCohorts] = useState<Array<{ id: number; label: string; currentCount: number; capacity: number }>>([]);
   const [selectedCohortId, setSelectedCohortId] = useState<number | null>(null);
+  const [deletingUserId, setDeletingUserId] = useState<number | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<number | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -394,6 +396,28 @@ export default function AdminDashboard() {
       console.error("Update user role failed:", error);
     } finally {
       setUpdating(false);
+    }
+  };
+
+  const deleteUser = async (userId: number) => {
+    setDeletingUserId(userId);
+    try {
+      const res = await fetch(`/api/admin/users/${userId}`, {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        setAllUsers((prev) => prev.filter((u) => u.id !== userId));
+        setShowDeleteConfirm(null);
+      } else {
+        const data = await res.json();
+        alert(data.message || "Failed to delete user");
+      }
+    } catch (error) {
+      console.error("Delete user failed:", error);
+      alert("Failed to delete user");
+    } finally {
+      setDeletingUserId(null);
     }
   };
 
@@ -1107,15 +1131,42 @@ export default function AdminDashboard() {
                           {formatDateTime(u.createdAt)}
                         </td>
                         <td className="py-3 px-4">
-                          <button
-                            onClick={() => {
-                              setEditingUser(u);
-                              setNewRole(u.role);
-                            }}
-                            className="text-blue-600 hover:text-blue-800 transition-colors text-sm font-medium"
-                          >
-                            Edit Role
-                          </button>
+                          <div className="flex items-center space-x-3">
+                            <button
+                              onClick={() => {
+                                setEditingUser(u);
+                                setNewRole(u.role);
+                              }}
+                              className="text-blue-600 hover:text-blue-800 transition-colors text-sm font-medium"
+                            >
+                              Edit Role
+                            </button>
+                            {showDeleteConfirm === u.id ? (
+                              <div className="flex items-center space-x-2">
+                                <button
+                                  onClick={() => deleteUser(u.id)}
+                                  disabled={deletingUserId === u.id}
+                                  className="text-xs px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
+                                >
+                                  {deletingUserId === u.id ? "..." : "Confirm"}
+                                </button>
+                                <button
+                                  onClick={() => setShowDeleteConfirm(null)}
+                                  className="text-xs px-2 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => setShowDeleteConfirm(u.id)}
+                                className="text-red-600 hover:text-red-800 transition-colors text-sm font-medium"
+                                title="Delete user and all associated data"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}

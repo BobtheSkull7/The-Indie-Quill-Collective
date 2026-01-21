@@ -1815,6 +1815,88 @@ export function registerRoutes(app: Express) {
     }
   });
 
+  // Admin delete user endpoint
+  app.delete("/api/admin/users/:id", async (req: Request, res: Response) => {
+    if (!req.session.userId || req.session.userRole !== "admin") {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    const targetUserId = req.params.id;
+
+    // Prevent admin from deleting themselves
+    if (targetUserId === req.session.userId) {
+      return res.status(400).json({ message: "Cannot delete your own account" });
+    }
+
+    try {
+      // Check if user exists
+      const [existingUser] = await db.select().from(users).where(eq(users.id, targetUserId));
+      if (!existingUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Check if user has minor data for audit logging
+      const userApps = await db.select().from(applications)
+        .where(eq(applications.userId, targetUserId));
+      const hasMinorApp = userApps.some(a => a.isMinor);
+
+      // STEP 1: Nullify external FK references that allow NULL
+      await db.update(applications)
+        .set({ reviewedBy: null })
+        .where(eq(applications.reviewedBy, targetUserId));
+      
+      await db.update(calendarEvents)
+        .set({ createdBy: null })
+        .where(eq(calendarEvents.createdBy, targetUserId));
+      
+      // STEP 2: Delete records where user is required (NOT NULL FK constraints)
+      const userCampaigns = await db.select({ id: fundraisingCampaigns.id })
+        .from(fundraisingCampaigns)
+        .where(eq(fundraisingCampaigns.createdBy, targetUserId));
+      
+      for (const campaign of userCampaigns) {
+        await db.delete(donations).where(eq(donations.campaignId, campaign.id));
+      }
+      
+      await db.delete(donations).where(eq(donations.recordedBy, targetUserId));
+      await db.delete(fundraisingCampaigns).where(eq(fundraisingCampaigns.createdBy, targetUserId));
+
+      // STEP 3: Delete applications and related data
+      const applicationIds = userApps.map(a => a.id);
+      if (applicationIds.length > 0) {
+        await db.delete(contracts).where(inArray(contracts.applicationId, applicationIds));
+        await db.delete(applications).where(eq(applications.userId, targetUserId));
+      }
+
+      await db.delete(publishingUpdates).where(eq(publishingUpdates.userId, targetUserId));
+      await db.delete(auditLogs).where(eq(auditLogs.userId, targetUserId));
+
+      // STEP 4: Delete the user
+      await db.delete(users).where(eq(users.id, targetUserId));
+
+      // Log COPPA-related deletion if minor data was involved
+      if (hasMinorApp) {
+        await logMinorDataAccess(
+          req.session.userId,
+          "delete",
+          "user",
+          targetUserId,
+          getClientIp(req),
+          {
+            deletedByRole: "admin",
+            deletedUserEmail: existingUser.email,
+            hadMinorApplications: true,
+          }
+        );
+      }
+
+      return res.json({ message: "User deleted successfully", deletedUserId: targetUserId });
+    } catch (error) {
+      console.error("Delete user error:", error);
+      return res.status(500).json({ message: "Failed to delete user" });
+    }
+  });
+
   // ============================================
   // AUDITOR ENDPOINTS (Zero-PII Analytics)
   // ============================================
