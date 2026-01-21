@@ -127,7 +127,7 @@ export default function Home() {
           </div>
           
           <p className="text-center text-xs text-gray-500 mt-4">
-            Zero-PII Architecture: Legal names never leave the NPO. Only pseudonyms are shared publicly.
+            Zero-PII Architecture: For minor authors, legal names never leave the NPO. Only pseudonyms are shared publicly.
           </p>
         </div>
       </section>
@@ -207,6 +207,9 @@ export default function Home() {
             </h2>
             <p className="text-gray-600 text-sm">
               Real-time metrics demonstrating our commitment to emerging authors
+            </p>
+            <p className="text-gray-500 text-xs mt-1">
+              Founded January 1, 2026
             </p>
           </div>
 
