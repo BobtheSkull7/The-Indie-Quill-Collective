@@ -16,6 +16,7 @@ import Vault from "./pages/Vault";
 import Ledger from "./pages/Ledger";
 import About from "./pages/About";
 import Auditor from "./pages/Auditor";
+import Donations from "./pages/Donations";
 import Navbar from "./components/Navbar";
 
 interface User {
@@ -70,6 +71,7 @@ function App() {
         <Switch>
           <Route path="/" component={Home} />
           <Route path="/about" component={About} />
+          <Route path="/donations" component={Donations} />
           <Route path="/apply" component={Apply} />
           <Route path="/login" component={Login} />
           <Route path="/register" component={Register} />
