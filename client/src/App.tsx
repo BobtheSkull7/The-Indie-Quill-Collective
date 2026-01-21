@@ -14,8 +14,8 @@ import Cohorts from "./pages/Cohorts";
 import Grants from "./pages/Grants";
 import Vault from "./pages/Vault";
 import Ledger from "./pages/Ledger";
-import About from "./pages/About";
 import Auditor from "./pages/Auditor";
+import { Redirect } from "wouter";
 import Donations from "./pages/Donations";
 import Navbar from "./components/Navbar";
 
@@ -70,7 +70,7 @@ function App() {
         <Navbar />
         <Switch>
           <Route path="/" component={Home} />
-          <Route path="/about" component={About} />
+          <Route path="/about">{() => <Redirect to="/" />}</Route>
           <Route path="/donations" component={Donations} />
           <Route path="/apply" component={Apply} />
           <Route path="/login" component={Login} />
