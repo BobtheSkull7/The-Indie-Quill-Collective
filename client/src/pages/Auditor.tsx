@@ -134,7 +134,7 @@ export default function Auditor() {
                   </div>
                   <div>
                     <p className="text-3xl font-bold text-slate-800">
-                      {metrics.cohortHealth.signedInActiveCohort}/{metrics.cohortHealth.activeCohortSize}
+                      {metrics.cohortHealth.signedInActiveCohort}/10
                     </p>
                     <p className="text-sm text-gray-500">Active Cohort Progress</p>
                   </div>

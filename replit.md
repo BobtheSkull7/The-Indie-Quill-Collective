@@ -42,16 +42,16 @@ The project utilizes a client-server architecture with a React 19, Vite, and Tai
 **Author Self-Service & Transparency:**
 - **About Page (/about):** Public-facing donor transparency with Impact Analytics (Total Authors Supported, Identity Protection Rate, Active Cohort Size, Published Books, Signed Contracts, Youth Authors).
 - **Author Dashboard:** 4-step pipeline tracker (Applied → Under Review → Contract Ready → Signed), Download Contract button for signed agreements, Kill Switch for application rescission.
-- **Kill Switch (Rescind Application):** Soft-delete pattern - sets status='rescinded', nulls PII fields (dateOfBirth, guardianName, guardianEmail, guardianPhone, personalStruggles, whyCollective), preserves penName/createdAt/id for audit trail.
-- **Auditor Role & Dashboard (/auditor):** Zero-PII Analytics Command Center with conversion funnel metrics, identity mode distribution, forensic health indicators - aggregate data only, no individual identifiers.
-- **PII Bridge Master View:** Admin-only view in Documentation page linking Pen Name ↔ Legal Name with audit logging of all access.
+- **Kill Switch (Rescind Application):** Soft-delete pattern - sets status='rescinded', nulls PII fields (dateOfBirth, guardianName, guardianEmail, guardianPhone, personalStruggles, whyCollective), preserves pseudonym/createdAt/id for audit trail.
+- **Auditor Role & Dashboard (/auditor):** Zero-PII Analytics Command Center with conversion funnel metrics, identity mode distribution, forensic health indicators - aggregate data only, no individual identifiers. Active Cohort Progress shows n/10 denominator.
+- **Secure Identity Vault:** Admin-only view at /admin/vault linking Pseudonym ↔ Legal Name with LLC Sync Status and audit logging of all access.
 
 **Core Database Schema Highlights:**
 - **users:** User accounts with roles (applicant, admin, board_member, auditor).
 - **cohorts:** Manages author cohorts (10 authors per cohort).
 - **applications:** Stores author application details, COPPA compliance fields, `public_identity_enabled` toggle, status includes 'rescinded' for soft-deleted applications.
 - **contracts:** Publishing agreements with signature tracking.
-- **audit_logs:** Comprehensive logging for COPPA compliance, tracking user actions on sensitive data including PII Bridge access.
+- **audit_logs:** Comprehensive logging for COPPA compliance, tracking user actions on sensitive data including Secure Identity Vault access.
 
 ## Documentation
 

@@ -208,7 +208,7 @@ export default function Vault() {
         <div className="mb-8">
           <h1 className="text-3xl font-display font-bold text-gray-900">Documentation</h1>
           <p className="text-gray-600 mt-2">
-            Admin Resource Center - Standardized documents, templates, and PII Bridge
+            Admin Resource Center - Standardized documents, templates, and Secure Identity Vault
           </p>
         </div>
 
@@ -216,7 +216,7 @@ export default function Vault() {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-3">
               <Link2 className="w-6 h-6" />
-              <h2 className="text-xl font-semibold">PII Bridge Master View</h2>
+              <h2 className="text-xl font-semibold">Secure Identity Vault</h2>
             </div>
             <div className="flex items-center space-x-3">
               <button
@@ -236,7 +236,7 @@ export default function Vault() {
             </div>
           </div>
           <p className="text-slate-300 text-sm">
-            The single source of truth linking Pen Names to Legal Names. Only you can see this data and trigger LLC sync.
+            The single source of truth linking Pseudonyms to Legal Names. Only you can see this data and trigger LLC sync.
           </p>
         </div>
 
@@ -255,7 +255,7 @@ export default function Vault() {
                 <table className="w-full text-sm">
                   <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Pen Name</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">Pseudonym</th>
                       <th className="text-left py-3 px-4 font-medium text-gray-600">Legal Name</th>
                       <th className="text-left py-3 px-4 font-medium text-gray-600">Email</th>
                       <th className="text-left py-3 px-4 font-medium text-gray-600">Identity</th>

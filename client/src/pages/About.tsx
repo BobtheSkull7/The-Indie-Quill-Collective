@@ -193,7 +193,7 @@ export default function About() {
               <ArrowRight className="w-4 h-4" />
             </Link>
             <a 
-              href="mailto:jon@theindiequill.com?subject=Donation Inquiry" 
+              href="mailto:Jon@theindiequill.com?subject=Donation Inquiry" 
               className="border-2 border-white text-white hover:bg-white/10 font-semibold py-3 px-8 rounded-lg transition-colors"
             >
               Contact for Donations
