@@ -133,9 +133,9 @@ export default function Home() {
       </section>
 
       {/* SECTION 3: Chevron Path (Flywheel) */}
-      <section className="py-10 bg-gray-50">
-        <div className="max-w-5xl mx-auto px-4">
-          <div className="text-center mb-6">
+      <section className="py-14 bg-gray-50">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="text-center mb-10">
             <h2 className="font-display text-2xl font-bold text-slate-800 mb-2">
               The Chevron Path
             </h2>
@@ -146,17 +146,19 @@ export default function Home() {
           
           {/* Horizontal Flywheel - Desktop */}
           <div className="hidden md:block">
-            <div className="flex items-center justify-center">
+            <div className="flex items-center justify-center gap-2">
               {CHEVRON_PHASES.map((phase, index) => (
                 <div key={phase.id} className="flex items-center">
                   <div className="flex flex-col items-center">
-                    <div className="w-12 h-12 bg-white rounded-lg shadow-sm border border-gray-200 flex items-center justify-center mb-1.5 hover:shadow-md hover:border-teal-300 transition-all">
-                      <span className="text-lg">{phase.icon}</span>
+                    <div className="w-16 h-16 bg-white rounded-xl shadow-md border-2 border-gray-200 flex items-center justify-center mb-2 hover:shadow-lg hover:border-teal-400 transition-all">
+                      <span className="text-2xl">{phase.icon}</span>
                     </div>
-                    <span className="text-xs font-medium text-slate-700 text-center w-16">{phase.label}</span>
+                    <span className="text-sm font-medium text-slate-700 text-center w-20">{phase.label}</span>
                   </div>
                   {index < CHEVRON_PHASES.length - 1 && (
-                    <ChevronRight className="w-4 h-4 text-teal-400 mx-1 flex-shrink-0" />
+                    <div className="mx-3 flex-shrink-0">
+                      <ChevronRight className="w-6 h-6 text-teal-500" strokeWidth={3} />
+                    </div>
                   )}
                 </div>
               ))}
@@ -165,32 +167,32 @@ export default function Home() {
           
           {/* Mobile Flywheel - Compact Grid */}
           <div className="md:hidden">
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-4 gap-3">
               {CHEVRON_PHASES.slice(0, 4).map((phase) => (
                 <div key={phase.id} className="flex flex-col items-center">
-                  <div className="w-10 h-10 bg-white rounded-lg shadow-sm border border-gray-200 flex items-center justify-center mb-1">
-                    <span className="text-sm">{phase.icon}</span>
+                  <div className="w-14 h-14 bg-white rounded-xl shadow-md border-2 border-gray-200 flex items-center justify-center mb-2">
+                    <span className="text-xl">{phase.icon}</span>
                   </div>
-                  <span className="text-[10px] font-medium text-slate-700 text-center">{phase.label}</span>
+                  <span className="text-xs font-medium text-slate-700 text-center">{phase.label}</span>
                 </div>
               ))}
             </div>
-            <div className="flex justify-center my-1">
-              <ChevronRight className="w-4 h-4 text-teal-400 rotate-90" />
+            <div className="flex justify-center my-3">
+              <ChevronRight className="w-6 h-6 text-teal-500 rotate-90" strokeWidth={3} />
             </div>
-            <div className="grid grid-cols-3 gap-2 max-w-[200px] mx-auto">
+            <div className="grid grid-cols-3 gap-3 max-w-[260px] mx-auto">
               {CHEVRON_PHASES.slice(4).map((phase) => (
                 <div key={phase.id} className="flex flex-col items-center">
-                  <div className="w-10 h-10 bg-white rounded-lg shadow-sm border border-gray-200 flex items-center justify-center mb-1">
-                    <span className="text-sm">{phase.icon}</span>
+                  <div className="w-14 h-14 bg-white rounded-xl shadow-md border-2 border-gray-200 flex items-center justify-center mb-2">
+                    <span className="text-xl">{phase.icon}</span>
                   </div>
-                  <span className="text-[10px] font-medium text-slate-700 text-center">{phase.label}</span>
+                  <span className="text-xs font-medium text-slate-700 text-center">{phase.label}</span>
                 </div>
               ))}
             </div>
           </div>
           
-          <p className="text-center text-xs text-gray-500 mt-4">
+          <p className="text-center text-sm text-gray-500 mt-8">
             Momentum is our goal — we move forward together.
           </p>
         </div>
