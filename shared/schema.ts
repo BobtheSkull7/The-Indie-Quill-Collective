@@ -88,7 +88,7 @@ export const applications = pgTable("applications", {
   dateApproved: timestamp("date_approved"),
   dateMigrated: timestamp("date_migrated"),
   
-  penName: text("pen_name"),
+  pseudonym: text("pseudonym"),
   dateOfBirth: text("date_of_birth").notNull(),
   isMinor: boolean("is_minor").notNull().default(false),
   

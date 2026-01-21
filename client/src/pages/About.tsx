@@ -156,7 +156,7 @@ export default function About() {
               </h3>
               <div className="space-y-4">
                 {[
-                  { step: 1, title: "Apply", desc: "Submit your application with pen name and identity preferences" },
+                  { step: 1, title: "Apply", desc: "Submit your application with pseudonym and identity preferences" },
                   { step: 2, title: "Review", desc: "Our team evaluates your application within 72 hours" },
                   { step: 3, title: "Contract", desc: "Sign your publishing agreement with forensic-grade security" },
                   { step: 4, title: "Publish", desc: "Work with mentors through the 7-phase Literacy Logistics Framework" },

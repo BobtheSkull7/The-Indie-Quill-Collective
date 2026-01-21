@@ -5,7 +5,7 @@ import { FileText, Clock, CheckCircle, XCircle, ArrowRight, BookOpen, AlertCircl
 
 interface Application {
   id: number;
-  penName: string | null;
+  pseudonym: string | null;
   status: string;
   createdAt: string;
   reviewNotes: string | null;
@@ -156,7 +156,7 @@ export default function Dashboard() {
                     <div className="flex-1">
                       <div className="flex items-center space-x-3 mb-4">
                         <h3 className="font-display text-xl font-semibold text-slate-800">
-                          {app.penName || "Your Application"}
+                          {app.pseudonym || "Your Application"}
                         </h3>
                         <span className={`inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${
                           app.publicIdentityEnabled 

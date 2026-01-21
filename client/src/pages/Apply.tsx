@@ -12,7 +12,7 @@ export default function Apply() {
   const [submitted, setSubmitted] = useState(false);
 
   const [formData, setFormData] = useState({
-    penName: "",
+    pseudonym: "",
     identityMode: "safe" as "safe" | "public",
     dateOfBirth: "",
     isMinor: false,
@@ -174,14 +174,14 @@ export default function Apply() {
                 </div>
 
                 <div>
-                  <label className="label">Pen Name / Pseudonym (Creative Identity) *</label>
+                  <label className="label">Pseudonym (Creative Identity) *</label>
                   <input
                     type="text"
                     required
                     className="input-field"
-                    placeholder="Your author pen name for the bookstore"
-                    value={formData.penName}
-                    onChange={(e) => setFormData({ ...formData, penName: e.target.value })}
+                    placeholder="Your pseudonym for the bookstore"
+                    value={formData.pseudonym}
+                    onChange={(e) => setFormData({ ...formData, pseudonym: e.target.value })}
                   />
                   <p className="text-xs text-gray-500 mt-1">This is how your name will appear on published works. Your legal name remains private.</p>
                 </div>
@@ -204,7 +204,7 @@ export default function Apply() {
                       <div>
                         <span className="font-medium text-slate-800">Safe Mode (Default)</span>
                         <p className="text-xs text-gray-600">
-                          Your identity will be masked using a truncated name and emoji avatar in all public materials. Only your Pseudonym will be shared with the Bookstore.
+                          Your identity will be masked using a truncated name and emoji avatar in all public materials. Only your pseudonym will be shared with the Bookstore.
                         </p>
                       </div>
                     </label>

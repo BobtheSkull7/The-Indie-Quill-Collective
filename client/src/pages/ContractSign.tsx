@@ -21,7 +21,7 @@ interface Contract {
   createdAt: string;
   authorLegalName?: string;
   guardianLegalName?: string;
-  penName?: string;
+  pseudonym?: string;
   identityMode?: "safe" | "public";
 }
 
@@ -294,8 +294,8 @@ export default function ContractSign() {
                 )}
                 
                 <div className="flex justify-between items-center p-2 bg-white rounded border">
-                  <span className="text-sm text-gray-600">Creative Identity (Pen Name):</span>
-                  <span className="font-medium text-teal-600">{contract.penName || "Not specified"}</span>
+                  <span className="text-sm text-gray-600">Pseudonym (Creative Identity):</span>
+                  <span className="font-medium text-teal-600">{contract.pseudonym || "Not specified"}</span>
                 </div>
                 
                 <div className="flex justify-between items-center p-2 bg-white rounded border">

@@ -20,7 +20,7 @@ interface AuditorMetrics {
   };
   contractForensics: Array<{
     id: number;
-    penName: string;
+    pseudonym: string;
     signedAt: string | null;
     hasIpVerification: boolean;
   }>;
@@ -215,7 +215,7 @@ export default function Auditor() {
                 <span>Forensic Health (Recent Signatures)</span>
               </h2>
               <p className="text-xs text-gray-500 mb-4">
-                Showing pen names only - Zero-PII compliant view
+                Showing pseudonyms only - Zero-PII compliant view
               </p>
               
               {metrics.contractForensics.length === 0 ? (
@@ -225,7 +225,7 @@ export default function Auditor() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-gray-200">
-                        <th className="text-left py-3 px-4 text-gray-600 font-medium">Pen Name</th>
+                        <th className="text-left py-3 px-4 text-gray-600 font-medium">Pseudonym</th>
                         <th className="text-left py-3 px-4 text-gray-600 font-medium">Signed At</th>
                         <th className="text-left py-3 px-4 text-gray-600 font-medium">IP Verified</th>
                       </tr>
@@ -233,7 +233,7 @@ export default function Auditor() {
                     <tbody>
                       {metrics.contractForensics.map((contract) => (
                         <tr key={contract.id} className="border-b border-gray-100 hover:bg-gray-50">
-                          <td className="py-3 px-4 font-medium text-slate-800">{contract.penName}</td>
+                          <td className="py-3 px-4 font-medium text-slate-800">{contract.pseudonym}</td>
                           <td className="py-3 px-4 text-gray-600">
                             {contract.signedAt ? new Date(contract.signedAt).toLocaleString() : "—"}
                           </td>
