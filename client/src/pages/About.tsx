@@ -66,54 +66,46 @@ export default function About() {
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-400"></div>
             </div>
           ) : metrics ? (
-            <div className="grid md:grid-cols-3 gap-6 mb-8">
-              <div className="bg-gradient-to-br from-teal-50 to-blue-50 rounded-2xl p-8 text-center border border-teal-100">
-                <div className="w-14 h-14 bg-teal-100 rounded-xl flex items-center justify-center mx-auto mb-4">
-                  <Users className="w-7 h-7 text-teal-600" />
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6 text-center border border-green-100">
+                <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <Shield className="w-6 h-6 text-green-600" />
                 </div>
-                <p className="text-4xl font-bold text-slate-800 mb-2">{metrics.totalAuthorsSupported}</p>
-                <p className="text-gray-600 font-medium">Total Authors Supported</p>
-                <p className="text-sm text-gray-500 mt-2">All-time applications received</p>
+                <p className="text-3xl font-bold text-slate-800 mb-1">{metrics.identityProtectionRate}%</p>
+                <p className="text-gray-600 font-medium text-sm">Identity Protection</p>
+                <p className="text-xs text-gray-500 mt-1">COPPA Compliant</p>
               </div>
 
-              <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-8 text-center border border-green-100">
-                <div className="w-14 h-14 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-4">
-                  <Shield className="w-7 h-7 text-green-600" />
+              <div className="bg-gradient-to-br from-teal-50 to-blue-50 rounded-2xl p-6 text-center border border-teal-100">
+                <div className="w-12 h-12 bg-teal-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <Users className="w-6 h-6 text-teal-600" />
                 </div>
-                <p className="text-4xl font-bold text-slate-800 mb-2">{metrics.identityProtectionRate}%</p>
-                <p className="text-gray-600 font-medium">Identity Protection Rate</p>
-                <p className="text-sm text-gray-500 mt-2">Authors in Safe Mode (COPPA Compliant)</p>
+                <p className="text-3xl font-bold text-slate-800 mb-1">{metrics.youthAuthorsSupported}/{metrics.totalAuthorsSupported}</p>
+                <p className="text-gray-600 font-medium text-sm">Authors Supported</p>
+                <p className="text-xs text-gray-500 mt-1">Youth / Total</p>
               </div>
 
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-8 text-center border border-blue-100">
-                <div className="w-14 h-14 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-4">
-                  <TrendingUp className="w-7 h-7 text-blue-600" />
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 text-center border border-blue-100">
+                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <TrendingUp className="w-6 h-6 text-blue-600" />
                 </div>
-                <p className="text-4xl font-bold text-slate-800 mb-2">{metrics.activeCohortSize}</p>
-                <p className="text-gray-600 font-medium">Active Cohort Size</p>
-                <p className="text-sm text-gray-500 mt-2">Currently accepted authors</p>
+                <p className="text-3xl font-bold text-slate-800 mb-1">{metrics.activeCohortSize}/10</p>
+                <p className="text-gray-600 font-medium text-sm">Active Cohort</p>
+                <p className="text-xs text-gray-500 mt-1">Current Progress</p>
+              </div>
+
+              <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-6 text-center border border-purple-100">
+                <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <BookOpen className="w-6 h-6 text-purple-600" />
+                </div>
+                <p className="text-3xl font-bold text-slate-800 mb-1">{metrics.publishedBooks}</p>
+                <p className="text-gray-600 font-medium text-sm">Books Published</p>
+                <p className="text-xs text-gray-500 mt-1">Available Now</p>
               </div>
             </div>
           ) : (
             <div className="text-center py-12 text-gray-500">
               Unable to load impact metrics
-            </div>
-          )}
-
-          {metrics && (
-            <div className="grid md:grid-cols-3 gap-4">
-              <div className="bg-gray-50 rounded-xl p-6 text-center">
-                <p className="text-2xl font-bold text-slate-800">{metrics.signedContracts}</p>
-                <p className="text-sm text-gray-600">Contracts Signed</p>
-              </div>
-              <div className="bg-gray-50 rounded-xl p-6 text-center">
-                <p className="text-2xl font-bold text-slate-800">{metrics.publishedBooks}</p>
-                <p className="text-sm text-gray-600">Books Published</p>
-              </div>
-              <div className="bg-gray-50 rounded-xl p-6 text-center">
-                <p className="text-2xl font-bold text-slate-800">{metrics.youthAuthorsSupported}</p>
-                <p className="text-sm text-gray-600">Youth Authors Supported</p>
-              </div>
             </div>
           )}
 
