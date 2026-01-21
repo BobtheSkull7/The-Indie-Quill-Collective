@@ -71,7 +71,7 @@ export default function Home() {
         <div className="max-w-4xl mx-auto px-4">
           <div className="text-center mb-8">
             <h2 className="font-display text-2xl font-bold text-slate-800 mb-2">
-              Secure Identity Vault
+              Identity Bridge
             </h2>
             <p className="text-gray-600 text-sm">
               Your privacy is our priority. We separate what's private from what's public.
