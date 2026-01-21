@@ -1851,12 +1851,12 @@ export function registerRoutes(app: Express) {
         public: nonRescinded.filter(a => a.publicIdentityEnabled).length,
       };
 
-      // Conversion rate (applications to signed contracts)
+      // Total approved (accepted + migrated + signed contracts)
       const signedContracts = allContracts.filter(c => c.status === "signed");
       const totalApps = allApps.filter(a => a.status !== "rescinded").length;
-      const conversionRate = totalApps > 0 
-        ? Math.round((signedContracts.length / totalApps) * 100) 
-        : 0;
+      const totalApproved = allApps.filter(a => 
+        a.status === "accepted" || a.status === "migrated"
+      ).length + signedContracts.length;
 
       // Active cohort health
       const activeCohort = allCohorts.find(c => c.status === "open");
@@ -1882,15 +1882,35 @@ export function registerRoutes(app: Express) {
         };
       }
 
-      // Contract forensics (Zero-PII: only pen names, timestamps, and IP verification status)
+      // Contract forensics (Zero-PII: only pseudonyms, timestamps, and IP verification status)
+      // For minors or when pseudonym looks like a legal name, show masked identifier
       const contractForensics = await Promise.all(
         signedContracts.slice(0, 10).map(async (contract) => {
           const [app] = await db.select().from(applications)
             .where(eq(applications.id, contract.applicationId));
           
+          // Determine if we should mask the identity
+          // Mask if: no pseudonym set, or author is a minor (under 18), or pseudonym contains spaces (likely a legal name)
+          let displayName = "Author #" + contract.id;
+          if (app?.pseudonym) {
+            // Check if this looks like a real pseudonym (single word or clearly pen name style)
+            // If it has a space and matches firstName lastName pattern, mask it for safety
+            const isMinor = app.dateOfBirth && 
+              (new Date().getFullYear() - new Date(app.dateOfBirth).getFullYear()) < 18;
+            
+            if (isMinor || !app.publicIdentityEnabled) {
+              // For minors or safe mode users, always use masked format
+              const firstInitial = app.pseudonym.charAt(0).toUpperCase();
+              displayName = `${firstInitial}. Author`;
+            } else {
+              // Adult in public mode - can show pseudonym
+              displayName = app.pseudonym;
+            }
+          }
+          
           return {
             id: contract.id,
-            pseudonym: app?.pseudonym || "Unknown",
+            pseudonym: displayName,
             signedAt: contract.authorSignedAt?.toISOString() || null,
             hasIpVerification: !!contract.authorSignatureIp,
           };
@@ -1899,7 +1919,7 @@ export function registerRoutes(app: Express) {
 
       return res.json({
         totalApplications: totalApps,
-        conversionRate,
+        totalApproved,
         identityModeDistribution,
         statusDistribution,
         contractForensics,

@@ -5,7 +5,7 @@ import { BarChart3, Shield, Users, FileCheck, TrendingUp, Clock, AlertTriangle }
 
 interface AuditorMetrics {
   totalApplications: number;
-  conversionRate: number;
+  totalApproved: number;
   identityModeDistribution: {
     safe: number;
     public: number;
@@ -120,11 +120,11 @@ export default function Auditor() {
                     <TrendingUp className="w-6 h-6 text-green-600" />
                   </div>
                   <div>
-                    <p className="text-3xl font-bold text-slate-800">{metrics.conversionRate}%</p>
-                    <p className="text-sm text-gray-500">Conversion Rate</p>
+                    <p className="text-3xl font-bold text-slate-800">{metrics.totalApproved}</p>
+                    <p className="text-sm text-gray-500">Total Approved</p>
                   </div>
                 </div>
-                <p className="text-xs text-gray-400">Applications → Signed Contracts</p>
+                <p className="text-xs text-gray-400">Accepted + Migrated Authors</p>
               </div>
 
               <div className="card">
