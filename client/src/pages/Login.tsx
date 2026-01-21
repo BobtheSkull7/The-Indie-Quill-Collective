@@ -30,7 +30,15 @@ export default function Login() {
       }
 
       setUser(data.user);
-      setLocation(data.user.role === "admin" ? "/admin" : "/dashboard");
+      if (data.user.role === "admin") {
+        setLocation("/admin");
+      } else if (data.user.role === "auditor") {
+        setLocation("/auditor");
+      } else if (data.user.role === "board_member") {
+        setLocation("/board");
+      } else {
+        setLocation("/dashboard");
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {

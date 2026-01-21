@@ -41,6 +41,21 @@ export default function Dashboard() {
       return;
     }
 
+    if (user.role === "auditor") {
+      setLocation("/auditor");
+      return;
+    }
+
+    if (user.role === "admin") {
+      setLocation("/admin");
+      return;
+    }
+
+    if (user.role === "board_member") {
+      setLocation("/board");
+      return;
+    }
+
     Promise.all([
       fetch("/api/applications").then((res) => res.json()),
       fetch("/api/contracts").then((res) => res.json()),
