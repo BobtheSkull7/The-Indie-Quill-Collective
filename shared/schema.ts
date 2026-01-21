@@ -70,7 +70,7 @@ export const cohorts = pgTable("cohorts", {
 });
 
 export const users = pgTable("users", {
-  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  id: serial("id").primaryKey(),
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
   firstName: text("first_name").notNull(),
@@ -81,7 +81,7 @@ export const users = pgTable("users", {
 
 export const applications = pgTable("applications", {
   id: serial("id").primaryKey(),
-  userId: varchar("user_id", { length: 36 }).references(() => users.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
   
   internalId: text("internal_id"),
   cohortId: integer("cohort_id").references(() => cohorts.id),
@@ -112,7 +112,7 @@ export const applications = pgTable("applications", {
   
   status: applicationStatusEnum("status").default("pending").notNull(),
   reviewNotes: text("review_notes"),
-  reviewedBy: varchar("reviewed_by", { length: 36 }).references(() => users.id),
+  reviewedBy: integer("reviewed_by").references(() => users.id),
   reviewedAt: timestamp("reviewed_at"),
   
   // Grant metrics - manuscript tracking
@@ -131,7 +131,7 @@ export const applications = pgTable("applications", {
 export const contracts = pgTable("contracts", {
   id: serial("id").primaryKey(),
   applicationId: integer("application_id").references(() => applications.id).notNull(),
-  userId: varchar("user_id", { length: 36 }).references(() => users.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
   
   contractType: text("contract_type").notNull(),
   contractContent: text("contract_content").notNull(),
@@ -160,7 +160,7 @@ export const contracts = pgTable("contracts", {
 export const publishingUpdates = pgTable("publishing_updates", {
   id: serial("id").primaryKey(),
   applicationId: integer("application_id").references(() => applications.id).notNull(),
-  userId: varchar("user_id", { length: 36 }).references(() => users.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
   
   indieQuillAuthorId: text("indie_quill_author_id"),
   
@@ -239,7 +239,7 @@ export const calendarEvents = pgTable("calendar_events", {
   allDay: boolean("all_day").default(false).notNull(),
   eventType: text("event_type").notNull().default("meeting"),
   location: text("location"),
-  createdBy: varchar("created_by", { length: 36 }).references(() => users.id),
+  createdBy: integer("created_by").references(() => users.id),
   googleCalendarEventId: text("google_calendar_event_id"),
   lastSyncedAt: timestamp("last_synced_at"),
   isFromGoogle: boolean("is_from_google").default(false).notNull(),
@@ -256,7 +256,7 @@ export const fundraisingCampaigns = pgTable("fundraising_campaigns", {
   startDate: timestamp("start_date").notNull(),
   endDate: timestamp("end_date"),
   isActive: boolean("is_active").default(true).notNull(),
-  createdBy: varchar("created_by", { length: 36 }).references(() => users.id).notNull(),
+  createdBy: integer("created_by").references(() => users.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -270,7 +270,7 @@ export const donations = pgTable("donations", {
   isAnonymous: boolean("is_anonymous").default(false).notNull(),
   notes: text("notes"),
   donatedAt: timestamp("donated_at").defaultNow().notNull(),
-  recordedBy: varchar("recorded_by", { length: 36 }).references(() => users.id).notNull(),
+  recordedBy: integer("recorded_by").references(() => users.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -302,7 +302,7 @@ export const donationsRelations = relations(donations, ({ one }) => ({
 
 export const auditLogs = pgTable("audit_logs", {
   id: serial("id").primaryKey(),
-  userId: varchar("user_id", { length: 36 }).references(() => users.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
   action: text("action").notNull(),
   targetTable: text("target_table").notNull(),
   targetId: text("target_id").notNull(),
@@ -321,7 +321,7 @@ export const foundations = pgTable("foundations", {
   mission: text("mission"),
   website: text("website"),
   notes: text("notes"),
-  createdBy: varchar("created_by", { length: 36 }).references(() => users.id).notNull(),
+  createdBy: integer("created_by").references(() => users.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -332,7 +332,7 @@ export const solicitationLogs = pgTable("solicitation_logs", {
   foundationId: integer("foundation_id").references(() => foundations.id).notNull(),
   contactDate: timestamp("contact_date").notNull(),
   contactMethod: text("contact_method").notNull(), // email, phone, in-person, letter
-  contactedBy: varchar("contacted_by", { length: 36 }).references(() => users.id).notNull(),
+  contactedBy: integer("contacted_by").references(() => users.id).notNull(),
   purpose: text("purpose").notNull(),
   response: text("response"), // pending, interested, declined, funded
   responseDate: timestamp("response_date"),
@@ -350,7 +350,7 @@ export const foundationGrants = pgTable("foundation_grants", {
   grantDate: timestamp("grant_date").notNull(),
   grantPurpose: text("grant_purpose"),
   donorLockedAt: timestamp("donor_locked_at"), // When authors are locked to this grant for reporting
-  recordedBy: varchar("recorded_by", { length: 36 }).references(() => users.id).notNull(),
+  recordedBy: integer("recorded_by").references(() => users.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -398,7 +398,7 @@ export const operatingCosts = pgTable("operating_costs", {
   quarterNum: integer("quarter_num").notNull(), // 1-4
   totalCost: integer("total_cost").notNull().default(0), // In cents
   description: text("description"),
-  recordedBy: varchar("recorded_by", { length: 36 }).references(() => users.id).notNull(),
+  recordedBy: integer("recorded_by").references(() => users.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
