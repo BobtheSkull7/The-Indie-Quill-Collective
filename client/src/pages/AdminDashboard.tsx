@@ -11,7 +11,7 @@ import OperationsPanel from "../components/OperationsPanel";
 interface Application {
   id: number;
   userId: number;
-  penName: string | null;
+  pseudonym: string | null;
   dateOfBirth: string;
   isMinor: boolean;
   guardianName: string | null;
@@ -1480,8 +1480,8 @@ export default function AdminDashboard() {
                       <p className="text-slate-800">{selectedApp.authorEmail}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-500">Pen Name</p>
-                      <p className="text-slate-800">{selectedApp.penName || "Not provided"}</p>
+                      <p className="text-sm text-gray-500">Pseudonym</p>
+                      <p className="text-slate-800">{selectedApp.pseudonym || "Not provided"}</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Date of Birth</p>

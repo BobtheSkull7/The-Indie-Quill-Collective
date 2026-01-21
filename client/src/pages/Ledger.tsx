@@ -21,7 +21,7 @@ interface LedgerEntry {
 interface AuthorSpending {
   authorId: number;
   authorName: string;
-  penName: string | null;
+  pseudonym: string | null;
   sponsorshipReceived: number;
   totalSpent: number;
   remaining: number;
@@ -48,7 +48,7 @@ export default function Ledger() {
   const [, setLocation] = useLocation();
   const [entries, setEntries] = useState<LedgerEntry[]>([]);
   const [metrics, setMetrics] = useState<LedgerMetrics | null>(null);
-  const [authors, setAuthors] = useState<{ id: number; name: string; penName: string | null }[]>([]);
+  const [authors, setAuthors] = useState<{ id: number; name: string; pseudonym: string | null }[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddEntry, setShowAddEntry] = useState(false);
   const [selectedAuthor, setSelectedAuthor] = useState<AuthorSpending | null>(null);
@@ -90,7 +90,7 @@ export default function Ledger() {
           .map((app: any) => ({
             id: app.id,
             name: `${app.firstName} ${app.lastName}`,
-            penName: app.penName,
+            pseudonym: app.pseudonym,
           }));
         setAuthors(acceptedAuthors);
       }
@@ -311,8 +311,8 @@ export default function Ledger() {
                           <p className="font-medium text-gray-900">
                             {author.authorName}
                           </p>
-                          {author.penName && (
-                            <p className="text-sm text-gray-500">"{author.penName}"</p>
+                          {author.pseudonym && (
+                            <p className="text-sm text-gray-500">"{author.pseudonym}"</p>
                           )}
                         </div>
                         <div className="text-right">
@@ -441,7 +441,7 @@ export default function Ledger() {
                     <option value="">No linked author</option>
                     {authors.map((author) => (
                       <option key={author.id} value={author.id}>
-                        {author.name} {author.penName ? `(${author.penName})` : ""}
+                        {author.name} {author.pseudonym ? `(${author.pseudonym})` : ""}
                       </option>
                     ))}
                   </select>
@@ -486,8 +486,8 @@ export default function Ledger() {
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-900">
                   {selectedAuthor.authorName}
-                  {selectedAuthor.penName && (
-                    <span className="text-gray-500 font-normal"> "{selectedAuthor.penName}"</span>
+                  {selectedAuthor.pseudonym && (
+                    <span className="text-gray-500 font-normal"> "{selectedAuthor.pseudonym}"</span>
                   )}
                 </h3>
                 <button

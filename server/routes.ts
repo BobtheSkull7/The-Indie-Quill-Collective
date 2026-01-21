@@ -46,7 +46,7 @@ async function generateAndStorePDF(contractId: number): Promise<Buffer | null> {
           createdAt: contract.createdAt.toISOString(),
         },
         application: {
-          penName: application.penName,
+          pseudonym: application.pseudonym,
           dateOfBirth: application.dateOfBirth,
           isMinor: application.isMinor,
           guardianName: application.guardianName,
@@ -595,7 +595,7 @@ export function registerRoutes(app: Express) {
         ipAddress: getClientIp(req),
         metadata: { 
           reason: "author_initiated",
-          penNamePreserved: application.penName,
+          pseudonymPreserved: application.pseudonym,
         },
       });
 
@@ -890,7 +890,7 @@ export function registerRoutes(app: Express) {
         ...contract,
         authorLegalName: user ? `${user.firstName} ${user.lastName}` : null,
         guardianLegalName: application?.guardianName || null,
-        penName: application?.penName || null,
+        pseudonym: application?.pseudonym || null,
         identityMode: application?.publicIdentityEnabled ? "public" : "safe",
       });
     } catch (error) {
@@ -977,7 +977,7 @@ export function registerRoutes(app: Express) {
                 createdAt: contract.createdAt.toISOString(),
               },
               application: {
-                penName: application.penName,
+                pseudonym: application.pseudonym,
                 dateOfBirth: application.dateOfBirth,
                 isMinor: application.isMinor,
                 guardianName: application.guardianName,
@@ -1131,7 +1131,7 @@ export function registerRoutes(app: Express) {
         ...updated,
         authorLegalName,
         guardianLegalName: application.guardianName || null,
-        penName: application.penName || null,
+        pseudonym: application.pseudonym || null,
         identityMode: application.publicIdentityEnabled ? "public" : "safe",
       });
     } catch (error) {
@@ -1207,7 +1207,7 @@ export function registerRoutes(app: Express) {
         allUpdates.map(async (update) => {
           const [app] = await db.select({
             expressionTypes: applications.expressionTypes,
-            penName: applications.penName,
+            pseudonym: applications.pseudonym,
             isMinor: applications.isMinor,
           }).from(applications).where(eq(applications.id, update.applicationId));
 
@@ -1670,7 +1670,7 @@ export function registerRoutes(app: Express) {
 
           return {
             applicationId: app.id,
-            penName: app.penName,
+            pseudonym: app.pseudonym,
             legalName: user ? `${user.firstName} ${user.lastName}` : "Unknown",
             email: user?.email || "Unknown",
             identityMode: app.publicIdentityEnabled ? "public" : "safe",
@@ -1890,7 +1890,7 @@ export function registerRoutes(app: Express) {
           
           return {
             id: contract.id,
-            penName: app?.penName || "Unknown",
+            pseudonym: app?.pseudonym || "Unknown",
             signedAt: contract.authorSignedAt?.toISOString() || null,
             hasIpVerification: !!contract.authorSignatureIp,
           };
@@ -2646,7 +2646,7 @@ export function registerRoutes(app: Express) {
               firstName: users.firstName,
               lastName: users.lastName,
               isMinor: applications.isMinor,
-              penName: applications.penName,
+              pseudonym: applications.pseudonym,
               status: applications.status,
               dateApproved: applications.dateApproved,
             })
@@ -2661,7 +2661,7 @@ export function registerRoutes(app: Express) {
               firstName: app.firstName,
               lastName: app.lastName,
               isMinor: app.isMinor,
-              penName: app.penName,
+              pseudonym: app.pseudonym,
             });
             return {
               id: app.id,
@@ -2816,7 +2816,7 @@ The Publisher: The Indie Quill LLC, the authorized publishing partner of The Col
 
 The Author (Legal Identity): [Full Legal Name - Stored in Forensic Vault Only]
 
-The Author (Creative Identity): ${application.penName || "[Pseudonym/Pen Name - Transmitted to The Publisher]"}
+The Author (Creative Identity): ${application.pseudonym || "[Pseudonym - Transmitted to The Publisher]"}
 ${guardianSection}
 
 2. THE LITERACY LOGISTICS FRAMEWORK
@@ -2835,7 +2835,7 @@ We follow COPPA (Children's Online Privacy Protection Act) to ensure that all mi
 
 Default "Safe Mode": The Author's identity will be masked using a truncated name and emoji avatar in all public materials.
 
-Pseudonym Bridge: Only the elected Pen Name (Creative Identity) will be shared with The Publisher for bookstore distribution.
+Pseudonym Bridge: Only the elected pseudonym (Creative Identity) will be shared with The Publisher for bookstore distribution.
 
 Identity Opt-In:
 [ ] Safe Mode: I elect to remain in "Safe Mode." Only my Pseudonym will be shared with the Bookstore.
@@ -3326,7 +3326,7 @@ export function registerGrantRoutes(app: Express) {
         // Get authors in this cohort with sanitized names
         const cohortApplications = await db.select({
           id: applications.id,
-          penName: applications.penName,
+          pseudonym: applications.pseudonym,
           isMinor: applications.isMinor,
           status: applications.status,
           firstName: users.firstName,
@@ -3339,7 +3339,7 @@ export function registerGrantRoutes(app: Express) {
         const emojis = ["✍️", "📚", "🌟", "📖", "🎭", "🖋️", "💫", "📝", "🎨", "🚀"];
         authorsImpacted = cohortApplications.map((app, index) => ({
           displayName: `${app.firstName?.charAt(0) || "A"}. ${emojis[index % emojis.length]}`,
-          penName: app.penName,
+          pseudonym: app.pseudonym,
           isMinor: app.isMinor,
           status: app.status,
         }));
@@ -3457,7 +3457,7 @@ export function registerGrantRoutes(app: Express) {
       const authorBreakdown: Record<number, {
         authorId: number;
         authorName: string;
-        penName: string | null;
+        pseudonym: string | null;
         sponsorshipReceived: number;
         totalSpent: number;
         transactions: typeof entriesWithAuthors;
@@ -3469,7 +3469,7 @@ export function registerGrantRoutes(app: Express) {
             const [app] = await db.select({
               firstName: users.firstName,
               lastName: users.lastName,
-              penName: applications.penName,
+              pseudonym: applications.pseudonym,
             })
             .from(applications)
             .leftJoin(users, eq(applications.userId, users.id))
@@ -3478,7 +3478,7 @@ export function registerGrantRoutes(app: Express) {
             authorBreakdown[entry.linkedAuthorId] = {
               authorId: entry.linkedAuthorId,
               authorName: app ? `${app.firstName} ${app.lastName}` : `Author ${entry.linkedAuthorId}`,
-              penName: app?.penName || null,
+              pseudonym: app?.pseudonym || null,
               sponsorshipReceived: 0,
               totalSpent: 0,
               transactions: [],

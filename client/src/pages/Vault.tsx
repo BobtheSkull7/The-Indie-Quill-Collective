@@ -14,7 +14,7 @@ interface VaultDocument {
 
 interface PIIBridgeEntry {
   applicationId: number;
-  penName: string | null;
+  pseudonym: string | null;
   legalName: string;
   email: string;
   identityMode: string;
@@ -268,7 +268,7 @@ export default function Vault() {
                     {piiBridge.map((entry) => (
                       <tr key={entry.applicationId} className="border-b border-gray-100 hover:bg-gray-50">
                         <td className="py-3 px-4 font-medium text-teal-600">
-                          {entry.penName || <span className="text-gray-400 italic">No pen name</span>}
+                          {entry.pseudonym || <span className="text-gray-400 italic">No pseudonym</span>}
                         </td>
                         <td className="py-3 px-4 text-gray-900">{entry.legalName}</td>
                         <td className="py-3 px-4 text-gray-600">{entry.email}</td>

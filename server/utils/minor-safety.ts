@@ -50,7 +50,7 @@ export interface AuthorProfile {
   email?: string;
   dateOfBirth?: string;
   isMinor: boolean;
-  penName?: string | null;
+  pseudonym?: string | null;
   profilePhoto?: string | null;
   publicIdentityEnabled?: boolean;
 }
@@ -61,7 +61,7 @@ export interface SanitizedAuthorProfile {
   avatar: string;
   ageDisplay: string;
   isMinor: boolean;
-  penName: string | null;
+  pseudonym: string | null;
   canShowPhoto: boolean;
 }
 
@@ -75,11 +75,11 @@ export function sanitizeAuthorProfile(author: AuthorProfile): SanitizedAuthorPro
       // Public Mode for minors (requires guardian counter-signature)
       return {
         id: author.id,
-        displayName: author.penName || `${author.firstName} ${author.lastName}`,
+        displayName: author.pseudonym || `${author.firstName} ${author.lastName}`,
         avatar: author.profilePhoto || assignMinorEmoji(author.id),
         ageDisplay: 'Youth Author',
         isMinor: true,
-        penName: author.penName || null,
+        pseudonym: author.pseudonym || null,
         canShowPhoto: true,
       };
     }
@@ -90,7 +90,7 @@ export function sanitizeAuthorProfile(author: AuthorProfile): SanitizedAuthorPro
       avatar: assignMinorEmoji(author.id),
       ageDisplay: 'Youth Author',
       isMinor: true,
-      penName: author.penName || null,
+      pseudonym: author.pseudonym || null,
       canShowPhoto: false,
     };
   }
@@ -99,11 +99,11 @@ export function sanitizeAuthorProfile(author: AuthorProfile): SanitizedAuthorPro
   // Only use safe mode if explicitly opted out
   return {
     id: author.id,
-    displayName: author.penName || `${author.firstName} ${author.lastName}`,
+    displayName: author.pseudonym || `${author.firstName} ${author.lastName}`,
     avatar: author.profilePhoto || '👤',
     ageDisplay: 'Author',
     isMinor: false,
-    penName: author.penName || null,
+    pseudonym: author.pseudonym || null,
     canShowPhoto: true,
   };
 }

@@ -66,7 +66,7 @@ export async function buildNPOAuthorPayload(applicationId: number): Promise<NPOA
     }
   }
 
-  const pseudonym = application.penName || `Author ${application.internalId || application.id}`;
+  const pseudonym = application.pseudonym || `Author ${application.internalId || application.id}`;
 
   const payload: NPOAuthorPayload = {
     source: "npo_collective",
@@ -483,7 +483,7 @@ export async function processSyncJob(jobId: number): Promise<{ success: boolean;
           .where(eq(users.id, application.userId));
         
         if (user) {
-          const pseudonym = application.penName || `Author ${application.internalId || application.id}`;
+          const pseudonym = application.pseudonym || `Author ${application.internalId || application.id}`;
           await sendActiveAuthorEmail(
             user.email,
             user.firstName,

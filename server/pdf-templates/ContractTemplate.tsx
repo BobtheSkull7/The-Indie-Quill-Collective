@@ -144,7 +144,7 @@ interface ContractData {
 }
 
 interface ApplicationData {
-  penName: string | null;
+  pseudonym: string | null;
   dateOfBirth: string;
   isMinor: boolean;
   guardianName: string | null;
@@ -218,10 +218,10 @@ export function ContractPDF({ contract, application, user }: ContractPDFProps) {
             <Text style={styles.label}>Email:</Text>
             <Text style={styles.value}>{user.email}</Text>
           </View>
-          {application.penName && (
+          {application.pseudonym && (
             <View style={styles.row}>
-              <Text style={styles.label}>Pen Name:</Text>
-              <Text style={styles.value}>{application.penName}</Text>
+              <Text style={styles.label}>Pseudonym:</Text>
+              <Text style={styles.value}>{application.pseudonym}</Text>
             </View>
           )}
           <View style={styles.row}>

@@ -61,7 +61,7 @@ export async function sendApplicationToLLC(
     return { success: false, error: "Integration not configured" };
   }
 
-  const pseudonym = applicationData.penName || `Applicant ${applicationId}`;
+  const pseudonym = applicationData.pseudonym || `Applicant ${applicationId}`;
 
   const payload: ApplicationPayload = {
     source: "npo_collective",
@@ -317,7 +317,7 @@ export async function migrateAuthorToIndieQuill(publishingUpdateId: number): Pro
       }
     }
 
-    const pseudonym = application.penName || `Author ${application.internalId || application.id}`;
+    const pseudonym = application.pseudonym || `Author ${application.internalId || application.id}`;
 
     const payload: AuthorPayload = {
       collectiveAuthorId: user.id,
