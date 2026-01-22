@@ -110,10 +110,14 @@ export default function Grants() {
       ]);
 
       if (foundationsRes.ok) {
-        setFoundations(await foundationsRes.json());
+        const foundationsData = await foundationsRes.json();
+        setFoundations(Array.isArray(foundationsData) ? foundationsData : []);
       }
       if (grantsRes.ok) {
-        setGrantsData(await grantsRes.json());
+        const grantsJson = await grantsRes.json();
+        if (grantsJson && typeof grantsJson === 'object' && !grantsJson.error) {
+          setGrantsData(grantsJson);
+        }
       }
     } catch (error) {
       console.error("Failed to fetch data:", error);
@@ -598,7 +602,7 @@ export default function Grants() {
                   </form>
                 )}
 
-                {!grantsData || grantsData.grants.length === 0 ? (
+                {!grantsData || !Array.isArray(grantsData.grants) || grantsData.grants.length === 0 ? (
                   <div className="text-center py-12">
                     <DollarSign className="w-12 h-12 text-gray-300 mx-auto mb-4" />
                     <p className="text-gray-500">No grants recorded yet.</p>

@@ -48,9 +48,10 @@ export default function Cohorts() {
       });
       if (response.ok) {
         const data = await response.json();
-        setCohorts(data);
-        if (data.length > 0) {
-          setExpandedCohorts(new Set([data[0].id]));
+        const cohortsArray = Array.isArray(data) ? data : [];
+        setCohorts(cohortsArray);
+        if (cohortsArray.length > 0) {
+          setExpandedCohorts(new Set([cohortsArray[0].id]));
         }
       }
     } catch (error) {

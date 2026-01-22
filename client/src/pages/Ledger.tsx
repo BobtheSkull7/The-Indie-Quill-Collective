@@ -79,13 +79,14 @@ export default function Ledger() {
 
       if (entriesRes.ok) {
         const data = await entriesRes.json();
-        setEntries(data.entries);
-        setMetrics(data.metrics);
+        setEntries(Array.isArray(data?.entries) ? data.entries : []);
+        setMetrics(data?.metrics || null);
       }
 
       if (authorsRes.ok) {
         const appsData = await authorsRes.json();
-        const acceptedAuthors = appsData
+        const appsArray = Array.isArray(appsData) ? appsData : [];
+        const acceptedAuthors = appsArray
           .filter((app: any) => app.status === "accepted")
           .map((app: any) => ({
             id: app.id,
@@ -295,12 +296,12 @@ export default function Ledger() {
                 </p>
               </div>
               <div className="divide-y divide-gray-100 max-h-[500px] overflow-y-auto">
-                {metrics?.authorBreakdown.length === 0 ? (
+                {!metrics?.authorBreakdown || metrics.authorBreakdown.length === 0 ? (
                   <div className="p-6 text-center text-gray-500">
                     No author sponsorships tracked yet.
                   </div>
                 ) : (
-                  metrics?.authorBreakdown.map((author) => (
+                  (metrics.authorBreakdown || []).map((author) => (
                     <button
                       key={author.authorId}
                       onClick={() => setSelectedAuthor(author)}

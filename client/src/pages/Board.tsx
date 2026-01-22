@@ -114,10 +114,12 @@ export default function Board() {
         fetch("/api/board/campaigns").then((r) => r.json()),
         fetch("/api/board/donations").then((r) => r.json()),
       ]);
-      setStats(statsData);
-      setEvents(eventsData);
-      setCampaigns(campaignsData);
-      setDonations(donationsData);
+      if (statsData && typeof statsData === 'object' && !statsData.error) {
+        setStats(statsData);
+      }
+      setEvents(Array.isArray(eventsData) ? eventsData : []);
+      setCampaigns(Array.isArray(campaignsData) ? campaignsData : []);
+      setDonations(Array.isArray(donationsData) ? donationsData : []);
     } catch (error) {
       console.error("Failed to load data:", error);
     } finally {
