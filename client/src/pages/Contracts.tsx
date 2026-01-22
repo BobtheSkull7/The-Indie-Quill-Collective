@@ -28,7 +28,7 @@ export default function Contracts() {
 
     fetch("/api/contracts")
       .then((res) => res.json())
-      .then(setContracts)
+      .then((data) => setContracts(Array.isArray(data) ? data : []))
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [user, setLocation]);

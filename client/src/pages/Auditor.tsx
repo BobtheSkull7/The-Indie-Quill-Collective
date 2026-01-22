@@ -231,7 +231,7 @@ export default function Auditor() {
                       </tr>
                     </thead>
                     <tbody>
-                      {metrics.contractForensics.map((contract) => (
+                      {(metrics.contractForensics || []).map((contract) => (
                         <tr key={contract.id} className="border-b border-gray-100 hover:bg-gray-50">
                           <td className="py-3 px-4 font-medium text-slate-800">{contract.pseudonym}</td>
                           <td className="py-3 px-4 text-gray-600">

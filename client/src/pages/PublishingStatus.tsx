@@ -49,7 +49,7 @@ export default function PublishingStatus() {
 
     fetch("/api/publishing-updates")
       .then((res) => res.json())
-      .then(setUpdates)
+      .then((data) => setUpdates(Array.isArray(data) ? data : []))
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [user, setLocation]);

@@ -28,8 +28,15 @@ export default function Home() {
 
   useEffect(() => {
     fetch("/api/public/impact")
-      .then((res) => res.json())
-      .then(setMetrics)
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch metrics");
+        return res.json();
+      })
+      .then((data) => {
+        if (data && typeof data === 'object' && !data.error) {
+          setMetrics(data);
+        }
+      })
       .catch(console.error)
       .finally(() => setMetricsLoading(false));
   }, []);

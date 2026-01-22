@@ -162,7 +162,7 @@ export default function Vault() {
     // Fetch PII Bridge data
     fetch("/api/admin/pii-bridge")
       .then((res) => res.json())
-      .then(setPiiBridge)
+      .then((data) => setPiiBridge(Array.isArray(data) ? data : []))
       .catch(console.error)
       .finally(() => setLoadingBridge(false));
   }, [user, setLocation]);
@@ -185,7 +185,7 @@ export default function Vault() {
     setLoadingBridge(true);
     fetch("/api/admin/pii-bridge")
       .then((res) => res.json())
-      .then(setPiiBridge)
+      .then((data) => setPiiBridge(Array.isArray(data) ? data : []))
       .catch(console.error)
       .finally(() => setLoadingBridge(false));
   };

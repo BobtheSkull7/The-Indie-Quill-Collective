@@ -61,8 +61,10 @@ export default function Dashboard() {
       fetch("/api/contracts").then((res) => res.json()),
     ])
       .then(([apps, cons]) => {
-        setApplications(apps.filter((a: Application) => a.status !== 'rescinded'));
-        setContracts(cons);
+        const appsArray = Array.isArray(apps) ? apps : [];
+        const consArray = Array.isArray(cons) ? cons : [];
+        setApplications(appsArray.filter((a: Application) => a.status !== 'rescinded'));
+        setContracts(consArray);
       })
       .catch(console.error)
       .finally(() => setLoading(false));
