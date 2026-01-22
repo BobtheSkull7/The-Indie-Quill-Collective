@@ -953,6 +953,61 @@ export default function AdminDashboard() {
               </div>
             )}
 
+            {/* Sync Status Filter Tabs */}
+            <div className="flex items-center space-x-2 mb-4 border-b border-gray-200 pb-4">
+              <span className="text-sm text-gray-500 mr-2">Filter:</span>
+              <button
+                onClick={() => setStatusFilter(null)}
+                className={`text-sm px-3 py-1.5 rounded-lg transition-colors ${
+                  statusFilter === null 
+                    ? "bg-gray-800 text-white" 
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                All ({syncRecords.length})
+              </button>
+              <button
+                onClick={() => setStatusFilter("pending")}
+                className={`text-sm px-3 py-1.5 rounded-lg transition-colors ${
+                  statusFilter === "pending" 
+                    ? "bg-yellow-500 text-white" 
+                    : "bg-yellow-50 text-yellow-700 hover:bg-yellow-100"
+                }`}
+              >
+                Pending ({syncRecords.filter(r => r.syncStatus === "pending").length})
+              </button>
+              <button
+                onClick={() => setStatusFilter("syncing")}
+                className={`text-sm px-3 py-1.5 rounded-lg transition-colors ${
+                  statusFilter === "syncing" 
+                    ? "bg-blue-500 text-white" 
+                    : "bg-blue-50 text-blue-700 hover:bg-blue-100"
+                }`}
+              >
+                Syncing ({syncRecords.filter(r => r.syncStatus === "syncing").length})
+              </button>
+              <button
+                onClick={() => setStatusFilter("failed")}
+                className={`text-sm px-3 py-1.5 rounded-lg transition-colors ${
+                  statusFilter === "failed" 
+                    ? "bg-red-500 text-white" 
+                    : "bg-red-50 text-red-700 hover:bg-red-100"
+                }`}
+              >
+                Failed ({syncRecords.filter(r => r.syncStatus === "failed").length})
+              </button>
+              <button
+                onClick={() => setStatusFilter("synced")}
+                className={`text-sm px-3 py-1.5 rounded-lg transition-colors ${
+                  statusFilter === "synced" 
+                    ? "bg-green-500 text-white" 
+                    : "bg-green-50 text-green-700 hover:bg-green-100"
+                }`}
+              >
+                Completed ({syncRecords.filter(r => r.syncStatus === "synced").length})
+              </button>
+            </div>
+
             {syncRecords.length === 0 ? (
               <p className="text-gray-500 text-center py-8">
                 No sync records yet. Use "Force Sync All Migrated" to queue migrated authors for sync.

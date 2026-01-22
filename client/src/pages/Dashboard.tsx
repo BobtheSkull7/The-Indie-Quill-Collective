@@ -11,6 +11,7 @@ interface Application {
   reviewNotes: string | null;
   publicIdentityEnabled: boolean;
   syncStatus?: string;
+  syncError?: string | null;
 }
 
 interface Contract {
@@ -18,6 +19,14 @@ interface Contract {
   applicationId: number;
   status: string;
   authorSignature: string | null;
+}
+
+interface PublishingUpdate {
+  id: number;
+  applicationId: number;
+  syncStatus: string;
+  syncError: string | null;
+  statusMessage: string | null;
 }
 
 const STATUS_STEPS = [
@@ -32,9 +41,11 @@ export default function Dashboard() {
   const [, setLocation] = useLocation();
   const [applications, setApplications] = useState<Application[]>([]);
   const [contracts, setContracts] = useState<Contract[]>([]);
+  const [publishingUpdates, setPublishingUpdates] = useState<PublishingUpdate[]>([]);
   const [loading, setLoading] = useState(true);
   const [rescinding, setRescinding] = useState<number | null>(null);
   const [showRescindConfirm, setShowRescindConfirm] = useState<number | null>(null);
+  const [retryingSyncId, setRetryingSyncId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -60,12 +71,15 @@ export default function Dashboard() {
     Promise.all([
       fetch("/api/applications").then((res) => res.json()),
       fetch("/api/contracts").then((res) => res.json()),
+      fetch("/api/publishing-updates").then((res) => res.json()),
     ])
-      .then(([apps, cons]) => {
+      .then(([apps, cons, updates]) => {
         const appsArray = Array.isArray(apps) ? apps : [];
         const consArray = Array.isArray(cons) ? cons : [];
+        const updatesArray = Array.isArray(updates) ? updates : [];
         setApplications(appsArray.filter((a: Application) => a.status !== 'rescinded'));
         setContracts(consArray);
+        setPublishingUpdates(updatesArray);
       })
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -103,6 +117,34 @@ export default function Dashboard() {
 
   const getContractForApp = (appId: number) => {
     return contracts.find(c => c.applicationId === appId);
+  };
+
+  const getPublishingUpdateForApp = (appId: number) => {
+    return publishingUpdates.find(u => u.applicationId === appId);
+  };
+
+  const handleRetrySync = async (applicationId: number) => {
+    setRetryingSyncId(applicationId);
+    try {
+      const res = await fetch(`/api/publishing-updates/${applicationId}/retry-sync`, {
+        method: "POST",
+      });
+      
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || "Failed to retry sync");
+      }
+      
+      // Refresh publishing updates
+      const updatesRes = await fetch("/api/publishing-updates");
+      const updates = await updatesRes.json();
+      setPublishingUpdates(Array.isArray(updates) ? updates : []);
+    } catch (err) {
+      console.error("Retry sync error:", err);
+      alert("Failed to retry sync. Please contact support if the problem persists.");
+    } finally {
+      setRetryingSyncId(null);
+    }
   };
 
   if (!user) {
@@ -320,6 +362,61 @@ export default function Dashboard() {
                       </div>
                     </div>
                   )}
+
+                  {/* Sync Status Display */}
+                  {(() => {
+                    const pubUpdate = getPublishingUpdateForApp(app.id);
+                    if (!pubUpdate) return null;
+                    
+                    if (pubUpdate.syncStatus === "failed") {
+                      return (
+                        <div className="mt-4 p-4 bg-red-50 rounded-lg border border-red-200">
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-start space-x-2">
+                              <XCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                              <div>
+                                <p className="text-sm font-medium text-red-800">Sync Failed</p>
+                                <p className="text-sm text-red-600 mt-1">
+                                  There was an issue syncing your account with The Indie Quill. 
+                                  Please try again or contact support if the problem persists.
+                                </p>
+                                {pubUpdate.syncError && (
+                                  <p className="text-xs text-red-500 mt-2 font-mono bg-red-100 p-2 rounded">
+                                    Error: {pubUpdate.syncError}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => handleRetrySync(app.id)}
+                              disabled={retryingSyncId === app.id}
+                              className="ml-4 text-sm py-2 px-4 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 flex-shrink-0"
+                            >
+                              {retryingSyncId === app.id ? "Retrying..." : "Retry Sync"}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    }
+                    
+                    if (pubUpdate.syncStatus === "syncing" || pubUpdate.syncStatus === "pending") {
+                      return (
+                        <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                          <div className="flex items-center space-x-2">
+                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                            <div>
+                              <p className="text-sm font-medium text-blue-800">Syncing with The Indie Quill...</p>
+                              <p className="text-sm text-blue-600 mt-1">
+                                Your account is being set up. This usually takes just a moment.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+                    
+                    return null;
+                  })()}
                 </div>
               );
             })}

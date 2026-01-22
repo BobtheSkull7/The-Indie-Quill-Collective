@@ -1184,6 +1184,53 @@ export function registerRoutes(app: Express) {
     }
   });
 
+  // User-accessible retry sync endpoint (for failed syncs only)
+  app.post("/api/publishing-updates/:applicationId/retry-sync", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    try {
+      const applicationId = parseInt(req.params.applicationId);
+      
+      // Verify user owns this application
+      const [application] = await db.select().from(applications)
+        .where(eq(applications.id, applicationId));
+      
+      if (!application || application.userId !== req.session.userId) {
+        return res.status(403).json({ message: "Not authorized" });
+      }
+      
+      // Find the publishing update for this application
+      const [update] = await db.select().from(publishingUpdates)
+        .where(eq(publishingUpdates.applicationId, applicationId));
+      
+      if (!update) {
+        return res.status(404).json({ message: "No sync record found for this application" });
+      }
+      
+      if (update.syncStatus === "synced") {
+        return res.status(400).json({ message: "Already synced successfully" });
+      }
+      
+      if (update.syncStatus === "syncing") {
+        return res.status(400).json({ message: "Sync is already in progress" });
+      }
+      
+      // Retry the sync
+      const result = await processSyncJob(update.id);
+      
+      if (result.success) {
+        return res.json({ message: "Sync successful", syncStatus: "synced" });
+      } else {
+        return res.status(500).json({ message: `Sync failed: ${result.error}`, syncStatus: "failed" });
+      }
+    } catch (error) {
+      console.error("User retry sync error:", error);
+      return res.status(500).json({ message: "Failed to retry sync" });
+    }
+  });
+
   app.get("/api/admin/stats", async (req: Request, res: Response) => {
     if (!req.session.userId || req.session.userRole !== "admin") {
       return res.status(403).json({ message: "Not authorized" });
