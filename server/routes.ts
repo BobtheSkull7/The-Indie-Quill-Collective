@@ -107,17 +107,21 @@ export function registerRoutes(app: Express) {
     try {
       const { email, password, firstName, lastName } = req.body;
       
-      const existingUser = await db.select().from(users).where(sql`lower(${users.email}) = lower(${email})`);
+      const sanitizedEmail = email?.trim()?.toLowerCase() || "";
+      const sanitizedFirstName = firstName?.trim() || "";
+      const sanitizedLastName = lastName?.trim() || "";
+      
+      const existingUser = await db.select().from(users).where(sql`lower(${users.email}) = lower(${sanitizedEmail})`);
       if (existingUser.length > 0) {
         return res.status(400).json({ message: "Email already registered" });
       }
 
       const hashedPassword = await hash(password);
       const [newUser] = await db.insert(users).values({
-        email: email.toLowerCase(),
+        email: sanitizedEmail,
         password: hashedPassword,
-        firstName,
-        lastName,
+        firstName: sanitizedFirstName,
+        lastName: sanitizedLastName,
         role: "applicant",
       }).returning();
 
@@ -410,6 +414,10 @@ export function registerRoutes(app: Express) {
         expressionTypes: Array.isArray(req.body.expressionTypes) 
           ? req.body.expressionTypes.join(",") 
           : req.body.expressionTypes,
+        pseudonym: req.body.pseudonym?.trim() || null,
+        guardianName: req.body.guardianName?.trim() || null,
+        guardianEmail: req.body.guardianEmail?.trim()?.toLowerCase() || null,
+        guardianPhone: req.body.guardianPhone?.trim() || null,
       };
 
       const [newApplication] = await db.insert(applications).values(applicationData).returning();
@@ -1039,20 +1047,27 @@ export function registerRoutes(app: Express) {
         return res.status(404).json({ message: "Application or user not found" });
       }
 
-      const authorLegalName = `${user.firstName} ${user.lastName}`;
-      const guardianLegalName = application.guardianName || "";
+      const normalizeName = (name: string): string => {
+        return name
+          .trim()
+          .toLowerCase()
+          .replace(/\s+/g, ' ');
+      };
 
-      const normalizedSignature = signature.trim().toLowerCase();
+      const authorLegalName = `${user.firstName?.trim() || ''} ${user.lastName?.trim() || ''}`.trim();
+      const guardianLegalName = application.guardianName?.trim() || "";
+
+      const normalizedSignature = normalizeName(signature);
 
       if (signatureType === "author") {
-        const normalizedAuthorName = authorLegalName.trim().toLowerCase();
+        const normalizedAuthorName = normalizeName(authorLegalName);
         if (normalizedSignature !== normalizedAuthorName) {
           return res.status(400).json({ 
             message: `Identity Mismatch: The name entered does not match the Author's Legal Name. Please enter your name exactly as "${authorLegalName}". This is required to maintain the Zero-PII safety of your account.`
           });
         }
       } else if (signatureType === "guardian") {
-        const normalizedGuardianName = guardianLegalName.trim().toLowerCase();
+        const normalizedGuardianName = normalizeName(guardianLegalName);
         if (normalizedSignature !== normalizedGuardianName) {
           return res.status(400).json({ 
             message: `Identity Mismatch: The name entered does not match the Guardian's Legal Name. Please enter your name exactly as "${guardianLegalName}". This is required to maintain the Zero-PII safety of your account.`
