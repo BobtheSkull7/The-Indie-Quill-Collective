@@ -2806,6 +2806,7 @@ export function registerRoutes(app: Express) {
 
           return {
             ...cohort,
+            currentCount: members.length,
             members,
           };
         })
