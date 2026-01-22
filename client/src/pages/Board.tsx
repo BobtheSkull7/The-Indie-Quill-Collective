@@ -269,8 +269,8 @@ export default function Board() {
     }).format(cents / 100);
   };
 
-  const totalDonations = donations.reduce((sum, d) => sum + d.amount, 0);
-  const totalGoal = campaigns.filter(c => c.isActive).reduce((sum, c) => sum + c.goalAmount, 0);
+  const totalDonations = (donations || []).reduce((sum, d) => sum + d.amount, 0);
+  const totalGoal = (campaigns || []).filter(c => c.isActive).reduce((sum, c) => sum + c.goalAmount, 0);
 
   if (loading) {
     return (
@@ -399,7 +399,7 @@ export default function Board() {
                   <p className="text-gray-500 text-center py-4">No upcoming events</p>
                 ) : (
                   <div className="space-y-3">
-                    {events.slice(0, 5).map((event) => (
+                    {(events || []).slice(0, 5).map((event) => (
                       <div key={event.id} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
                         <div className={`w-3 h-3 rounded-full mt-1.5 ${getEventTypeColor(event.eventType)}`} />
                         <div>
@@ -436,7 +436,7 @@ export default function Board() {
                   </div>
                   <div>
                     <p className="text-sm text-gray-600 mb-2">Active Campaigns</p>
-                    {campaigns.filter(c => c.isActive).slice(0, 3).map((campaign) => (
+                    {(campaigns || []).filter(c => c.isActive).slice(0, 3).map((campaign) => (
                       <div key={campaign.id} className="mb-2">
                         <div className="flex justify-between text-sm mb-1">
                           <span className="font-medium">{campaign.name}</span>
@@ -593,7 +593,7 @@ export default function Board() {
                 <p className="text-gray-500 text-center py-8">No campaigns yet</p>
               ) : (
                 <div className="space-y-4">
-                  {campaigns.map((campaign) => (
+                  {(campaigns || []).map((campaign) => (
                     <div key={campaign.id} className="p-4 border border-gray-200 rounded-lg">
                       <div className="flex items-center justify-between mb-2">
                         <div>
@@ -655,7 +655,7 @@ export default function Board() {
                       </tr>
                     </thead>
                     <tbody>
-                      {donations.map((donation) => (
+                      {(donations || []).map((donation) => (
                         <tr key={donation.id} className="border-b border-gray-100 hover:bg-gray-50">
                           <td className="py-3 px-4">
                             <p className="font-medium text-slate-800">
@@ -882,7 +882,7 @@ export default function Board() {
                     className="input"
                   >
                     <option value="">General Fund</option>
-                    {campaigns.filter(c => c.isActive).map((campaign) => (
+                    {(campaigns || []).filter(c => c.isActive).map((campaign) => (
                       <option key={campaign.id} value={campaign.id}>{campaign.name}</option>
                     ))}
                   </select>

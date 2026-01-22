@@ -383,7 +383,7 @@ export default function Grants() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {foundations.map((foundation) => (
+                    {(foundations || []).map((foundation) => (
                       <div key={foundation.id} className="border border-gray-200 rounded-lg overflow-hidden">
                         <button
                           onClick={() => setExpandedFoundation(expandedFoundation === foundation.id ? null : foundation.id)}

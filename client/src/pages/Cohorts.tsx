@@ -120,7 +120,7 @@ export default function Cohorts() {
           </div>
         ) : (
           <div className="space-y-4">
-            {cohorts.map((cohort) => {
+            {(cohorts || []).map((cohort) => {
               const isExpanded = expandedCohorts.has(cohort.id);
               const percentage = getCapacityPercentage(cohort.currentCount, cohort.capacity);
               const showMarketingAlert = percentage >= 80;

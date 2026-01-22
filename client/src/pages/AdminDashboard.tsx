@@ -929,9 +929,9 @@ export default function AdminDashboard() {
                   Force Sync Complete: {forceSyncResult.queued} synced, {forceSyncResult.alreadySynced} already synced, {forceSyncResult.failed} failed
                   {forceSyncResult.idsGenerated ? `, ${forceSyncResult.idsGenerated} IDs generated` : ""}
                 </p>
-                {forceSyncResult.errors.length > 0 && (
+                {forceSyncResult.errors && forceSyncResult.errors.length > 0 && (
                   <ul className="text-sm text-red-600 mt-2 list-disc list-inside">
-                    {forceSyncResult.errors.slice(0, 5).map((err, i) => (
+                    {(forceSyncResult.errors || []).slice(0, 5).map((err, i) => (
                       <li key={i}>{err}</li>
                     ))}
                     {forceSyncResult.errors.length > 5 && (
@@ -1108,7 +1108,7 @@ export default function AdminDashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {allUsers.map((u) => (
+                    {(allUsers || []).map((u) => (
                       <tr key={u.id} className="border-b border-gray-100 hover:bg-gray-50">
                         <td className="py-3 px-4">
                           <div>
@@ -1358,7 +1358,7 @@ export default function AdminDashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {calendarEvents.map((event) => (
+                    {(calendarEvents || []).map((event) => (
                       <tr key={event.id} className="border-b border-gray-100 hover:bg-gray-50">
                         <td className="py-3 px-4">
                           <p className="font-medium text-slate-800">{event.title}</p>

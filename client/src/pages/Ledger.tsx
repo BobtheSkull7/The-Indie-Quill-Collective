@@ -232,12 +232,12 @@ export default function Ledger() {
                 <h2 className="text-lg font-semibold text-gray-900">Transaction History</h2>
               </div>
               <div className="divide-y divide-gray-100 max-h-[600px] overflow-y-auto">
-                {entries.length === 0 ? (
+                {!entries || entries.length === 0 ? (
                   <div className="p-8 text-center text-gray-500">
                     No transactions yet. Add your first sponsorship or expense.
                   </div>
                 ) : (
-                  entries.map((entry) => (
+                  (entries || []).map((entry) => (
                     <div key={entry.id} className="p-4 hover:bg-gray-50 transition-colors">
                       <div className="flex items-start justify-between">
                         <div className="flex items-start gap-3">
@@ -524,12 +524,12 @@ export default function Ledger() {
 
               <h4 className="font-medium text-gray-700 mb-2">Transactions</h4>
               <div className="divide-y divide-gray-100 border border-gray-200 rounded-lg">
-                {selectedAuthor.transactions.length === 0 ? (
+                {!selectedAuthor.transactions || selectedAuthor.transactions.length === 0 ? (
                   <div className="p-4 text-center text-gray-500">
                     No transactions for this author yet.
                   </div>
                 ) : (
-                  selectedAuthor.transactions.map((tx) => (
+                  (selectedAuthor.transactions || []).map((tx) => (
                     <div key={tx.id} className="p-3 flex items-center justify-between">
                       <div>
                         <p className="text-sm font-medium text-gray-900">{tx.description}</p>
