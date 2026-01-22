@@ -2,6 +2,7 @@ import crypto from "crypto";
 import { db } from "./db";
 import { publishingUpdates, applications, users, contracts, cohorts } from "@shared/schema";
 import { eq } from "drizzle-orm";
+import { sendActiveAuthorEmail } from "./email";
 
 const INDIE_QUILL_API_URL = process.env.INDIE_QUILL_API_URL || "";
 const INDIE_QUILL_API_KEY = process.env.INDIE_QUILL_API_KEY || "";
@@ -324,7 +325,7 @@ export async function migrateAuthorToIndieQuill(publishingUpdateId: number): Pro
       collectiveApplicationId: application.id.toString(),
       internalId: application.internalId || "",
       email: user.email,
-      password: generateSecureTemporaryPassword(),
+      password: user.password,
       pseudonym,
       cohortId: application.cohortId,
       cohortLabel,
@@ -347,6 +348,23 @@ export async function migrateAuthorToIndieQuill(publishingUpdateId: number): Pro
           updatedAt: new Date(),
         })
         .where(eq(publishingUpdates.id, publishingUpdateId));
+
+      await db.update(users)
+        .set({
+          indieQuillAuthorId: result.authorId,
+        })
+        .where(eq(users.id, user.id));
+
+      try {
+        await sendActiveAuthorEmail(
+          user.email,
+          user.firstName,
+          pseudonym,
+          application.isMinor
+        );
+      } catch (emailError) {
+        console.error("Failed to send welcome email:", emailError);
+      }
 
       console.log(`Author ${user.email} successfully migrated to Indie Quill as ${result.authorId}`);
       return true;

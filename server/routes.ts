@@ -502,7 +502,20 @@ export function registerRoutes(app: Express) {
         const userApplications = await db.select().from(applications)
           .where(eq(applications.userId, req.session.userId))
           .orderBy(desc(applications.createdAt));
-        return res.json(userApplications);
+        
+        const appsWithSyncStatus = await Promise.all(
+          userApplications.map(async (app) => {
+            const [publishingUpdate] = await db.select({ syncStatus: publishingUpdates.syncStatus })
+              .from(publishingUpdates)
+              .where(eq(publishingUpdates.applicationId, app.id));
+            return {
+              ...app,
+              syncStatus: publishingUpdate?.syncStatus || null,
+            };
+          })
+        );
+        
+        return res.json(appsWithSyncStatus);
       }
     } catch (error) {
       console.error("Fetch applications error:", error);

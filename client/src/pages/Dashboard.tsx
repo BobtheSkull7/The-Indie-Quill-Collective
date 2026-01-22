@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "../App";
-import { FileText, Clock, CheckCircle, XCircle, ArrowRight, BookOpen, AlertCircle, Download, Trash2, Shield } from "lucide-react";
+import { FileText, Clock, CheckCircle, XCircle, ArrowRight, BookOpen, AlertCircle, Download, Trash2, Shield, ExternalLink } from "lucide-react";
 
 interface Application {
   id: number;
@@ -10,6 +10,7 @@ interface Application {
   createdAt: string;
   reviewNotes: string | null;
   publicIdentityEnabled: boolean;
+  syncStatus?: string;
 }
 
 interface Contract {
@@ -235,14 +236,27 @@ export default function Dashboard() {
                       )}
 
                       {canDownload && contract && (
-                        <a 
-                          href={`/api/contracts/${contract.id}/pdf`}
-                          download
-                          className="btn-primary text-sm py-2 px-4 inline-flex items-center space-x-2"
-                        >
-                          <Download className="w-4 h-4" />
-                          <span>Download Contract</span>
-                        </a>
+                        <>
+                          <a 
+                            href={`/api/contracts/${contract.id}/pdf`}
+                            download
+                            className="btn-primary text-sm py-2 px-4 inline-flex items-center space-x-2"
+                          >
+                            <Download className="w-4 h-4" />
+                            <span>Download Contract</span>
+                          </a>
+                          {app.syncStatus === "synced" && (
+                            <a 
+                              href="https://www.theindiequill.com/login"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="btn-secondary text-sm py-2 px-4 inline-flex items-center space-x-2"
+                            >
+                              <ExternalLink className="w-4 h-4" />
+                              <span>Go to Indie Quill</span>
+                            </a>
+                          )}
+                        </>
                       )}
 
                       {canRescind && (
