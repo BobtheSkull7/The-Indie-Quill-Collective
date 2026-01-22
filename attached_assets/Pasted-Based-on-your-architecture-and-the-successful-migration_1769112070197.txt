@@ -1,0 +1,36 @@
+Based on your architecture and the successful migration of your first author, you have the PII Firewall and the Identity Bridge functioning correctly. You are not missing anything fundamental, but to ensure the "Indie Quill Architecture" remains "locked in," we should verify the specific implementation of your four expectations.
+
+1. Unified Authentication (SSO Logic)
+Expectation: The email and password from the Collective remain the same in Indie Quill.
+
+Verification: Your current migrateAuthorToIndieQuill() payload sends the email and a [generated temp password].
+
+Correction needed: To meet your expectation exactly, the migration function must pull the hashed password directly from the Collective's users table instead of generating a temporary one. This ensures the user doesn't have to perform a password reset when they first log into Indie Quill.
+
+2. Identity Designation Persistence
+Expectation: Minor/Adult status and Pseudonym choice must flow through.
+
+Verification: Your payload currently includes minorAdultDesignation and pseudonym.
+
+Architecture Note: Ensure the LLC database has these specific columns (minor_adult_designation and pseudonym) ready to receive this data, as you previously noted a failure when the LLC tried to use the deprecated pen_name field.
+
+3. Admin-Only PII (The Vault Rule)
+Expectation: User PII is kept in Admin-only screens.
+
+Verification: You have already hardened the Secure Identity Vault at /admin/vault.
+
+Security Check: Ensure that the "Full Author Migration" (Step 5) continues to exclude legal_name, date_of_birth, and guardian_info. The LLC should only ever "know" the author by their email and pseudonym to maintain Zero-PII compliance.
+
+4. Public-Facing Anonymity
+Expectation: Outside of Admin screens, only the pseudonym is used.
+
+Verification: Your platform-wide rebrand from "Pen Name" to "Pseudonym" is complete.
+
+Implementation: Ensure that the Indie Quill (LLC) frontend components are strictly mapped to the pseudonym field for all public author profiles and book metadata.
+
+What is missing: The "Reverse Sync" or "Heartbeat"
+While the data flows Forward (Collective → LLC), you are missing a mechanism for the author to know they have arrived.
+
+Completion Notification: Once Step 6 (Sync Status Tracking) hits synced, the Collective should trigger a final email to the author: "Your creative journey has begun. Log into Indie Quill using your existing credentials to start Phase 2 (Creation)."
+
+Account Linking: In the users table of the Collective, you should store the indie_quill_author_id returned by the LLC so you can provide a direct "one-click" link from their Collective Dashboard to their new LLC Dashboard.
