@@ -65,9 +65,14 @@ export default function AboutUs() {
               </svg>
             </div>
             
-            <div className="w-16 h-12 rounded-lg overflow-hidden shadow-lg bg-black flex items-center justify-center" title="Black Power Raised Fist">
-              <svg viewBox="0 0 24 24" className="w-8 h-8 text-white" fill="currentColor">
-                <path d="M12 2C10.5 2 9.2 2.9 8.5 4.2C7.8 3.5 6.8 3 5.7 3C3.6 3 2 4.6 2 6.7C2 7.8 2.5 8.8 3.2 9.5C2.9 10.2 2 11.5 2 12C2 14 4 15 6 15V22H18V15C20 15 22 14 22 12C22 11.5 21.1 10.2 20.8 9.5C21.5 8.8 22 7.8 22 6.7C22 4.6 20.4 3 18.3 3C17.2 3 16.2 3.5 15.5 4.2C14.8 2.9 13.5 2 12 2Z"/>
+            <div className="w-16 h-12 rounded-lg overflow-hidden shadow-lg relative" title="Pan-African Flag with Raised Fist">
+              <svg viewBox="0 0 60 40" className="w-full h-full">
+                <rect fill="#E31B23" width="60" height="13.33" y="0"/>
+                <rect fill="#000000" width="60" height="13.34" y="13.33"/>
+                <rect fill="#00853F" width="60" height="13.33" y="26.67"/>
+                <g transform="translate(22, 5) scale(0.7)" fill="#FFD700">
+                  <path d="M12 2C11 2 10 2.5 9.5 3.5L9 4C8.5 3.5 8 3 7 3C5.5 3 4.5 4 4.5 5.5C4.5 6 4.7 6.5 5 7L4 8C3.5 8.5 3 9.5 3 10.5V12C3 12 3 14 4 15L5 16V22C5 23 5.5 24 6.5 24H17.5C18.5 24 19 23 19 22V16L20 15C21 14 21 12 21 12V10.5C21 9.5 20.5 8.5 20 8L19 7C19.3 6.5 19.5 6 19.5 5.5C19.5 4 18.5 3 17 3C16 3 15.5 3.5 15 4L14.5 3.5C14 2.5 13 2 12 2ZM8 7H9V11H8V7ZM11 7H13V11H11V7ZM15 7H16V11H15V7Z"/>
+                </g>
               </svg>
             </div>
             
