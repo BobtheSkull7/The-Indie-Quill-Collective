@@ -65,7 +65,10 @@ export default function AboutUs() {
               </svg>
             </div>
             
-            <div className="w-16 h-12 rounded-lg overflow-hidden shadow-lg bg-gradient-to-b from-red-600 via-black to-green-600" title="Pan-African Flag">
+            <div className="w-16 h-12 rounded-lg overflow-hidden shadow-lg bg-black flex items-center justify-center" title="Black Power Raised Fist">
+              <svg viewBox="0 0 24 24" className="w-8 h-8 text-white" fill="currentColor">
+                <path d="M12 2C10.5 2 9.2 2.9 8.5 4.2C7.8 3.5 6.8 3 5.7 3C3.6 3 2 4.6 2 6.7C2 7.8 2.5 8.8 3.2 9.5C2.9 10.2 2 11.5 2 12C2 14 4 15 6 15V22H18V15C20 15 22 14 22 12C22 11.5 21.1 10.2 20.8 9.5C21.5 8.8 22 7.8 22 6.7C22 4.6 20.4 3 18.3 3C17.2 3 16.2 3.5 15.5 4.2C14.8 2.9 13.5 2 12 2Z"/>
+              </svg>
             </div>
             
             <div className="w-16 h-12 rounded-lg overflow-hidden shadow-lg" title="Hispanic Heritage">
