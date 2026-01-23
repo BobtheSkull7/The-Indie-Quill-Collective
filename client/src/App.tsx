@@ -17,6 +17,7 @@ import Ledger from "./pages/Ledger";
 import Auditor from "./pages/Auditor";
 import { Redirect } from "wouter";
 import Donations from "./pages/Donations";
+import DonationSuccess from "./pages/DonationSuccess";
 import Navbar from "./components/Navbar";
 
 interface User {
@@ -72,6 +73,7 @@ function App() {
           <Route path="/" component={Home} />
           <Route path="/about">{() => <Redirect to="/" />}</Route>
           <Route path="/donations" component={Donations} />
+          <Route path="/donations/success" component={DonationSuccess} />
           <Route path="/apply" component={Apply} />
           <Route path="/login" component={Login} />
           <Route path="/register" component={Register} />

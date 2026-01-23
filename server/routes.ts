@@ -102,7 +102,7 @@ declare module "express-session" {
   }
 }
 
-export function registerRoutes(app: Express) {
+export async function registerRoutes(app: Express) {
   app.post("/api/auth/register", authRateLimiter, async (req: Request, res: Response) => {
     try {
       const { email, password, firstName, lastName } = req.body;
@@ -3004,6 +3004,7 @@ export function registerRoutes(app: Express) {
 
   // Register Grant & Donor Logistics routes
   registerGrantRoutes(app);
+  await registerDonationRoutes(app);
 }
 
 function formatExpressionTypes(types: string): string {
@@ -3796,6 +3797,105 @@ export function registerGrantRoutes(app: Express) {
     } catch (error) {
       console.error("Failed to add ledger entry:", error);
       return res.status(500).json({ message: "Failed to add transaction" });
+    }
+  });
+}
+
+// ==================== DONATION API ====================
+
+export async function registerDonationRoutes(app: Express) {
+  const stripeClientModule = await import('./stripeClient');
+  const { getUncachableStripeClient, getStripePublishableKey } = stripeClientModule;
+
+  // Get Stripe publishable key for frontend
+  app.get("/api/stripe/publishable-key", async (_req: Request, res: Response) => {
+    try {
+      const publishableKey = await getStripePublishableKey();
+      return res.json({ publishableKey });
+    } catch (error) {
+      console.error("Failed to get Stripe publishable key:", error);
+      return res.status(500).json({ message: "Stripe not configured" });
+    }
+  });
+
+  // Create donation checkout session
+  app.post("/api/donations/checkout", async (req: Request, res: Response) => {
+    const { amount, donorName, donorEmail, message, tier } = req.body;
+
+    if (!amount || amount < 100) {
+      return res.status(400).json({ message: "Minimum donation is $1.00" });
+    }
+
+    try {
+      const stripe = await getUncachableStripeClient();
+      const domain = process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost:5000';
+      const protocol = domain.includes('localhost') ? 'http' : 'https';
+      
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price_data: {
+              currency: 'usd',
+              product_data: {
+                name: tier === 'sponsor' 
+                  ? "Author's Kit Sponsorship ($600)" 
+                  : `Donation to The Indie Quill Collective`,
+                description: tier === 'sponsor'
+                  ? "Sponsor one full publication cycle for an emerging author"
+                  : "Support emerging authors in their publishing journey",
+                images: [],
+              },
+              unit_amount: amount,
+            },
+            quantity: 1,
+          },
+        ],
+        mode: 'payment',
+        success_url: `${protocol}://${domain}/donations/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${protocol}://${domain}/donations`,
+        customer_email: donorEmail || undefined,
+        metadata: {
+          donorName: donorName || 'Anonymous',
+          message: message || '',
+          tier: tier || 'micro',
+          source: 'indie_quill_collective',
+        },
+        billing_address_collection: 'required',
+      });
+
+      return res.json({ url: session.url, sessionId: session.id });
+    } catch (error: any) {
+      console.error("Failed to create checkout session:", error);
+      return res.status(500).json({ message: error.message || "Failed to create checkout session" });
+    }
+  });
+
+  // Verify donation success (for thank you page)
+  app.get("/api/donations/verify/:sessionId", async (req: Request, res: Response) => {
+    const { sessionId } = req.params;
+
+    if (!sessionId) {
+      return res.status(400).json({ message: "Session ID required" });
+    }
+
+    try {
+      const stripe = await getUncachableStripeClient();
+      const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+      if (session.payment_status === 'paid') {
+        return res.json({
+          success: true,
+          amount: session.amount_total,
+          donorName: session.metadata?.donorName || 'Anonymous',
+          email: session.customer_details?.email,
+        });
+      } else {
+        return res.json({ success: false, status: session.payment_status });
+      }
+    } catch (error: any) {
+      console.error("Failed to verify donation:", error);
+      return res.status(500).json({ message: "Failed to verify donation" });
     }
   });
 }
