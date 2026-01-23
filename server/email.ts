@@ -403,7 +403,9 @@ export async function sendTestEmailSamples(adminEmail: string): Promise<{ succes
     const { client, fromEmail } = await getResendClient();
     
     // 1. Application Received sample
-    await client.emails.send({
+    const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+    
+    const result1 = await client.emails.send({
       from: fromEmail,
       to: adminEmail,
       subject: '[TEST SAMPLE] Application Received Email',
@@ -434,10 +436,13 @@ export async function sendTestEmailSamples(adminEmail: string): Promise<{ succes
         </div>
       `
     });
+    console.log('Test email 1 result:', result1);
     results.push('Application Received - SENT');
     
+    await delay(1000);
+    
     // 2. Application Accepted sample
-    await client.emails.send({
+    const result2 = await client.emails.send({
       from: fromEmail,
       to: adminEmail,
       subject: '[TEST SAMPLE] Application Accepted Email',
@@ -469,10 +474,13 @@ export async function sendTestEmailSamples(adminEmail: string): Promise<{ succes
         </div>
       `
     });
+    console.log('Test email 2 result:', result2);
     results.push('Application Accepted - SENT');
     
+    await delay(1000);
+    
     // 3. Application Rejected sample
-    await client.emails.send({
+    const result3 = await client.emails.send({
       from: fromEmail,
       to: adminEmail,
       subject: '[TEST SAMPLE] Application Rejected Email',
@@ -502,10 +510,13 @@ export async function sendTestEmailSamples(adminEmail: string): Promise<{ succes
         </div>
       `
     });
+    console.log('Test email 3 result:', result3);
     results.push('Application Rejected - SENT');
     
+    await delay(1000);
+    
     // 4. Active Author Welcome sample
-    await client.emails.send({
+    const result4 = await client.emails.send({
       from: fromEmail,
       to: adminEmail,
       subject: '[TEST SAMPLE] Active Author Welcome Email',
@@ -544,6 +555,7 @@ export async function sendTestEmailSamples(adminEmail: string): Promise<{ succes
         </div>
       `
     });
+    console.log('Test email 4 result:', result4);
     results.push('Active Author Welcome - SENT');
     
     return { success: true, results };
