@@ -116,7 +116,7 @@ export default function AdminDashboard() {
   const [reviewNotes, setReviewNotes] = useState("");
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
-  const [activeTab, setActiveTab] = useState<"applicants" | "sync" | "users" | "calendar" | "operations">("applicants");
+  const [activeTab, setActiveTab] = useState<"applicants" | "calendar" | "operations">("applicants");
   const [retrying, setRetrying] = useState<number | null>(null);
   const [updatingStage, setUpdatingStage] = useState<number | null>(null);
   const [allUsers, setAllUsers] = useState<UserRecord[]>([]);
@@ -359,16 +359,16 @@ export default function AdminDashboard() {
         setStatusFilter("pending_review");
         break;
       case "pendingSync":
-        setActiveTab("sync");
-        setStatusFilter("pending");
+        setActiveTab("applicants");
+        setStatusFilter("sync_pending");
         break;
       case "synced":
-        setActiveTab("sync");
-        setStatusFilter("synced");
+        setActiveTab("applicants");
+        setStatusFilter("sync_synced");
         break;
       case "failed":
-        setActiveTab("sync");
-        setStatusFilter("failed");
+        setActiveTab("applicants");
+        setStatusFilter("sync_failed");
         break;
     }
   };
@@ -743,33 +743,14 @@ export default function AdminDashboard() {
         <div className="flex space-x-2 mb-6">
           <button
             onClick={() => setActiveTab("applicants")}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2 ${
               activeTab === "applicants"
                 ? "bg-red-500 text-white"
                 : "bg-white text-gray-600 hover:bg-gray-100"
             }`}
           >
-            Applicants
-          </button>
-          <button
-            onClick={() => setActiveTab("sync")}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              activeTab === "sync"
-                ? "bg-red-500 text-white"
-                : "bg-white text-gray-600 hover:bg-gray-100"
-            }`}
-          >
-            LLC Sync Status
-          </button>
-          <button
-            onClick={() => setActiveTab("users")}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              activeTab === "users"
-                ? "bg-red-500 text-white"
-                : "bg-white text-gray-600 hover:bg-gray-100"
-            }`}
-          >
-            Users
+            <Users className="w-4 h-4" />
+            <span>Applicants</span>
           </button>
           <button
             onClick={() => setActiveTab("calendar")}
@@ -798,435 +779,222 @@ export default function AdminDashboard() {
         {activeTab === "applicants" && (
           <div className="card">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-display text-xl font-semibold text-slate-800">Applicants</h2>
-              {statusFilter && (
-                <button
-                  onClick={() => setStatusFilter(null)}
-                  className="text-sm text-blue-600 hover:text-blue-800"
-                >
-                  Clear filter: {statusFilter === "pending_review" ? "Pending Review" : statusFilter} &times;
-                </button>
-              )}
-            </div>
-            
-            {applications.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">No applications yet.</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Author</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Expression Type</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Has Story</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Age</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Status</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Applied</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {applications
-                      .filter(app => !statusFilter || 
-                        (statusFilter === "pending_review" ? (app.status === "pending" || app.status === "under_review") : app.status === statusFilter))
-                      .map((app) => (
-                      <tr key={app.id} className="border-b border-gray-100 hover:bg-gray-50">
-                        <td className="py-3 px-4">
-                          <div>
-                            <p className="font-medium text-slate-800">{app.authorName || "Unknown"}</p>
-                            <p className="text-xs text-gray-500">{app.authorEmail}</p>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4 text-gray-600 text-sm">{formatExpressionTypes(app.expressionTypes)}</td>
-                        <td className="py-3 px-4">
-                          {app.hasStoryToTell ? (
-                            <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">Yes</span>
-                          ) : (
-                            <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded">Not Sure</span>
-                          )}
-                        </td>
-                        <td className="py-3 px-4">
-                          {app.isMinor ? (
-                            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">Minor</span>
-                          ) : (
-                            <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">Adult</span>
-                          )}
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className={`text-xs px-2 py-1 rounded capitalize ${getStatusColor(app.status)}`}>
-                            {app.status.replace("_", " ")}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-gray-600 text-sm">
-                          <div className="flex items-center space-x-1">
-                            <Calendar className="w-3 h-3" />
-                            <span>{formatDateTime(app.createdAt)}</span>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4">
-                          <button
-                            onClick={() => {
-                              setSelectedApp(app);
-                              if (app.isMinor) {
-                                initCoppaState(app);
-                              }
-                            }}
-                            className="text-blue-600 hover:text-blue-800 transition-colors"
-                          >
-                            <Eye className="w-5 h-5" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        )}
-
-        {activeTab === "sync" && (
-          <div className="card">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="font-display text-xl font-semibold text-slate-800">
-                  The Indie Quill LLC Sync Status
-                </h2>
+              <h2 className="font-display text-xl font-semibold text-slate-800">
+                Applicants & Users
+                <span className="text-sm font-normal text-gray-500 ml-2">({allUsers.length} total)</span>
+              </h2>
+              <div className="flex items-center space-x-2">
                 {statusFilter && (
                   <button
                     onClick={() => setStatusFilter(null)}
-                    className="text-sm text-blue-600 hover:text-blue-800 mt-1"
+                    className="text-sm text-blue-600 hover:text-blue-800"
                   >
-                    Clear filter: {statusFilter} &times;
+                    Clear filter: {
+                      statusFilter === "pending_review" ? "Pending Review" :
+                      statusFilter === "sync_pending" ? "Pending Sync" :
+                      statusFilter === "sync_synced" ? "Synced" :
+                      statusFilter === "sync_failed" ? "Failed Sync" :
+                      statusFilter
+                    } &times;
                   </button>
                 )}
-              </div>
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={forceSyncAllMigrated}
-                  disabled={forceSyncing}
-                  className="bg-purple-600 text-white text-sm py-2 px-4 rounded-lg hover:bg-purple-700 disabled:opacity-50 flex items-center space-x-2"
-                >
-                  <Zap className={`w-4 h-4 ${forceSyncing ? "animate-pulse" : ""}`} />
-                  <span>{forceSyncing ? "Syncing..." : "Force Sync All Migrated"}</span>
-                </button>
                 {stats && stats.failedSync > 0 && (
                   <button
                     onClick={retryAllFailed}
                     disabled={retrying === -1}
-                    className="btn-primary text-sm py-2 px-4 flex items-center space-x-2"
+                    className="btn-primary text-sm py-2 px-3 flex items-center space-x-1"
                   >
                     <RefreshCw className={`w-4 h-4 ${retrying === -1 ? "animate-spin" : ""}`} />
-                    <span>{retrying === -1 ? "Retrying..." : "Retry All Failed"}</span>
+                    <span>{retrying === -1 ? "Retrying..." : "Retry Failed Syncs"}</span>
                   </button>
                 )}
               </div>
             </div>
 
-            {forceSyncResult && (
-              <div className={`p-4 rounded-lg mb-4 ${forceSyncResult.failed > 0 ? "bg-yellow-50 border border-yellow-200" : "bg-green-50 border border-green-200"}`}>
-                <p className="font-medium text-slate-800">
-                  Force Sync Complete: {forceSyncResult.queued} synced, {forceSyncResult.alreadySynced} already synced, {forceSyncResult.failed} failed
-                  {forceSyncResult.idsGenerated ? `, ${forceSyncResult.idsGenerated} IDs generated` : ""}
-                </p>
-                {forceSyncResult.errors && forceSyncResult.errors.length > 0 && (
-                  <ul className="text-sm text-red-600 mt-2 list-disc list-inside">
-                    {(forceSyncResult.errors || []).slice(0, 5).map((err, i) => (
-                      <li key={i}>{err}</li>
-                    ))}
-                    {forceSyncResult.errors.length > 5 && (
-                      <li>...and {forceSyncResult.errors.length - 5} more</li>
-                    )}
-                  </ul>
-                )}
-              </div>
-            )}
-
             {retryAllResult && (
-              <div className={`p-4 rounded-lg mb-4 ${retryAllResult.error || retryAllResult.succeeded === 0 ? "bg-red-50 border border-red-200" : "bg-green-50 border border-green-200"}`}>
-                <p className="font-medium text-slate-800">
+              <div className={`p-3 rounded-lg mb-4 ${retryAllResult.error || retryAllResult.succeeded === 0 ? "bg-red-50 border border-red-200" : "bg-green-50 border border-green-200"}`}>
+                <p className="text-sm font-medium text-slate-800">
                   {retryAllResult.error 
                     ? `Retry Failed: ${retryAllResult.error}` 
-                    : `Retry Complete: ${retryAllResult.retried} attempted, ${retryAllResult.succeeded} succeeded, ${retryAllResult.retried - retryAllResult.succeeded} failed`
+                    : `Retry Complete: ${retryAllResult.retried} attempted, ${retryAllResult.succeeded} succeeded`
                   }
                 </p>
               </div>
             )}
-
-            {/* Sync Status Filter Tabs */}
-            <div className="flex items-center space-x-2 mb-4 border-b border-gray-200 pb-4">
-              <span className="text-sm text-gray-500 mr-2">Filter:</span>
-              <button
-                onClick={() => setStatusFilter(null)}
-                className={`text-sm px-3 py-1.5 rounded-lg transition-colors ${
-                  statusFilter === null 
-                    ? "bg-gray-800 text-white" 
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                }`}
-              >
-                All ({syncRecords.length})
-              </button>
-              <button
-                onClick={() => setStatusFilter("pending")}
-                className={`text-sm px-3 py-1.5 rounded-lg transition-colors ${
-                  statusFilter === "pending" 
-                    ? "bg-yellow-500 text-white" 
-                    : "bg-yellow-50 text-yellow-700 hover:bg-yellow-100"
-                }`}
-              >
-                Pending ({syncRecords.filter(r => r.syncStatus === "pending").length})
-              </button>
-              <button
-                onClick={() => setStatusFilter("syncing")}
-                className={`text-sm px-3 py-1.5 rounded-lg transition-colors ${
-                  statusFilter === "syncing" 
-                    ? "bg-blue-500 text-white" 
-                    : "bg-blue-50 text-blue-700 hover:bg-blue-100"
-                }`}
-              >
-                Syncing ({syncRecords.filter(r => r.syncStatus === "syncing").length})
-              </button>
-              <button
-                onClick={() => setStatusFilter("failed")}
-                className={`text-sm px-3 py-1.5 rounded-lg transition-colors ${
-                  statusFilter === "failed" 
-                    ? "bg-red-500 text-white" 
-                    : "bg-red-50 text-red-700 hover:bg-red-100"
-                }`}
-              >
-                Failed ({syncRecords.filter(r => r.syncStatus === "failed").length})
-              </button>
-              <button
-                onClick={() => setStatusFilter("synced")}
-                className={`text-sm px-3 py-1.5 rounded-lg transition-colors ${
-                  statusFilter === "synced" 
-                    ? "bg-green-500 text-white" 
-                    : "bg-green-50 text-green-700 hover:bg-green-100"
-                }`}
-              >
-                Completed ({syncRecords.filter(r => r.syncStatus === "synced").length})
-              </button>
-            </div>
-
-            {syncRecords.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">
-                No sync records yet. Use "Force Sync All Migrated" to queue migrated authors for sync.
-              </p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Author</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Expression Type</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Sync Status</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Chevron Stage</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">LLC Author ID</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Attempts</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {syncRecords
-                      .filter(record => !statusFilter || record.syncStatus === statusFilter)
-                      .map((record) => (
-                      <tr key={record.id} className="border-b border-gray-100 hover:bg-gray-50">
-                        <td className="py-3 px-4">
-                          <p className="font-medium text-slate-800">{record.authorName}</p>
-                          <p className="text-xs text-gray-500">{record.email}</p>
-                        </td>
-                        <td className="py-3 px-4 text-gray-600 text-sm">{formatExpressionTypes(record.expressionTypes)}</td>
-                        <td className="py-3 px-4">
-                          <span className={`text-xs px-2 py-1 rounded capitalize ${getSyncStatusColor(record.syncStatus)}`}>
-                            {record.syncStatus}
-                          </span>
-                          {record.syncError && (
-                            <p className="text-xs text-red-500 mt-1 max-w-xs truncate" title={record.syncError}>
-                              {record.syncError}
-                            </p>
-                          )}
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center space-x-1">
-                            <button
-                              onClick={() => {
-                                const currentIdx = getStageIndex(record.status);
-                                if (currentIdx > 0) {
-                                  updatePublishingStage(record.id, PUBLISHING_STAGES[currentIdx - 1].key);
-                                }
-                              }}
-                              disabled={updatingStage === record.id || getStageIndex(record.status) <= 0}
-                              className="p-1 rounded hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed"
-                              title="Move to previous stage"
-                            >
-                              <ChevronLeft className="w-4 h-4 text-gray-600" />
-                            </button>
-                            <span className={`text-xs px-2 py-1 rounded capitalize ${
-                              normalizeStage(record.status) === 'published' || normalizeStage(record.status) === 'marketing' ? 'bg-green-100 text-green-700' :
-                              normalizeStage(record.status) === 'review' || normalizeStage(record.status) === 'modifications' ? 'bg-purple-100 text-purple-700' :
-                              'bg-blue-100 text-blue-700'
-                            }`}>
-                              {PUBLISHING_STAGES.find(s => s.key === normalizeStage(record.status))?.label || normalizeStage(record.status) || 'Agreement'}
-                            </span>
-                            <button
-                              onClick={() => {
-                                const currentIdx = getStageIndex(record.status);
-                                if (currentIdx < PUBLISHING_STAGES.length - 1) {
-                                  updatePublishingStage(record.id, PUBLISHING_STAGES[currentIdx + 1].key);
-                                }
-                              }}
-                              disabled={updatingStage === record.id || getStageIndex(record.status) >= PUBLISHING_STAGES.length - 1}
-                              className="p-1 rounded hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed"
-                              title="Move to next stage"
-                            >
-                              <ChevronRight className="w-4 h-4 text-gray-600" />
-                            </button>
-                          </div>
-                          {updatingStage === record.id && (
-                            <p className="text-xs text-blue-500 mt-1">Updating...</p>
-                          )}
-                        </td>
-                        <td className="py-3 px-4 text-gray-600 font-mono text-sm">
-                          {record.indieQuillAuthorId || "-"}
-                        </td>
-                        <td className="py-3 px-4 text-gray-600 text-sm">
-                          {record.syncAttempts}
-                        </td>
-                        <td className="py-3 px-4 flex items-center space-x-2">
-                          {record.syncStatus === "failed" && (
-                            <>
-                              <button
-                                onClick={() => retrySync(record.id)}
-                                disabled={retrying === record.id}
-                                className="bg-red-500 hover:bg-red-600 text-white text-xs px-3 py-1.5 rounded flex items-center space-x-1 transition-colors"
-                                title="Retry sync to LLC"
-                              >
-                                <RefreshCw className={`w-4 h-4 ${retrying === record.id ? "animate-spin" : ""}`} />
-                                <span>Retry</span>
-                              </button>
-                              <button
-                                onClick={() => resetSync(record.id)}
-                                disabled={retrying === record.id}
-                                className="bg-gray-500 hover:bg-gray-600 text-white text-xs px-3 py-1.5 rounded flex items-center space-x-1 transition-colors"
-                                title="Reset sync (clear attempts and start fresh)"
-                              >
-                                <span>Reset</span>
-                              </button>
-                            </>
-                          )}
-                          {record.syncStatus === "pending" && (
-                            <span className="text-xs text-gray-500 italic">Queued...</span>
-                          )}
-                          {record.syncStatus === "syncing" && (
-                            <span className="text-xs text-blue-500 flex items-center space-x-1">
-                              <RefreshCw className="w-4 h-4 animate-spin" />
-                              <span>Syncing...</span>
-                            </span>
-                          )}
-                          {record.syncStatus === "synced" && (
-                            <span className="text-xs text-green-600 flex items-center space-x-1" title="Successfully synced">
-                              <Zap className="w-4 h-4" />
-                              <span>Synced</span>
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        )}
-
-        {activeTab === "users" && (
-          <div className="card">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-display text-xl font-semibold text-slate-800">
-                User Management
-              </h2>
-              <p className="text-sm text-gray-500">{allUsers.length} total users</p>
-            </div>
-
+            
             {allUsers.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">No users found.</p>
+              <p className="text-gray-500 text-center py-8">No users yet.</p>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">User</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Role</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Applications</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Joined</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(allUsers || []).map((u) => (
-                      <tr key={u.id} className="border-b border-gray-100 hover:bg-gray-50">
-                        <td className="py-3 px-4">
-                          <div>
+              <div className="space-y-3">
+                {allUsers
+                  .filter(u => {
+                    if (!statusFilter) return true;
+                    const app = applications.find(a => a.userId === u.id);
+                    const syncRecord = syncRecords.find(s => s.userId === u.id);
+                    if (statusFilter === "pending_review") {
+                      return app && (app.status === "pending" || app.status === "under_review");
+                    }
+                    if (statusFilter === "sync_pending") {
+                      return syncRecord?.syncStatus === "pending" || (app?.status === "migrated" && !syncRecord);
+                    }
+                    if (statusFilter === "sync_synced") {
+                      return syncRecord?.syncStatus === "synced";
+                    }
+                    if (statusFilter === "sync_failed") {
+                      return syncRecord?.syncStatus === "failed";
+                    }
+                    return app?.status === statusFilter;
+                  })
+                  .map((u) => {
+                    const app = applications.find(a => a.userId === u.id);
+                    const syncRecord = syncRecords.find(s => s.userId === u.id);
+                    return (
+                      <div key={u.id} className="bg-slate-50 rounded-lg p-4 border border-slate-200 hover:border-slate-300 transition-colors">
+                        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mb-2">
+                          <div className="min-w-[180px]">
+                            <p className="text-xs text-gray-500 uppercase tracking-wide">Real Name</p>
                             <p className="font-medium text-slate-800">{u.firstName} {u.lastName}</p>
-                            <p className="text-xs text-gray-500">{u.email}</p>
                           </div>
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className={`text-xs px-2 py-1 rounded capitalize ${getRoleColor(u.role)}`}>
-                            {u.role.replace("_", " ")}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className="text-gray-600">{u.applicationCount}</span>
-                          {u.hasAcceptedApp && (
-                            <CheckCircle className="w-4 h-4 text-green-500 inline ml-2" />
-                          )}
-                        </td>
-                        <td className="py-3 px-4 text-gray-600 text-sm">
-                          {formatDateTime(u.createdAt)}
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center space-x-3">
+                          <div className="min-w-[140px]">
+                            <p className="text-xs text-gray-500 uppercase tracking-wide">Pseudonym</p>
+                            <p className="text-slate-700">{app?.pseudonym || <span className="text-gray-400 italic">Not set</span>}</p>
+                          </div>
+                          <div className="min-w-[200px]">
+                            <p className="text-xs text-gray-500 uppercase tracking-wide">Email</p>
+                            <p className="text-slate-700 text-sm">{u.email}</p>
+                          </div>
+                          <div className="min-w-[100px]">
+                            <p className="text-xs text-gray-500 uppercase tracking-wide">Role</p>
+                            <span className={`text-xs px-2 py-1 rounded capitalize ${getRoleColor(u.role)}`}>
+                              {u.role.replace("_", " ")}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap items-center justify-between gap-y-2 pt-2 border-t border-slate-200">
+                          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                            <div>
+                              <span className="text-xs text-gray-500 mr-1">Age:</span>
+                              {app ? (
+                                app.isMinor ? (
+                                  <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">Minor</span>
+                                ) : (
+                                  <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">Adult</span>
+                                )
+                              ) : (
+                                <span className="text-xs text-gray-400">—</span>
+                              )}
+                            </div>
+                            <div>
+                              <span className="text-xs text-gray-500 mr-1">Status:</span>
+                              {app ? (
+                                <span className={`text-xs px-2 py-0.5 rounded capitalize ${getStatusColor(app.status)}`}>
+                                  {app.status.replace("_", " ")}
+                                </span>
+                              ) : (
+                                <span className="text-xs text-gray-400">No application</span>
+                              )}
+                            </div>
+                            <div>
+                              <span className="text-xs text-gray-500 mr-1">LLC:</span>
+                              {syncRecord ? (
+                                <>
+                                  <span className={`text-xs px-2 py-0.5 rounded capitalize ${getSyncStatusColor(syncRecord.syncStatus)}`}>
+                                    {syncRecord.syncStatus}
+                                  </span>
+                                  {syncRecord.syncError && (
+                                    <span className="text-xs text-red-500 ml-1" title={syncRecord.syncError}>⚠</span>
+                                  )}
+                                </>
+                              ) : app?.status === "migrated" ? (
+                                <span className="text-xs px-2 py-0.5 rounded bg-yellow-100 text-yellow-700">pending</span>
+                              ) : (
+                                <span className="text-xs text-gray-400">—</span>
+                              )}
+                            </div>
+                            <div className="flex items-center text-xs text-gray-500">
+                              <Clock className="w-3 h-3 mr-1" />
+                              Joined {new Date(u.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            {app && (
+                              <button
+                                onClick={() => {
+                                  setSelectedApp(app);
+                                  if (app.isMinor) {
+                                    initCoppaState(app);
+                                  }
+                                }}
+                                className="text-blue-600 hover:text-blue-800 transition-colors p-1.5 rounded hover:bg-blue-50"
+                                title="View Application"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </button>
+                            )}
                             <button
                               onClick={() => {
                                 setEditingUser(u);
                                 setNewRole(u.role);
                               }}
-                              className="text-blue-600 hover:text-blue-800 transition-colors text-sm font-medium"
+                              className="text-gray-600 hover:text-gray-800 transition-colors p-1.5 rounded hover:bg-gray-100"
+                              title="Edit User"
                             >
-                              Edit Role
+                              <User className="w-4 h-4" />
                             </button>
-                            {showDeleteConfirm === u.id ? (
-                              <div className="flex items-center space-x-2">
-                                <button
-                                  onClick={() => deleteUser(u.id)}
-                                  disabled={deletingUserId === u.id}
-                                  className="text-xs px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
-                                >
-                                  {deletingUserId === u.id ? "..." : "Confirm"}
-                                </button>
-                                <button
-                                  onClick={() => setShowDeleteConfirm(null)}
-                                  className="text-xs px-2 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
-                                >
-                                  Cancel
-                                </button>
-                              </div>
-                            ) : (
+                            {app && (app.status === "accepted" || app.status === "migrated") && (
                               <button
-                                onClick={() => setShowDeleteConfirm(u.id)}
-                                className="text-red-600 hover:text-red-800 transition-colors text-sm font-medium"
-                                title="Delete user and all associated data"
+                                onClick={() => setLocation(`/contract/${app.id}`)}
+                                className="text-purple-600 hover:text-purple-800 transition-colors p-1.5 rounded hover:bg-purple-50"
+                                title="View Contract"
                               >
-                                <Trash2 className="w-4 h-4" />
+                                <FileText className="w-4 h-4" />
                               </button>
                             )}
+                            {syncRecord?.syncStatus === "failed" && (
+                              <button
+                                onClick={() => retrySync(syncRecord.id)}
+                                disabled={retrying === syncRecord.id}
+                                className="text-red-600 hover:text-red-800 transition-colors p-1.5 rounded hover:bg-red-50"
+                                title="Retry Sync"
+                              >
+                                <RefreshCw className={`w-4 h-4 ${retrying === syncRecord.id ? "animate-spin" : ""}`} />
+                              </button>
+                            )}
+                            {u.role === "applicant" && u.id !== user?.id && (
+                              <>
+                                {showDeleteConfirm === u.id ? (
+                                  <div className="flex items-center space-x-1 bg-red-50 rounded px-2 py-1">
+                                    <span className="text-xs text-red-700">Delete?</span>
+                                    <button
+                                      onClick={() => deleteUser(u.id)}
+                                      disabled={deletingUserId === u.id}
+                                      className="text-red-600 hover:text-red-800 text-xs font-medium"
+                                    >
+                                      {deletingUserId === u.id ? "..." : "Yes"}
+                                    </button>
+                                    <button
+                                      onClick={() => setShowDeleteConfirm(null)}
+                                      className="text-gray-600 hover:text-gray-800 text-xs"
+                                    >
+                                      No
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <button
+                                    onClick={() => setShowDeleteConfirm(u.id)}
+                                    className="text-gray-400 hover:text-red-600 transition-colors p-1.5 rounded hover:bg-red-50"
+                                    title="Delete User"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                )}
+                              </>
+                            )}
                           </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                        </div>
+                      </div>
+                    );
+                  })}
               </div>
             )}
           </div>
