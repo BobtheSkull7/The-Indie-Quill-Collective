@@ -77,7 +77,15 @@ export default function AboutUs() {
             </div>
             
             <div className="w-16 h-12 rounded-lg overflow-hidden shadow-lg" title="Hispanic Heritage">
-              <div className="w-full h-full bg-gradient-to-r from-red-600 via-yellow-400 to-red-600"></div>
+              <svg viewBox="0 0 60 40" className="w-full h-full">
+                <rect fill="#1E3A5F" width="60" height="12" y="0"/>
+                <polygon fill="#FFFFFF" points="30,2 32,8 38,8 33,12 35,18 30,14 25,18 27,12 22,8 28,8"/>
+                <rect fill="#D4A574" width="60" height="8" y="12"/>
+                <polygon fill="#8B4513" points="0,12 5,16 10,12 15,16 20,12 25,16 30,12 35,16 40,12 45,16 50,12 55,16 60,12 60,20 0,20"/>
+                <rect fill="#2563EB" width="60" height="7" y="20"/>
+                <rect fill="#16A34A" width="60" height="7" y="27"/>
+                <rect fill="#78350F" width="60" height="6" y="34"/>
+              </svg>
             </div>
             
             <div className="w-16 h-12 rounded-lg overflow-hidden shadow-lg" title="Asian Heritage">
