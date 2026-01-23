@@ -3826,6 +3826,25 @@ export async function registerDonationRoutes(app: Express) {
       return res.status(400).json({ message: "Minimum donation is $1.00" });
     }
 
+    // Server-side tier validation - enforce tier ranges
+    const validTiers = ['micro', 'supporter', 'champion', 'sponsor'];
+    const effectiveTier = validTiers.includes(tier) ? tier : 'micro';
+    
+    // Validate amount matches tier range (amounts in cents)
+    const tierRanges: Record<string, { min: number; max: number }> = {
+      micro: { min: 100, max: 2500 },        // $1 - $25
+      supporter: { min: 2600, max: 10000 },  // $26 - $100
+      champion: { min: 10100, max: 59900 },  // $101 - $599
+      sponsor: { min: 60000, max: 60000 },   // $600 fixed
+    };
+
+    const range = tierRanges[effectiveTier];
+    if (amount < range.min || amount > range.max) {
+      return res.status(400).json({ 
+        message: `Amount $${(amount / 100).toFixed(2)} is not valid for ${effectiveTier} tier. Expected range: $${(range.min / 100).toFixed(2)} - $${(range.max / 100).toFixed(2)}` 
+      });
+    }
+
     try {
       const stripe = await getUncachableStripeClient();
       const domain = process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost:5000';
@@ -3838,10 +3857,10 @@ export async function registerDonationRoutes(app: Express) {
             price_data: {
               currency: 'usd',
               product_data: {
-                name: tier === 'sponsor' 
+                name: effectiveTier === 'sponsor' 
                   ? "Author's Kit Sponsorship ($600)" 
                   : `Donation to The Indie Quill Collective`,
-                description: tier === 'sponsor'
+                description: effectiveTier === 'sponsor'
                   ? "Sponsor one full publication cycle for an emerging author"
                   : "Support emerging authors in their publishing journey",
                 images: [],
@@ -3858,7 +3877,7 @@ export async function registerDonationRoutes(app: Express) {
         metadata: {
           donorName: donorName || 'Anonymous',
           message: message || '',
-          tier: tier || 'micro',
+          tier: effectiveTier,
           source: 'indie_quill_collective',
         },
         billing_address_collection: 'required',
