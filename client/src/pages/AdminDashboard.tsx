@@ -161,6 +161,7 @@ export default function AdminDashboard() {
   const [forceSyncResult, setForceSyncResult] = useState<{ total: number; queued: number; alreadySynced: number; failed: number; idsGenerated?: number; errors: string[] } | null>(null);
   const [retryAllResult, setRetryAllResult] = useState<{ retried: number; succeeded: number; error?: string } | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [sendingTestEmails, setSendingTestEmails] = useState(false);
   const [availableCohorts, setAvailableCohorts] = useState<Array<{ id: number; label: string; currentCount: number; capacity: number }>>([]);
   const [selectedCohortId, setSelectedCohortId] = useState<number | null>(null);
   const [deletingUserId, setDeletingUserId] = useState<number | null>(null);
@@ -1276,25 +1277,33 @@ export default function AdminDashboard() {
                   </span>
                   <button
                     onClick={async () => {
+                      setSendingTestEmails(true);
                       try {
                         const res = await fetch('/api/admin/send-test-emails', { 
                           method: 'POST',
                           credentials: 'include'
                         });
                         if (res.ok) {
-                          alert('Test emails sent! Check your inbox (may take a few seconds).');
+                          alert('Test emails sent! Check your inbox.');
                           loadData();
                         } else {
                           alert('Failed to send test emails');
                         }
                       } catch (e) {
                         alert('Error sending test emails');
+                      } finally {
+                        setSendingTestEmails(false);
                       }
                     }}
-                    className="px-3 py-1.5 bg-teal-600 text-white text-sm rounded-lg hover:bg-teal-700 flex items-center gap-2"
+                    disabled={sendingTestEmails}
+                    className="px-3 py-1.5 bg-teal-600 text-white text-sm rounded-lg hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   >
-                    <Mail className="w-4 h-4" />
-                    Send Test Emails
+                    {sendingTestEmails ? (
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Mail className="w-4 h-4" />
+                    )}
+                    {sendingTestEmails ? 'Sending...' : 'Send Test Emails'}
                   </button>
                 </div>
               </div>
