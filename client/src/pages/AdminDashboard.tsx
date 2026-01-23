@@ -1270,9 +1270,33 @@ export default function AdminDashboard() {
                   <Mail className="w-5 h-5 text-teal-600" />
                   Email Logs
                 </h3>
-                <span className="text-sm text-gray-500">
-                  All emails CC'd to jon@theindiequill.com
-                </span>
+                <div className="flex items-center gap-4">
+                  <span className="text-sm text-gray-500">
+                    All emails CC'd to jon@theindiequill.com
+                  </span>
+                  <button
+                    onClick={async () => {
+                      try {
+                        const res = await fetch('/api/admin/send-test-emails', { 
+                          method: 'POST',
+                          credentials: 'include'
+                        });
+                        if (res.ok) {
+                          alert('Test emails sent! Check your inbox (may take a few seconds).');
+                          loadData();
+                        } else {
+                          alert('Failed to send test emails');
+                        }
+                      } catch (e) {
+                        alert('Error sending test emails');
+                      }
+                    }}
+                    className="px-3 py-1.5 bg-teal-600 text-white text-sm rounded-lg hover:bg-teal-700 flex items-center gap-2"
+                  >
+                    <Mail className="w-4 h-4" />
+                    Send Test Emails
+                  </button>
+                </div>
               </div>
               
               {emailLogs.length === 0 ? (
