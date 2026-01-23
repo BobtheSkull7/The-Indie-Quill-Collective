@@ -35,6 +35,12 @@ export default function Navbar() {
             >
               Home
             </Link>
+            <Link 
+              href="/about" 
+              className={`text-sm font-medium transition-colors ${location === "/about" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`}
+            >
+              About
+            </Link>
             
             {!user ? (
               <>
@@ -171,6 +177,7 @@ export default function Navbar() {
       {mobileMenuOpen && (
         <div className="md:hidden bg-white border-t border-gray-100 py-4 px-4 space-y-3">
           <Link href="/" className="block text-gray-600 hover:text-slate-800 py-2">Home</Link>
+          <Link href="/about" className="block text-gray-600 hover:text-slate-800 py-2">About</Link>
           {!user ? (
             <>
               <Link href="/login" className="block text-gray-600 hover:text-slate-800 py-2">Sign In</Link>
