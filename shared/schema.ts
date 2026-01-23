@@ -446,6 +446,41 @@ export const pilotLedgerRelations = relations(pilotLedger, ({ one }) => ({
   }),
 }));
 
+export const emailTypeEnum = pgEnum('email_type', [
+  'application_received',
+  'application_accepted',
+  'application_rejected',
+  'active_author'
+]);
+
+export const emailStatusEnum = pgEnum('email_status', [
+  'sent',
+  'failed'
+]);
+
+export const emailLogs = pgTable("email_logs", {
+  id: serial("id").primaryKey(),
+  emailType: emailTypeEnum("email_type").notNull(),
+  recipientEmail: text("recipient_email").notNull(),
+  recipientName: text("recipient_name"),
+  userId: integer("user_id").references(() => users.id),
+  applicationId: integer("application_id").references(() => applications.id),
+  status: emailStatusEnum("status").notNull(),
+  errorMessage: text("error_message"),
+  sentAt: timestamp("sent_at").defaultNow().notNull(),
+});
+
+export const emailLogsRelations = relations(emailLogs, ({ one }) => ({
+  user: one(users, {
+    fields: [emailLogs.userId],
+    references: [users.id],
+  }),
+  application: one(applications, {
+    fields: [emailLogs.applicationId],
+    references: [applications.id],
+  }),
+}));
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 export type Cohort = typeof cohorts.$inferSelect;
@@ -474,3 +509,5 @@ export type FoundationGrant = typeof foundationGrants.$inferSelect;
 export type InsertFoundationGrant = typeof foundationGrants.$inferInsert;
 export type PilotLedgerEntry = typeof pilotLedger.$inferSelect;
 export type InsertPilotLedgerEntry = typeof pilotLedger.$inferInsert;
+export type EmailLog = typeof emailLogs.$inferSelect;
+export type InsertEmailLog = typeof emailLogs.$inferInsert;
