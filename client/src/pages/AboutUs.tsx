@@ -34,7 +34,7 @@ export default function AboutUs() {
             Our Mission
           </h2>
           <p className="text-gray-700 text-lg leading-relaxed">
-            To dismantle the systemic architectures of forced silence. We provide a radical, frictionless path to authorship for youth and disadvantaged adults whose voices have been muted by racism, misogyny, bigotry, and age discrimination. By providing the specific systems, tools, and direct human assistance required to bypass traditional gatekeepers, we ensure that those historically ignored are finally empowered as published authorities of their own narratives.
+            To dismantle the systemic architectures of forced silence. We provide a radical, frictionless path to authorship for disadvantaged youth and adults whose voices have been muted by racism, misogyny, bigotry, and age discrimination. By providing the specific systems, tools, and direct human assistance required to bypass traditional gatekeepers, we ensure that those historically ignored are finally empowered as published authorities of their own narratives.
           </p>
         </section>
 
