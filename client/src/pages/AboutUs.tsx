@@ -47,7 +47,7 @@ export default function AboutUs() {
           </p>
           
           <div className="flex flex-wrap justify-center gap-4 mb-8">
-            <div className="w-16 h-12 rounded-lg overflow-hidden shadow-lg" title="Progress Pride Flag">
+            <div className="w-16 h-12 rounded-lg overflow-hidden shadow-lg" title="Intersex-Inclusive Progress Pride Flag">
               <svg viewBox="0 0 60 40" className="w-full h-full">
                 <rect fill="#FF0018" width="60" height="6.67" y="0"/>
                 <rect fill="#FFA52C" width="60" height="6.67" y="6.67"/>
@@ -60,6 +60,8 @@ export default function AboutUs() {
                 <polygon fill="#74D7EE" points="0,0 10,20 0,40"/>
                 <polygon fill="#613915" points="0,0 5,20 0,40"/>
                 <polygon fill="#000000" points="0,0 0,40 0,20"/>
+                <circle cx="8" cy="20" r="4" fill="#FFDA00"/>
+                <circle cx="8" cy="20" r="2.5" fill="#7902AA"/>
               </svg>
             </div>
             
