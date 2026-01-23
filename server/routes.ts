@@ -3835,7 +3835,7 @@ export async function registerDonationRoutes(app: Express) {
       micro: { min: 100, max: 2500 },        // $1 - $25
       supporter: { min: 2600, max: 10000 },  // $26 - $100
       champion: { min: 10100, max: 59900 },  // $101 - $599
-      sponsor: { min: 60000, max: 60000 },   // $600 fixed
+      sponsor: { min: 77700, max: 77700 },   // $777 fixed
     };
 
     const range = tierRanges[effectiveTier];
@@ -3858,7 +3858,7 @@ export async function registerDonationRoutes(app: Express) {
               currency: 'usd',
               product_data: {
                 name: effectiveTier === 'sponsor' 
-                  ? "Author's Kit Sponsorship ($600)" 
+                  ? "Author's Kit Sponsorship ($777)" 
                   : `Donation to The Indie Quill Collective`,
                 description: effectiveTier === 'sponsor'
                   ? "Sponsor one full publication cycle for an emerging author"

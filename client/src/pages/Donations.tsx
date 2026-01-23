@@ -39,13 +39,13 @@ const DONATION_TIERS = [
   {
     id: "sponsor",
     name: "Author's Kit",
-    range: "$600",
+    range: "$777",
     description: "Sponsor one full publication cycle for a disadvantaged author. The complete journey from manuscript to published book.",
     icon: Sparkles,
     color: "amber",
-    defaultAmount: 600,
-    minAmount: 600,
-    maxAmount: 600,
+    defaultAmount: 777,
+    minAmount: 777,
+    maxAmount: 777,
     featured: true,
   },
 ];
