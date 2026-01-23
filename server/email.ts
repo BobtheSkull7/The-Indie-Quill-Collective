@@ -66,6 +66,64 @@ async function logEmail(
   }
 }
 
+async function sendFailureNotification(
+  emailType: string,
+  recipientEmail: string,
+  recipientName: string | null,
+  errorMessage: string
+) {
+  try {
+    const { client, fromEmail } = await getResendClient();
+    
+    await client.emails.send({
+      from: fromEmail || 'The Indie Quill Collective <noreply@resend.dev>',
+      to: ADMIN_CC_EMAIL,
+      subject: `[EMAIL FAILURE ALERT] ${emailType} Email Failed`,
+      html: `
+        <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background: #fef2f2; border: 2px solid #dc2626; border-radius: 12px; padding: 30px;">
+            <h1 style="color: #dc2626; margin: 0 0 20px 0; font-size: 24px;">
+              ⚠️ Email Delivery Failed
+            </h1>
+            
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 10px 0; border-bottom: 1px solid #fecaca; color: #991b1b; font-weight: bold;">Email Type:</td>
+                <td style="padding: 10px 0; border-bottom: 1px solid #fecaca; color: #374151;">${emailType}</td>
+              </tr>
+              <tr>
+                <td style="padding: 10px 0; border-bottom: 1px solid #fecaca; color: #991b1b; font-weight: bold;">Recipient:</td>
+                <td style="padding: 10px 0; border-bottom: 1px solid #fecaca; color: #374151;">${recipientName || 'Unknown'} (${recipientEmail})</td>
+              </tr>
+              <tr>
+                <td style="padding: 10px 0; border-bottom: 1px solid #fecaca; color: #991b1b; font-weight: bold;">Time:</td>
+                <td style="padding: 10px 0; border-bottom: 1px solid #fecaca; color: #374151;">${new Date().toISOString()}</td>
+              </tr>
+              <tr>
+                <td style="padding: 10px 0; color: #991b1b; font-weight: bold;">Error:</td>
+                <td style="padding: 10px 0; color: #374151;">${errorMessage}</td>
+              </tr>
+            </table>
+            
+            <div style="margin-top: 20px; padding: 15px; background: white; border-radius: 8px;">
+              <p style="margin: 0; color: #374151; font-size: 14px;">
+                <strong>Action Required:</strong> Please manually contact the recipient or retry the email from the Admin Dashboard.
+              </p>
+            </div>
+          </div>
+          
+          <p style="text-align: center; color: #9ca3af; font-size: 12px; margin-top: 20px;">
+            This is an automated alert from The Indie Quill Collective email system.
+          </p>
+        </div>
+      `
+    });
+    console.log(`Failure notification sent for ${emailType} to ${recipientEmail}`);
+  } catch (notifyError) {
+    console.error('Failed to send failure notification:', notifyError);
+  }
+}
+
 export async function sendApplicationReceivedEmail(
   toEmail: string, 
   firstName: string,
@@ -137,6 +195,7 @@ export async function sendApplicationReceivedEmail(
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     await logEmail('application_received', toEmail, firstName, 'failed', userId, applicationId, errorMessage);
+    await sendFailureNotification('Application Received', toEmail, firstName, errorMessage);
     console.error('Failed to send application received email:', error);
     return false;
   }
@@ -235,6 +294,7 @@ export async function sendApplicationAcceptedEmail(
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     await logEmail('application_accepted', toEmail, firstName, 'failed', userId, applicationId, errorMessage);
+    await sendFailureNotification('Application Accepted', toEmail, firstName, errorMessage);
     console.error('Failed to send application accepted email:', error);
     return false;
   }
@@ -306,6 +366,7 @@ export async function sendApplicationRejectedEmail(
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     await logEmail('application_rejected', toEmail, firstName, 'failed', userId, applicationId, errorMessage);
+    await sendFailureNotification('Application Rejected', toEmail, firstName, errorMessage);
     console.error('Failed to send application rejected email:', error);
     return false;
   }
@@ -391,6 +452,7 @@ export async function sendActiveAuthorEmail(
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     await logEmail('active_author', toEmail, firstName, 'failed', userId, applicationId, errorMessage);
+    await sendFailureNotification('Active Author', toEmail, firstName, errorMessage);
     console.error('Failed to send active author email:', error);
     return false;
   }
@@ -439,7 +501,7 @@ export async function sendTestEmailSamples(adminEmail: string): Promise<{ succes
     console.log('Test email 1 result:', result1);
     results.push('Application Received - SENT');
     
-    await delay(1000);
+    await delay(2000);
     
     // 2. Application Accepted sample
     const result2 = await client.emails.send({
@@ -477,7 +539,7 @@ export async function sendTestEmailSamples(adminEmail: string): Promise<{ succes
     console.log('Test email 2 result:', result2);
     results.push('Application Accepted - SENT');
     
-    await delay(1000);
+    await delay(2000);
     
     // 3. Application Rejected sample
     const result3 = await client.emails.send({
@@ -513,7 +575,7 @@ export async function sendTestEmailSamples(adminEmail: string): Promise<{ succes
     console.log('Test email 3 result:', result3);
     results.push('Application Rejected - SENT');
     
-    await delay(1000);
+    await delay(2000);
     
     // 4. Active Author Welcome sample
     const result4 = await client.emails.send({
