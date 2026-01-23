@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { ArrowLeft, Heart, Users, Shield, Sparkles } from "lucide-react";
+import { ArrowLeft, Heart } from "lucide-react";
 
 export default function AboutUs() {
   return (
@@ -127,9 +127,6 @@ export default function AboutUs() {
           
           <div className="grid md:grid-cols-3 gap-6">
             <div className="bg-gradient-to-br from-teal-50 to-teal-100 rounded-xl p-6 border border-teal-200">
-              <div className="w-10 h-10 bg-collective-teal rounded-full flex items-center justify-center mb-4">
-                <Shield className="w-5 h-5 text-white" />
-              </div>
               <h3 className="font-display font-semibold text-slate-800 mb-2">Systemic Removal of Barriers</h3>
               <p className="text-gray-600 text-sm">
                 We identify and neutralize the hurdles that prevent a story from reaching the page.
@@ -137,9 +134,6 @@ export default function AboutUs() {
             </div>
             
             <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 border border-blue-200">
-              <div className="w-10 h-10 bg-collective-blue rounded-full flex items-center justify-center mb-4">
-                <Users className="w-5 h-5 text-white" />
-              </div>
               <h3 className="font-display font-semibold text-slate-800 mb-2">Integrated Support</h3>
               <p className="text-gray-600 text-sm">
                 We provide the direct human assistance and infrastructure necessary to turn the act of speaking into the act of publishing.
@@ -147,9 +141,6 @@ export default function AboutUs() {
             </div>
             
             <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-6 border border-red-200">
-              <div className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center mb-4">
-                <Sparkles className="w-5 h-5 text-white" />
-              </div>
               <h3 className="font-display font-semibold text-slate-800 mb-2">Ownership and Legacy</h3>
               <p className="text-gray-600 text-sm">
                 We move beyond mere representation toward true ownership, where marginalized voices finally control their own data and their own legacies.
