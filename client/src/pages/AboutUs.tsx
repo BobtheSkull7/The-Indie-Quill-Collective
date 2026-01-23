@@ -110,17 +110,20 @@ export default function AboutUs() {
               </svg>
             </div>
             
-            <div className="w-16 h-12 rounded-lg overflow-hidden shadow-lg" title="Indigenous Peoples - Medicine Wheel">
+            <div className="w-16 h-12 rounded-lg overflow-hidden shadow-lg" title="Indigenous Peoples Flag">
               <svg viewBox="0 0 60 40" className="w-full h-full">
-                <rect fill="#8B4513" width="60" height="40"/>
-                <circle cx="30" cy="20" r="14" fill="#FFFFFF" stroke="#000000" strokeWidth="1"/>
-                <path d="M30 6 L30 34" stroke="#000000" strokeWidth="1"/>
-                <path d="M16 20 L44 20" stroke="#000000" strokeWidth="1"/>
-                <path d="M30 6 A14 14 0 0 1 44 20 L30 20 Z" fill="#FFFF00"/>
-                <path d="M44 20 A14 14 0 0 1 30 34 L30 20 Z" fill="#FF0000"/>
-                <path d="M30 34 A14 14 0 0 1 16 20 L30 20 Z" fill="#000000"/>
-                <path d="M16 20 A14 14 0 0 1 30 6 L30 20 Z" fill="#FFFFFF"/>
-                <circle cx="30" cy="20" r="3" fill="#8B4513"/>
+                <rect fill="#D32F2F" width="30" height="20" x="0" y="0"/>
+                <rect fill="#000000" width="30" height="20" x="30" y="0"/>
+                <rect fill="#FFD54F" width="30" height="20" x="0" y="20"/>
+                <rect fill="#FFFFFF" width="30" height="20" x="30" y="20"/>
+                <g transform="translate(30, 20)">
+                  <polygon fill="#00BCD4" stroke="#FFFFFF" strokeWidth="0.5" points="0,-12 4,-8 12,-8 8,-4 8,4 12,8 4,8 0,12 -4,8 -12,8 -8,4 -8,-4 -12,-8 -4,-8"/>
+                  <polygon fill="#FFFFFF" points="0,-6 6,0 0,6 -6,0"/>
+                  <polygon fill="#FFD54F" points="0,-5 0,0 5,0"/>
+                  <polygon fill="#D32F2F" points="0,0 0,5 -5,0"/>
+                  <polygon fill="#000000" points="0,0 -5,0 0,-5"/>
+                  <polygon fill="#FFFFFF" points="0,0 5,0 0,5"/>
+                </g>
               </svg>
             </div>
             
