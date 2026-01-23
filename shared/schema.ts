@@ -313,15 +313,26 @@ export const auditLogs = pgTable("audit_logs", {
 });
 
 // Grant & Donor Logistics - Foundation CRM
+export const grantProspectStatusEnum = pgEnum('grant_prospect_status', [
+  'active',
+  'archived'
+]);
+
 export const foundations = pgTable("foundations", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   contactPerson: text("contact_person"),
   contactEmail: text("contact_email"),
   contactPhone: text("contact_phone"),
+  contactRole: text("contact_role"),
   mission: text("mission"),
   website: text("website"),
   notes: text("notes"),
+  category: text("category"),
+  geographyScope: text("geography_scope"),
+  acceptanceCriteria: text("acceptance_criteria"),
+  fitRank: integer("fit_rank"),
+  status: grantProspectStatusEnum("status").default("active").notNull(),
   createdBy: varchar("created_by", { length: 36 }).references(() => users.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),

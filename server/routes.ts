@@ -3162,7 +3162,7 @@ export function registerGrantRoutes(app: Express) {
       return res.status(403).json({ message: "Access denied" });
     }
 
-    const { name, contactPerson, contactEmail, contactPhone, mission, website, notes } = req.body;
+    const { name, contactPerson, contactEmail, contactPhone, contactRole, mission, website, notes, category, geographyScope, acceptanceCriteria, fitRank, status } = req.body;
     
     if (!name) {
       return res.status(400).json({ message: "Foundation name is required" });
@@ -3174,9 +3174,15 @@ export function registerGrantRoutes(app: Express) {
         contactPerson,
         contactEmail,
         contactPhone,
+        contactRole,
         mission,
         website,
         notes,
+        category,
+        geographyScope,
+        acceptanceCriteria,
+        fitRank: fitRank ? parseInt(fitRank) : null,
+        status: status || 'active',
         createdBy: req.session.userId,
       }).returning();
 
@@ -3208,7 +3214,7 @@ export function registerGrantRoutes(app: Express) {
     }
 
     const foundationId = parseInt(req.params.id);
-    const { name, contactPerson, contactEmail, contactPhone, mission, website, notes } = req.body;
+    const { name, contactPerson, contactEmail, contactPhone, contactRole, mission, website, notes, category, geographyScope, acceptanceCriteria, fitRank, status } = req.body;
 
     try {
       const [updated] = await db.update(foundations)
@@ -3217,9 +3223,15 @@ export function registerGrantRoutes(app: Express) {
           contactPerson,
           contactEmail,
           contactPhone,
+          contactRole,
           mission,
           website,
           notes,
+          category,
+          geographyScope,
+          acceptanceCriteria,
+          fitRank: fitRank ? parseInt(fitRank) : null,
+          status: status || 'active',
           updatedAt: new Date(),
         })
         .where(eq(foundations.id, foundationId))
