@@ -5,7 +5,7 @@ import { users, applications, contracts, publishingUpdates, calendarEvents, fund
 import { eq, desc, gte, sql, inArray, lt, and } from "drizzle-orm";
 import { hash, compare } from "./auth";
 import { migrateAuthorToIndieQuill, retryFailedMigrations, sendApplicationToLLC, sendStatusUpdateToLLC, sendContractSignatureToLLC, sendUserRoleUpdateToLLC } from "./indie-quill-integration";
-import { sendApplicationReceivedEmail, sendApplicationAcceptedEmail, sendApplicationRejectedEmail } from "./email";
+import { sendApplicationReceivedEmail, sendApplicationAcceptedEmail, sendApplicationRejectedEmail, sendTestEmailSamples } from "./email";
 import { logAuditEvent, logMinorDataAccess, getClientIp } from "./utils/auditLogger";
 import { syncCalendarEvents, getGoogleCalendarConnectionStatus, deleteGoogleCalendarEvent } from "./google-calendar-sync";
 import { renderToBuffer } from "@react-pdf/renderer";
@@ -1351,6 +1351,27 @@ export function registerRoutes(app: Express) {
     } catch (error) {
       console.error("Fetch email logs error:", error);
       return res.status(500).json({ message: "Failed to fetch email logs" });
+    }
+  });
+
+  // Send test email samples to admin
+  app.post("/api/admin/send-test-emails", async (req: Request, res: Response) => {
+    if (!req.session.userId || req.session.userRole !== "admin") {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    try {
+      const adminEmail = "jon@theindiequill.com";
+      const result = await sendTestEmailSamples(adminEmail);
+      
+      if (result.success) {
+        return res.json({ message: "Test emails sent successfully", results: result.results });
+      } else {
+        return res.status(500).json({ message: "Some emails failed to send", results: result.results });
+      }
+    } catch (error) {
+      console.error("Send test emails error:", error);
+      return res.status(500).json({ message: "Failed to send test emails" });
     }
   });
 

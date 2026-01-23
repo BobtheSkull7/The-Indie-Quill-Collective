@@ -395,3 +395,161 @@ export async function sendActiveAuthorEmail(
     return false;
   }
 }
+
+export async function sendTestEmailSamples(adminEmail: string): Promise<{ success: boolean; results: string[] }> {
+  const results: string[] = [];
+  
+  try {
+    const { client, fromEmail } = await getResendClient();
+    
+    // 1. Application Received sample
+    await client.emails.send({
+      from: fromEmail,
+      to: adminEmail,
+      subject: '[TEST SAMPLE] Application Received Email',
+      html: `
+        <div style="font-family: 'Inter', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <p style="color: #dc2626; font-weight: bold; background: #fef2f2; padding: 12px; border-radius: 8px;">
+            This is a TEST SAMPLE of the email applicants receive when they submit an application.
+          </p>
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="font-family: 'Playfair Display', serif; color: #0d9488; margin: 0;">The Indie Quill</h1>
+            <p style="color: #64748b; margin: 5px 0;">COLLECTIVE</p>
+          </div>
+          <div style="background: linear-gradient(135deg, #f0fdfa 0%, #e0f2fe 100%); border-radius: 12px; padding: 30px; margin-bottom: 20px;">
+            <h2 style="color: #1e293b; margin: 0 0 15px 0;">Application Received!</h2>
+            <p style="color: #475569; line-height: 1.6;">Dear [Applicant Name],</p>
+            <p style="color: #475569; line-height: 1.6;">
+              Thank you for applying to The Indie Quill Collective! We're excited to review your application
+              and learn more about your writing journey.
+            </p>
+            <p style="color: #475569; line-height: 1.6;">
+              Our team will carefully review your submission and get back to you within 2-3 weeks.
+              In the meantime, you can log in to your dashboard to track your application status.
+            </p>
+          </div>
+          <div style="text-align: center; padding: 20px; border-top: 1px solid #e2e8f0;">
+            <p style="color: #9ca3af; font-size: 12px;">&copy; ${new Date().getFullYear()} The Indie Quill Collective</p>
+          </div>
+        </div>
+      `
+    });
+    results.push('Application Received - SENT');
+    
+    // 2. Application Accepted sample
+    await client.emails.send({
+      from: fromEmail,
+      to: adminEmail,
+      subject: '[TEST SAMPLE] Application Accepted Email',
+      html: `
+        <div style="font-family: 'Inter', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <p style="color: #dc2626; font-weight: bold; background: #fef2f2; padding: 12px; border-radius: 8px;">
+            This is a TEST SAMPLE of the email applicants receive when their application is ACCEPTED.
+          </p>
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="font-family: 'Playfair Display', serif; color: #0d9488; margin: 0;">The Indie Quill</h1>
+            <p style="color: #64748b; margin: 5px 0;">COLLECTIVE</p>
+          </div>
+          <div style="background: linear-gradient(135deg, #dcfce7 0%, #d1fae5 100%); border-radius: 12px; padding: 30px; margin-bottom: 20px;">
+            <h2 style="color: #166534; margin: 0 0 15px 0;">Congratulations! You've Been Accepted!</h2>
+            <p style="color: #475569; line-height: 1.6;">Dear [Applicant Name],</p>
+            <p style="color: #475569; line-height: 1.6;">
+              We are thrilled to inform you that your application to The Indie Quill Collective has been <strong>approved</strong>!
+            </p>
+            <p style="color: #475569; line-height: 1.6;">
+              Your next step is to review and sign your publishing agreement. Log in to your dashboard to access your contract.
+            </p>
+            <p style="color: #475569; line-height: 1.6; font-style: italic;">
+              Identity Mode: [Pseudonym Only / Public Identity]
+            </p>
+          </div>
+          <div style="text-align: center; padding: 20px; border-top: 1px solid #e2e8f0;">
+            <p style="color: #9ca3af; font-size: 12px;">&copy; ${new Date().getFullYear()} The Indie Quill Collective</p>
+          </div>
+        </div>
+      `
+    });
+    results.push('Application Accepted - SENT');
+    
+    // 3. Application Rejected sample
+    await client.emails.send({
+      from: fromEmail,
+      to: adminEmail,
+      subject: '[TEST SAMPLE] Application Rejected Email',
+      html: `
+        <div style="font-family: 'Inter', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <p style="color: #dc2626; font-weight: bold; background: #fef2f2; padding: 12px; border-radius: 8px;">
+            This is a TEST SAMPLE of the email applicants receive when their application is REJECTED.
+          </p>
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="font-family: 'Playfair Display', serif; color: #0d9488; margin: 0;">The Indie Quill</h1>
+            <p style="color: #64748b; margin: 5px 0;">COLLECTIVE</p>
+          </div>
+          <div style="background: linear-gradient(135deg, #fef2f2 0%, #fef3c7 100%); border-radius: 12px; padding: 30px; margin-bottom: 20px;">
+            <h2 style="color: #991b1b; margin: 0 0 15px 0;">Application Update</h2>
+            <p style="color: #475569; line-height: 1.6;">Dear [Applicant Name],</p>
+            <p style="color: #475569; line-height: 1.6;">
+              Thank you for your interest in The Indie Quill Collective. After careful consideration,
+              we regret to inform you that we are unable to accept your application at this time.
+            </p>
+            <p style="color: #475569; line-height: 1.6;">
+              We encourage you to continue developing your craft, and you are welcome to reapply in the future.
+            </p>
+          </div>
+          <div style="text-align: center; padding: 20px; border-top: 1px solid #e2e8f0;">
+            <p style="color: #9ca3af; font-size: 12px;">&copy; ${new Date().getFullYear()} The Indie Quill Collective</p>
+          </div>
+        </div>
+      `
+    });
+    results.push('Application Rejected - SENT');
+    
+    // 4. Active Author Welcome sample
+    await client.emails.send({
+      from: fromEmail,
+      to: adminEmail,
+      subject: '[TEST SAMPLE] Active Author Welcome Email',
+      html: `
+        <div style="font-family: 'Inter', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <p style="color: #dc2626; font-weight: bold; background: #fef2f2; padding: 12px; border-radius: 8px;">
+            This is a TEST SAMPLE of the email authors receive when they become ACTIVE AUTHORS (contract signed & synced to LLC).
+          </p>
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="font-family: 'Playfair Display', serif; color: #0d9488; margin: 0;">The Indie Quill</h1>
+            <p style="color: #64748b; margin: 5px 0;">COLLECTIVE</p>
+          </div>
+          <div style="background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%); border-radius: 12px; padding: 30px; margin-bottom: 20px;">
+            <h2 style="color: #0d9488; margin: 0 0 15px 0;">Welcome to the Family, [Pseudonym]!</h2>
+            <p style="color: #475569; line-height: 1.6;">Dear [First Name],</p>
+            <p style="color: #475569; line-height: 1.6;">
+              Your contract has been signed and you are now officially an <strong>Active Author</strong> 
+              with The Indie Quill Collective!
+            </p>
+            <p style="color: #475569; line-height: 1.6;">
+              Your author profile has been created with The Indie Quill LLC, and you're ready to begin 
+              your publishing journey.
+            </p>
+            <div style="background: white; border-radius: 8px; padding: 15px; margin: 20px 0;">
+              <p style="color: #0d9488; font-weight: bold; margin: 0 0 10px 0;">Next Steps:</p>
+              <ul style="color: #475569; margin: 0; padding-left: 20px;">
+                <li>Access your Author Dashboard</li>
+                <li>Submit your manuscript</li>
+                <li>Connect with your cohort</li>
+              </ul>
+            </div>
+          </div>
+          <div style="text-align: center; padding: 20px; border-top: 1px solid #e2e8f0;">
+            <p style="color: #9ca3af; font-size: 12px;">&copy; ${new Date().getFullYear()} The Indie Quill Collective</p>
+          </div>
+        </div>
+      `
+    });
+    results.push('Active Author Welcome - SENT');
+    
+    return { success: true, results };
+  } catch (error) {
+    console.error('Failed to send test emails:', error);
+    results.push(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    return { success: false, results };
+  }
+}
