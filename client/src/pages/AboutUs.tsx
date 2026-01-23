@@ -90,10 +90,23 @@ export default function AboutUs() {
             
             <div className="w-16 h-12 rounded-lg overflow-hidden shadow-lg" title="Asian American & Pacific Islander">
               <svg viewBox="0 0 60 40" className="w-full h-full">
-                <rect fill="#0066B3" width="60" height="40"/>
-                <circle cx="30" cy="20" r="12" fill="#FFD700"/>
-                <path d="M15 35 Q30 25 45 35" stroke="#FFFFFF" strokeWidth="2" fill="none"/>
-                <path d="M10 38 Q30 28 50 38" stroke="#FFFFFF" strokeWidth="1.5" fill="none"/>
+                <rect fill="#E63946" width="60" height="40"/>
+                <rect fill="#F77F00" width="60" height="6" y="4"/>
+                <path d="M0,7 Q5,4 10,7 Q15,10 20,7 Q25,4 30,7 Q35,10 40,7 Q45,4 50,7 Q55,10 60,7" stroke="#FFFFFF" strokeWidth="1.5" fill="none"/>
+                <circle cx="5" cy="7" r="2" fill="#FFFFFF" fillOpacity="0.8"/>
+                <circle cx="15" cy="7" r="2" fill="#FFFFFF" fillOpacity="0.8"/>
+                <circle cx="25" cy="7" r="2" fill="#FFFFFF" fillOpacity="0.8"/>
+                <circle cx="35" cy="7" r="2" fill="#FFFFFF" fillOpacity="0.8"/>
+                <circle cx="45" cy="7" r="2" fill="#FFFFFF" fillOpacity="0.8"/>
+                <circle cx="55" cy="7" r="2" fill="#FFFFFF" fillOpacity="0.8"/>
+                <rect fill="#F77F00" width="60" height="6" y="30"/>
+                <path d="M0,33 Q5,30 10,33 Q15,36 20,33 Q25,30 30,33 Q35,36 40,33 Q45,30 50,33 Q55,36 60,33" stroke="#FFFFFF" strokeWidth="1.5" fill="none"/>
+                <circle cx="5" cy="33" r="2" fill="#FFFFFF" fillOpacity="0.8"/>
+                <circle cx="15" cy="33" r="2" fill="#FFFFFF" fillOpacity="0.8"/>
+                <circle cx="25" cy="33" r="2" fill="#FFFFFF" fillOpacity="0.8"/>
+                <circle cx="35" cy="33" r="2" fill="#FFFFFF" fillOpacity="0.8"/>
+                <circle cx="45" cy="33" r="2" fill="#FFFFFF" fillOpacity="0.8"/>
+                <circle cx="55" cy="33" r="2" fill="#FFFFFF" fillOpacity="0.8"/>
               </svg>
             </div>
             
