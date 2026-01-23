@@ -753,17 +753,6 @@ export default function AdminDashboard() {
             <span>Applicants</span>
           </button>
           <button
-            onClick={() => setActiveTab("calendar")}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2 ${
-              activeTab === "calendar"
-                ? "bg-red-500 text-white"
-                : "bg-white text-gray-600 hover:bg-gray-100"
-            }`}
-          >
-            <Calendar className="w-4 h-4" />
-            <span>Calendar</span>
-          </button>
-          <button
             onClick={() => setActiveTab("operations")}
             className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2 ${
               activeTab === "operations"
@@ -773,6 +762,17 @@ export default function AdminDashboard() {
           >
             <BarChart3 className="w-4 h-4" />
             <span>Operations</span>
+          </button>
+          <button
+            onClick={() => setActiveTab("calendar")}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2 ${
+              activeTab === "calendar"
+                ? "bg-red-500 text-white"
+                : "bg-white text-gray-600 hover:bg-gray-100"
+            }`}
+          >
+            <Calendar className="w-4 h-4" />
+            <span>Calendar</span>
           </button>
         </div>
 
