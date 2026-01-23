@@ -463,7 +463,7 @@ export const emailLogs = pgTable("email_logs", {
   emailType: emailTypeEnum("email_type").notNull(),
   recipientEmail: text("recipient_email").notNull(),
   recipientName: text("recipient_name"),
-  userId: integer("user_id").references(() => users.id),
+  userId: integer("user_id"),
   applicationId: integer("application_id").references(() => applications.id),
   status: emailStatusEnum("status").notNull(),
   errorMessage: text("error_message"),

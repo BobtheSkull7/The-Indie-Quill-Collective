@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import rateLimit from "express-rate-limit";
 import { db } from "./db";
-import { users, applications, contracts, publishingUpdates, calendarEvents, fundraisingCampaigns, donations, auditLogs, cohorts, operatingCosts, foundations, solicitationLogs, foundationGrants, pilotLedger } from "@shared/schema";
+import { users, applications, contracts, publishingUpdates, calendarEvents, fundraisingCampaigns, donations, auditLogs, cohorts, operatingCosts, foundations, solicitationLogs, foundationGrants, pilotLedger, emailLogs } from "@shared/schema";
 import { eq, desc, gte, sql, inArray, lt, and } from "drizzle-orm";
 import { hash, compare } from "./auth";
 import { migrateAuthorToIndieQuill, retryFailedMigrations, sendApplicationToLLC, sendStatusUpdateToLLC, sendContractSignatureToLLC, sendUserRoleUpdateToLLC } from "./indie-quill-integration";
@@ -426,7 +426,7 @@ export function registerRoutes(app: Express) {
       if (user) {
         // Send confirmation email
         try {
-          await sendApplicationReceivedEmail(user.email, user.firstName);
+          await sendApplicationReceivedEmail(user.email, user.firstName, user.id, newApplication.id);
         } catch (emailError) {
           console.error("Failed to send confirmation email:", emailError);
         }
@@ -679,9 +679,10 @@ export function registerRoutes(app: Express) {
         // This ensures the Manual Ledger and Forensic Audit Trail are accurate before touching the Bookstore
 
         try {
-          await sendApplicationAcceptedEmail(applicantUser.email, applicantUser.firstName);
+          const identityMode = updated.publicIdentityEnabled ? 'public' : 'pseudonym';
+          await sendApplicationAcceptedEmail(applicantUser.email, applicantUser.firstName, identityMode, applicantUser.id, updated.id);
           if (updated.isMinor && updated.guardianEmail) {
-            await sendApplicationAcceptedEmail(updated.guardianEmail, applicantUser.firstName);
+            await sendApplicationAcceptedEmail(updated.guardianEmail, applicantUser.firstName, identityMode, applicantUser.id, updated.id);
           }
         } catch (emailError) {
           console.error("Failed to send acceptance email:", emailError);
@@ -719,9 +720,9 @@ export function registerRoutes(app: Express) {
           .returning();
 
         try {
-          await sendApplicationRejectedEmail(applicantUser.email, applicantUser.firstName);
+          await sendApplicationRejectedEmail(applicantUser.email, applicantUser.firstName, applicantUser.id, updated.id);
           if (updated.isMinor && updated.guardianEmail) {
-            await sendApplicationRejectedEmail(updated.guardianEmail, applicantUser.firstName);
+            await sendApplicationRejectedEmail(updated.guardianEmail, applicantUser.firstName, applicantUser.id, updated.id);
           }
         } catch (emailError) {
           console.error("Failed to send rejection email:", emailError);
@@ -1322,6 +1323,34 @@ export function registerRoutes(app: Express) {
     } catch (error) {
       console.error("Fetch sync status error:", error);
       return res.status(500).json({ message: "Failed to fetch sync status" });
+    }
+  });
+
+  app.get("/api/admin/email-logs", async (req: Request, res: Response) => {
+    if (!req.session.userId || req.session.userRole !== "admin") {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    try {
+      const logs = await db.select({
+        id: emailLogs.id,
+        emailType: emailLogs.emailType,
+        recipientEmail: emailLogs.recipientEmail,
+        recipientName: emailLogs.recipientName,
+        userId: emailLogs.userId,
+        applicationId: emailLogs.applicationId,
+        status: emailLogs.status,
+        errorMessage: emailLogs.errorMessage,
+        sentAt: emailLogs.sentAt,
+      })
+      .from(emailLogs)
+      .orderBy(desc(emailLogs.sentAt))
+      .limit(100);
+
+      return res.json(logs);
+    } catch (error) {
+      console.error("Fetch email logs error:", error);
+      return res.status(500).json({ message: "Failed to fetch email logs" });
     }
   });
 

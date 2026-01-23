@@ -1,4 +1,8 @@
 import { Resend } from 'resend';
+import { db } from './db';
+import { emailLogs } from '../shared/schema';
+
+const ADMIN_CC_EMAIL = 'jon@theindiequill.com';
 
 let connectionSettings: any;
 
@@ -38,13 +42,43 @@ async function getResendClient() {
   };
 }
 
-export async function sendApplicationReceivedEmail(toEmail: string, firstName: string) {
+async function logEmail(
+  emailType: 'application_received' | 'application_accepted' | 'application_rejected' | 'active_author',
+  recipientEmail: string,
+  recipientName: string | null,
+  status: 'sent' | 'failed',
+  userId?: number,
+  applicationId?: number,
+  errorMessage?: string
+) {
+  try {
+    await db.insert(emailLogs).values({
+      emailType,
+      recipientEmail,
+      recipientName,
+      userId: userId || null,
+      applicationId: applicationId || null,
+      status,
+      errorMessage: errorMessage || null,
+    });
+  } catch (error) {
+    console.error('Failed to log email:', error);
+  }
+}
+
+export async function sendApplicationReceivedEmail(
+  toEmail: string, 
+  firstName: string,
+  userId?: number,
+  applicationId?: number
+) {
   try {
     const { client, fromEmail } = await getResendClient();
     
     await client.emails.send({
       from: fromEmail || 'The Indie Quill Collective <noreply@resend.dev>',
       to: toEmail,
+      cc: ADMIN_CC_EMAIL,
       subject: 'Application Received - The Indie Quill Collective',
       html: `
         <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
@@ -97,15 +131,24 @@ export async function sendApplicationReceivedEmail(toEmail: string, firstName: s
       `
     });
     
-    console.log(`Application received email sent to ${toEmail}`);
+    await logEmail('application_received', toEmail, firstName, 'sent', userId, applicationId);
+    console.log(`Application received email sent to ${toEmail} (CC: ${ADMIN_CC_EMAIL})`);
     return true;
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    await logEmail('application_received', toEmail, firstName, 'failed', userId, applicationId, errorMessage);
     console.error('Failed to send application received email:', error);
     return false;
   }
 }
 
-export async function sendApplicationAcceptedEmail(toEmail: string, firstName: string, identityMode?: string) {
+export async function sendApplicationAcceptedEmail(
+  toEmail: string, 
+  firstName: string, 
+  identityMode?: string,
+  userId?: number,
+  applicationId?: number
+) {
   try {
     const { client, fromEmail } = await getResendClient();
     
@@ -121,6 +164,7 @@ export async function sendApplicationAcceptedEmail(toEmail: string, firstName: s
     await client.emails.send({
       from: fromEmail || 'The Indie Quill Collective <noreply@resend.dev>',
       to: toEmail,
+      cc: ADMIN_CC_EMAIL,
       subject: 'Congratulations! You Have Been Accepted - The Indie Quill Collective',
       html: `
         <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
@@ -185,21 +229,30 @@ export async function sendApplicationAcceptedEmail(toEmail: string, firstName: s
       `
     });
     
-    console.log(`Application accepted email sent to ${toEmail}`);
+    await logEmail('application_accepted', toEmail, firstName, 'sent', userId, applicationId);
+    console.log(`Application accepted email sent to ${toEmail} (CC: ${ADMIN_CC_EMAIL})`);
     return true;
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    await logEmail('application_accepted', toEmail, firstName, 'failed', userId, applicationId, errorMessage);
     console.error('Failed to send application accepted email:', error);
     return false;
   }
 }
 
-export async function sendApplicationRejectedEmail(toEmail: string, firstName: string) {
+export async function sendApplicationRejectedEmail(
+  toEmail: string, 
+  firstName: string,
+  userId?: number,
+  applicationId?: number
+) {
   try {
     const { client, fromEmail } = await getResendClient();
     
     await client.emails.send({
       from: fromEmail || 'The Indie Quill Collective <noreply@resend.dev>',
       to: toEmail,
+      cc: ADMIN_CC_EMAIL,
       subject: 'Application Update - The Indie Quill Collective',
       html: `
         <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
@@ -247,15 +300,25 @@ export async function sendApplicationRejectedEmail(toEmail: string, firstName: s
       `
     });
     
-    console.log(`Application rejected email sent to ${toEmail}`);
+    await logEmail('application_rejected', toEmail, firstName, 'sent', userId, applicationId);
+    console.log(`Application rejected email sent to ${toEmail} (CC: ${ADMIN_CC_EMAIL})`);
     return true;
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    await logEmail('application_rejected', toEmail, firstName, 'failed', userId, applicationId, errorMessage);
     console.error('Failed to send application rejected email:', error);
     return false;
   }
 }
 
-export async function sendActiveAuthorEmail(toEmail: string, firstName: string, pseudonym: string, isMinor: boolean) {
+export async function sendActiveAuthorEmail(
+  toEmail: string, 
+  firstName: string, 
+  pseudonym: string, 
+  isMinor: boolean,
+  userId?: number,
+  applicationId?: number
+) {
   try {
     const { client, fromEmail } = await getResendClient();
     
@@ -270,6 +333,7 @@ export async function sendActiveAuthorEmail(toEmail: string, firstName: string, 
     await client.emails.send({
       from: fromEmail || 'The Indie Quill Collective <noreply@resend.dev>',
       to: toEmail,
+      cc: ADMIN_CC_EMAIL,
       subject: 'Your Publishing Tools are Live! - The Indie Quill Collective',
       html: `
         <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
@@ -321,9 +385,12 @@ export async function sendActiveAuthorEmail(toEmail: string, firstName: string, 
       `
     });
     
-    console.log(`Active author email sent to ${toEmail}`);
+    await logEmail('active_author', toEmail, firstName, 'sent', userId, applicationId);
+    console.log(`Active author email sent to ${toEmail} (CC: ${ADMIN_CC_EMAIL})`);
     return true;
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    await logEmail('active_author', toEmail, firstName, 'failed', userId, applicationId, errorMessage);
     console.error('Failed to send active author email:', error);
     return false;
   }

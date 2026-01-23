@@ -360,7 +360,9 @@ export async function migrateAuthorToIndieQuill(publishingUpdateId: number): Pro
           user.email,
           user.firstName,
           pseudonym,
-          application.isMinor
+          application.isMinor,
+          user.id,
+          application.id
         );
       } catch (emailError) {
         console.error("Failed to send welcome email:", emailError);

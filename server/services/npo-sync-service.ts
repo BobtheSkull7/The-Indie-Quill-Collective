@@ -488,7 +488,9 @@ export async function processSyncJob(jobId: number): Promise<{ success: boolean;
             user.email,
             user.firstName,
             pseudonym,
-            application.isMinor
+            application.isMinor,
+            user.id,
+            application.id
           );
           console.log(`Active Author email sent to ${user.email} after successful sync`);
         }

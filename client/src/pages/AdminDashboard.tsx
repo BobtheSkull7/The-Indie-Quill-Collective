@@ -106,6 +106,18 @@ interface CalendarEvent {
   createdAt: string;
 }
 
+interface EmailLog {
+  id: number;
+  emailType: string;
+  recipientEmail: string;
+  recipientName: string | null;
+  userId: number | null;
+  applicationId: number | null;
+  status: string;
+  errorMessage: string | null;
+  sentAt: string;
+}
+
 export default function AdminDashboard() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
@@ -137,6 +149,7 @@ export default function AdminDashboard() {
   const [creatingEvent, setCreatingEvent] = useState(false);
   const [deletingEventId, setDeletingEventId] = useState<number | null>(null);
   const [googleCalendarStatus, setGoogleCalendarStatus] = useState<{ connected: boolean; email?: string } | null>(null);
+  const [emailLogs, setEmailLogs] = useState<EmailLog[]>([]);
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<{ success: boolean; pushedToGoogle: number; pulledFromGoogle: number; error?: string } | null>(null);
   const [coppaConsentMethod, setCoppaConsentMethod] = useState<string>("");
@@ -168,13 +181,14 @@ export default function AdminDashboard() {
   const loadData = async () => {
     setError(null);
     try {
-      const [appsRes, statsRes, syncRes, usersRes, calendarRes, gcalStatusRes] = await Promise.all([
+      const [appsRes, statsRes, syncRes, usersRes, calendarRes, gcalStatusRes, emailLogsRes] = await Promise.all([
         fetch("/api/applications"),
         fetch("/api/admin/stats"),
         fetch("/api/admin/sync-status"),
         fetch("/api/admin/users"),
         fetch("/api/board/calendar"),
         fetch("/api/board/calendar/sync-status"),
+        fetch("/api/admin/email-logs"),
       ]);
 
       const apps = appsRes.ok ? await appsRes.json() : [];
@@ -183,12 +197,14 @@ export default function AdminDashboard() {
       const usersData = usersRes.ok ? await usersRes.json() : [];
       const calendarData = calendarRes.ok ? await calendarRes.json() : [];
       const gcalStatus = gcalStatusRes.ok ? await gcalStatusRes.json() : { connected: false };
+      const emailLogsData = emailLogsRes.ok ? await emailLogsRes.json() : [];
 
       setApplications(Array.isArray(apps) ? apps : []);
       setStats(statsData);
       setSyncRecords(Array.isArray(syncData) ? syncData : []);
       setAllUsers(Array.isArray(usersData) ? usersData : []);
       setGoogleCalendarStatus(gcalStatus);
+      setEmailLogs(Array.isArray(emailLogsData) ? emailLogsData : []);
       const sortedCalendarEvents = Array.isArray(calendarData) 
         ? calendarData.sort((a: CalendarEvent, b: CalendarEvent) => 
             new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
@@ -1244,7 +1260,80 @@ export default function AdminDashboard() {
         )}
 
         {activeTab === "operations" && (
-          <OperationsPanel />
+          <div className="space-y-8">
+            <OperationsPanel />
+            
+            {/* Email Logs Section */}
+            <div className="card">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-display text-lg font-bold text-slate-800 flex items-center gap-2">
+                  <Mail className="w-5 h-5 text-teal-600" />
+                  Email Logs
+                </h3>
+                <span className="text-sm text-gray-500">
+                  All emails CC'd to jon@theindiequill.com
+                </span>
+              </div>
+              
+              {emailLogs.length === 0 ? (
+                <p className="text-gray-500 text-center py-8">No emails sent yet</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-200">
+                        <th className="text-left py-2 px-3 font-medium text-gray-600">Sent</th>
+                        <th className="text-left py-2 px-3 font-medium text-gray-600">Type</th>
+                        <th className="text-left py-2 px-3 font-medium text-gray-600">Recipient</th>
+                        <th className="text-left py-2 px-3 font-medium text-gray-600">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {emailLogs.map((log) => (
+                        <tr key={log.id} className="border-b border-gray-100 hover:bg-gray-50">
+                          <td className="py-2 px-3 text-gray-600">
+                            {new Date(log.sentAt).toLocaleDateString()} {new Date(log.sentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </td>
+                          <td className="py-2 px-3">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                              log.emailType === 'application_received' ? 'bg-blue-100 text-blue-800' :
+                              log.emailType === 'application_accepted' ? 'bg-green-100 text-green-800' :
+                              log.emailType === 'application_rejected' ? 'bg-red-100 text-red-800' :
+                              log.emailType === 'active_author' ? 'bg-teal-100 text-teal-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {log.emailType.replace(/_/g, ' ')}
+                            </span>
+                          </td>
+                          <td className="py-2 px-3">
+                            <div>
+                              <span className="text-gray-800">{log.recipientEmail}</span>
+                              {log.recipientName && (
+                                <span className="text-gray-500 text-xs ml-1">({log.recipientName})</span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-2 px-3">
+                            {log.status === 'sent' ? (
+                              <span className="inline-flex items-center gap-1 text-green-600">
+                                <CheckCircle className="w-3.5 h-3.5" />
+                                Sent
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-red-600" title={log.errorMessage || undefined}>
+                                <AlertTriangle className="w-3.5 h-3.5" />
+                                Failed
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
         )}
 
         {editingUser && (
