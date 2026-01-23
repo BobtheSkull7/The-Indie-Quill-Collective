@@ -18,6 +18,7 @@ import Auditor from "./pages/Auditor";
 import { Redirect } from "wouter";
 import Donations from "./pages/Donations";
 import DonationSuccess from "./pages/DonationSuccess";
+import AboutUs from "./pages/AboutUs";
 import Navbar from "./components/Navbar";
 
 interface User {
@@ -71,7 +72,7 @@ function App() {
         <Navbar />
         <Switch>
           <Route path="/" component={Home} />
-          <Route path="/about">{() => <Redirect to="/" />}</Route>
+          <Route path="/about" component={AboutUs} />
           <Route path="/donations" component={Donations} />
           <Route path="/donations/success" component={DonationSuccess} />
           <Route path="/apply" component={Apply} />
