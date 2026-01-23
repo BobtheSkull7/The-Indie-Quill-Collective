@@ -3890,6 +3890,83 @@ export async function registerDonationRoutes(app: Express) {
     }
   });
 
+  // Create recurring subscription checkout session
+  app.post("/api/donations/subscribe", async (req: Request, res: Response) => {
+    const { amount, donorName, donorEmail, message, tier } = req.body;
+
+    if (!amount || amount < 100) {
+      return res.status(400).json({ message: "Minimum recurring donation is $1.00" });
+    }
+
+    // Validate tier range
+    const validTiers = ['micro', 'supporter', 'champion', 'sponsor'];
+    const effectiveTier = validTiers.includes(tier) ? tier : 'micro';
+    
+    const tierRanges: Record<string, { min: number; max: number }> = {
+      micro: { min: 100, max: 2500 },
+      supporter: { min: 2600, max: 10000 },
+      champion: { min: 10100, max: 59900 },
+      sponsor: { min: 60000, max: 60000 },
+    };
+
+    const range = tierRanges[effectiveTier];
+    if (amount < range.min || amount > range.max) {
+      return res.status(400).json({ 
+        message: `Amount $${(amount / 100).toFixed(2)} is not valid for ${effectiveTier} tier` 
+      });
+    }
+
+    try {
+      const stripe = await getUncachableStripeClient();
+      const domain = process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost:5000';
+      const protocol = domain.includes('localhost') ? 'http' : 'https';
+
+      // Create a price object for the subscription
+      const price = await stripe.prices.create({
+        unit_amount: amount,
+        currency: 'usd',
+        recurring: { interval: 'month' },
+        product_data: {
+          name: `Monthly ${effectiveTier === 'sponsor' ? "Author's Kit Sponsorship" : "Donation"} - The Indie Quill Collective`,
+        },
+      });
+      
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price: price.id,
+            quantity: 1,
+          },
+        ],
+        mode: 'subscription',
+        success_url: `${protocol}://${domain}/donations/success?session_id={CHECKOUT_SESSION_ID}&recurring=true`,
+        cancel_url: `${protocol}://${domain}/donations`,
+        customer_email: donorEmail || undefined,
+        metadata: {
+          donorName: donorName || 'Anonymous',
+          message: message || '',
+          tier: effectiveTier,
+          source: 'indie_quill_collective',
+          recurring: 'true',
+        },
+        subscription_data: {
+          metadata: {
+            donorName: donorName || 'Anonymous',
+            tier: effectiveTier,
+            source: 'indie_quill_collective',
+          },
+        },
+        billing_address_collection: 'required',
+      });
+
+      return res.json({ url: session.url, sessionId: session.id });
+    } catch (error: any) {
+      console.error("Failed to create subscription session:", error);
+      return res.status(500).json({ message: error.message || "Failed to create subscription" });
+    }
+  });
+
   // Verify donation success (for thank you page)
   app.get("/api/donations/verify/:sessionId", async (req: Request, res: Response) => {
     const { sessionId } = req.params;
@@ -3902,15 +3979,36 @@ export async function registerDonationRoutes(app: Express) {
       const stripe = await getUncachableStripeClient();
       const session = await stripe.checkout.sessions.retrieve(sessionId);
 
+      const isSubscription = session.mode === 'subscription';
+      
+      // For subscriptions, check if the subscription is active
+      if (isSubscription) {
+        if (session.subscription) {
+          const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
+          return res.json({
+            success: subscription.status === 'active' || subscription.status === 'trialing',
+            amount: session.amount_total,
+            donorName: session.metadata?.donorName || 'Anonymous',
+            email: session.customer_details?.email,
+            recurring: true,
+            interval: 'month',
+            status: subscription.status,
+          });
+        }
+        return res.json({ success: false, status: 'pending', recurring: true });
+      }
+
+      // For one-time payments
       if (session.payment_status === 'paid') {
         return res.json({
           success: true,
           amount: session.amount_total,
           donorName: session.metadata?.donorName || 'Anonymous',
           email: session.customer_details?.email,
+          recurring: false,
         });
       } else {
-        return res.json({ success: false, status: session.payment_status });
+        return res.json({ success: false, status: session.payment_status, recurring: false });
       }
     } catch (error: any) {
       console.error("Failed to verify donation:", error);

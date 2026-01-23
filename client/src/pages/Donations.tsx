@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Heart, BookOpen, Users, Star, ArrowLeft, Gift, Sparkles, DollarSign, Loader2 } from "lucide-react";
+import { Heart, BookOpen, Users, Star, ArrowLeft, Gift, Sparkles, DollarSign, Loader2, RefreshCw } from "lucide-react";
 
 const DONATION_TIERS = [
   {
@@ -56,6 +56,7 @@ export default function Donations() {
   const [donorName, setDonorName] = useState("");
   const [donorEmail, setDonorEmail] = useState("");
   const [message, setMessage] = useState("");
+  const [isRecurring, setIsRecurring] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [, setLocation] = useLocation();
@@ -80,7 +81,8 @@ export default function Donations() {
     setError(null);
 
     try {
-      const response = await fetch("/api/donations/checkout", {
+      const endpoint = isRecurring ? "/api/donations/subscribe" : "/api/donations/checkout";
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -237,6 +239,38 @@ export default function Donations() {
                 )}
               </div>
 
+              <div className="p-4 bg-gradient-to-r from-teal-50 to-blue-50 rounded-xl border border-teal-100">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isRecurring ? 'bg-teal-500' : 'bg-gray-200'}`}>
+                      <RefreshCw className={`w-5 h-5 ${isRecurring ? 'text-white' : 'text-gray-500'}`} />
+                    </div>
+                    <div>
+                      <p className="font-medium text-slate-800">Make it monthly</p>
+                      <p className="text-sm text-gray-500">
+                        {isRecurring 
+                          ? `$${customAmount.toFixed(2)}/month - Cancel anytime` 
+                          : "Support authors every month"
+                        }
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsRecurring(!isRecurring)}
+                    className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors ${
+                      isRecurring ? 'bg-teal-500' : 'bg-gray-300'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform shadow-md ${
+                        isRecurring ? 'translate-x-8' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -296,7 +330,10 @@ export default function Donations() {
                 ) : (
                   <>
                     <Heart className="w-5 h-5" />
-                    Donate ${customAmount.toFixed(2)}
+                    {isRecurring 
+                      ? `Subscribe $${customAmount.toFixed(2)}/month`
+                      : `Donate $${customAmount.toFixed(2)}`
+                    }
                   </>
                 )}
               </button>

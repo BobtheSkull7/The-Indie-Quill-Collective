@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useSearch } from "wouter";
-import { Heart, CheckCircle, ArrowLeft, Loader2, Gift } from "lucide-react";
+import { Heart, CheckCircle, ArrowLeft, Loader2, Gift, RefreshCw } from "lucide-react";
 
 export default function DonationSuccess() {
   const searchString = useSearch();
@@ -13,6 +13,9 @@ export default function DonationSuccess() {
     amount: number;
     donorName: string;
     email?: string;
+    recurring?: boolean;
+    interval?: string;
+    status?: string;
   } | null>(null);
 
   useEffect(() => {
@@ -86,14 +89,26 @@ export default function DonationSuccess() {
         </h1>
 
         <div className="bg-white rounded-2xl shadow-lg p-8 mb-8 border border-green-100">
+          {donation.recurring && (
+            <div className="flex items-center justify-center gap-2 mb-4 text-teal-600">
+              <RefreshCw className="w-5 h-5" />
+              <span className="font-medium">Monthly Subscription Active</span>
+            </div>
+          )}
           <p className="text-xl text-gray-700 mb-4">
-            Your generous donation of
+            {donation.recurring 
+              ? "Your monthly contribution of" 
+              : "Your generous donation of"
+            }
           </p>
           <p className="text-5xl font-bold text-teal-600 mb-4">
-            ${amountFormatted}
+            ${amountFormatted}{donation.recurring && <span className="text-2xl">/month</span>}
           </p>
           <p className="text-gray-600">
-            will directly support an emerging author on their publishing journey.
+            {donation.recurring 
+              ? "will support emerging authors every month. You can cancel anytime."
+              : "will directly support an emerging author on their publishing journey."
+            }
           </p>
         </div>
 
@@ -106,14 +121,29 @@ export default function DonationSuccess() {
               <CheckCircle className="w-5 h-5 text-teal-600 flex-shrink-0 mt-0.5" />
               <span>A receipt has been sent to {donation.email || "your email"}</span>
             </li>
-            <li className="flex items-start gap-2">
-              <CheckCircle className="w-5 h-5 text-teal-600 flex-shrink-0 mt-0.5" />
-              <span>Your donation is now part of the Author's Fund</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <CheckCircle className="w-5 h-5 text-teal-600 flex-shrink-0 mt-0.5" />
-              <span>An emerging author will benefit from your generosity</span>
-            </li>
+            {donation.recurring ? (
+              <>
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="w-5 h-5 text-teal-600 flex-shrink-0 mt-0.5" />
+                  <span>Your subscription is now active and will renew monthly</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="w-5 h-5 text-teal-600 flex-shrink-0 mt-0.5" />
+                  <span>You can manage or cancel your subscription via email link</span>
+                </li>
+              </>
+            ) : (
+              <>
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="w-5 h-5 text-teal-600 flex-shrink-0 mt-0.5" />
+                  <span>Your donation is now part of the Author's Fund</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="w-5 h-5 text-teal-600 flex-shrink-0 mt-0.5" />
+                  <span>An emerging author will benefit from your generosity</span>
+                </li>
+              </>
+            )}
           </ul>
         </div>
 
