@@ -354,15 +354,15 @@ export default function Donations() {
           <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
             <div className="text-center">
               <div className="text-3xl font-bold text-teal-600 mb-2">$777</div>
-              <p className="text-gray-600">Per-capita sponsorship covers the full publishing journey</p>
+              <p className="text-gray-600">Full cost to publish one emerging author</p>
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold text-blue-600 mb-2">$119.25</div>
-              <p className="text-gray-600">ISBN Arbitrage Surplus reinvested per author</p>
+              <p className="text-gray-600">Bulk ISBN savings reinvested per author</p>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-purple-600 mb-2">100%</div>
-              <p className="text-gray-600">Of donations go directly to author services</p>
+              <div className="text-3xl font-bold text-purple-600 mb-2">$127.00</div>
+              <p className="text-gray-600">Bulk copyright savings reinvested per author</p>
             </div>
           </div>
         </div>
