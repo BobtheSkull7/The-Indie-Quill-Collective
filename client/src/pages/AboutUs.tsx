@@ -88,8 +88,13 @@ export default function AboutUs() {
               </svg>
             </div>
             
-            <div className="w-16 h-12 rounded-lg overflow-hidden shadow-lg" title="Asian Heritage">
-              <div className="w-full h-full bg-gradient-to-b from-red-500 via-orange-400 to-yellow-300"></div>
+            <div className="w-16 h-12 rounded-lg overflow-hidden shadow-lg" title="Asian American & Pacific Islander">
+              <svg viewBox="0 0 60 40" className="w-full h-full">
+                <rect fill="#0066B3" width="60" height="40"/>
+                <circle cx="30" cy="20" r="12" fill="#FFD700"/>
+                <path d="M15 35 Q30 25 45 35" stroke="#FFFFFF" strokeWidth="2" fill="none"/>
+                <path d="M10 38 Q30 28 50 38" stroke="#FFFFFF" strokeWidth="1.5" fill="none"/>
+              </svg>
             </div>
             
             <div className="w-16 h-12 rounded-lg overflow-hidden shadow-lg" title="Indigenous Peoples">
