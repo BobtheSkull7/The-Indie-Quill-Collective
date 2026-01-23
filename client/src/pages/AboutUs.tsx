@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { ArrowLeft, Heart, Users, BookOpen, Shield, Sparkles, Globe } from "lucide-react";
+import { ArrowLeft, Heart, Users, Shield, Sparkles } from "lucide-react";
 
 export default function AboutUs() {
   return (
@@ -21,8 +21,7 @@ export default function AboutUs() {
         </div>
 
         <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mb-8">
-          <h2 className="font-display text-2xl font-bold text-slate-800 mb-4 flex items-center gap-3">
-            <Globe className="w-6 h-6 text-collective-teal" />
+          <h2 className="font-display text-2xl font-bold text-slate-800 mb-4">
             Our Vision
           </h2>
           <p className="text-gray-700 text-lg leading-relaxed">
@@ -31,8 +30,7 @@ export default function AboutUs() {
         </section>
 
         <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mb-8">
-          <h2 className="font-display text-2xl font-bold text-slate-800 mb-4 flex items-center gap-3">
-            <Shield className="w-6 h-6 text-collective-blue" />
+          <h2 className="font-display text-2xl font-bold text-slate-800 mb-4">
             Our Mission
           </h2>
           <p className="text-gray-700 text-lg leading-relaxed">
@@ -108,8 +106,7 @@ export default function AboutUs() {
         </section>
 
         <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mb-8">
-          <h2 className="font-display text-2xl font-bold text-slate-800 mb-4 flex items-center gap-3">
-            <Users className="w-6 h-6 text-red-500" />
+          <h2 className="font-display text-2xl font-bold text-slate-800 mb-4">
             The Condition of Forced Silence
           </h2>
           <p className="text-gray-700 text-lg leading-relaxed mb-4">
@@ -121,8 +118,7 @@ export default function AboutUs() {
         </section>
 
         <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mb-8">
-          <h2 className="font-display text-2xl font-bold text-slate-800 mb-6 flex items-center gap-3">
-            <BookOpen className="w-6 h-6 text-collective-teal" />
+          <h2 className="font-display text-2xl font-bold text-slate-800 mb-6">
             Our Path to Authorship
           </h2>
           <p className="text-gray-700 text-lg leading-relaxed mb-6">
@@ -163,8 +159,7 @@ export default function AboutUs() {
         </section>
 
         <section className="bg-gradient-to-br from-collective-teal to-collective-blue rounded-2xl shadow-lg p-8 mb-8 text-white">
-          <h2 className="font-display text-2xl font-bold mb-4 flex items-center gap-3">
-            <Heart className="w-6 h-6" />
+          <h2 className="font-display text-2xl font-bold mb-4">
             A Sustainable Movement
           </h2>
           <p className="text-lg leading-relaxed opacity-90">
