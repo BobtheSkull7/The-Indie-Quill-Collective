@@ -136,6 +136,7 @@ export default function Board() {
   });
 
   const isBoardMember = user && user.role === "board_member";
+  const isAuthenticated = !!user;
 
   useEffect(() => {
     if (isBoardMember) {
