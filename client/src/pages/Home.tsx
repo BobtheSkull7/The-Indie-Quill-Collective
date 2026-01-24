@@ -362,13 +362,13 @@ export default function Home() {
               <span className="text-xs text-gray-500">Partner Member</span>
             </div>
             
-            {/* National Literacy Directory Placeholder */}
+            {/* National Literacy Directory */}
             <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 flex flex-col items-center min-w-[160px]">
-              <div className="w-20 h-20 bg-gradient-to-br from-green-100 to-green-50 rounded-lg flex items-center justify-center mb-3 border-2 border-dashed border-green-300">
-                <BookOpen className="w-10 h-10 text-green-400" />
+              <div className="w-20 h-20 bg-gradient-to-br from-green-100 to-green-50 rounded-lg flex items-center justify-center mb-3 border border-green-300">
+                <BookOpen className="w-10 h-10 text-green-500" />
               </div>
-              <span className="text-sm font-medium text-slate-700">NLD Listed</span>
-              <span className="text-xs text-gray-500">National Directory</span>
+              <span className="text-sm font-medium text-slate-700">NLD ID: 131274</span>
+              <span className="text-xs text-gray-500">National Literacy Directory</span>
             </div>
           </div>
           
