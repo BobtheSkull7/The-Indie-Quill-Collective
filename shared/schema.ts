@@ -623,3 +623,280 @@ export type OrganizationCredential = typeof organizationCredentials.$inferSelect
 export type InsertOrganizationCredential = typeof organizationCredentials.$inferInsert;
 export type GrantCalendarAlert = typeof grantCalendarAlerts.$inferSelect;
 export type InsertGrantCalendarAlert = typeof grantCalendarAlerts.$inferInsert;
+
+// ============================================
+// FRICTIONLESS LITERACY - VIRTUAL CLASSROOM
+// ============================================
+
+// Accessibility preference enum for students
+export const accessibilityModeEnum = pgEnum('accessibility_mode', [
+  'standard',
+  'high_contrast',
+  'large_text',
+  'screen_reader'
+]);
+
+// EFL (Educational Functioning Level) enum for TABE tracking
+export const eflLevelEnum = pgEnum('efl_level', [
+  'beginning_literacy',      // 0-1.9 grade equivalent
+  'beginning_basic',         // 2.0-3.9 grade equivalent
+  'low_intermediate',        // 4.0-5.9 grade equivalent
+  'high_intermediate',       // 6.0-8.9 grade equivalent
+  'low_adult_secondary',     // 9.0-10.9 grade equivalent
+  'high_adult_secondary'     // 11.0-12.9 grade equivalent
+]);
+
+// Meeting provider enum
+export const meetingProviderEnum = pgEnum('meeting_provider', [
+  'google_meet',
+  'zoom',
+  'jitsi',
+  'daily'
+]);
+
+// Student Profiles - extends users for student-specific data
+export const studentProfiles = pgTable("student_profiles", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull().unique(),
+  cohortId: integer("cohort_id").references(() => cohorts.id),
+  accessibilityMode: accessibilityModeEnum("accessibility_mode").default("standard").notNull(),
+  preferredLanguage: text("preferred_language").default("en"),
+  enrolledAt: timestamp("enrolled_at").defaultNow().notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Mentor Profiles - extends users for mentor-specific data
+export const mentorProfiles = pgTable("mentor_profiles", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull().unique(),
+  specialties: text("specialties"), // JSON array of specialties
+  bio: text("bio"),
+  maxStudents: integer("max_students").default(10).notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Mentor-Student assignments (many-to-many)
+export const mentorStudentAssignments = pgTable("mentor_student_assignments", {
+  id: serial("id").primaryKey(),
+  mentorId: integer("mentor_id").references(() => users.id).notNull(),
+  studentId: integer("student_id").references(() => users.id).notNull(),
+  assignedAt: timestamp("assigned_at").defaultNow().notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+});
+
+// Curriculum Modules - 120-hour "Architecture of Authorship" course
+export const curriculumModules = pgTable("curriculum_modules", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description"),
+  orderIndex: integer("order_index").notNull(),
+  durationHours: integer("duration_hours").notNull().default(1),
+  contentType: text("content_type").default("lesson"), // lesson, video, exercise, assessment
+  contentUrl: text("content_url"), // Link to video or content
+  isPublished: boolean("is_published").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Student Curriculum Progress - tracks completion per module
+export const studentCurriculumProgress = pgTable("student_curriculum_progress", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  moduleId: integer("module_id").references(() => curriculumModules.id).notNull(),
+  percentComplete: integer("percent_complete").default(0).notNull(),
+  hoursSpent: integer("hours_spent").default(0).notNull(), // In minutes for precision
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+  lastAccessedAt: timestamp("last_accessed_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// TABE Assessments - for EFL tracking and grant reporting
+export const tabeAssessments = pgTable("tabe_assessments", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  testType: text("test_type").notNull(), // reading, math, language
+  scaleScore: integer("scale_score").notNull(),
+  gradeEquivalent: text("grade_equivalent").notNull(), // e.g., "4.5"
+  eflLevel: eflLevelEnum("efl_level").notNull(),
+  isBaseline: boolean("is_baseline").default(false).notNull(),
+  testDate: timestamp("test_date").notNull(),
+  administeredBy: integer("administered_by").references(() => users.id),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Meetings - video sessions between mentors and students
+export const meetings = pgTable("meetings", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description"),
+  mentorId: integer("mentor_id").references(() => users.id),
+  startTime: timestamp("start_time").notNull(),
+  endTime: timestamp("end_time").notNull(),
+  provider: meetingProviderEnum("provider").default("google_meet").notNull(),
+  joinUrl: text("join_url"),
+  meetingType: text("meeting_type").default("group"), // group, one-on-one, coaching
+  isRecurring: boolean("is_recurring").default(false).notNull(),
+  recurringPattern: text("recurring_pattern"), // weekly, biweekly
+  googleEventId: text("google_event_id"),
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Meeting Attendees - who is invited to each meeting
+export const meetingAttendees = pgTable("meeting_attendees", {
+  id: serial("id").primaryKey(),
+  meetingId: integer("meeting_id").references(() => meetings.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  attended: boolean("attended"),
+  attendedMinutes: integer("attended_minutes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Activity Logs - tracks hours active and word count for grant metrics
+export const studentActivityLogs = pgTable("student_activity_logs", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  sessionDate: timestamp("session_date").notNull(),
+  minutesActive: integer("minutes_active").notNull().default(0),
+  wordCountStart: integer("word_count_start").default(0),
+  wordCountEnd: integer("word_count_end").default(0),
+  modulesAccessed: text("modules_accessed"), // JSON array of module IDs
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Drafting Documents - "Legacy Work" manuscripts
+export const draftingDocuments = pgTable("drafting_documents", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  title: text("title").notNull(),
+  content: text("content"), // Markdown content
+  wordCount: integer("word_count").default(0).notNull(),
+  isPublished: boolean("is_published").default(false).notNull(),
+  lastEditedAt: timestamp("last_edited_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Relations for Virtual Classroom
+export const studentProfilesRelations = relations(studentProfiles, ({ one }) => ({
+  user: one(users, {
+    fields: [studentProfiles.userId],
+    references: [users.id],
+  }),
+  cohort: one(cohorts, {
+    fields: [studentProfiles.cohortId],
+    references: [cohorts.id],
+  }),
+}));
+
+export const mentorProfilesRelations = relations(mentorProfiles, ({ one }) => ({
+  user: one(users, {
+    fields: [mentorProfiles.userId],
+    references: [users.id],
+  }),
+}));
+
+export const mentorStudentAssignmentsRelations = relations(mentorStudentAssignments, ({ one }) => ({
+  mentor: one(users, {
+    fields: [mentorStudentAssignments.mentorId],
+    references: [users.id],
+  }),
+  student: one(users, {
+    fields: [mentorStudentAssignments.studentId],
+    references: [users.id],
+  }),
+}));
+
+export const curriculumModulesRelations = relations(curriculumModules, ({ many }) => ({
+  progress: many(studentCurriculumProgress),
+}));
+
+export const studentCurriculumProgressRelations = relations(studentCurriculumProgress, ({ one }) => ({
+  user: one(users, {
+    fields: [studentCurriculumProgress.userId],
+    references: [users.id],
+  }),
+  module: one(curriculumModules, {
+    fields: [studentCurriculumProgress.moduleId],
+    references: [curriculumModules.id],
+  }),
+}));
+
+export const tabeAssessmentsRelations = relations(tabeAssessments, ({ one }) => ({
+  user: one(users, {
+    fields: [tabeAssessments.userId],
+    references: [users.id],
+  }),
+  administrator: one(users, {
+    fields: [tabeAssessments.administeredBy],
+    references: [users.id],
+  }),
+}));
+
+export const meetingsRelations = relations(meetings, ({ one, many }) => ({
+  mentor: one(users, {
+    fields: [meetings.mentorId],
+    references: [users.id],
+  }),
+  creator: one(users, {
+    fields: [meetings.createdBy],
+    references: [users.id],
+  }),
+  attendees: many(meetingAttendees),
+}));
+
+export const meetingAttendeesRelations = relations(meetingAttendees, ({ one }) => ({
+  meeting: one(meetings, {
+    fields: [meetingAttendees.meetingId],
+    references: [meetings.id],
+  }),
+  user: one(users, {
+    fields: [meetingAttendees.userId],
+    references: [users.id],
+  }),
+}));
+
+export const studentActivityLogsRelations = relations(studentActivityLogs, ({ one }) => ({
+  user: one(users, {
+    fields: [studentActivityLogs.userId],
+    references: [users.id],
+  }),
+}));
+
+export const draftingDocumentsRelations = relations(draftingDocuments, ({ one }) => ({
+  user: one(users, {
+    fields: [draftingDocuments.userId],
+    references: [users.id],
+  }),
+}));
+
+// Type exports for Virtual Classroom
+export type StudentProfile = typeof studentProfiles.$inferSelect;
+export type InsertStudentProfile = typeof studentProfiles.$inferInsert;
+export type MentorProfile = typeof mentorProfiles.$inferSelect;
+export type InsertMentorProfile = typeof mentorProfiles.$inferInsert;
+export type MentorStudentAssignment = typeof mentorStudentAssignments.$inferSelect;
+export type InsertMentorStudentAssignment = typeof mentorStudentAssignments.$inferInsert;
+export type CurriculumModule = typeof curriculumModules.$inferSelect;
+export type InsertCurriculumModule = typeof curriculumModules.$inferInsert;
+export type StudentCurriculumProgress = typeof studentCurriculumProgress.$inferSelect;
+export type InsertStudentCurriculumProgress = typeof studentCurriculumProgress.$inferInsert;
+export type TabeAssessment = typeof tabeAssessments.$inferSelect;
+export type InsertTabeAssessment = typeof tabeAssessments.$inferInsert;
+export type Meeting = typeof meetings.$inferSelect;
+export type InsertMeeting = typeof meetings.$inferInsert;
+export type MeetingAttendee = typeof meetingAttendees.$inferSelect;
+export type InsertMeetingAttendee = typeof meetingAttendees.$inferInsert;
+export type StudentActivityLog = typeof studentActivityLogs.$inferSelect;
+export type InsertStudentActivityLog = typeof studentActivityLogs.$inferInsert;
+export type DraftingDocument = typeof draftingDocuments.$inferSelect;
+export type InsertDraftingDocument = typeof draftingDocuments.$inferInsert;

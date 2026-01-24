@@ -68,6 +68,11 @@ export default function Dashboard() {
       return;
     }
 
+    if (user.role === "student") {
+      setLocation("/student");
+      return;
+    }
+
     Promise.all([
       fetch("/api/applications").then((res) => res.json()),
       fetch("/api/contracts").then((res) => res.json()),

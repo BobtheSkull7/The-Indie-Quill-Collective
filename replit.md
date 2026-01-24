@@ -47,11 +47,30 @@ The project utilizes a client-server architecture with a React 19, Vite, and Tai
 - **Secure Identity Vault:** Admin-only view at /admin/vault linking Pseudonym ↔ Legal Name with LLC Sync Status and audit logging of all access.
 
 **Core Database Schema Highlights:**
-- **users:** User accounts with roles (applicant, admin, board_member, auditor).
+- **users:** User accounts with roles (applicant, admin, board_member, auditor, student, mentor).
 - **cohorts:** Manages author cohorts (10 authors per cohort).
 - **applications:** Stores author application details, COPPA compliance fields, `public_identity_enabled` toggle, status includes 'rescinded' for soft-deleted applications.
 - **contracts:** Publishing agreements with signature tracking.
 - **audit_logs:** Comprehensive logging for COPPA compliance, tracking user actions on sensitive data including Secure Identity Vault access.
+
+**Frictionless Literacy - Virtual Classroom (Phase 1):**
+- **student_profiles:** Student-specific data including cohort assignment, accessibility preferences (standard, high_contrast, large_text, screen_reader), and enrollment tracking.
+- **mentor_profiles:** Mentor capabilities including specialties, bio, and maximum student assignments.
+- **mentor_student_assignments:** Many-to-many relationship linking mentors to their assigned students.
+- **curriculum_modules:** 120-hour "Architecture of Authorship" course content with ordered lessons, duration tracking, and content types.
+- **student_curriculum_progress:** Tracks per-module completion percentage, hours spent, and completion dates.
+- **tabe_assessments:** TABE test scores for measuring EFL (Educational Functioning Level) gains - baseline vs. current with grade equivalents.
+- **meetings:** Video session scheduling with mentors, supporting Google Meet, Zoom, Jitsi, and Daily providers.
+- **meeting_attendees:** Tracks student participation in meetings.
+- **student_activity_logs:** Tracks hours active and word count milestones for grant reporting.
+- **drafting_documents:** "Legacy Work" manuscript storage with word count tracking.
+
+**Student Dashboard (/student):**
+- 4 key metrics: Hours Active, Word Count, Course Progress, Modules Completed
+- Curriculum progress visualization with completion status per module
+- TABE score display showing baseline vs. current grade level gains
+- Upcoming video sessions with "Join Session" button
+- Mobile-first, accessible design
 
 ## Documentation
 

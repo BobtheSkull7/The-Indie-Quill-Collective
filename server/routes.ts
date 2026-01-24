@@ -4376,4 +4376,146 @@ export async function registerDonationRoutes(app: Express) {
       return res.status(500).json({ message: "Failed to verify donation" });
     }
   });
+
+  // ============================================
+  // STUDENT DASHBOARD API ROUTES
+  // ============================================
+
+  // Get curriculum modules
+  app.get("/api/student/curriculum", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    try {
+      const modules = await db.execute(sql`
+        SELECT id, title, description, order_index, duration_hours, content_type, is_published
+        FROM curriculum_modules
+        WHERE is_published = true
+        ORDER BY order_index ASC
+      `);
+      res.json(modules.rows || []);
+    } catch (error) {
+      console.error("Error fetching curriculum:", error);
+      res.status(500).json({ message: "Failed to fetch curriculum" });
+    }
+  });
+
+  // Get student's progress on modules
+  app.get("/api/student/progress", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    try {
+      const progress = await db.execute(sql`
+        SELECT module_id, percent_complete, hours_spent, started_at, completed_at
+        FROM student_curriculum_progress
+        WHERE user_id = ${req.session.userId}
+      `);
+      res.json(progress.rows || []);
+    } catch (error) {
+      console.error("Error fetching progress:", error);
+      res.status(500).json({ message: "Failed to fetch progress" });
+    }
+  });
+
+  // Get student's upcoming meetings
+  app.get("/api/student/meetings", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    try {
+      const meetings = await db.execute(sql`
+        SELECT m.id, m.title, m.description, m.start_time, m.end_time, m.join_url, m.meeting_type,
+               u.first_name || ' ' || u.last_name as mentor_name
+        FROM meetings m
+        LEFT JOIN users u ON m.mentor_id = u.id
+        LEFT JOIN meeting_attendees ma ON m.id = ma.meeting_id
+        WHERE ma.user_id = ${req.session.userId}
+           OR m.meeting_type = 'group'
+        ORDER BY m.start_time ASC
+      `);
+      res.json(meetings.rows || []);
+    } catch (error) {
+      console.error("Error fetching meetings:", error);
+      res.status(500).json({ message: "Failed to fetch meetings" });
+    }
+  });
+
+  // Get student's TABE scores
+  app.get("/api/student/tabe-scores", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    try {
+      const scores = await db.execute(sql`
+        SELECT id, test_type, scale_score, grade_equivalent, efl_level, is_baseline, test_date
+        FROM tabe_assessments
+        WHERE user_id = ${req.session.userId}
+        ORDER BY test_date DESC
+      `);
+      res.json(scores.rows || []);
+    } catch (error) {
+      console.error("Error fetching TABE scores:", error);
+      res.status(500).json({ message: "Failed to fetch TABE scores" });
+    }
+  });
+
+  // Get student stats summary
+  app.get("/api/student/stats", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    try {
+      // Get total hours active
+      const hoursResult = await db.execute(sql`
+        SELECT COALESCE(SUM(minutes_active), 0) / 60 as total_hours
+        FROM student_activity_logs
+        WHERE user_id = ${req.session.userId}
+      `);
+
+      // Get total word count from drafts
+      const wordCountResult = await db.execute(sql`
+        SELECT COALESCE(SUM(word_count), 0) as total_words
+        FROM drafting_documents
+        WHERE user_id = ${req.session.userId}
+      `);
+
+      // Get module completion stats
+      const progressResult = await db.execute(sql`
+        SELECT 
+          COUNT(CASE WHEN completed_at IS NOT NULL THEN 1 END) as completed,
+          (SELECT COUNT(*) FROM curriculum_modules WHERE is_published = true) as total
+        FROM student_curriculum_progress
+        WHERE user_id = ${req.session.userId}
+      `);
+
+      // Calculate overall progress
+      const avgProgressResult = await db.execute(sql`
+        SELECT COALESCE(AVG(percent_complete), 0) as avg_progress
+        FROM student_curriculum_progress
+        WHERE user_id = ${req.session.userId}
+      `);
+
+      const hours = hoursResult.rows?.[0] || { total_hours: 0 };
+      const words = wordCountResult.rows?.[0] || { total_words: 0 };
+      const progress = progressResult.rows?.[0] || { completed: 0, total: 0 };
+      const avgProgress = avgProgressResult.rows?.[0] || { avg_progress: 0 };
+
+      res.json({
+        totalHoursActive: Math.round(Number(hours.total_hours) || 0),
+        totalWordCount: Number(words.total_words) || 0,
+        overallProgress: Math.round(Number(avgProgress.avg_progress) || 0),
+        modulesCompleted: Number(progress.completed) || 0,
+        totalModules: Number(progress.total) || 0
+      });
+    } catch (error) {
+      console.error("Error fetching student stats:", error);
+      res.status(500).json({ message: "Failed to fetch stats" });
+    }
+  });
 }

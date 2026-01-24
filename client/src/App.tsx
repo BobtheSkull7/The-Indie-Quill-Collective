@@ -15,6 +15,7 @@ import Grants from "./pages/Grants";
 import Vault from "./pages/Vault";
 import Ledger from "./pages/Ledger";
 import Auditor from "./pages/Auditor";
+import StudentDashboard from "./pages/StudentDashboard";
 import { Redirect } from "wouter";
 import Donations from "./pages/Donations";
 import DonationSuccess from "./pages/DonationSuccess";
@@ -79,6 +80,7 @@ function App() {
           <Route path="/login" component={Login} />
           <Route path="/register" component={Register} />
           <Route path="/dashboard" component={Dashboard} />
+          <Route path="/student" component={StudentDashboard} />
           <Route path="/admin" component={AdminDashboard} />
           <Route path="/admin/cohorts" component={Cohorts} />
           <Route path="/admin/grants" component={Grants} />
