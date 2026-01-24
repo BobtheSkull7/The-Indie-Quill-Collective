@@ -374,6 +374,7 @@ export const foundationsRelations = relations(foundations, ({ one, many }) => ({
   }),
   solicitationLogs: many(solicitationLogs),
   grants: many(foundationGrants),
+  programs: many(grantPrograms),
 }));
 
 export const solicitationLogsRelations = relations(solicitationLogs, ({ one }) => ({
@@ -399,6 +400,100 @@ export const foundationGrantsRelations = relations(foundationGrants, ({ one }) =
   recorder: one(users, {
     fields: [foundationGrants.recordedBy],
     references: [users.id],
+  }),
+}));
+
+// Grant Programs - Individual programs within foundations (one-to-many)
+export const grantProgramStatusEnum = pgEnum('grant_program_status', [
+  'not_started',
+  'preparing', 
+  'submitted',
+  'awarded',
+  'declined',
+  'ineligible'
+]);
+
+export const grantPrograms = pgTable("grant_programs", {
+  id: serial("id").primaryKey(),
+  foundationId: integer("foundation_id").references(() => foundations.id).notNull(),
+  programName: text("program_name").notNull(),
+  maxAmount: integer("max_amount").notNull(), // In cents
+  openDate: timestamp("open_date"),
+  deadline: timestamp("deadline"),
+  fundedItems: text("funded_items"), // What they fund (software, computers, etc.)
+  eligibilityNotes: text("eligibility_notes"), // 15-mile rule, NCES requirements, etc.
+  twoYearRestriction: boolean("two_year_restriction").default(false).notNull(),
+  lastAwardedYear: integer("last_awarded_year"), // For two-year rule tracking
+  applicationStatus: grantProgramStatusEnum("application_status").default("not_started").notNull(),
+  applicationUrl: text("application_url"),
+  indieQuillAlignment: text("indie_quill_alignment"), // How we align with this program
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const grantProgramsRelations = relations(grantPrograms, ({ one, many }) => ({
+  foundation: one(foundations, {
+    fields: [grantPrograms.foundationId],
+    references: [foundations.id],
+  }),
+  alerts: many(grantCalendarAlerts),
+}));
+
+// Organization Credentials - Pre-verified credentials for instant application
+export const credentialTypeEnum = pgEnum('credential_type', [
+  'tax_id',
+  'nces_id', 
+  'ipeds_id',
+  'platform_registration',
+  'ein',
+  'duns',
+  'sam_uei'
+]);
+
+export const organizationCredentials = pgTable("organization_credentials", {
+  id: serial("id").primaryKey(),
+  credentialType: credentialTypeEnum("credential_type").notNull(),
+  credentialValue: text("credential_value").notNull(), // Encrypted/masked reference
+  platformName: text("platform_name"), // "DGLF Portal", "Grants.gov"
+  verifiedAt: timestamp("verified_at"),
+  expiresAt: timestamp("expires_at"),
+  notes: text("notes"),
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const organizationCredentialsRelations = relations(organizationCredentials, ({ one }) => ({
+  creator: one(users, {
+    fields: [organizationCredentials.createdBy],
+    references: [users.id],
+  }),
+}));
+
+// Grant Calendar Alerts - Automated deadline tracking
+export const alertTypeEnum = pgEnum('alert_type', [
+  'opens_soon',
+  'deadline_warning',
+  'deadline_critical',
+  'deadline_day'
+]);
+
+export const grantCalendarAlerts = pgTable("grant_calendar_alerts", {
+  id: serial("id").primaryKey(),
+  programId: integer("program_id").references(() => grantPrograms.id).notNull(),
+  alertType: alertTypeEnum("alert_type").notNull(),
+  daysBefore: integer("days_before").notNull(), // 7, 3, 1, 0
+  alertDate: timestamp("alert_date").notNull(),
+  googleEventId: text("google_event_id"), // For sync
+  dismissed: boolean("dismissed").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const grantCalendarAlertsRelations = relations(grantCalendarAlerts, ({ one }) => ({
+  program: one(grantPrograms, {
+    fields: [grantCalendarAlerts.programId],
+    references: [grantPrograms.id],
   }),
 }));
 
@@ -522,3 +617,9 @@ export type PilotLedgerEntry = typeof pilotLedger.$inferSelect;
 export type InsertPilotLedgerEntry = typeof pilotLedger.$inferInsert;
 export type EmailLog = typeof emailLogs.$inferSelect;
 export type InsertEmailLog = typeof emailLogs.$inferInsert;
+export type GrantProgram = typeof grantPrograms.$inferSelect;
+export type InsertGrantProgram = typeof grantPrograms.$inferInsert;
+export type OrganizationCredential = typeof organizationCredentials.$inferSelect;
+export type InsertOrganizationCredential = typeof organizationCredentials.$inferInsert;
+export type GrantCalendarAlert = typeof grantCalendarAlerts.$inferSelect;
+export type InsertGrantCalendarAlert = typeof grantCalendarAlerts.$inferInsert;
