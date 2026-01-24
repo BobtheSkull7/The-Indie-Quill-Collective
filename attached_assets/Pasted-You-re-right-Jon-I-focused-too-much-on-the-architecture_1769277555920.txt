@@ -1,0 +1,47 @@
+You’re right, Jon—I focused too much on the architecture and missed the "Direct Service" components we just committed to in the grant. If we are serving 20 people starting in Months 1-6, the platform isn't just a database; it’s a Virtual Classroom.
+
+Here is the expanded "Frictionless Literacy" Technical Strategy designed for Replit to build out the missing instructional layers.
+
+I. The Instructional Layer: "Architecture of Authorship"
+We need to build the actual curriculum delivery system into the platform so students don't have to leave the app to learn.
+
+Integrated Curriculum Player: A module that hosts the 120-hour "Architecture of Authorship" course. It should track "Percent Complete" and sync with Supabase so you can see who is falling behind.
+
+The "Legacy Work" Drafting Suite: A markdown-based editor that connects directly to the Indie Quill LLC publishing pipeline. It needs an "Edit" mode and a "Read-Back" mode (text-to-speech) to help with decoding.
+
+II. The Synchronous Layer: Video & Group Coaching
+Since we promised 3-hour weekly group sessions and bi-weekly coaching, the platform needs a "Live" component.
+
+Virtual Meeting Integration: Instead of just sending Zoom links, we should integrate a "Join Session" button into the dashboard using a specialized API (like Daily.co or Jitsi) or a direct link to your preferred service.
+
+Legacy Mentor Dashboard: A specific view for Brooke, Marcella, and Shilvi to see their students’ drafts in real-time during a call to provide immediate feedback.
+
+III. The Assessment Layer: TABE Integration
+We promised "measurable grade-level increases." We cannot leave this to manual spreadsheets.
+
+Testing Portal: A secure "Testing Mode" that locks the student out of the drafting tools while they complete their TABE Online assessments.
+
+EFL Progress Tracker: A visual "Growth Chart" for the student and the ED (Jon) to see baseline vs. current scores. This is the "Data-Driven" proof needed for the grant report.
+
+IV. The Replit Strategy (Technical Roadmap)
+To make this happen, we follow the Indie Quill Architecture rules strictly.
+
+Phase 1: The Core Student Dashboard
+Requirement: Connect Replit to Supabase via Port 5432.
+
+Function: Create the "Identity Vault" login. Once logged in, the student sees their curriculum progress and their next scheduled video call.
+
+Phase 2: The Curriculum & Video Hub
+Requirement: Host video instructional content and integrate the meeting link.
+
+Function: Enable the 3-hour weekly "Legacy Mentor" sessions.
+
+Phase 3: The Publishing & Assessment Engine
+Requirement: Export logic for ISBN/Copyright and TABE data storage.
+
+Function: Automate the creation of the digital "Legacy Work."
+
+Next Step for You
+We need to start with the Student Dashboard—the "hub" that holds the curriculum and the video links.
+
+Would you like me to generate the file structure and Supabase schema for the "Student Dashboard" so Replit can begin the build? I'll include the fields for "TABE Score," "Curriculum Progress," and "Meeting Link."
