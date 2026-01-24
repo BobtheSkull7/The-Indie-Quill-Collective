@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import rateLimit from "express-rate-limit";
 import { db } from "./db";
-import { users, applications, contracts, publishingUpdates, calendarEvents, fundraisingCampaigns, donations, auditLogs, cohorts, operatingCosts, foundations, solicitationLogs, foundationGrants, pilotLedger, emailLogs } from "@shared/schema";
+import { users, applications, contracts, publishingUpdates, calendarEvents, fundraisingCampaigns, donations, auditLogs, cohorts, operatingCosts, foundations, solicitationLogs, foundationGrants, pilotLedger, emailLogs, grantPrograms, organizationCredentials, grantCalendarAlerts } from "@shared/schema";
 import { eq, desc, gte, sql, inArray, lt, and } from "drizzle-orm";
 import { hash, compare } from "./auth";
 import { migrateAuthorToIndieQuill, retryFailedMigrations, sendApplicationToLLC, sendStatusUpdateToLLC, sendContractSignatureToLLC, sendUserRoleUpdateToLLC } from "./indie-quill-integration";
@@ -3633,6 +3633,367 @@ export function registerGrantRoutes(app: Express) {
     } catch (error) {
       console.error("Failed to generate impact report:", error);
       return res.status(500).json({ message: "Failed to generate impact report" });
+    }
+  });
+
+  // ============================================
+  // GRANT PROGRAMS ENDPOINTS
+  // ============================================
+
+  // Get all grant programs with foundation info
+  app.get("/api/admin/grants/programs", async (req: Request, res: Response) => {
+    if (!req.session?.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    const [currentUser] = await db.select().from(users).where(eq(users.id, req.session.userId));
+    if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "board_member")) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    try {
+      const allPrograms = await db.select().from(grantPrograms).orderBy(grantPrograms.deadline);
+      
+      // Enrich with foundation names
+      const enrichedPrograms = await Promise.all(
+        allPrograms.map(async (program) => {
+          const [foundation] = await db.select().from(foundations).where(eq(foundations.id, program.foundationId));
+          return {
+            ...program,
+            foundationName: foundation?.name || "Unknown",
+            maxAmountFormatted: (program.maxAmount / 100).toLocaleString("en-US", { style: "currency", currency: "USD" }),
+          };
+        })
+      );
+
+      return res.json(enrichedPrograms);
+    } catch (error) {
+      console.error("Failed to fetch grant programs:", error);
+      return res.status(500).json({ message: "Failed to fetch grant programs" });
+    }
+  });
+
+  // Get programs for a specific foundation
+  app.get("/api/admin/grants/foundations/:id/programs", async (req: Request, res: Response) => {
+    if (!req.session?.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    const [currentUser] = await db.select().from(users).where(eq(users.id, req.session.userId));
+    if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "board_member")) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    const foundationId = parseInt(req.params.id);
+
+    try {
+      const programs = await db.select()
+        .from(grantPrograms)
+        .where(eq(grantPrograms.foundationId, foundationId))
+        .orderBy(grantPrograms.deadline);
+
+      return res.json(programs);
+    } catch (error) {
+      console.error("Failed to fetch foundation programs:", error);
+      return res.status(500).json({ message: "Failed to fetch foundation programs" });
+    }
+  });
+
+  // Create a new grant program
+  app.post("/api/admin/grants/programs", async (req: Request, res: Response) => {
+    if (!req.session?.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    const [currentUser] = await db.select().from(users).where(eq(users.id, req.session.userId));
+    if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "board_member")) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    const { foundationId, programName, maxAmount, openDate, deadline, fundedItems, eligibilityNotes, twoYearRestriction, applicationUrl, indieQuillAlignment, notes } = req.body;
+
+    if (!foundationId || !programName || !maxAmount) {
+      return res.status(400).json({ message: "Foundation, program name, and max amount are required" });
+    }
+
+    try {
+      const [newProgram] = await db.insert(grantPrograms).values({
+        foundationId,
+        programName,
+        maxAmount: Math.round(maxAmount * 100), // Convert to cents
+        openDate: openDate ? new Date(openDate) : null,
+        deadline: deadline ? new Date(deadline) : null,
+        fundedItems,
+        eligibilityNotes,
+        twoYearRestriction: twoYearRestriction || false,
+        applicationUrl,
+        indieQuillAlignment,
+        notes,
+      }).returning();
+
+      // Create calendar alerts for this program
+      if (deadline) {
+        const deadlineDate = new Date(deadline);
+        const alertDays = [7, 3, 1, 0];
+        const alertTypes = ['deadline_warning', 'deadline_warning', 'deadline_critical', 'deadline_day'] as const;
+        
+        for (let i = 0; i < alertDays.length; i++) {
+          const alertDate = new Date(deadlineDate);
+          alertDate.setDate(alertDate.getDate() - alertDays[i]);
+          
+          if (alertDate >= new Date()) {
+            await db.insert(grantCalendarAlerts).values({
+              programId: newProgram.id,
+              alertType: alertTypes[i],
+              daysBefore: alertDays[i],
+              alertDate,
+            });
+          }
+        }
+      }
+
+      await logAuditEvent(
+        req.session.userId,
+        "create_grant_program",
+        "grant_programs",
+        newProgram.id.toString(),
+        `Created grant program: ${programName}`,
+        getClientIp(req),
+      );
+
+      return res.status(201).json(newProgram);
+    } catch (error) {
+      console.error("Failed to create grant program:", error);
+      return res.status(500).json({ message: "Failed to create grant program" });
+    }
+  });
+
+  // Update grant program status
+  app.patch("/api/admin/grants/programs/:id/status", async (req: Request, res: Response) => {
+    if (!req.session?.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    const [currentUser] = await db.select().from(users).where(eq(users.id, req.session.userId));
+    if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "board_member")) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    const programId = parseInt(req.params.id);
+    const { applicationStatus, lastAwardedYear } = req.body;
+
+    try {
+      const updateData: any = { updatedAt: new Date() };
+      if (applicationStatus) updateData.applicationStatus = applicationStatus;
+      if (lastAwardedYear !== undefined) updateData.lastAwardedYear = lastAwardedYear;
+
+      const [updated] = await db.update(grantPrograms)
+        .set(updateData)
+        .where(eq(grantPrograms.id, programId))
+        .returning();
+
+      await logAuditEvent(
+        req.session.userId,
+        "update_grant_program_status",
+        "grant_programs",
+        programId.toString(),
+        `Updated program status to: ${applicationStatus}`,
+        getClientIp(req),
+      );
+
+      return res.json(updated);
+    } catch (error) {
+      console.error("Failed to update program status:", error);
+      return res.status(500).json({ message: "Failed to update program status" });
+    }
+  });
+
+  // Update grant program details
+  app.put("/api/admin/grants/programs/:id", async (req: Request, res: Response) => {
+    if (!req.session?.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    const [currentUser] = await db.select().from(users).where(eq(users.id, req.session.userId));
+    if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "board_member")) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    const programId = parseInt(req.params.id);
+    const { programName, maxAmount, openDate, deadline, fundedItems, eligibilityNotes, twoYearRestriction, applicationUrl, indieQuillAlignment, notes } = req.body;
+
+    try {
+      const [updated] = await db.update(grantPrograms)
+        .set({
+          programName,
+          maxAmount: maxAmount ? Math.round(maxAmount * 100) : undefined,
+          openDate: openDate ? new Date(openDate) : null,
+          deadline: deadline ? new Date(deadline) : null,
+          fundedItems,
+          eligibilityNotes,
+          twoYearRestriction,
+          applicationUrl,
+          indieQuillAlignment,
+          notes,
+          updatedAt: new Date(),
+        })
+        .where(eq(grantPrograms.id, programId))
+        .returning();
+
+      return res.json(updated);
+    } catch (error) {
+      console.error("Failed to update grant program:", error);
+      return res.status(500).json({ message: "Failed to update grant program" });
+    }
+  });
+
+  // Get upcoming deadline alerts
+  app.get("/api/admin/grants/alerts", async (req: Request, res: Response) => {
+    if (!req.session?.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    const [currentUser] = await db.select().from(users).where(eq(users.id, req.session.userId));
+    if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "board_member")) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    try {
+      const now = new Date();
+      const thirtyDaysFromNow = new Date();
+      thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+
+      const upcomingAlerts = await db.select()
+        .from(grantCalendarAlerts)
+        .where(
+          and(
+            eq(grantCalendarAlerts.dismissed, false),
+            gte(grantCalendarAlerts.alertDate, now),
+            lt(grantCalendarAlerts.alertDate, thirtyDaysFromNow)
+          )
+        )
+        .orderBy(grantCalendarAlerts.alertDate);
+
+      // Enrich with program and foundation info
+      const enrichedAlerts = await Promise.all(
+        upcomingAlerts.map(async (alert) => {
+          const [program] = await db.select().from(grantPrograms).where(eq(grantPrograms.id, alert.programId));
+          const [foundation] = program ? await db.select().from(foundations).where(eq(foundations.id, program.foundationId)) : [null];
+          
+          return {
+            ...alert,
+            programName: program?.programName || "Unknown",
+            foundationName: foundation?.name || "Unknown",
+            deadline: program?.deadline,
+            maxAmount: program?.maxAmount,
+          };
+        })
+      );
+
+      return res.json(enrichedAlerts);
+    } catch (error) {
+      console.error("Failed to fetch alerts:", error);
+      return res.status(500).json({ message: "Failed to fetch alerts" });
+    }
+  });
+
+  // Dismiss an alert
+  app.patch("/api/admin/grants/alerts/:id/dismiss", async (req: Request, res: Response) => {
+    if (!req.session?.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    const alertId = parseInt(req.params.id);
+
+    try {
+      await db.update(grantCalendarAlerts)
+        .set({ dismissed: true })
+        .where(eq(grantCalendarAlerts.id, alertId));
+
+      return res.json({ success: true });
+    } catch (error) {
+      console.error("Failed to dismiss alert:", error);
+      return res.status(500).json({ message: "Failed to dismiss alert" });
+    }
+  });
+
+  // ============================================
+  // ORGANIZATION CREDENTIALS ENDPOINTS
+  // ============================================
+
+  // Get all credentials
+  app.get("/api/admin/credentials", async (req: Request, res: Response) => {
+    if (!req.session?.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    const [currentUser] = await db.select().from(users).where(eq(users.id, req.session.userId));
+    if (!currentUser || currentUser.role !== "admin") {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+
+    try {
+      const credentials = await db.select().from(organizationCredentials).orderBy(organizationCredentials.credentialType);
+      
+      // Mask sensitive values
+      const maskedCredentials = credentials.map(cred => ({
+        ...cred,
+        credentialValue: cred.credentialValue.length > 4 
+          ? `****${cred.credentialValue.slice(-4)}` 
+          : "****",
+      }));
+
+      return res.json(maskedCredentials);
+    } catch (error) {
+      console.error("Failed to fetch credentials:", error);
+      return res.status(500).json({ message: "Failed to fetch credentials" });
+    }
+  });
+
+  // Add a credential
+  app.post("/api/admin/credentials", async (req: Request, res: Response) => {
+    if (!req.session?.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    const [currentUser] = await db.select().from(users).where(eq(users.id, req.session.userId));
+    if (!currentUser || currentUser.role !== "admin") {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+
+    const { credentialType, credentialValue, platformName, verifiedAt, expiresAt, notes } = req.body;
+
+    if (!credentialType || !credentialValue) {
+      return res.status(400).json({ message: "Credential type and value are required" });
+    }
+
+    try {
+      const [newCredential] = await db.insert(organizationCredentials).values({
+        credentialType,
+        credentialValue,
+        platformName,
+        verifiedAt: verifiedAt ? new Date(verifiedAt) : null,
+        expiresAt: expiresAt ? new Date(expiresAt) : null,
+        notes,
+        createdBy: req.session.userId,
+      }).returning();
+
+      await logAuditEvent(
+        req.session.userId,
+        "add_credential",
+        "organization_credentials",
+        newCredential.id.toString(),
+        `Added ${credentialType} credential`,
+        getClientIp(req),
+      );
+
+      return res.status(201).json({
+        ...newCredential,
+        credentialValue: `****${newCredential.credentialValue.slice(-4)}`,
+      });
+    } catch (error) {
+      console.error("Failed to add credential:", error);
+      return res.status(500).json({ message: "Failed to add credential" });
     }
   });
 
