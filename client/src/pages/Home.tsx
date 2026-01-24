@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "wouter";
-import { Heart, ArrowRight, Shield, Lock, Globe, Users, TrendingUp, BookOpen, ChevronRight } from "lucide-react";
+import { Heart, ArrowRight, Shield, Lock, Globe, Users, TrendingUp, BookOpen, Handshake } from "lucide-react";
 
 interface ImpactMetrics {
   totalAuthorsSupported: number;
@@ -12,14 +12,14 @@ interface ImpactMetrics {
   lastUpdated: string;
 }
 
-const CHEVRON_PHASES = [
-  { id: 1, label: "Agreement", icon: "✍️" },
-  { id: 2, label: "Creation", icon: "📝" },
-  { id: 3, label: "Editing", icon: "📖" },
-  { id: 4, label: "Review", icon: "🔍" },
-  { id: 5, label: "Modifications", icon: "✏️" },
-  { id: 6, label: "Published", icon: "📚" },
-  { id: 7, label: "Marketing", icon: "🎉" },
+const PUBLISHING_PHASES = [
+  { id: 1, label: "Agreement", description: "Sign your publishing contract" },
+  { id: 2, label: "Creation", description: "Write your manuscript" },
+  { id: 3, label: "Editing", description: "Professional editing support" },
+  { id: 4, label: "Review", description: "Final quality review" },
+  { id: 5, label: "Modifications", description: "Make final revisions" },
+  { id: 6, label: "Published", description: "Your book goes live" },
+  { id: 7, label: "Marketing", description: "Promote your work" },
 ];
 
 export default function Home() {
@@ -139,67 +139,137 @@ export default function Home() {
         </div>
       </section>
 
-      {/* SECTION 3: Chevron Path (Flywheel) */}
-      <section className="py-14 bg-gray-50">
-        <div className="max-w-6xl mx-auto px-4">
+      {/* SECTION 3: Our Current Work */}
+      <section className="py-14 bg-gradient-to-br from-slate-50 to-white">
+        <div className="max-w-5xl mx-auto px-4">
+          <div className="text-center mb-10">
+            <h2 className="font-display text-2xl font-bold text-slate-800 mb-2">
+              Our Current Work
+            </h2>
+            <p className="text-lg text-teal-600 font-medium mb-1">
+              Project: Frictionless Literacy (Adult Authorship Path)
+            </p>
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 mb-10">
+            <div className="grid md:grid-cols-3 gap-8">
+              <div className="text-center md:text-left">
+                <h3 className="font-display text-lg font-semibold text-slate-800 mb-3">The Mission</h3>
+                <p className="text-gray-600 leading-relaxed">
+                  We provide a path for all children and adults silenced by discrimination and lack of privilege 
+                  to speak their minds, protect their history, and build a published legacy that belongs to them.
+                </p>
+              </div>
+              
+              <div className="text-center md:text-left">
+                <h3 className="font-display text-lg font-semibold text-slate-800 mb-3">The Literacy Point</h3>
+                <p className="text-gray-600 leading-relaxed">
+                  We teach the active craft of writing as a foundational key to literacy. By learning to author 
+                  their own stories, our participants gain the tools to decode and understand the world around them more fluently.
+                </p>
+              </div>
+              
+              <div className="text-center md:text-left">
+                <h3 className="font-display text-lg font-semibold text-slate-800 mb-3">Our Impact Goal</h3>
+                <p className="text-gray-600 leading-relaxed">
+                  We are currently focused on serving <span className="font-bold text-teal-600">20 individuals</span>, 
+                  with a deep commitment to bridging the literacy gap for Black and Hispanic learners.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* NLD Images Section */}
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="bg-white rounded-xl overflow-hidden shadow-md border border-gray-100">
+              <img 
+                src="/images/technology-tool.jpg" 
+                alt="We use computers and tablets to help you write your book. Our tools make it easy for everyone to become an author."
+                className="w-full h-48 object-cover"
+              />
+              <div className="p-4">
+                <h4 className="font-display font-semibold text-slate-800 mb-2">The Technology Tool</h4>
+                <p className="text-gray-600 text-sm">
+                  We use computers and tablets to help you write your book. Our tools make it easy for everyone to become an author.
+                </p>
+              </div>
+            </div>
+            
+            <div className="bg-white rounded-xl overflow-hidden shadow-md border border-gray-100">
+              <img 
+                src="/images/learning-path.jpg" 
+                alt="You can work with a teacher or a volunteer to tell your story. We provide free help for all adults and children in our community."
+                className="w-full h-48 object-cover"
+              />
+              <div className="p-4">
+                <h4 className="font-display font-semibold text-slate-800 mb-2">The Learning Path</h4>
+                <p className="text-gray-600 text-sm">
+                  You can work with a teacher or a volunteer to tell your story. We provide free help for all adults and children in our community.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 4: Publishing Journey (Flywheel) */}
+      <section className="py-14 bg-white">
+        <div className="max-w-5xl mx-auto px-4">
           <div className="text-center mb-10">
             <h2 className="font-display text-2xl font-bold text-slate-800 mb-2">
               The Publishing Journey
             </h2>
             <p className="text-gray-600 text-sm">
-              Your seven-step journey from idea to published author
+              Your seven-step path from idea to published author
             </p>
           </div>
           
-          {/* Horizontal Flywheel - Desktop */}
+          {/* Professional Flywheel - Desktop */}
           <div className="hidden md:block">
-            <div className="flex items-center justify-center gap-2">
-              {CHEVRON_PHASES.map((phase, index) => (
-                <div key={phase.id} className="flex items-center">
-                  <div className="flex flex-col items-center">
-                    <div className="w-16 h-16 bg-white rounded-xl shadow-md border-2 border-gray-200 flex items-center justify-center mb-2 hover:shadow-lg hover:border-teal-400 transition-all">
-                      <span className="text-2xl">{phase.icon}</span>
+            <div className="relative">
+              {/* Progress Line */}
+              <div className="absolute top-8 left-0 right-0 h-1 bg-gradient-to-r from-teal-200 via-teal-400 to-teal-600 rounded-full"></div>
+              
+              {/* Phases */}
+              <div className="relative flex justify-between">
+                {PUBLISHING_PHASES.map((phase) => (
+                  <div key={phase.id} className="flex flex-col items-center group">
+                    <div className="w-16 h-16 bg-white rounded-full shadow-lg border-4 border-teal-400 flex items-center justify-center mb-3 z-10 group-hover:border-teal-600 group-hover:scale-110 transition-all">
+                      <span className="font-display text-xl font-bold text-teal-600">{phase.id}</span>
                     </div>
-                    <span className="text-sm font-medium text-slate-700 text-center w-20">{phase.label}</span>
+                    <span className="text-sm font-semibold text-slate-800">{phase.label}</span>
+                    <span className="text-xs text-gray-500 text-center max-w-[100px] mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {phase.description}
+                    </span>
                   </div>
-                  {index < CHEVRON_PHASES.length - 1 && (
-                    <div className="mx-3 flex-shrink-0">
-                      <ChevronRight className="w-6 h-6 text-teal-500" strokeWidth={3} />
-                    </div>
-                  )}
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
           
-          {/* Mobile Flywheel - Compact Grid */}
+          {/* Mobile Flywheel - Vertical */}
           <div className="md:hidden">
-            <div className="grid grid-cols-4 gap-3">
-              {CHEVRON_PHASES.slice(0, 4).map((phase) => (
-                <div key={phase.id} className="flex flex-col items-center">
-                  <div className="w-14 h-14 bg-white rounded-xl shadow-md border-2 border-gray-200 flex items-center justify-center mb-2">
-                    <span className="text-xl">{phase.icon}</span>
+            <div className="relative pl-8">
+              {/* Vertical Line */}
+              <div className="absolute left-4 top-0 bottom-0 w-1 bg-gradient-to-b from-teal-200 via-teal-400 to-teal-600 rounded-full"></div>
+              
+              <div className="space-y-6">
+                {PUBLISHING_PHASES.map((phase) => (
+                  <div key={phase.id} className="flex items-start">
+                    <div className="w-10 h-10 bg-white rounded-full shadow-md border-3 border-teal-400 flex items-center justify-center -ml-5 z-10 flex-shrink-0">
+                      <span className="font-display text-sm font-bold text-teal-600">{phase.id}</span>
+                    </div>
+                    <div className="ml-4">
+                      <span className="font-semibold text-slate-800">{phase.label}</span>
+                      <p className="text-xs text-gray-500">{phase.description}</p>
+                    </div>
                   </div>
-                  <span className="text-xs font-medium text-slate-700 text-center">{phase.label}</span>
-                </div>
-              ))}
-            </div>
-            <div className="flex justify-center my-3">
-              <ChevronRight className="w-6 h-6 text-teal-500 rotate-90" strokeWidth={3} />
-            </div>
-            <div className="grid grid-cols-3 gap-3 max-w-[260px] mx-auto">
-              {CHEVRON_PHASES.slice(4).map((phase) => (
-                <div key={phase.id} className="flex flex-col items-center">
-                  <div className="w-14 h-14 bg-white rounded-xl shadow-md border-2 border-gray-200 flex items-center justify-center mb-2">
-                    <span className="text-xl">{phase.icon}</span>
-                  </div>
-                  <span className="text-xs font-medium text-slate-700 text-center">{phase.label}</span>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
           
-          <p className="text-center text-sm text-gray-500 mt-8">
+          <p className="text-center text-sm text-gray-500 mt-10">
             Momentum is our goal — we move forward together.
           </p>
         </div>
@@ -270,7 +340,45 @@ export default function Home() {
         </div>
       </section>
 
-      {/* SECTION 5: Unified CTA Footer */}
+      {/* SECTION 6: Partners & Affiliations */}
+      <section className="py-10 bg-gray-50">
+        <div className="max-w-4xl mx-auto px-4">
+          <div className="text-center mb-6">
+            <h2 className="font-display text-xl font-bold text-slate-800 mb-1">
+              Partners & Affiliations
+            </h2>
+            <p className="text-gray-600 text-sm">
+              Proud members of literacy advocacy networks
+            </p>
+          </div>
+          
+          <div className="flex flex-wrap justify-center items-center gap-8">
+            {/* ProLiteracy Badge Placeholder */}
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 flex flex-col items-center min-w-[160px]">
+              <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-blue-50 rounded-lg flex items-center justify-center mb-3 border-2 border-dashed border-blue-300">
+                <Handshake className="w-10 h-10 text-blue-400" />
+              </div>
+              <span className="text-sm font-medium text-slate-700">ProLiteracy</span>
+              <span className="text-xs text-gray-500">Partner Member</span>
+            </div>
+            
+            {/* National Literacy Directory Placeholder */}
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 flex flex-col items-center min-w-[160px]">
+              <div className="w-20 h-20 bg-gradient-to-br from-green-100 to-green-50 rounded-lg flex items-center justify-center mb-3 border-2 border-dashed border-green-300">
+                <BookOpen className="w-10 h-10 text-green-400" />
+              </div>
+              <span className="text-sm font-medium text-slate-700">NLD Listed</span>
+              <span className="text-xs text-gray-500">National Directory</span>
+            </div>
+          </div>
+          
+          <p className="text-center text-xs text-gray-500 mt-6">
+            Badge images will be added upon membership confirmation
+          </p>
+        </div>
+      </section>
+
+      {/* SECTION 7: Unified CTA Footer */}
       <section className="py-14 bg-gradient-to-br from-teal-500 to-blue-600 text-white">
         <div className="max-w-3xl mx-auto px-4 text-center">
           <h2 className="font-display text-3xl font-bold mb-3">

@@ -1,12 +1,49 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { useAuth } from "../App";
 import { 
   Users, FileText, CheckCircle, Clock, TrendingUp, 
   Calendar, DollarSign, Plus, X, Target, ChevronLeft, ChevronRight,
-  AlertTriangle
+  AlertTriangle, Mail, Linkedin, User, ArrowRight
 } from "lucide-react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from "date-fns";
+
+interface BoardMember {
+  name: string;
+  title: string;
+  bio: string;
+  image: string | null;
+  email?: string;
+  linkedin?: string;
+}
+
+const BOARD_MEMBERS: BoardMember[] = [
+  {
+    name: "Executive Director",
+    title: "Executive Director & Founder",
+    bio: "The chief architect of The Indie Quill Collective's mission to empower emerging authors. Leads organizational strategy, community partnerships, and the development of our literacy-focused authorship programs. Passionate about creating pathways for marginalized voices to be heard through published works.",
+    image: null,
+    email: "director@indiequill.org",
+  },
+  {
+    name: "Board Member",
+    title: "Board of Directors",
+    bio: "Brings expertise in nonprofit governance and strategic planning. Supports the organization's mission through oversight, fundraising, and community engagement.",
+    image: null,
+  },
+  {
+    name: "Board Member",
+    title: "Board of Directors",
+    bio: "Contributes professional experience in education and literacy advocacy. Helps guide program development and partnerships with schools and community organizations.",
+    image: null,
+  },
+  {
+    name: "Board Member",
+    title: "Board of Directors",
+    bio: "Provides expertise in financial management and nonprofit compliance. Ensures responsible stewardship of donor contributions and grant funds.",
+    image: null,
+  },
+];
 
 interface Stats {
   totalApplications: number;
@@ -98,13 +135,15 @@ export default function Board() {
     notes: ""
   });
 
+  const isBoardMember = user && user.role === "board_member";
+
   useEffect(() => {
-    if (!user || user.role !== "board_member") {
-      setLocation("/dashboard");
-      return;
+    if (isBoardMember) {
+      loadData();
+    } else {
+      setLoading(false);
     }
-    loadData();
-  }, [user, setLocation]);
+  }, [user, isBoardMember]);
 
   const loadData = async () => {
     try {
@@ -280,6 +319,135 @@ export default function Board() {
     );
   }
 
+  // Public Board View for all visitors
+  if (!isBoardMember) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        {/* Hero Section */}
+        <section className="bg-gradient-to-br from-slate-800 via-slate-700 to-slate-800 text-white py-16">
+          <div className="max-w-5xl mx-auto px-4 text-center">
+            <h1 className="font-display text-4xl md:text-5xl font-bold mb-4">
+              Our Leadership Team
+            </h1>
+            <p className="text-lg text-slate-300 max-w-2xl mx-auto">
+              Meet the dedicated individuals guiding The Indie Quill Collective's mission 
+              to empower emerging authors and advance literacy.
+            </p>
+          </div>
+        </section>
+
+        {/* Board Members Grid */}
+        <section className="py-16 px-4">
+          <div className="max-w-5xl mx-auto">
+            <div className="grid md:grid-cols-2 gap-8">
+              {BOARD_MEMBERS.map((member, index) => (
+                <div 
+                  key={index}
+                  className={`bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden ${
+                    index === 0 ? "md:col-span-2" : ""
+                  }`}
+                >
+                  <div className={`p-8 ${index === 0 ? "md:flex md:gap-8" : ""}`}>
+                    {/* Photo Placeholder */}
+                    <div className={`${index === 0 ? "md:w-1/3" : ""} mb-6 md:mb-0`}>
+                      <div className={`${
+                        index === 0 ? "w-48 h-48 mx-auto md:mx-0" : "w-32 h-32 mx-auto"
+                      } bg-gradient-to-br from-teal-100 to-blue-100 rounded-full flex items-center justify-center border-4 border-white shadow-lg`}>
+                        {member.image ? (
+                          <img 
+                            src={member.image} 
+                            alt={member.name}
+                            className="w-full h-full rounded-full object-cover"
+                          />
+                        ) : (
+                          <User className={`${index === 0 ? "w-20 h-20" : "w-12 h-12"} text-teal-400`} />
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Content */}
+                    <div className={`${index === 0 ? "md:w-2/3" : ""} text-center ${index === 0 ? "md:text-left" : ""}`}>
+                      <h3 className="font-display text-xl font-bold text-slate-800 mb-1">
+                        {member.name}
+                      </h3>
+                      <p className="text-teal-600 font-medium text-sm mb-4">
+                        {member.title}
+                      </p>
+                      <p className="text-gray-600 leading-relaxed mb-4">
+                        {member.bio}
+                      </p>
+
+                      {/* Contact Links */}
+                      {(member.email || member.linkedin) && (
+                        <div className="flex items-center justify-center md:justify-start space-x-4">
+                          {member.email && (
+                            <a 
+                              href={`mailto:${member.email}`}
+                              className="flex items-center space-x-1 text-gray-500 hover:text-teal-600 transition-colors text-sm"
+                            >
+                              <Mail className="w-4 h-4" />
+                              <span>Email</span>
+                            </a>
+                          )}
+                          {member.linkedin && (
+                            <a 
+                              href={member.linkedin}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center space-x-1 text-gray-500 hover:text-blue-600 transition-colors text-sm"
+                            >
+                              <Linkedin className="w-4 h-4" />
+                              <span>LinkedIn</span>
+                            </a>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Join the Board CTA */}
+            <div className="mt-12 text-center">
+              <div className="bg-gradient-to-br from-teal-50 to-blue-50 rounded-2xl p-8 border border-teal-100">
+                <h3 className="font-display text-xl font-bold text-slate-800 mb-2">
+                  Interested in Joining Our Board?
+                </h3>
+                <p className="text-gray-600 mb-6 max-w-xl mx-auto">
+                  We welcome individuals passionate about literacy, education, and empowering 
+                  underrepresented voices. Reach out to learn about board opportunities.
+                </p>
+                <Link 
+                  href="/donations"
+                  className="inline-flex items-center space-x-2 bg-teal-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-teal-700 transition-colors"
+                >
+                  <span>Support Our Mission</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
+            </div>
+
+            {/* Placeholder Notice */}
+            <p className="text-center text-sm text-gray-400 mt-8">
+              Board member photos and detailed bios will be added as positions are confirmed.
+            </p>
+          </div>
+        </section>
+
+        {/* Footer */}
+        <footer className="bg-slate-900 text-slate-300 py-8">
+          <div className="max-w-5xl mx-auto px-4 text-center">
+            <p className="text-xs">
+              &copy; {new Date().getFullYear()} The Indie Quill Collective. All rights reserved.
+            </p>
+          </div>
+        </footer>
+      </div>
+    );
+  }
+
+  // Board Member Dashboard (authenticated view)
   return (
     <div className="min-h-screen py-8 px-4 bg-gray-50">
       <div className="max-w-7xl mx-auto">
