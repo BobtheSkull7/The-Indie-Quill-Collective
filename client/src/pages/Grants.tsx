@@ -4,7 +4,7 @@ import { useAuth } from "../App";
 import {
   Building2, Phone, Mail, Globe, Calendar, DollarSign,
   Plus, ChevronDown, ChevronUp, MessageSquare, AlertTriangle,
-  TrendingUp, Users, Lock, FileText
+  TrendingUp, Users, Lock, FileText, Target, Clock, Bell, ExternalLink
 } from "lucide-react";
 
 interface Foundation {
@@ -56,14 +56,48 @@ interface GrantsData {
   };
 }
 
+interface GrantProgram {
+  id: number;
+  foundationId: number;
+  foundationName: string;
+  programName: string;
+  maxAmount: number;
+  maxAmountFormatted: string;
+  openDate: string | null;
+  deadline: string | null;
+  fundedItems: string | null;
+  eligibilityNotes: string | null;
+  twoYearRestriction: boolean;
+  lastAwardedYear: number | null;
+  applicationStatus: 'not_started' | 'preparing' | 'submitted' | 'awarded' | 'declined' | 'ineligible';
+  applicationUrl: string | null;
+  indieQuillAlignment: string | null;
+  notes: string | null;
+}
+
+interface CalendarAlert {
+  id: number;
+  programId: number;
+  programName: string;
+  foundationName: string;
+  alertType: string;
+  daysBefore: number;
+  alertDate: string;
+  deadline: string | null;
+  maxAmount: number | null;
+}
+
 export default function Grants() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
   const [foundations, setFoundations] = useState<Foundation[]>([]);
   const [grantsData, setGrantsData] = useState<GrantsData | null>(null);
+  const [programs, setPrograms] = useState<GrantProgram[]>([]);
+  const [alerts, setAlerts] = useState<CalendarAlert[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"foundations" | "grants">("foundations");
+  const [activeTab, setActiveTab] = useState<"foundations" | "grants" | "programs">("programs");
   const [expandedFoundation, setExpandedFoundation] = useState<number | null>(null);
+  const [expandedProgram, setExpandedProgram] = useState<number | null>(null);
   const [showAddFoundation, setShowAddFoundation] = useState(false);
   const [showAddGrant, setShowAddGrant] = useState(false);
   const [showAddLog, setShowAddLog] = useState<number | null>(null);
@@ -104,9 +138,11 @@ export default function Grants() {
 
   const fetchData = async () => {
     try {
-      const [foundationsRes, grantsRes] = await Promise.all([
+      const [foundationsRes, grantsRes, programsRes, alertsRes] = await Promise.all([
         fetch("/api/admin/grants/foundations", { credentials: "include" }),
         fetch("/api/admin/grants", { credentials: "include" }),
+        fetch("/api/admin/grants/programs", { credentials: "include" }),
+        fetch("/api/admin/grants/alerts", { credentials: "include" }),
       ]);
 
       if (foundationsRes.ok) {
@@ -118,6 +154,14 @@ export default function Grants() {
         if (grantsJson && typeof grantsJson === 'object' && !grantsJson.error) {
           setGrantsData(grantsJson);
         }
+      }
+      if (programsRes.ok) {
+        const programsData = await programsRes.json();
+        setPrograms(Array.isArray(programsData) ? programsData : []);
+      }
+      if (alertsRes.ok) {
+        const alertsData = await alertsRes.json();
+        setAlerts(Array.isArray(alertsData) ? alertsData : []);
       }
     } catch (error) {
       console.error("Failed to fetch data:", error);
@@ -208,6 +252,48 @@ export default function Grants() {
     }
   };
 
+  const handleUpdateProgramStatus = async (programId: number, status: string) => {
+    try {
+      const res = await fetch(`/api/admin/grants/programs/${programId}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ applicationStatus: status }),
+      });
+      if (res.ok) {
+        fetchData();
+      }
+    } catch (error) {
+      console.error("Failed to update program status:", error);
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    const badges: Record<string, { bg: string; text: string; label: string }> = {
+      not_started: { bg: "bg-gray-100", text: "text-gray-700", label: "Not Started" },
+      preparing: { bg: "bg-blue-100", text: "text-blue-700", label: "Preparing" },
+      submitted: { bg: "bg-yellow-100", text: "text-yellow-700", label: "Submitted" },
+      awarded: { bg: "bg-green-100", text: "text-green-700", label: "Awarded" },
+      declined: { bg: "bg-red-100", text: "text-red-700", label: "Declined" },
+      ineligible: { bg: "bg-slate-100", text: "text-slate-500", label: "Ineligible" },
+    };
+    const badge = badges[status] || badges.not_started;
+    return <span className={`px-2 py-1 rounded-full text-xs font-medium ${badge.bg} ${badge.text}`}>{badge.label}</span>;
+  };
+
+  const formatDate = (dateStr: string | null) => {
+    if (!dateStr) return "N/A";
+    return new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  };
+
+  const getDaysUntil = (dateStr: string | null) => {
+    if (!dateStr) return null;
+    const target = new Date(dateStr);
+    const now = new Date();
+    const diff = Math.ceil((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    return diff;
+  };
+
   const formatCurrency = (cents: number) => `$${(cents / 100).toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
 
   if (!user || (user.role !== "admin" && user.role !== "board_member")) {
@@ -293,6 +379,17 @@ export default function Grants() {
               >
                 <DollarSign className="w-4 h-4 inline mr-2" />
                 Grant Allocations
+              </button>
+              <button
+                onClick={() => setActiveTab("programs")}
+                className={`flex-1 px-6 py-4 text-sm font-medium ${
+                  activeTab === "programs"
+                    ? "text-collective-teal border-b-2 border-collective-teal bg-teal-50/50"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                <Target className="w-4 h-4 inline mr-2" />
+                Grant Programs
               </button>
             </div>
           </div>
@@ -678,6 +775,185 @@ export default function Grants() {
                         </div>
                       </div>
                     ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === "programs" && (
+              <div>
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-lg font-semibold text-slate-800">Grant Programs Pipeline</h2>
+                  <div className="flex items-center space-x-2 text-sm text-gray-500">
+                    <Clock className="w-4 h-4" />
+                    <span>Track deadlines and application status</span>
+                  </div>
+                </div>
+
+                {alerts.length > 0 && (
+                  <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                    <div className="flex items-center space-x-2 mb-3">
+                      <Bell className="w-5 h-5 text-amber-600" />
+                      <h3 className="font-semibold text-amber-800">Upcoming Deadlines</h3>
+                    </div>
+                    <div className="space-y-2">
+                      {alerts.slice(0, 5).map((alert) => {
+                        const daysUntil = getDaysUntil(alert.alertDate);
+                        return (
+                          <div key={alert.id} className="flex items-center justify-between text-sm">
+                            <div>
+                              <span className="font-medium text-amber-900">{alert.programName}</span>
+                              <span className="text-amber-700"> - {alert.foundationName}</span>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                                daysUntil !== null && daysUntil <= 3 ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"
+                              }`}>
+                                {daysUntil !== null && daysUntil <= 0 ? "TODAY" : `${daysUntil} days`}
+                              </span>
+                              <span className="text-amber-600">{formatDate(alert.deadline)}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {programs.length === 0 ? (
+                  <div className="text-center py-12 text-gray-500">
+                    <Target className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>No grant programs found. Add programs from the Foundation CRM tab.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {programs.map((program) => {
+                      const daysUntilDeadline = getDaysUntil(program.deadline);
+                      const daysUntilOpen = getDaysUntil(program.openDate);
+                      const isOpen = daysUntilOpen !== null && daysUntilOpen <= 0;
+                      const isUrgent = daysUntilDeadline !== null && daysUntilDeadline <= 7 && daysUntilDeadline > 0;
+                      const isPassed = daysUntilDeadline !== null && daysUntilDeadline < 0;
+
+                      return (
+                        <div
+                          key={program.id}
+                          className={`border rounded-lg overflow-hidden ${
+                            program.applicationStatus === "ineligible" ? "bg-gray-50 border-gray-200" :
+                            isUrgent ? "border-amber-300 bg-amber-50/30" :
+                            isPassed ? "bg-gray-50 border-gray-200" :
+                            "border-gray-200 bg-white"
+                          }`}
+                        >
+                          <div
+                            className="p-4 cursor-pointer"
+                            onClick={() => setExpandedProgram(expandedProgram === program.id ? null : program.id)}
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center space-x-2 mb-1">
+                                  <h3 className="font-semibold text-slate-800">{program.programName}</h3>
+                                  {program.twoYearRestriction && (
+                                    <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs rounded-full">2-Year Rule</span>
+                                  )}
+                                  {program.notes?.includes("PRIMARY") && (
+                                    <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full font-medium">PRIMARY TARGET</span>
+                                  )}
+                                </div>
+                                <p className="text-sm text-gray-600">{program.foundationName}</p>
+                              </div>
+                              <div className="flex items-center space-x-3">
+                                <span className="text-lg font-bold text-green-600">{program.maxAmountFormatted}</span>
+                                {getStatusBadge(program.applicationStatus)}
+                                {expandedProgram === program.id ? (
+                                  <ChevronUp className="w-5 h-5 text-gray-400" />
+                                ) : (
+                                  <ChevronDown className="w-5 h-5 text-gray-400" />
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="flex items-center space-x-6 mt-3 text-sm">
+                              <div className="flex items-center space-x-1">
+                                <Calendar className="w-4 h-4 text-gray-400" />
+                                <span className="text-gray-600">Opens: {formatDate(program.openDate)}</span>
+                                {isOpen && daysUntilOpen === 0 && (
+                                  <span className="ml-1 px-1.5 py-0.5 bg-green-100 text-green-700 text-xs rounded">OPEN NOW</span>
+                                )}
+                              </div>
+                              <div className="flex items-center space-x-1">
+                                <Clock className="w-4 h-4 text-gray-400" />
+                                <span className={`${isUrgent ? "text-amber-700 font-medium" : isPassed ? "text-gray-400 line-through" : "text-gray-600"}`}>
+                                  Deadline: {formatDate(program.deadline)}
+                                </span>
+                                {isUrgent && (
+                                  <span className="ml-1 px-1.5 py-0.5 bg-amber-100 text-amber-700 text-xs rounded font-medium">
+                                    {daysUntilDeadline} days left
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {expandedProgram === program.id && (
+                            <div className="border-t border-gray-100 p-4 bg-gray-50/50">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <div>
+                                  <h4 className="text-xs font-medium text-gray-500 uppercase mb-1">Funded Items</h4>
+                                  <p className="text-sm text-gray-700">{program.fundedItems || "Not specified"}</p>
+                                </div>
+                                <div>
+                                  <h4 className="text-xs font-medium text-gray-500 uppercase mb-1">Indie Quill Alignment</h4>
+                                  <p className="text-sm text-gray-700">{program.indieQuillAlignment || "Not specified"}</p>
+                                </div>
+                              </div>
+
+                              {program.eligibilityNotes && (
+                                <div className="mb-4">
+                                  <h4 className="text-xs font-medium text-gray-500 uppercase mb-1">Eligibility Notes</h4>
+                                  <p className="text-sm text-gray-700">{program.eligibilityNotes}</p>
+                                </div>
+                              )}
+
+                              {program.notes && (
+                                <div className="mb-4">
+                                  <h4 className="text-xs font-medium text-gray-500 uppercase mb-1">Strategic Notes</h4>
+                                  <p className="text-sm text-gray-700">{program.notes}</p>
+                                </div>
+                              )}
+
+                              <div className="flex items-center justify-between pt-3 border-t border-gray-200">
+                                <div className="flex items-center space-x-2">
+                                  <span className="text-sm text-gray-600">Update Status:</span>
+                                  <select
+                                    value={program.applicationStatus}
+                                    onChange={(e) => handleUpdateProgramStatus(program.id, e.target.value)}
+                                    className="text-sm border border-gray-300 rounded px-2 py-1"
+                                  >
+                                    <option value="not_started">Not Started</option>
+                                    <option value="preparing">Preparing</option>
+                                    <option value="submitted">Submitted</option>
+                                    <option value="awarded">Awarded</option>
+                                    <option value="declined">Declined</option>
+                                    <option value="ineligible">Ineligible</option>
+                                  </select>
+                                </div>
+                                {program.applicationUrl && (
+                                  <a
+                                    href={program.applicationUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center space-x-1 text-sm text-blue-600 hover:underline"
+                                  >
+                                    <ExternalLink className="w-4 h-4" />
+                                    <span>Application Portal</span>
+                                  </a>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
