@@ -128,6 +128,29 @@ export default function Navbar() {
                   </button>
                 </div>
               </>
+            ) : user.role === "mentor" ? (
+              <>
+                <Link 
+                  href="/mentor" 
+                  className={`text-sm font-medium transition-colors ${location === "/mentor" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`}
+                >
+                  My Students
+                </Link>
+                <div className="flex items-center space-x-3 border-l pl-6 border-gray-200">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                      <User className="w-4 h-4 text-orange-600" />
+                    </div>
+                    <span className="text-sm font-medium text-gray-700">{user.firstName}</span>
+                  </div>
+                  <button 
+                    onClick={handleLogout}
+                    className="text-gray-500 hover:text-red-500 transition-colors"
+                  >
+                    <LogOut className="w-5 h-5" />
+                  </button>
+                </div>
+              </>
             ) : (
               <>
                 <Link 
@@ -230,6 +253,11 @@ export default function Navbar() {
           ) : user.role === "student" ? (
             <>
               <Link href="/student" className="block text-gray-600 hover:text-slate-800 py-2">My Learning</Link>
+              <button onClick={handleLogout} className="block w-full text-left text-red-500 py-2">Logout</button>
+            </>
+          ) : user.role === "mentor" ? (
+            <>
+              <Link href="/mentor" className="block text-gray-600 hover:text-slate-800 py-2">My Students</Link>
               <button onClick={handleLogout} className="block w-full text-left text-red-500 py-2">Logout</button>
             </>
           ) : (

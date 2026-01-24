@@ -72,6 +72,25 @@ The project utilizes a client-server architecture with a React 19, Vite, and Tai
 - Upcoming video sessions with "Join Session" button
 - Mobile-first, accessible design
 
+**Curriculum Player (/student/module/:id):**
+- Full module content display with progress tracking
+- Text-to-Speech (TTS) accessibility feature with play/pause/restart controls
+- Mark Complete functionality for module completion
+- Navigation between modules with previous/next buttons
+
+**Drafting Suite (/student/drafts):**
+- "Legacy Work" manuscript editor with auto-save (3-second debounce)
+- Real-time word count tracking
+- Document management (create, edit, delete)
+- Text-to-Speech for proofreading
+- One-Click Publish for manuscripts 500+ words (submission for review)
+
+**Mentor Dashboard (/mentor):**
+- Student roster with progress metrics (hours active, word count, course progress)
+- Meeting scheduler with session type selection (one-on-one, group, review, workshop)
+- Student email links for quick communication
+- Mentor statistics (total students, avg progress, avg hours active, upcoming meetings)
+
 ## Documentation
 
 - **[ARCHITECTURE.md](./ARCHITECTURE.md):** Comprehensive technical reference including naming conventions, data flow diagrams, infrastructure map, UUID architecture, security layers, and deployment configuration.

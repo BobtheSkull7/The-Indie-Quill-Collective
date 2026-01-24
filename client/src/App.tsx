@@ -16,6 +16,9 @@ import Vault from "./pages/Vault";
 import Ledger from "./pages/Ledger";
 import Auditor from "./pages/Auditor";
 import StudentDashboard from "./pages/StudentDashboard";
+import CurriculumPlayer from "./pages/CurriculumPlayer";
+import DraftingSuite from "./pages/DraftingSuite";
+import MentorDashboard from "./pages/MentorDashboard";
 import { Redirect } from "wouter";
 import Donations from "./pages/Donations";
 import DonationSuccess from "./pages/DonationSuccess";
@@ -81,6 +84,9 @@ function App() {
           <Route path="/register" component={Register} />
           <Route path="/dashboard" component={Dashboard} />
           <Route path="/student" component={StudentDashboard} />
+          <Route path="/student/module/:id" component={CurriculumPlayer} />
+          <Route path="/student/drafts" component={DraftingSuite} />
+          <Route path="/mentor" component={MentorDashboard} />
           <Route path="/admin" component={AdminDashboard} />
           <Route path="/admin/cohorts" component={Cohorts} />
           <Route path="/admin/grants" component={Grants} />

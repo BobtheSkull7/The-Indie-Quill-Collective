@@ -781,6 +781,7 @@ export const draftingDocuments = pgTable("drafting_documents", {
   content: text("content"), // Markdown content
   wordCount: integer("word_count").default(0).notNull(),
   isPublished: boolean("is_published").default(false).notNull(),
+  publishedAt: timestamp("published_at"),
   lastEditedAt: timestamp("last_edited_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),

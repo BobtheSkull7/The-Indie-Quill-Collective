@@ -73,6 +73,11 @@ export default function Dashboard() {
       return;
     }
 
+    if (user.role === "mentor") {
+      setLocation("/mentor");
+      return;
+    }
+
     Promise.all([
       fetch("/api/applications").then((res) => res.json()),
       fetch("/api/contracts").then((res) => res.json()),

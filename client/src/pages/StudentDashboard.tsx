@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { useAuth } from "../App";
 import { 
   BookOpen, 
@@ -11,7 +11,8 @@ import {
   FileText,
   Play,
   CheckCircle,
-  ChevronRight
+  ChevronRight,
+  Edit3
 } from "lucide-react";
 
 interface CurriculumModule {
@@ -263,13 +264,16 @@ export default function StudentDashboard() {
                                 <p className="text-xs text-gray-500 text-right mt-1">{moduleProgress.percentComplete}%</p>
                               </div>
                             )}
-                            <button className="p-2 rounded-lg hover:bg-white transition-colors">
+                            <Link 
+                              href={`/student/module/${module.id}`}
+                              className="p-2 rounded-lg hover:bg-white transition-colors"
+                            >
                               {isCompleted ? (
                                 <CheckCircle className="w-5 h-5 text-green-500" />
                               ) : (
                                 <Play className="w-5 h-5 text-teal-500" />
                               )}
-                            </button>
+                            </Link>
                           </div>
                         </div>
                       </div>
@@ -373,6 +377,23 @@ export default function StudentDashboard() {
                   ))}
                 </div>
               )}
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <h2 className="font-display text-xl font-bold text-slate-800 flex items-center gap-2 mb-4">
+                <Edit3 className="w-5 h-5 text-purple-500" />
+                Your Legacy Work
+              </h2>
+              <p className="text-gray-600 text-sm mb-4">
+                Write, edit, and develop your manuscript in the Drafting Suite.
+              </p>
+              <Link 
+                href="/student/drafts"
+                className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+              >
+                <Edit3 className="w-4 h-4" />
+                Open Drafting Suite
+              </Link>
             </div>
 
             <div className="bg-gradient-to-br from-teal-500 to-blue-600 rounded-xl p-6 text-white">

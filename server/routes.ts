@@ -4465,6 +4465,380 @@ export async function registerDonationRoutes(app: Express) {
   });
 
   // Get student stats summary
+  app.get("/api/student/curriculum/:id", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    const moduleId = parseInt(req.params.id);
+    if (isNaN(moduleId)) {
+      return res.status(400).json({ error: "Invalid module ID" });
+    }
+
+    try {
+      const result = await db.execute(sql`
+        SELECT id, title, description, content, order_index as "orderIndex", 
+               duration_hours as "durationHours", content_type as "contentType"
+        FROM curriculum_modules
+        WHERE id = ${moduleId} AND is_published = true
+      `);
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: "Module not found" });
+      }
+
+      res.json(result.rows[0]);
+    } catch (error) {
+      console.error("Error fetching module:", error);
+      res.status(500).json({ error: "Failed to fetch module" });
+    }
+  });
+
+  app.post("/api/student/progress", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    const { moduleId, percentComplete } = req.body;
+    if (!moduleId || percentComplete === undefined) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    try {
+      const existingResult = await db.execute(sql`
+        SELECT id FROM student_curriculum_progress
+        WHERE user_id = ${req.session.userId} AND module_id = ${moduleId}
+      `);
+
+      const now = new Date().toISOString();
+      const isComplete = percentComplete >= 100;
+
+      if (existingResult.rows.length > 0) {
+        await db.execute(sql`
+          UPDATE student_curriculum_progress
+          SET percent_complete = ${percentComplete},
+              completed_at = ${isComplete ? now : null},
+              updated_at = ${now}
+          WHERE user_id = ${req.session.userId} AND module_id = ${moduleId}
+        `);
+      } else {
+        await db.execute(sql`
+          INSERT INTO student_curriculum_progress (user_id, module_id, percent_complete, started_at, completed_at)
+          VALUES (${req.session.userId}, ${moduleId}, ${percentComplete}, ${now}, ${isComplete ? now : null})
+        `);
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error updating progress:", error);
+      res.status(500).json({ error: "Failed to update progress" });
+    }
+  });
+
+  app.get("/api/student/drafts", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const result = await db.execute(sql`
+        SELECT id, title, content, word_count as "wordCount", 
+               is_published as "isPublished", published_at as "publishedAt",
+               created_at as "createdAt", updated_at as "updatedAt"
+        FROM drafting_documents
+        WHERE user_id = ${req.session.userId}
+        ORDER BY updated_at DESC
+      `);
+
+      res.json(result.rows);
+    } catch (error) {
+      console.error("Error fetching drafts:", error);
+      res.status(500).json({ error: "Failed to fetch drafts" });
+    }
+  });
+
+  app.post("/api/student/drafts", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    const { title } = req.body;
+    if (!title?.trim()) {
+      return res.status(400).json({ error: "Title is required" });
+    }
+
+    try {
+      const result = await db.execute(sql`
+        INSERT INTO drafting_documents (user_id, title, content, word_count)
+        VALUES (${req.session.userId}, ${title.trim()}, '', 0)
+        RETURNING id, title, content, word_count as "wordCount", 
+                  is_published as "isPublished", published_at as "publishedAt",
+                  created_at as "createdAt", updated_at as "updatedAt"
+      `);
+
+      res.json(result.rows[0]);
+    } catch (error) {
+      console.error("Error creating draft:", error);
+      res.status(500).json({ error: "Failed to create draft" });
+    }
+  });
+
+  app.put("/api/student/drafts/:id", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    const draftId = parseInt(req.params.id);
+    if (isNaN(draftId)) {
+      return res.status(400).json({ error: "Invalid draft ID" });
+    }
+
+    const { title, content } = req.body;
+    const wordCount = content ? content.trim().split(/\s+/).filter((w: string) => w.length > 0).length : 0;
+
+    try {
+      const result = await db.execute(sql`
+        UPDATE drafting_documents
+        SET title = COALESCE(${title}, title),
+            content = COALESCE(${content}, content),
+            word_count = ${wordCount},
+            updated_at = NOW()
+        WHERE id = ${draftId} AND user_id = ${req.session.userId}
+        RETURNING id, title, content, word_count as "wordCount", 
+                  is_published as "isPublished", published_at as "publishedAt",
+                  created_at as "createdAt", updated_at as "updatedAt"
+      `);
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: "Draft not found" });
+      }
+
+      res.json(result.rows[0]);
+    } catch (error) {
+      console.error("Error updating draft:", error);
+      res.status(500).json({ error: "Failed to update draft" });
+    }
+  });
+
+  app.delete("/api/student/drafts/:id", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    const draftId = parseInt(req.params.id);
+    if (isNaN(draftId)) {
+      return res.status(400).json({ error: "Invalid draft ID" });
+    }
+
+    try {
+      const result = await db.execute(sql`
+        DELETE FROM drafting_documents
+        WHERE id = ${draftId} AND user_id = ${req.session.userId}
+        RETURNING id
+      `);
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: "Draft not found" });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting draft:", error);
+      res.status(500).json({ error: "Failed to delete draft" });
+    }
+  });
+
+  // ============ MENTOR ENDPOINTS ============
+
+  app.get("/api/mentor/students", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const result = await db.execute(sql`
+        SELECT 
+          u.id, u.first_name as "firstName", u.last_name as "lastName", u.email,
+          sp.enrolled_at as "enrolledAt",
+          COALESCE(sal.total_hours, 0) as "hoursActive",
+          COALESCE(dd.total_words, 0) as "wordCount",
+          COALESCE(scp.avg_progress, 0) as "courseProgress",
+          sal.last_activity as "lastActivity"
+        FROM mentor_student_assignments msa
+        JOIN users u ON u.id = msa.student_id
+        LEFT JOIN student_profiles sp ON sp.user_id = u.id
+        LEFT JOIN (
+          SELECT user_id, SUM(hours_active) as total_hours, MAX(created_at) as last_activity
+          FROM student_activity_logs GROUP BY user_id
+        ) sal ON sal.user_id = u.id
+        LEFT JOIN (
+          SELECT user_id, SUM(word_count) as total_words FROM drafting_documents GROUP BY user_id
+        ) dd ON dd.user_id = u.id
+        LEFT JOIN (
+          SELECT user_id, AVG(percent_complete) as avg_progress FROM student_curriculum_progress GROUP BY user_id
+        ) scp ON scp.user_id = u.id
+        WHERE msa.mentor_id = ${req.session.userId}
+        ORDER BY u.first_name, u.last_name
+      `);
+
+      res.json(result.rows);
+    } catch (error) {
+      console.error("Error fetching mentor students:", error);
+      res.status(500).json({ error: "Failed to fetch students" });
+    }
+  });
+
+  app.get("/api/mentor/meetings", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const result = await db.execute(sql`
+        SELECT 
+          m.id, m.title, m.description, m.start_time as "startTime", 
+          m.end_time as "endTime", m.meeting_type as "meetingType",
+          CONCAT(u.first_name, ' ', u.last_name) as "studentName"
+        FROM meetings m
+        JOIN meeting_attendees ma ON ma.meeting_id = m.id
+        JOIN users u ON u.id = ma.user_id
+        WHERE m.host_id = ${req.session.userId}
+        ORDER BY m.start_time DESC
+      `);
+
+      res.json(result.rows);
+    } catch (error) {
+      console.error("Error fetching mentor meetings:", error);
+      res.status(500).json({ error: "Failed to fetch meetings" });
+    }
+  });
+
+  app.post("/api/mentor/meetings", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    const { studentId, title, description, startTime, endTime, meetingType } = req.body;
+    if (!studentId || !title || !startTime || !endTime) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    try {
+      // Validate mentor-student assignment
+      const assignmentCheck = await db.execute(sql`
+        SELECT id FROM mentor_student_assignments 
+        WHERE mentor_id = ${req.session.userId} AND student_id = ${parseInt(studentId)}
+      `);
+
+      if (assignmentCheck.rows.length === 0) {
+        return res.status(403).json({ error: "You can only schedule meetings with your assigned students" });
+      }
+
+      const meetingResult = await db.execute(sql`
+        INSERT INTO meetings (host_id, title, description, start_time, end_time, meeting_type, provider)
+        VALUES (${req.session.userId}, ${title}, ${description || null}, ${startTime}, ${endTime}, ${meetingType || 'one_on_one'}, 'google_meet')
+        RETURNING id, title, description, start_time as "startTime", end_time as "endTime", meeting_type as "meetingType"
+      `);
+
+      const meeting = meetingResult.rows[0];
+      if (meeting) {
+        await db.execute(sql`
+          INSERT INTO meeting_attendees (meeting_id, user_id)
+          VALUES (${(meeting as any).id}, ${parseInt(studentId)})
+        `);
+      }
+
+      res.json(meeting);
+    } catch (error) {
+      console.error("Error creating meeting:", error);
+      res.status(500).json({ error: "Failed to create meeting" });
+    }
+  });
+
+  app.get("/api/mentor/stats", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const studentsResult = await db.execute(sql`
+        SELECT COUNT(*) as count FROM mentor_student_assignments WHERE mentor_id = ${req.session.userId}
+      `);
+
+      const progressResult = await db.execute(sql`
+        SELECT AVG(scp.percent_complete) as avg_progress
+        FROM mentor_student_assignments msa
+        JOIN student_curriculum_progress scp ON scp.user_id = msa.student_id
+        WHERE msa.mentor_id = ${req.session.userId}
+      `);
+
+      const hoursResult = await db.execute(sql`
+        SELECT AVG(sal.total_hours) as avg_hours
+        FROM mentor_student_assignments msa
+        JOIN (SELECT user_id, SUM(hours_active) as total_hours FROM student_activity_logs GROUP BY user_id) sal
+          ON sal.user_id = msa.student_id
+        WHERE msa.mentor_id = ${req.session.userId}
+      `);
+
+      const meetingsResult = await db.execute(sql`
+        SELECT COUNT(*) as count FROM meetings 
+        WHERE host_id = ${req.session.userId} AND start_time > NOW()
+      `);
+
+      res.json({
+        totalStudents: Number((studentsResult.rows[0] as any)?.count) || 0,
+        avgProgress: Math.round(Number((progressResult.rows[0] as any)?.avg_progress) || 0),
+        avgHoursActive: Math.round(Number((hoursResult.rows[0] as any)?.avg_hours) || 0),
+        upcomingMeetings: Number((meetingsResult.rows[0] as any)?.count) || 0
+      });
+    } catch (error) {
+      console.error("Error fetching mentor stats:", error);
+      res.status(500).json({ error: "Failed to fetch stats" });
+    }
+  });
+
+  // ============ PUBLISH ENDPOINT ============
+
+  app.post("/api/student/drafts/:id/publish", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    const draftId = parseInt(req.params.id);
+    if (isNaN(draftId)) {
+      return res.status(400).json({ error: "Invalid draft ID" });
+    }
+
+    try {
+      const draftResult = await db.execute(sql`
+        SELECT id, title, content, word_count as "wordCount"
+        FROM drafting_documents
+        WHERE id = ${draftId} AND user_id = ${req.session.userId}
+      `);
+
+      if (draftResult.rows.length === 0) {
+        return res.status(404).json({ error: "Draft not found" });
+      }
+
+      const draft = draftResult.rows[0] as any;
+      
+      if (draft.wordCount < 500) {
+        return res.status(400).json({ error: "Manuscript must be at least 500 words to publish" });
+      }
+
+      await db.execute(sql`
+        UPDATE drafting_documents
+        SET is_published = true, published_at = NOW()
+        WHERE id = ${draftId}
+      `);
+
+      res.json({ success: true, message: "Your Legacy Work has been submitted for review!" });
+    } catch (error) {
+      console.error("Error publishing draft:", error);
+      res.status(500).json({ error: "Failed to publish draft" });
+    }
+  });
+
   app.get("/api/student/stats", async (req: Request, res: Response) => {
     if (!req.session.userId) {
       return res.status(401).json({ message: "Not authenticated" });
