@@ -1,0 +1,88 @@
+To finalize the Indie Quill Architecture, we must close the loop between your technical "Hub" and the "Spokes" of the grant. Here are the final structural instructions for Replit to unify the remaining pieces.
+
+I. Final Architecture Wrap-Up: The "Closing the Loop" Modules
+To ensure the "2,400 Hours" and "1:1 Tech Ratio" promises are verifiable for the DGLF, we need to add these three logic controllers to your existing Express server.
+
+1. The Grant Impact Aggregator (/server/grant-logic.ts)
+Purpose: Summarize progress across the cohort for the Auditor and Admin dashboards.
+
+Logic: * Query student_activity_logs filtered by grant_id.
+
+Calculate total_hours_delivered (Goal: 2,400).
+
+Calculate avg_efl_gain by comparing baseline vs. current in tabe_assessments.
+
+2. The Copyright Identity Vault (/server/vault-logic.ts)
+Purpose: Bridge the "PII Firewall" only when it's time to publish.
+
+Logic:
+
+Store legal names in a separate, encrypted identity_vault table.
+
+Create a "Publishing Package" endpoint that pairs a drafting_document with its legal ISBN_assignee name for one-time export to the LLC.
+
+3. The Discovery Landing Controller (/client/src/pages/Discovery.tsx)
+Purpose: Replace the standard Home page with Shane's "Frictionless" entry point.
+
+Logic:
+
+A clean, "zero-clutter" interface.
+
+Dynamic routing: If user.role === 'student', redirect immediately to the Student Dashboard.
+
+II. The "Seed Data" Package (The "Why" for the AI Agent)
+Copy and paste this into your project’s README.md or a SYSTEM_PROMPT.txt file. This ensures every AI interaction is grounded in your project's specific identity.
+
+PROJECT IDENTITY:
+
+Title: Frictionless Literacy: Tech-Enabled Adult Authorship
+
+Mission: Empowering silenced voices to decode the world through authorship.
+
+Core Principle: "Encoding is the key to Decoding."
+
+GRANT COMMITMENTS (2026):
+
+Cohort: 20 Students (Split into 2 cohorts of 10).
+
+Instruction: 120 hours per student (2,400 total hours).
+
+Goal: 1-grade level gain in 80% of students.
+
+Output: 20 Digital Legacy Works with ISBN and Copyright.
+
+TECH STACK RULE:
+
+Source of Truth: GitHub.
+
+Hosting: Render.
+
+Database: Supabase via Port 5432 (Session Pooler).
+
+Naming Convention: Indie Quill Collective (Non-Profit) vs. Indie Quill LLC (Sync Target).
+
+III. Directions for Replit: Build the Remaining Structure
+Follow these steps one-by-one to complete the build-out.
+
+Step 1: The Migration (Database Skeleton)
+Task: Update shared/schema.ts with the missing Grant and Impact tables.
+
+New Tables: grant_programs, tabe_assessments, pact_sessions, identity_vault.
+
+Action: Run your Drizzle push command to update Supabase.
+
+Step 2: The Logic Bridge (Server Endpoints)
+Task: Create the routes for the Family Dashboard and Grant Tracking.
+
+Endpoint: GET /api/admin/grants/:id/impact (The "DGLF Report" generator).
+
+Endpoint: POST /api/family/pact-sessions/start (The PACT Timer logic).
+
+Step 3: The User Experience (Frontend Dashboards)
+Task: Build the UI components for the new Roles.
+
+Student Dashboard: Display the 4 metrics (Hours, Word Count, Progress, Modules).
+
+Family Dashboard: Implement the PACT Progress Ring and the "Start Timer" button.
+
+Auditor Dashboard: Build the Zero-PII analytics view for your board members and donors.
