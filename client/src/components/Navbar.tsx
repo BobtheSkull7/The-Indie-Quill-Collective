@@ -113,6 +113,12 @@ export default function Navbar() {
                 >
                   My Learning
                 </Link>
+                <Link 
+                  href="/family" 
+                  className={`text-sm font-medium transition-colors ${location === "/family" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`}
+                >
+                  My Family
+                </Link>
                 <div className="flex items-center space-x-3 border-l pl-6 border-gray-200">
                   <div className="flex items-center space-x-2">
                     <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
@@ -253,6 +259,7 @@ export default function Navbar() {
           ) : user.role === "student" ? (
             <>
               <Link href="/student" className="block text-gray-600 hover:text-slate-800 py-2">My Learning</Link>
+              <Link href="/family" className="block text-gray-600 hover:text-slate-800 py-2">My Family</Link>
               <button onClick={handleLogout} className="block w-full text-left text-red-500 py-2">Logout</button>
             </>
           ) : user.role === "mentor" ? (

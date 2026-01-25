@@ -4892,4 +4892,201 @@ export async function registerDonationRoutes(app: Express) {
       res.status(500).json({ message: "Failed to fetch stats" });
     }
   });
+
+  // ============ FAMILY LITERACY ENDPOINTS ============
+
+  // Get family dashboard data
+  app.get("/api/family/dashboard", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      // Get user's family unit
+      const familyResult = await db.execute(sql`
+        SELECT fu.*, sp.family_role
+        FROM family_units fu
+        JOIN student_profiles sp ON sp.family_unit_id = fu.id
+        WHERE sp.user_id = ${req.session.userId}
+      `);
+
+      if (familyResult.rows.length === 0) {
+        return res.json(null);
+      }
+
+      const family = familyResult.rows[0] as any;
+
+      // Get family members with their stats
+      const membersResult = await db.execute(sql`
+        SELECT 
+          u.id, u.first_name as "firstName", u.last_name as "lastName",
+          sp.family_role as "familyRole",
+          COALESCE((SELECT SUM(minutes_active) / 60 FROM student_activity_logs WHERE user_id = u.id), 0) as "hoursActive",
+          COALESCE((SELECT SUM(word_count) FROM drafting_documents WHERE user_id = u.id), 0) as "wordCount",
+          COALESCE((SELECT AVG(percent_complete) FROM student_curriculum_progress WHERE user_id = u.id), 0) as "courseProgress"
+        FROM users u
+        JOIN student_profiles sp ON sp.user_id = u.id
+        WHERE sp.family_unit_id = ${family.id}
+      `);
+
+      // Calculate totals
+      const totalHoursActive = membersResult.rows.reduce((sum: number, m: any) => sum + Number(m.hoursActive || 0), 0);
+      const totalWordCount = membersResult.rows.reduce((sum: number, m: any) => sum + Number(m.wordCount || 0), 0);
+      const avgCourseProgress = membersResult.rows.length > 0
+        ? membersResult.rows.reduce((sum: number, m: any) => sum + Number(m.courseProgress || 0), 0) / membersResult.rows.length
+        : 0;
+
+      res.json({
+        id: family.id,
+        familyName: family.family_name,
+        targetPactHours: family.target_pact_hours,
+        totalPactMinutes: family.total_pact_minutes,
+        anthologyTitle: family.anthology_title,
+        anthologyContent: family.anthology_content,
+        anthologyWordCount: family.anthology_word_count,
+        members: membersResult.rows.map((m: any) => ({
+          ...m,
+          hoursActive: Math.round(Number(m.hoursActive) || 0),
+          wordCount: Number(m.wordCount) || 0,
+          courseProgress: Math.round(Number(m.courseProgress) || 0),
+        })),
+        totalHoursActive: Math.round(totalHoursActive),
+        totalWordCount,
+        avgCourseProgress: Math.round(avgCourseProgress),
+      });
+    } catch (error) {
+      console.error("Error fetching family dashboard:", error);
+      res.status(500).json({ error: "Failed to fetch family data" });
+    }
+  });
+
+  // Get PACT sessions for family
+  app.get("/api/family/pact-sessions", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const familyResult = await db.execute(sql`
+        SELECT fu.id FROM family_units fu
+        JOIN student_profiles sp ON sp.family_unit_id = fu.id
+        WHERE sp.user_id = ${req.session.userId}
+      `);
+
+      if (familyResult.rows.length === 0) {
+        return res.json([]);
+      }
+
+      const familyId = (familyResult.rows[0] as any).id;
+
+      const sessions = await db.execute(sql`
+        SELECT id, session_title as "sessionTitle", session_type as "sessionType",
+               duration_minutes as "durationMinutes", words_written as "wordsWritten",
+               created_at as "createdAt"
+        FROM pact_sessions
+        WHERE family_unit_id = ${familyId}
+        ORDER BY created_at DESC
+        LIMIT 20
+      `);
+
+      res.json(sessions.rows);
+    } catch (error) {
+      console.error("Error fetching PACT sessions:", error);
+      res.status(500).json({ error: "Failed to fetch PACT sessions" });
+    }
+  });
+
+  // Start PACT session
+  app.post("/api/family/pact-sessions/start", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    const { title, type, description } = req.body;
+    if (!title) {
+      return res.status(400).json({ error: "Session title is required" });
+    }
+
+    try {
+      const familyResult = await db.execute(sql`
+        SELECT fu.id FROM family_units fu
+        JOIN student_profiles sp ON sp.family_unit_id = fu.id
+        WHERE sp.user_id = ${req.session.userId}
+      `);
+
+      if (familyResult.rows.length === 0) {
+        return res.status(404).json({ error: "No family unit found" });
+      }
+
+      const familyId = (familyResult.rows[0] as any).id;
+
+      const result = await db.execute(sql`
+        INSERT INTO pact_sessions (family_unit_id, session_title, session_type, activity_description, start_time, created_by)
+        VALUES (${familyId}, ${title}, ${type || 'writing'}, ${description || null}, NOW(), ${req.session.userId})
+        RETURNING id, session_title as "sessionTitle", start_time as "startTime"
+      `);
+
+      res.json(result.rows[0]);
+    } catch (error) {
+      console.error("Error starting PACT session:", error);
+      res.status(500).json({ error: "Failed to start PACT session" });
+    }
+  });
+
+  // End PACT session
+  app.post("/api/family/pact-sessions/end", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    const { wordsWritten } = req.body;
+
+    try {
+      const familyResult = await db.execute(sql`
+        SELECT fu.id FROM family_units fu
+        JOIN student_profiles sp ON sp.family_unit_id = fu.id
+        WHERE sp.user_id = ${req.session.userId}
+      `);
+
+      if (familyResult.rows.length === 0) {
+        return res.status(404).json({ error: "No family unit found" });
+      }
+
+      const familyId = (familyResult.rows[0] as any).id;
+
+      // Get the active session
+      const activeSession = await db.execute(sql`
+        SELECT id, start_time FROM pact_sessions
+        WHERE family_unit_id = ${familyId} AND end_time IS NULL
+        ORDER BY start_time DESC LIMIT 1
+      `);
+
+      if (activeSession.rows.length === 0) {
+        return res.status(404).json({ error: "No active PACT session" });
+      }
+
+      const session = activeSession.rows[0] as any;
+      const startTime = new Date(session.start_time);
+      const durationMinutes = Math.round((Date.now() - startTime.getTime()) / 60000);
+
+      // Update session with end time and duration
+      await db.execute(sql`
+        UPDATE pact_sessions
+        SET end_time = NOW(), duration_minutes = ${durationMinutes}, words_written = ${wordsWritten || 0}
+        WHERE id = ${session.id}
+      `);
+
+      // Update family's total PACT minutes
+      await db.execute(sql`
+        UPDATE family_units
+        SET total_pact_minutes = total_pact_minutes + ${durationMinutes}, updated_at = NOW()
+        WHERE id = ${familyId}
+      `);
+
+      res.json({ success: true, durationMinutes });
+    } catch (error) {
+      console.error("Error ending PACT session:", error);
+      res.status(500).json({ error: "Failed to end PACT session" });
+    }
+  });
 }

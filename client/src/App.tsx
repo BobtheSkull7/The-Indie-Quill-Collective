@@ -19,6 +19,7 @@ import StudentDashboard from "./pages/StudentDashboard";
 import CurriculumPlayer from "./pages/CurriculumPlayer";
 import DraftingSuite from "./pages/DraftingSuite";
 import MentorDashboard from "./pages/MentorDashboard";
+import FamilyDashboard from "./pages/FamilyDashboard";
 import { Redirect } from "wouter";
 import Donations from "./pages/Donations";
 import DonationSuccess from "./pages/DonationSuccess";
@@ -87,6 +88,7 @@ function App() {
           <Route path="/student/module/:id" component={CurriculumPlayer} />
           <Route path="/student/drafts" component={DraftingSuite} />
           <Route path="/mentor" component={MentorDashboard} />
+          <Route path="/family" component={FamilyDashboard} />
           <Route path="/admin" component={AdminDashboard} />
           <Route path="/admin/cohorts" component={Cohorts} />
           <Route path="/admin/grants" component={Grants} />
