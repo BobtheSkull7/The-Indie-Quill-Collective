@@ -160,34 +160,28 @@ export default function Navbar() {
             ) : user.role === "admin" ? (
               <>
                 <Link 
-                  href="/dashboard" 
-                  className={`text-sm font-medium transition-colors ${location === "/dashboard" || location === "/admin" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`}
+                  href="/admin/intake" 
+                  className={`text-sm font-medium transition-colors ${location === "/admin/intake" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`}
                 >
-                  Dashboard
+                  Intake
                 </Link>
                 <Link 
-                  href="/admin/grants" 
-                  className={`text-sm font-medium transition-colors ${location === "/admin/grants" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`}
+                  href="/admin/training" 
+                  className={`text-sm font-medium transition-colors ${location === "/admin/training" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`}
                 >
-                  Grants
+                  Training
                 </Link>
                 <Link 
-                  href="/admin/cohorts" 
-                  className={`text-sm font-medium transition-colors ${location === "/admin/cohorts" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`}
+                  href="/admin/publishing" 
+                  className={`text-sm font-medium transition-colors ${location === "/admin/publishing" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`}
                 >
-                  Cohorts
+                  Publishing
                 </Link>
                 <Link 
-                  href="/admin/vault" 
-                  className={`text-sm font-medium transition-colors ${location === "/admin/vault" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`}
+                  href="/admin/outcomes" 
+                  className={`text-sm font-medium transition-colors ${location === "/admin/outcomes" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`}
                 >
-                  Documentation
-                </Link>
-                <Link 
-                  href="/admin/ledger" 
-                  className={`text-sm font-medium transition-colors ${location === "/admin/ledger" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`}
-                >
-                  Ledger
+                  Outcomes
                 </Link>
                 <div className="flex items-center space-x-3 border-l pl-6 border-gray-200">
                   <div className="flex items-center space-x-2">
@@ -288,11 +282,10 @@ export default function Navbar() {
             </>
           ) : user.role === "admin" ? (
             <>
-              <Link href="/dashboard" className="block text-gray-600 hover:text-slate-800 py-2">Dashboard</Link>
-              <Link href="/admin/grants" className="block text-gray-600 hover:text-slate-800 py-2">Grants</Link>
-              <Link href="/admin/cohorts" className="block text-gray-600 hover:text-slate-800 py-2">Cohorts</Link>
-              <Link href="/admin/vault" className="block text-gray-600 hover:text-slate-800 py-2">Documentation</Link>
-              <Link href="/admin/ledger" className="block text-gray-600 hover:text-slate-800 py-2">Ledger</Link>
+              <Link href="/admin/intake" className="block text-gray-600 hover:text-slate-800 py-2">Intake</Link>
+              <Link href="/admin/training" className="block text-gray-600 hover:text-slate-800 py-2">Training</Link>
+              <Link href="/admin/publishing" className="block text-gray-600 hover:text-slate-800 py-2">Publishing</Link>
+              <Link href="/admin/outcomes" className="block text-gray-600 hover:text-slate-800 py-2">Outcomes</Link>
               <button onClick={handleLogout} className="block w-full text-left text-red-500 py-2">Logout</button>
             </>
           ) : (
