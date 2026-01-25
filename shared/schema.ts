@@ -654,11 +654,55 @@ export const meetingProviderEnum = pgEnum('meeting_provider', [
   'daily'
 ]);
 
+// Family member role enum for Family Literacy program
+export const familyRoleEnum = pgEnum('family_role', [
+  'parent',
+  'child',
+  'guardian',
+  'grandparent',
+  'sibling'
+]);
+
+// Family Units - groups household members for DGLF Family Literacy
+export const familyUnits = pgTable("family_units", {
+  id: serial("id").primaryKey(),
+  familyName: text("family_name").notNull(), // e.g., "The Johnson Family"
+  primaryContactId: integer("primary_contact_id").references(() => users.id),
+  cohortId: integer("cohort_id").references(() => cohorts.id),
+  targetPactHours: integer("target_pact_hours").default(20).notNull(), // DGLF requirement
+  totalPactMinutes: integer("total_pact_minutes").default(0).notNull(),
+  anthologyTitle: text("anthology_title"), // Family Anthology title
+  anthologyContent: text("anthology_content"), // Shared Family Anthology content
+  anthologyWordCount: integer("anthology_word_count").default(0).notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// PACT Sessions - Parent and Child Together time tracking for DGLF
+export const pactSessions = pgTable("pact_sessions", {
+  id: serial("id").primaryKey(),
+  familyUnitId: integer("family_unit_id").references(() => familyUnits.id).notNull(),
+  sessionTitle: text("session_title").notNull(),
+  sessionType: text("session_type").default("writing").notNull(), // writing, reading, discussion
+  startTime: timestamp("start_time").notNull(),
+  endTime: timestamp("end_time"),
+  durationMinutes: integer("duration_minutes").default(0).notNull(),
+  participantIds: text("participant_ids"), // JSON array of user IDs who participated
+  activityDescription: text("activity_description"),
+  wordsWritten: integer("words_written").default(0),
+  notes: text("notes"),
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Student Profiles - extends users for student-specific data
 export const studentProfiles = pgTable("student_profiles", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull().unique(),
   cohortId: integer("cohort_id").references(() => cohorts.id),
+  familyUnitId: integer("family_unit_id").references(() => familyUnits.id),
+  familyRole: familyRoleEnum("family_role"),
   accessibilityMode: accessibilityModeEnum("accessibility_mode").default("standard").notNull(),
   preferredLanguage: text("preferred_language").default("en"),
   enrolledAt: timestamp("enrolled_at").defaultNow().notNull(),
@@ -788,6 +832,32 @@ export const draftingDocuments = pgTable("drafting_documents", {
 });
 
 // Relations for Virtual Classroom
+// Family Units Relations
+export const familyUnitsRelations = relations(familyUnits, ({ one, many }) => ({
+  primaryContact: one(users, {
+    fields: [familyUnits.primaryContactId],
+    references: [users.id],
+  }),
+  cohort: one(cohorts, {
+    fields: [familyUnits.cohortId],
+    references: [cohorts.id],
+  }),
+  members: many(studentProfiles),
+  pactSessions: many(pactSessions),
+}));
+
+// PACT Sessions Relations
+export const pactSessionsRelations = relations(pactSessions, ({ one }) => ({
+  familyUnit: one(familyUnits, {
+    fields: [pactSessions.familyUnitId],
+    references: [familyUnits.id],
+  }),
+  creator: one(users, {
+    fields: [pactSessions.createdBy],
+    references: [users.id],
+  }),
+}));
+
 export const studentProfilesRelations = relations(studentProfiles, ({ one }) => ({
   user: one(users, {
     fields: [studentProfiles.userId],
@@ -796,6 +866,10 @@ export const studentProfilesRelations = relations(studentProfiles, ({ one }) => 
   cohort: one(cohorts, {
     fields: [studentProfiles.cohortId],
     references: [cohorts.id],
+  }),
+  familyUnit: one(familyUnits, {
+    fields: [studentProfiles.familyUnitId],
+    references: [familyUnits.id],
   }),
 }));
 
