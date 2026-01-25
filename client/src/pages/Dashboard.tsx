@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "../App";
 import { FileText, Clock, CheckCircle, XCircle, ArrowRight, BookOpen, AlertCircle, Download, Trash2, Shield, ExternalLink } from "lucide-react";
+import AdminDashboard from "./AdminDashboard";
 
 interface Application {
   id: number;
@@ -59,7 +60,6 @@ export default function Dashboard() {
     }
 
     if (user.role === "admin") {
-      setLocation("/admin");
       return;
     }
 
@@ -169,6 +169,10 @@ export default function Dashboard() {
         </div>
       </div>
     );
+  }
+
+  if (user?.role === "admin") {
+    return <AdminDashboard />;
   }
 
   if (loading) {

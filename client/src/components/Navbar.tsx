@@ -157,6 +157,53 @@ export default function Navbar() {
                   </button>
                 </div>
               </>
+            ) : user.role === "admin" ? (
+              <>
+                <Link 
+                  href="/dashboard" 
+                  className={`text-sm font-medium transition-colors ${location === "/dashboard" || location === "/admin" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`}
+                >
+                  Dashboard
+                </Link>
+                <Link 
+                  href="/admin/grants" 
+                  className={`text-sm font-medium transition-colors ${location === "/admin/grants" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`}
+                >
+                  Grants
+                </Link>
+                <Link 
+                  href="/admin/cohorts" 
+                  className={`text-sm font-medium transition-colors ${location === "/admin/cohorts" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`}
+                >
+                  Cohorts
+                </Link>
+                <Link 
+                  href="/admin/vault" 
+                  className={`text-sm font-medium transition-colors ${location === "/admin/vault" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`}
+                >
+                  Documentation
+                </Link>
+                <Link 
+                  href="/admin/ledger" 
+                  className={`text-sm font-medium transition-colors ${location === "/admin/ledger" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`}
+                >
+                  Ledger
+                </Link>
+                <div className="flex items-center space-x-3 border-l pl-6 border-gray-200">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                      <User className="w-4 h-4 text-red-600" />
+                    </div>
+                    <span className="text-sm font-medium text-gray-700">{user.firstName}</span>
+                  </div>
+                  <button 
+                    onClick={handleLogout}
+                    className="text-gray-500 hover:text-red-500 transition-colors"
+                  >
+                    <LogOut className="w-5 h-5" />
+                  </button>
+                </div>
+              </>
             ) : (
               <>
                 <Link 
@@ -177,34 +224,6 @@ export default function Navbar() {
                 >
                   Publishing Status
                 </Link>
-                {user.role === "admin" && (
-                  <>
-                    <Link 
-                      href="/admin" 
-                      className={`text-sm font-medium transition-colors ${location === "/admin" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`}
-                    >
-                      Admin
-                    </Link>
-                    <Link 
-                      href="/admin/cohorts" 
-                      className={`text-sm font-medium transition-colors ${location === "/admin/cohorts" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`}
-                    >
-                      Cohorts
-                    </Link>
-                    <Link 
-                      href="/admin/vault" 
-                      className={`text-sm font-medium transition-colors ${location === "/admin/vault" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`}
-                    >
-                      Documentation
-                    </Link>
-                    <Link 
-                      href="/admin/ledger" 
-                      className={`text-sm font-medium transition-colors ${location === "/admin/ledger" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`}
-                    >
-                      Ledger
-                    </Link>
-                  </>
-                )}
                 <div className="flex items-center space-x-3 border-l pl-6 border-gray-200">
                   <div className="flex items-center space-x-2">
                     <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
@@ -267,19 +286,20 @@ export default function Navbar() {
               <Link href="/mentor" className="block text-gray-600 hover:text-slate-800 py-2">My Students</Link>
               <button onClick={handleLogout} className="block w-full text-left text-red-500 py-2">Logout</button>
             </>
+          ) : user.role === "admin" ? (
+            <>
+              <Link href="/dashboard" className="block text-gray-600 hover:text-slate-800 py-2">Dashboard</Link>
+              <Link href="/admin/grants" className="block text-gray-600 hover:text-slate-800 py-2">Grants</Link>
+              <Link href="/admin/cohorts" className="block text-gray-600 hover:text-slate-800 py-2">Cohorts</Link>
+              <Link href="/admin/vault" className="block text-gray-600 hover:text-slate-800 py-2">Documentation</Link>
+              <Link href="/admin/ledger" className="block text-gray-600 hover:text-slate-800 py-2">Ledger</Link>
+              <button onClick={handleLogout} className="block w-full text-left text-red-500 py-2">Logout</button>
+            </>
           ) : (
             <>
               <Link href="/dashboard" className="block text-gray-600 hover:text-slate-800 py-2">Dashboard</Link>
               <Link href="/contracts" className="block text-gray-600 hover:text-slate-800 py-2">Contracts</Link>
               <Link href="/publishing-status" className="block text-gray-600 hover:text-slate-800 py-2">Publishing Status</Link>
-              {user.role === "admin" && (
-                <>
-                  <Link href="/admin" className="block text-gray-600 hover:text-slate-800 py-2">Admin</Link>
-                  <Link href="/admin/cohorts" className="block text-gray-600 hover:text-slate-800 py-2">Cohorts</Link>
-                  <Link href="/admin/vault" className="block text-gray-600 hover:text-slate-800 py-2">Documentation</Link>
-                  <Link href="/admin/ledger" className="block text-gray-600 hover:text-slate-800 py-2">Ledger</Link>
-                </>
-              )}
               <button onClick={handleLogout} className="block w-full text-left text-red-500 py-2">Logout</button>
             </>
           )}
