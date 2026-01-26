@@ -3,6 +3,24 @@ import rateLimit from "express-rate-limit";
 import { db } from "./db";
 import { users, applications, contracts, publishingUpdates, calendarEvents, fundraisingCampaigns, donations, auditLogs, cohorts, familyUnits, operatingCosts, foundations, solicitationLogs, foundationGrants, pilotLedger, emailLogs, grantPrograms, organizationCredentials, grantCalendarAlerts } from "@shared/schema";
 import { eq, desc, gte, sql, inArray, lt, and } from "drizzle-orm";
+
+// Helper function to fetch user by ID using raw SQL to avoid Drizzle ORM column mismatch issues
+async function getUserById(userId: number): Promise<any | null> {
+  const result = await db.execute(sql`
+    SELECT id, email, first_name as "firstName", last_name as "lastName", role, short_id as "shortId", family_unit_id as "familyUnitId"
+    FROM users WHERE id = ${userId}
+  `);
+  return result.rows[0] || null;
+}
+
+// Helper function to fetch user by email using raw SQL
+async function getUserByEmail(email: string): Promise<any | null> {
+  const result = await db.execute(sql`
+    SELECT id, email, password, first_name as "firstName", last_name as "lastName", role, short_id as "shortId", family_unit_id as "familyUnitId"
+    FROM users WHERE lower(email) = lower(${email})
+  `);
+  return result.rows[0] || null;
+}
 import { hash, compare } from "./auth";
 import { migrateAuthorToIndieQuill, retryFailedMigrations, sendApplicationToLLC, sendStatusUpdateToLLC, sendContractSignatureToLLC, sendUserRoleUpdateToLLC } from "./indie-quill-integration";
 import { sendApplicationReceivedEmail, sendApplicationAcceptedEmail, sendApplicationRejectedEmail, sendTestEmailSamples } from "./email";
@@ -27,8 +45,7 @@ async function generateAndStorePDF(contractId: number): Promise<Buffer | null> {
     
     if (!application) return null;
 
-    const [user] = await db.select().from(users)
-      .where(eq(users.id, contract.userId));
+    const user = await getUserById(contract.userId);
     
     if (!user) return null;
 
@@ -112,8 +129,8 @@ export async function registerRoutes(app: Express) {
       const sanitizedFirstName = firstName?.trim() || "";
       const sanitizedLastName = lastName?.trim() || "";
       
-      const existingUser = await db.select().from(users).where(sql`lower(${users.email}) = lower(${sanitizedEmail})`);
-      if (existingUser.length > 0) {
+      const existingUser = await getUserByEmail(sanitizedEmail);
+      if (existingUser) {
         return res.status(400).json({ message: "Email already registered" });
       }
 
@@ -433,7 +450,7 @@ export async function registerRoutes(app: Express) {
 
       const [newApplication] = await db.insert(applications).values(applicationData).returning();
       
-      const [user] = await db.select().from(users).where(eq(users.id, req.session.userId));
+      const user = await getUserById(req.session.userId);
       if (user) {
         // Send confirmation email
         try {
@@ -652,7 +669,7 @@ export async function registerRoutes(app: Express) {
         return res.status(404).json({ message: "Application not found" });
       }
       
-      const [applicantUser] = await db.select().from(users).where(eq(users.id, application.userId));
+      const applicantUser = await getUserById(application.userId);
       if (!applicantUser) {
         return res.status(404).json({ message: "User not found" });
       }
@@ -905,8 +922,7 @@ export async function registerRoutes(app: Express) {
       const [application] = await db.select().from(applications)
         .where(eq(applications.id, contract.applicationId));
       
-      const [user] = await db.select().from(users)
-        .where(eq(users.id, contract.userId));
+      const user = await getUserById(contract.userId);
 
       if (contract.requiresGuardian) {
         await logMinorDataAccess(
@@ -987,8 +1003,7 @@ export async function registerRoutes(app: Express) {
       } else {
         // Regenerate if missing (legacy contracts or failed storage)
         console.log(`[PDF Download] Regenerating PDF for contract ${contract.id} (not in database)`);
-        const [user] = await db.select().from(users)
-          .where(eq(users.id, contract.userId));
+        const user = await getUserById(contract.userId);
 
         if (!user) {
           return res.status(404).json({ message: "User not found" });
@@ -1065,8 +1080,7 @@ export async function registerRoutes(app: Express) {
       const [application] = await db.select().from(applications)
         .where(eq(applications.id, contract.applicationId));
       
-      const [user] = await db.select().from(users)
-        .where(eq(users.id, contract.userId));
+      const user = await getUserById(contract.userId);
 
       if (!application || !user) {
         return res.status(404).json({ message: "Application or user not found" });
@@ -1724,8 +1738,7 @@ export async function registerRoutes(app: Express) {
         return res.status(404).json({ message: "Application not found" });
       }
 
-      const [user] = await db.select().from(users)
-        .where(eq(users.id, application.userId));
+      const user = await getUserById(application.userId);
       
       if (!user) {
         return res.status(404).json({ message: "User not found" });
@@ -1800,7 +1813,7 @@ export async function registerRoutes(app: Express) {
 
       const bridgeEntries = await Promise.all(
         allApps.map(async (app) => {
-          const [user] = await db.select().from(users).where(eq(users.id, app.userId));
+          const user = await getUserById(app.userId);
           const contract = allContracts.find(c => c.applicationId === app.id);
           const cohort = allCohorts.find(c => c.id === app.cohortId);
 
@@ -1940,7 +1953,7 @@ export async function registerRoutes(app: Express) {
         return res.status(400).json({ message: "Invalid role" });
       }
 
-      const [existingUser] = await db.select().from(users).where(eq(users.id, userId));
+      const existingUser = await getUserById(userId);
       if (!existingUser) {
         return res.status(404).json({ message: "User not found" });
       }
@@ -2051,7 +2064,7 @@ export async function registerRoutes(app: Express) {
 
     try {
       // Check if user exists
-      const [existingUser] = await db.select().from(users).where(eq(users.id, targetUserId));
+      const existingUser = await getUserById(targetUserId);
       if (!existingUser) {
         return res.status(404).json({ message: "User not found" });
       }
@@ -2784,8 +2797,7 @@ export async function registerRoutes(app: Express) {
       const { truncateName } = await import("./utils/minor-safety");
 
       // Get admin user info
-      const [adminUser] = await db.select().from(users)
-        .where(eq(users.id, req.session.userId));
+      const adminUser = await getUserById(req.session.userId);
 
       // Get all applications with minor data
       const allApps = await db.select().from(applications);
@@ -2800,11 +2812,16 @@ export async function registerRoutes(app: Express) {
         .orderBy(desc(auditLogs.createdAt))
         .limit(20);
 
-      // Get user info for display names
+      // Get user info for display names using raw SQL to avoid column issues
       const userIds = [...new Set(allApps.map(a => a.userId))];
-      const appUsers = userIds.length > 0 
-        ? await db.select().from(users).where(inArray(users.id, userIds))
-        : [];
+      let appUsers: any[] = [];
+      if (userIds.length > 0) {
+        const usersResult = await db.execute(sql`
+          SELECT id, email, first_name as "firstName", last_name as "lastName", role
+          FROM users WHERE id = ANY(${userIds})
+        `);
+        appUsers = usersResult.rows as any[];
+      }
       const userMap = new Map(appUsers.map(u => [u.id, u]));
 
       // Prepare minor records (sanitized)
@@ -2946,7 +2963,7 @@ export async function registerRoutes(app: Express) {
     if (!req.session.userId) {
       return res.status(401).json({ message: "Not authenticated" });
     }
-    const [currentUser] = await db.select().from(users).where(eq(users.id, req.session.userId));
+    const currentUser = await getUserById(req.session.userId);
     if (!currentUser || currentUser.role !== "admin") {
       return res.status(403).json({ message: "Admin access required" });
     }
@@ -3011,7 +3028,7 @@ export async function registerRoutes(app: Express) {
     if (!req.session.userId) {
       return res.status(401).json({ message: "Not authenticated" });
     }
-    const [currentUser] = await db.select().from(users).where(eq(users.id, req.session.userId));
+    const currentUser = await getUserById(req.session.userId);
     if (!currentUser || currentUser.role !== "admin") {
       return res.status(403).json({ message: "Admin access required" });
     }
@@ -3035,7 +3052,7 @@ export async function registerRoutes(app: Express) {
     if (!req.session.userId) {
       return res.status(401).json({ message: "Not authenticated" });
     }
-    const [currentUser] = await db.select().from(users).where(eq(users.id, req.session.userId));
+    const currentUser = await getUserById(req.session.userId);
     if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "board_member")) {
       return res.status(403).json({ message: "Admin access required" });
     }
@@ -3081,7 +3098,7 @@ export async function registerRoutes(app: Express) {
     if (!req.session.userId) {
       return res.status(401).json({ message: "Not authenticated" });
     }
-    const [currentUser] = await db.select().from(users).where(eq(users.id, req.session.userId));
+    const currentUser = await getUserById(req.session.userId);
     if (!currentUser || currentUser.role !== "admin") {
       return res.status(403).json({ message: "Admin access required" });
     }
@@ -3109,7 +3126,7 @@ export async function registerRoutes(app: Express) {
     if (!req.session.userId) {
       return res.status(401).json({ message: "Not authenticated" });
     }
-    const [currentUser] = await db.select().from(users).where(eq(users.id, req.session.userId));
+    const currentUser = await getUserById(req.session.userId);
     if (!currentUser || currentUser.role !== "admin") {
       return res.status(403).json({ message: "Admin access required" });
     }
@@ -3279,7 +3296,7 @@ export function registerGrantRoutes(app: Express) {
       return res.status(401).json({ message: "Not authenticated" });
     }
 
-    const [currentUser] = await db.select().from(users).where(eq(users.id, req.session.userId));
+    const currentUser = await getUserById(req.session.userId);
     if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "board_member")) {
       return res.status(403).json({ message: "Access denied" });
     }
@@ -3324,7 +3341,7 @@ export function registerGrantRoutes(app: Express) {
       return res.status(401).json({ message: "Not authenticated" });
     }
 
-    const [currentUser] = await db.select().from(users).where(eq(users.id, req.session.userId));
+    const currentUser = await getUserById(req.session.userId);
     if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "board_member")) {
       return res.status(403).json({ message: "Access denied" });
     }
@@ -3375,7 +3392,7 @@ export function registerGrantRoutes(app: Express) {
       return res.status(401).json({ message: "Not authenticated" });
     }
 
-    const [currentUser] = await db.select().from(users).where(eq(users.id, req.session.userId));
+    const currentUser = await getUserById(req.session.userId);
     if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "board_member")) {
       return res.status(403).json({ message: "Access denied" });
     }
@@ -3423,7 +3440,7 @@ export function registerGrantRoutes(app: Express) {
       return res.status(401).json({ message: "Not authenticated" });
     }
 
-    const [currentUser] = await db.select().from(users).where(eq(users.id, req.session.userId));
+    const currentUser = await getUserById(req.session.userId);
     if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "board_member")) {
       return res.status(403).json({ message: "Access denied" });
     }
@@ -3463,7 +3480,7 @@ export function registerGrantRoutes(app: Express) {
       return res.status(401).json({ message: "Not authenticated" });
     }
 
-    const [currentUser] = await db.select().from(users).where(eq(users.id, req.session.userId));
+    const currentUser = await getUserById(req.session.userId);
     if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "board_member")) {
       return res.status(403).json({ message: "Access denied" });
     }
@@ -3511,7 +3528,7 @@ export function registerGrantRoutes(app: Express) {
       return res.status(401).json({ message: "Not authenticated" });
     }
 
-    const [currentUser] = await db.select().from(users).where(eq(users.id, req.session.userId));
+    const currentUser = await getUserById(req.session.userId);
     if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "board_member")) {
       return res.status(403).json({ message: "Access denied" });
     }
@@ -3598,7 +3615,7 @@ export function registerGrantRoutes(app: Express) {
       return res.status(401).json({ message: "Not authenticated" });
     }
 
-    const [currentUser] = await db.select().from(users).where(eq(users.id, req.session.userId));
+    const currentUser = await getUserById(req.session.userId);
     if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "board_member")) {
       return res.status(403).json({ message: "Access denied" });
     }
@@ -3655,7 +3672,7 @@ export function registerGrantRoutes(app: Express) {
       return res.status(401).json({ message: "Not authenticated" });
     }
 
-    const [currentUser] = await db.select().from(users).where(eq(users.id, req.session.userId));
+    const currentUser = await getUserById(req.session.userId);
     if (!currentUser || currentUser.role !== "admin") {
       return res.status(403).json({ message: "Access denied" });
     }
@@ -3707,7 +3724,7 @@ export function registerGrantRoutes(app: Express) {
       return res.status(401).json({ message: "Not authenticated" });
     }
 
-    const [currentUser] = await db.select().from(users).where(eq(users.id, req.session.userId));
+    const currentUser = await getUserById(req.session.userId);
     if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "board_member")) {
       return res.status(403).json({ message: "Access denied" });
     }
@@ -3812,7 +3829,7 @@ export function registerGrantRoutes(app: Express) {
       return res.status(401).json({ message: "Not authenticated" });
     }
 
-    const [currentUser] = await db.select().from(users).where(eq(users.id, req.session.userId));
+    const currentUser = await getUserById(req.session.userId);
     if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "board_member")) {
       return res.status(403).json({ message: "Access denied" });
     }
@@ -3845,7 +3862,7 @@ export function registerGrantRoutes(app: Express) {
       return res.status(401).json({ message: "Not authenticated" });
     }
 
-    const [currentUser] = await db.select().from(users).where(eq(users.id, req.session.userId));
+    const currentUser = await getUserById(req.session.userId);
     if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "board_member")) {
       return res.status(403).json({ message: "Access denied" });
     }
@@ -3871,7 +3888,7 @@ export function registerGrantRoutes(app: Express) {
       return res.status(401).json({ message: "Not authenticated" });
     }
 
-    const [currentUser] = await db.select().from(users).where(eq(users.id, req.session.userId));
+    const currentUser = await getUserById(req.session.userId);
     if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "board_member")) {
       return res.status(403).json({ message: "Access denied" });
     }
@@ -3940,7 +3957,7 @@ export function registerGrantRoutes(app: Express) {
       return res.status(401).json({ message: "Not authenticated" });
     }
 
-    const [currentUser] = await db.select().from(users).where(eq(users.id, req.session.userId));
+    const currentUser = await getUserById(req.session.userId);
     if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "board_member")) {
       return res.status(403).json({ message: "Access denied" });
     }
@@ -3980,7 +3997,7 @@ export function registerGrantRoutes(app: Express) {
       return res.status(401).json({ message: "Not authenticated" });
     }
 
-    const [currentUser] = await db.select().from(users).where(eq(users.id, req.session.userId));
+    const currentUser = await getUserById(req.session.userId);
     if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "board_member")) {
       return res.status(403).json({ message: "Access denied" });
     }
@@ -4019,7 +4036,7 @@ export function registerGrantRoutes(app: Express) {
       return res.status(401).json({ message: "Not authenticated" });
     }
 
-    const [currentUser] = await db.select().from(users).where(eq(users.id, req.session.userId));
+    const currentUser = await getUserById(req.session.userId);
     if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "board_member")) {
       return res.status(403).json({ message: "Access denied" });
     }
@@ -4093,7 +4110,7 @@ export function registerGrantRoutes(app: Express) {
       return res.status(401).json({ message: "Not authenticated" });
     }
 
-    const [currentUser] = await db.select().from(users).where(eq(users.id, req.session.userId));
+    const currentUser = await getUserById(req.session.userId);
     if (!currentUser || currentUser.role !== "admin") {
       return res.status(403).json({ message: "Admin access required" });
     }
@@ -4122,7 +4139,7 @@ export function registerGrantRoutes(app: Express) {
       return res.status(401).json({ message: "Not authenticated" });
     }
 
-    const [currentUser] = await db.select().from(users).where(eq(users.id, req.session.userId));
+    const currentUser = await getUserById(req.session.userId);
     if (!currentUser || currentUser.role !== "admin") {
       return res.status(403).json({ message: "Admin access required" });
     }
@@ -4172,7 +4189,7 @@ export function registerGrantRoutes(app: Express) {
       return res.status(401).json({ message: "Not authenticated" });
     }
 
-    const [currentUser] = await db.select().from(users).where(eq(users.id, req.session.userId));
+    const currentUser = await getUserById(req.session.userId);
     if (!currentUser || currentUser.role !== "admin") {
       return res.status(403).json({ message: "Admin access required" });
     }
@@ -4289,7 +4306,7 @@ export function registerGrantRoutes(app: Express) {
       return res.status(401).json({ message: "Not authenticated" });
     }
 
-    const [currentUser] = await db.select().from(users).where(eq(users.id, req.session.userId));
+    const currentUser = await getUserById(req.session.userId);
     if (!currentUser || currentUser.role !== "admin") {
       return res.status(403).json({ message: "Admin access required" });
     }
