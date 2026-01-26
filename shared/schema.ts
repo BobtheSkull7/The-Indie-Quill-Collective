@@ -67,34 +67,44 @@ export const cohorts = pgTable("cohorts", {
   currentCount: integer("current_count").notNull().default(0),
   status: text("status").default("open"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const familyUnits = pgTable("family_units", {
   id: serial("id").primaryKey(),
-  name: text("name").notNull(),
+  name: text("family_name").notNull(),
+  primaryContactId: integer("primary_contact_id"),
   cohortId: integer("cohort_id").references(() => cohorts.id),
+  targetPactHours: integer("target_pact_hours").default(20),
+  totalPactMinutes: integer("total_pact_minutes").default(0),
+  anthologyTitle: text("anthology_title"),
+  anthologyContent: text("anthology_content"),
+  anthologyWordCount: integer("anthology_word_count").default(0),
+  isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
   role: text("role").notNull().default("applicant"),
-  shortId: text("short_id").unique(),
-  familyUnitId: integer("family_unit_id").references(() => familyUnits.id),
   indieQuillAuthorId: text("indie_quill_author_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const applications = pgTable("applications", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
   
-  pseudonym: text("pen_name"),
+  internalId: text("internal_id"),
+  cohortId: integer("cohort_id").references(() => cohorts.id),
+  dateApproved: timestamp("date_approved"),
+  dateMigrated: timestamp("date_migrated"),
+  
+  pseudonym: text("pseudonym"),
   dateOfBirth: text("date_of_birth"),
   isMinor: boolean("is_minor").default(false),
   
@@ -102,9 +112,14 @@ export const applications = pgTable("applications", {
   guardianEmail: text("guardian_email"),
   guardianPhone: text("guardian_phone"),
   guardianRelationship: text("guardian_relationship"),
+  guardianConsentMethod: text("guardian_consent_method"),
+  guardianConsentVerified: boolean("guardian_consent_verified").default(false),
+  dataRetentionUntil: timestamp("data_retention_until"),
   
-  previouslyPublished: boolean("previously_published"),
-  publishingDetails: text("publishing_details"),
+  hasStoryToTell: boolean("has_story_to_tell").default(true),
+  personalStruggles: text("personal_struggles"),
+  expressionTypes: text("expression_types"),
+  expressionOther: text("expression_other"),
   
   whyCollective: text("why_collective"),
   goals: text("goals"),
@@ -112,29 +127,21 @@ export const applications = pgTable("applications", {
   
   status: applicationStatusEnum("status").default("pending").notNull(),
   reviewNotes: text("review_notes"),
-  reviewedBy: integer("reviewed_by").references(() => users.id),
+  reviewedBy: varchar("reviewed_by").references(() => users.id),
   reviewedAt: timestamp("reviewed_at"),
   
-  hasStoryToTell: boolean("has_story_to_tell").default(true),
-  personalStruggles: text("personal_struggles"),
-  expressionTypes: text("expression_types"),
-  expressionOther: text("expression_other"),
-  
-  publicIdentityEnabled: boolean("public_identity_enabled").default(false),
-  
-  internalId: text("internal_id"),
-  cohortId: integer("cohort_id").references(() => cohorts.id),
-  dateApproved: timestamp("date_approved"),
-  dateMigrated: timestamp("date_migrated"),
-  
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  
+  manuscriptWordCount: integer("manuscript_word_count").default(0),
+  manuscriptTitle: text("manuscript_title"),
+  publicIdentityEnabled: boolean("public_identity_enabled").default(false),
 });
 
 export const contracts = pgTable("contracts", {
   id: serial("id").primaryKey(),
   applicationId: integer("application_id").references(() => applications.id).notNull(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
   
   contractType: text("contract_type").notNull(),
   contractContent: text("contract_content").notNull(),
@@ -163,7 +170,7 @@ export const contracts = pgTable("contracts", {
 export const publishingUpdates = pgTable("publishing_updates", {
   id: serial("id").primaryKey(),
   applicationId: integer("application_id").references(() => applications.id).notNull(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
   
   indieQuillAuthorId: text("indie_quill_author_id"),
   
@@ -302,7 +309,7 @@ export const donationsRelations = relations(donations, ({ one }) => ({
 
 export const auditLogs = pgTable("audit_logs", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
   action: text("action").notNull(),
   entityType: text("entity_type").notNull(),
   entityId: text("entity_id").notNull(),

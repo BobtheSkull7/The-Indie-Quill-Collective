@@ -1883,7 +1883,7 @@ export async function registerRoutes(app: Express) {
       const allFoundations = allFoundationsResult.rows as any[];
 
       const allFamilyUnitsResult = await db.execute(sql`
-        SELECT id, name, cohort_id as "cohortId", created_at as "createdAt"
+        SELECT id, family_name as "name", cohort_id as "cohortId", created_at as "createdAt"
         FROM family_units
       `);
       const allFamilyUnits = allFamilyUnitsResult.rows as any[];
@@ -3077,17 +3077,17 @@ export async function registerRoutes(app: Express) {
       let allFamilyUnits;
       if (cohortIdParam) {
         const result = await db.execute(sql`
-          SELECT id, name, cohort_id as "cohortId", created_at as "createdAt"
+          SELECT id, family_name as "name", cohort_id as "cohortId", created_at as "createdAt"
           FROM family_units
           WHERE cohort_id = ${cohortIdParam}
-          ORDER BY name
+          ORDER BY family_name
         `);
         allFamilyUnits = result.rows as any[];
       } else {
         const result = await db.execute(sql`
-          SELECT id, name, cohort_id as "cohortId", created_at as "createdAt"
+          SELECT id, family_name as "name", cohort_id as "cohortId", created_at as "createdAt"
           FROM family_units
-          ORDER BY name
+          ORDER BY family_name
         `);
         allFamilyUnits = result.rows as any[];
       }
