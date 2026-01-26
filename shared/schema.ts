@@ -176,9 +176,6 @@ export const publishingUpdates = pgTable("publishing_updates", {
   syncAttempts: integer("sync_attempts").default(0).notNull(),
   lastSyncAttempt: timestamp("last_sync_attempt"),
   
-  // Grant metrics - words processed tracking
-  wordsProcessed: integer("words_processed").default(0),
-  
   lastSyncedAt: timestamp("last_synced_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
