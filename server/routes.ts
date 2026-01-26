@@ -7,7 +7,7 @@ import { eq, desc, gte, sql, inArray, lt, and } from "drizzle-orm";
 // Helper function to fetch user by ID using raw SQL to avoid Drizzle ORM column mismatch issues
 async function getUserById(userId: number): Promise<any | null> {
   const result = await db.execute(sql`
-    SELECT id, email, first_name as "firstName", last_name as "lastName", role, short_id as "shortId", family_unit_id as "familyUnitId"
+    SELECT id, email, first_name as "firstName", last_name as "lastName", role
     FROM users WHERE id = ${userId}
   `);
   return result.rows[0] || null;
@@ -16,7 +16,7 @@ async function getUserById(userId: number): Promise<any | null> {
 // Helper function to fetch user by email using raw SQL
 async function getUserByEmail(email: string): Promise<any | null> {
   const result = await db.execute(sql`
-    SELECT id, email, password, first_name as "firstName", last_name as "lastName", role, short_id as "shortId", family_unit_id as "familyUnitId"
+    SELECT id, email, password, first_name as "firstName", last_name as "lastName", role
     FROM users WHERE lower(email) = lower(${email})
   `);
   return result.rows[0] || null;
@@ -1857,16 +1857,12 @@ export async function registerRoutes(app: Express) {
     }
 
     try {
-      const allUsers = await db.select({
-        id: users.id,
-        email: users.email,
-        firstName: users.firstName,
-        lastName: users.lastName,
-        role: users.role,
-        shortId: users.shortId,
-        familyUnitId: users.familyUnitId,
-        createdAt: users.createdAt,
-      }).from(users).orderBy(desc(users.createdAt));
+      // Use raw SQL to avoid column mismatch issues with Supabase
+      const allUsersResult = await db.execute(sql`
+        SELECT id, email, first_name as "firstName", last_name as "lastName", role, created_at as "createdAt"
+        FROM users ORDER BY created_at DESC
+      `);
+      const allUsers = allUsersResult.rows as any[];
 
       const allCohorts = await db.select().from(cohorts);
       const allGrants = await db.select().from(foundationGrants);
@@ -1962,7 +1958,7 @@ export async function registerRoutes(app: Express) {
         .where(eq(applications.userId, userId));
       const hasMinorApp = userApps.some(a => a.isMinor);
 
-      let shortId: string | null = existingUser.shortId;
+      let shortId: string | null = null;
       let grantLabel: string | null = null;
       let familyName: string | null = null;
 
@@ -1971,9 +1967,8 @@ export async function registerRoutes(app: Express) {
           return res.status(400).json({ message: "Cohort assignment required for student role" });
         }
 
-        if (!existingUser.shortId) {
-          shortId = await assignAuthorId(userId);
-        }
+        // Always assign author ID for students
+        shortId = await assignAuthorId(userId);
 
         const [cohort] = await db.select().from(cohorts).where(eq(cohorts.id, cohortId));
         if (cohort && cohort.grantId) {
@@ -2001,13 +1996,13 @@ export async function registerRoutes(app: Express) {
         }
       }
 
-      const [updated] = await db.update(users)
-        .set({ 
-          role,
-          familyUnitId: familyUnitId || existingUser.familyUnitId,
-        })
-        .where(eq(users.id, userId))
-        .returning();
+      // Update user role using raw SQL to avoid column issues
+      await db.execute(sql`
+        UPDATE users SET role = ${role} WHERE id = ${userId}
+      `);
+      
+      // Fetch the updated user
+      const updated = await getUserById(userId);
 
       if (hasMinorApp) {
         await logMinorDataAccess(
@@ -2033,13 +2028,12 @@ export async function registerRoutes(app: Express) {
       }
 
       return res.json({
-        id: updated.id,
-        email: updated.email,
-        firstName: updated.firstName,
-        lastName: updated.lastName,
-        role: updated.role,
-        shortId: updated.shortId,
-        familyUnitId: updated.familyUnitId,
+        id: updated?.id,
+        email: updated?.email,
+        firstName: updated?.firstName,
+        lastName: updated?.lastName,
+        role: updated?.role,
+        shortId: shortId,
         familyName,
         grantLabel,
       });
@@ -3071,13 +3065,12 @@ export async function registerRoutes(app: Express) {
 
       const familyUnitsWithMembers = await Promise.all(
         allFamilyUnits.map(async (family) => {
-          const members = await db.select({
-            id: users.id,
-            firstName: users.firstName,
-            lastName: users.lastName,
-            shortId: users.shortId,
-            role: users.role,
-          }).from(users).where(eq(users.familyUnitId, family.id));
+          // Use raw SQL to avoid column mismatch issues
+          const membersResult = await db.execute(sql`
+            SELECT id, first_name as "firstName", last_name as "lastName", role
+            FROM users WHERE family_unit_id = ${family.id}
+          `);
+          const members = membersResult.rows as any[];
 
           return {
             ...family,
