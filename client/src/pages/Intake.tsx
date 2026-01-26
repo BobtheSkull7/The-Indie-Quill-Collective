@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 
 interface UserRecord {
-  id: number;
+  id: string;
   email: string;
   firstName: string;
   lastName: string;
@@ -35,9 +35,11 @@ interface UserRecord {
   isMinor?: boolean;
   syncStatus?: string;
   indieQuillAuthorId?: string | null;
+  shortId?: string | null;
   createdAt: string;
   cohortId?: number | null;
   grantId?: number | null;
+  grantLabel?: string | null;
 }
 
 interface Cohort {
@@ -143,6 +145,8 @@ export default function Intake() {
   const [selectedUser, setSelectedUser] = useState<UserRecord | null>(null);
   const [showRoleModal, setShowRoleModal] = useState(false);
   const [showApprovalModal, setShowApprovalModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [approvalResult, setApprovalResult] = useState<{ shortId: string; grantLabel: string; firstName: string } | null>(null);
   const [newRole, setNewRole] = useState("");
   const [selectedCohortId, setSelectedCohortId] = useState<number | null>(null);
   const [updating, setUpdating] = useState(false);
@@ -267,13 +271,20 @@ export default function Intake() {
         }),
       });
 
+      const data = await res.json();
+      
       if (res.ok) {
         setShowApprovalModal(false);
+        setApprovalResult({
+          shortId: data.shortId || "N/A",
+          grantLabel: data.grantLabel || "General",
+          firstName: u.firstName,
+        });
+        setShowSuccessModal(true);
         setSelectedUser(null);
         setSelectedCohortId(null);
         loadData();
       } else {
-        const data = await res.json();
         alert(data.message || "Failed to approve user");
       }
     } catch (error) {
@@ -438,6 +449,16 @@ export default function Intake() {
                           <span className="inline-flex items-center gap-1">
                             <Tag className="w-4 h-4" />
                             Cohort #{u.cohortId}
+                          </span>
+                        )}
+                        {u.shortId && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-teal-100 text-teal-800 rounded-md font-mono text-sm">
+                            ID: {u.shortId}
+                          </span>
+                        )}
+                        {u.grantLabel && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-100 text-purple-800 rounded-md text-sm font-medium">
+                            {u.grantLabel}
                           </span>
                         )}
                       </div>
@@ -661,6 +682,49 @@ export default function Intake() {
                     {updating && <Loader2 className="w-4 h-4 animate-spin" />}
                     <Check className="w-4 h-4" />
                     Approve as Student
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showSuccessModal && approvalResult && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
+              <div className="bg-gradient-to-r from-green-600 to-teal-600 px-6 py-4">
+                <h3 className="text-xl font-semibold text-white flex items-center gap-2">
+                  <CheckCircle className="w-6 h-6" />
+                  Student Approved!
+                </h3>
+              </div>
+              
+              <div className="p-6 space-y-6">
+                <div className="text-center">
+                  <p className="text-gray-600 mb-4">
+                    <span className="font-medium text-gray-900">{approvalResult.firstName}</span> has been approved for the <span className="font-medium text-teal-700">{approvalResult.grantLabel}</span> program.
+                  </p>
+                  
+                  <div className="bg-gray-50 rounded-xl p-6 border-2 border-dashed border-teal-300">
+                    <p className="text-sm text-gray-500 mb-2">VibeScribe Author ID</p>
+                    <p className="text-4xl font-mono font-bold text-teal-700 tracking-wider">
+                      {approvalResult.shortId}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-2">
+                      Share this ID with the author for mobile login
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex justify-center">
+                  <button
+                    onClick={() => {
+                      setShowSuccessModal(false);
+                      setApprovalResult(null);
+                    }}
+                    className="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
+                  >
+                    Done
                   </button>
                 </div>
               </div>

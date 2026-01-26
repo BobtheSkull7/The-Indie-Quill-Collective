@@ -12,6 +12,7 @@ import { renderToBuffer } from "@react-pdf/renderer";
 import { ContractPDF } from "./pdf-templates/ContractTemplate";
 import { processAcceptance } from "./services/cohort-service";
 import { createSyncJob, processSyncJob, registerNpoAuthorWithLLC } from "./services/npo-sync-service";
+import { assignAuthorId } from "./utils/authorId";
 
 // Helper function to generate and store contract PDF
 async function generateAndStorePDF(contractId: number): Promise<Buffer | null> {
@@ -1839,19 +1840,46 @@ export async function registerRoutes(app: Express) {
         firstName: users.firstName,
         lastName: users.lastName,
         role: users.role,
+        shortId: users.shortId,
         createdAt: users.createdAt,
       }).from(users).orderBy(desc(users.createdAt));
+
+      const allCohorts = await db.select().from(cohorts);
+      const allGrants = await db.select().from(foundationGrants);
+      const allFoundations = await db.select().from(foundations);
 
       const usersWithStats = await Promise.all(
         allUsers.map(async (user) => {
           const userApps = await db.select().from(applications)
             .where(eq(applications.userId, user.id));
           
+          let grantLabel: string | null = null;
+          const userApp = userApps[0];
+          if (userApp?.cohortId) {
+            const cohort = allCohorts.find(c => c.id === userApp.cohortId);
+            if (cohort?.grantId) {
+              const grant = allGrants.find(g => g.id === cohort.grantId);
+              if (grant) {
+                const foundation = allFoundations.find(f => f.id === grant.foundationId);
+                if (foundation) {
+                  const year = new Date(grant.grantDate).getFullYear();
+                  grantLabel = `${foundation.name.split(' ')[0].toUpperCase()}-${year}`;
+                }
+              }
+            }
+          }
+
           return {
             ...user,
+            cohortId: userApp?.cohortId || null,
+            grantLabel,
             applicationCount: userApps.length,
             hasAcceptedApp: userApps.some(a => a.status === "accepted" || a.status === "migrated"),
             hasMinorApp: userApps.some(a => a.isMinor),
+            status: userApp?.status || null,
+            pseudonym: userApp?.pseudonym || null,
+            dateOfBirth: userApp?.dateOfBirth || null,
+            isMinor: userApp?.isMinor || false,
           };
         })
       );
@@ -1885,10 +1913,10 @@ export async function registerRoutes(app: Express) {
     }
 
     try {
-      const userId = parseInt(req.params.id);
-      const { role } = req.body;
+      const userId = req.params.id;
+      const { role, cohortId } = req.body;
 
-      if (!["applicant", "admin", "board_member", "auditor"].includes(role)) {
+      if (!["applicant", "admin", "board_member", "auditor", "student", "mentor"].includes(role)) {
         return res.status(400).json({ message: "Invalid role" });
       }
 
@@ -1901,6 +1929,37 @@ export async function registerRoutes(app: Express) {
         .where(eq(applications.userId, userId));
       const hasMinorApp = userApps.some(a => a.isMinor);
 
+      let shortId: string | null = existingUser.shortId;
+      let grantLabel: string | null = null;
+
+      if (role === "student") {
+        if (!cohortId) {
+          return res.status(400).json({ message: "Cohort assignment required for student role" });
+        }
+
+        if (!existingUser.shortId) {
+          shortId = await assignAuthorId(userId);
+        }
+
+        const [cohort] = await db.select().from(cohorts).where(eq(cohorts.id, cohortId));
+        if (cohort && cohort.grantId) {
+          const [grant] = await db.select().from(foundationGrants).where(eq(foundationGrants.id, cohort.grantId));
+          if (grant) {
+            const [foundation] = await db.select().from(foundations).where(eq(foundations.id, grant.foundationId));
+            if (foundation) {
+              const year = new Date(grant.grantDate).getFullYear();
+              grantLabel = `${foundation.name.split(' ')[0].toUpperCase()}-${year}`;
+            }
+          }
+        }
+
+        if (userApps.length > 0) {
+          await db.update(applications)
+            .set({ cohortId, updatedAt: new Date() })
+            .where(eq(applications.userId, userId));
+        }
+      }
+
       const [updated] = await db.update(users)
         .set({ role })
         .where(eq(users.id, userId))
@@ -1911,12 +1970,14 @@ export async function registerRoutes(app: Express) {
           req.session.userId,
           "update",
           "users",
-          userId,
+          Number(userId),
           getClientIp(req),
           {
             actionType: "role_change",
             previousRole: existingUser.role,
-            newRole: role
+            newRole: role,
+            cohortId: cohortId || null,
+            shortId: shortId || null
           }
         );
       }
@@ -1933,6 +1994,8 @@ export async function registerRoutes(app: Express) {
         firstName: updated.firstName,
         lastName: updated.lastName,
         role: updated.role,
+        shortId: updated.shortId,
+        grantLabel,
       });
     } catch (error) {
       console.error("Update user role error:", error);
