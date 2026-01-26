@@ -1890,10 +1890,17 @@ export async function registerRoutes(app: Express) {
 
       const usersWithStats = await Promise.all(
         allUsers.map(async (user) => {
-          const userApps = await db.select().from(applications)
-            .where(eq(applications.userId, user.id));
+          // Use raw SQL to avoid type mismatch issues with varchar user_id
+          const userAppsResult = await db.execute(sql`
+            SELECT id, user_id as "userId", pseudonym, status, cohort_id as "cohortId", 
+                   is_minor as "isMinor", public_identity_enabled as "publicIdentityEnabled",
+                   internal_id as "internalId", date_migrated as "dateMigrated",
+                   created_at as "createdAt"
+            FROM applications WHERE user_id = ${user.id}
+          `);
+          const userApps = userAppsResult.rows as any[];
           
-          const activeApp = userApps.find(a => 
+          const activeApp = userApps.find((a: any) => 
             a.status === "accepted" || a.status === "migrated" || a.cohortId
           ) || userApps[0];
           
