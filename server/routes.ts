@@ -1864,10 +1864,29 @@ export async function registerRoutes(app: Express) {
       `);
       const allUsers = allUsersResult.rows as any[];
 
-      const allCohorts = await db.select().from(cohorts);
-      const allGrants = await db.select().from(foundationGrants);
-      const allFoundations = await db.select().from(foundations);
-      const allFamilyUnits = await db.select().from(familyUnits);
+      // Use raw SQL for all lookups to avoid Drizzle schema mismatches with Supabase
+      const allCohortsResult = await db.execute(sql`
+        SELECT id, label, capacity, current_count as "currentCount", status, created_at as "createdAt"
+        FROM cohorts
+      `);
+      const allCohorts = allCohortsResult.rows as any[];
+
+      const allGrantsResult = await db.execute(sql`
+        SELECT id, foundation_id as "foundationId", grant_date as "grantDate", amount
+        FROM foundation_grants
+      `);
+      const allGrants = allGrantsResult.rows as any[];
+
+      const allFoundationsResult = await db.execute(sql`
+        SELECT id, name FROM foundations
+      `);
+      const allFoundations = allFoundationsResult.rows as any[];
+
+      const allFamilyUnitsResult = await db.execute(sql`
+        SELECT id, name, cohort_id as "cohortId", created_at as "createdAt"
+        FROM family_units
+      `);
+      const allFamilyUnits = allFamilyUnitsResult.rows as any[];
 
       const usersWithStats = await Promise.all(
         allUsers.map(async (user) => {
@@ -3028,13 +3047,14 @@ export async function registerRoutes(app: Express) {
     }
 
     try {
-      const openCohorts = await db
-        .select()
-        .from(cohorts)
-        .where(eq(cohorts.status, "open"))
-        .orderBy(cohorts.id);
-
-      return res.json(openCohorts);
+      // Use raw SQL to avoid Drizzle schema mismatches with Supabase
+      const openCohortsResult = await db.execute(sql`
+        SELECT id, label, capacity, current_count as "currentCount", status, created_at as "createdAt"
+        FROM cohorts
+        WHERE status = 'open'
+        ORDER BY id
+      `);
+      return res.json(openCohortsResult.rows);
     } catch (error) {
       console.error("Failed to fetch available cohorts:", error);
       return res.status(500).json({ message: "Failed to fetch available cohorts" });
@@ -3056,11 +3076,20 @@ export async function registerRoutes(app: Express) {
       
       let allFamilyUnits;
       if (cohortIdParam) {
-        allFamilyUnits = await db.select().from(familyUnits)
-          .where(eq(familyUnits.cohortId, cohortIdParam))
-          .orderBy(familyUnits.name);
+        const result = await db.execute(sql`
+          SELECT id, name, cohort_id as "cohortId", created_at as "createdAt"
+          FROM family_units
+          WHERE cohort_id = ${cohortIdParam}
+          ORDER BY name
+        `);
+        allFamilyUnits = result.rows as any[];
       } else {
-        allFamilyUnits = await db.select().from(familyUnits).orderBy(familyUnits.name);
+        const result = await db.execute(sql`
+          SELECT id, name, cohort_id as "cohortId", created_at as "createdAt"
+          FROM family_units
+          ORDER BY name
+        `);
+        allFamilyUnits = result.rows as any[];
       }
 
       const familyUnitsWithMembers = await Promise.all(
