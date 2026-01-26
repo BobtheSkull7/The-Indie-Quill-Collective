@@ -65,10 +65,9 @@ export const cohorts = pgTable("cohorts", {
   label: text("label").notNull(),
   capacity: integer("capacity").notNull().default(10),
   currentCount: integer("current_count").notNull().default(0),
-  status: cohortStatusEnum("status").default("open").notNull(),
-  grantId: integer("grant_id"),
-  grantType: text("grant_type").default("general"),
+  status: text("status").default("open"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const familyUnits = pgTable("family_units", {
@@ -185,12 +184,8 @@ export const publishingUpdates = pgTable("publishing_updates", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const cohortsRelations = relations(cohorts, ({ one, many }) => ({
+export const cohortsRelations = relations(cohorts, ({ many }) => ({
   applications: many(applications),
-  grant: one(foundationGrants, {
-    fields: [cohorts.grantId],
-    references: [foundationGrants.id],
-  }),
 }));
 
 export const usersRelations = relations(users, ({ many }) => ({

@@ -40,7 +40,6 @@ interface UserRecord {
   familyName?: string | null;
   createdAt: string;
   cohortId?: number | null;
-  grantId?: number | null;
   grantLabel?: string | null;
 }
 
@@ -49,8 +48,6 @@ interface Cohort {
   label: string;
   currentCount: number;
   capacity: number;
-  grantId?: number | null;
-  grantType?: string;
 }
 
 interface FamilyUnit {
@@ -607,9 +604,7 @@ export default function Intake() {
                       <option value="">Select a cohort...</option>
                       {cohorts.map((c) => (
                         <option key={c.id} value={c.id}>
-                          {c.label} ({c.currentCount}/{c.capacity}){" "}
-                          {c.grantType && `- ${c.grantType}`}
-                          {c.grantId && ` [Grant #${c.grantId}]`}
+                          {c.label} ({c.currentCount}/{c.capacity})
                         </option>
                       ))}
                     </select>
@@ -691,9 +686,7 @@ export default function Intake() {
                     <option value="">Select a cohort...</option>
                     {cohorts.map((c) => (
                       <option key={c.id} value={c.id}>
-                        {c.label} ({c.currentCount}/{c.capacity}){" "}
-                        {c.grantType && `- ${c.grantType}`}
-                        {c.grantId && ` [Grant #${c.grantId}]`}
+                        {c.label} ({c.currentCount}/{c.capacity})
                       </option>
                     ))}
                   </select>

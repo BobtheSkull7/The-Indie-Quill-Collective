@@ -148,7 +148,13 @@ export async function registerRoutes(app: Express) {
     try {
       const { email, password } = req.body;
       
-      const [user] = await db.select().from(users).where(sql`lower(${users.email}) = lower(${email})`);
+      // Use raw SQL to bypass Drizzle ORM column issue
+      const result = await db.execute(sql`
+        SELECT id, email, password, first_name as "firstName", last_name as "lastName", role
+        FROM users 
+        WHERE lower(email) = lower(${email})
+      `);
+      const user = result.rows[0] as any;
       if (!user) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
@@ -190,7 +196,12 @@ export async function registerRoutes(app: Express) {
       return res.status(401).json({ message: "Not authenticated" });
     }
 
-    const [user] = await db.select().from(users).where(eq(users.id, req.session.userId));
+    // Use raw SQL to bypass Drizzle ORM column issue
+    const result = await db.execute(sql`
+      SELECT id, email, first_name as "firstName", last_name as "lastName", role
+      FROM users WHERE id = ${req.session.userId}
+    `);
+    const user = result.rows[0] as any;
     if (!user) {
       return res.status(401).json({ message: "User not found" });
     }
