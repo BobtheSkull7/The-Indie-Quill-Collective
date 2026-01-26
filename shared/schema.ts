@@ -79,7 +79,7 @@ export const familyUnits = pgTable("family_units", {
 });
 
 export const users = pgTable("users", {
-  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  id: serial("id").primaryKey(),
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
   firstName: text("first_name").notNull(),
@@ -93,7 +93,7 @@ export const users = pgTable("users", {
 
 export const applications = pgTable("applications", {
   id: serial("id").primaryKey(),
-  userId: varchar("user_id", { length: 36 }).references(() => users.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
   
   internalId: text("internal_id"),
   cohortId: integer("cohort_id").references(() => cohorts.id),
@@ -143,7 +143,7 @@ export const applications = pgTable("applications", {
 export const contracts = pgTable("contracts", {
   id: serial("id").primaryKey(),
   applicationId: integer("application_id").references(() => applications.id).notNull(),
-  userId: varchar("user_id", { length: 36 }).references(() => users.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
   
   contractType: text("contract_type").notNull(),
   contractContent: text("contract_content").notNull(),
@@ -172,7 +172,7 @@ export const contracts = pgTable("contracts", {
 export const publishingUpdates = pgTable("publishing_updates", {
   id: serial("id").primaryKey(),
   applicationId: integer("application_id").references(() => applications.id).notNull(),
-  userId: varchar("user_id", { length: 36 }).references(() => users.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
   
   indieQuillAuthorId: text("indie_quill_author_id"),
   
@@ -318,7 +318,7 @@ export const donationsRelations = relations(donations, ({ one }) => ({
 
 export const auditLogs = pgTable("audit_logs", {
   id: serial("id").primaryKey(),
-  userId: varchar("user_id", { length: 36 }).references(() => users.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
   action: text("action").notNull(),
   targetTable: text("target_table").notNull(),
   targetId: text("target_id").notNull(),
