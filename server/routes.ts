@@ -1853,10 +1853,13 @@ export async function registerRoutes(app: Express) {
           const userApps = await db.select().from(applications)
             .where(eq(applications.userId, user.id));
           
+          const activeApp = userApps.find(a => 
+            a.status === "accepted" || a.status === "migrated" || a.cohortId
+          ) || userApps[0];
+          
           let grantLabel: string | null = null;
-          const userApp = userApps[0];
-          if (userApp?.cohortId) {
-            const cohort = allCohorts.find(c => c.id === userApp.cohortId);
+          if (activeApp?.cohortId) {
+            const cohort = allCohorts.find(c => c.id === activeApp.cohortId);
             if (cohort?.grantId) {
               const grant = allGrants.find(g => g.id === cohort.grantId);
               if (grant) {
@@ -1871,15 +1874,15 @@ export async function registerRoutes(app: Express) {
 
           return {
             ...user,
-            cohortId: userApp?.cohortId || null,
+            cohortId: activeApp?.cohortId || null,
             grantLabel,
             applicationCount: userApps.length,
             hasAcceptedApp: userApps.some(a => a.status === "accepted" || a.status === "migrated"),
             hasMinorApp: userApps.some(a => a.isMinor),
-            status: userApp?.status || null,
-            pseudonym: userApp?.pseudonym || null,
-            dateOfBirth: userApp?.dateOfBirth || null,
-            isMinor: userApp?.isMinor || false,
+            status: activeApp?.status || null,
+            pseudonym: activeApp?.pseudonym || null,
+            dateOfBirth: activeApp?.dateOfBirth || null,
+            isMinor: activeApp?.isMinor || false,
           };
         })
       );
