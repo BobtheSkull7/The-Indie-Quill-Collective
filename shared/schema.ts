@@ -71,6 +71,13 @@ export const cohorts = pgTable("cohorts", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const familyUnits = pgTable("family_units", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  cohortId: integer("cohort_id").references(() => cohorts.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const users = pgTable("users", {
   id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
   email: text("email").notNull().unique(),
@@ -79,6 +86,7 @@ export const users = pgTable("users", {
   lastName: text("last_name").notNull(),
   role: text("role").notNull().default("applicant"),
   shortId: text("short_id").unique(),
+  familyUnitId: integer("family_unit_id").references(() => familyUnits.id),
   indieQuillAuthorId: text("indie_quill_author_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -598,6 +606,8 @@ export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 export type Cohort = typeof cohorts.$inferSelect;
 export type InsertCohort = typeof cohorts.$inferInsert;
+export type FamilyUnit = typeof familyUnits.$inferSelect;
+export type InsertFamilyUnit = typeof familyUnits.$inferInsert;
 export type Application = typeof applications.$inferSelect;
 export type InsertApplication = typeof applications.$inferInsert;
 export type Contract = typeof contracts.$inferSelect;
@@ -670,21 +680,6 @@ export const familyRoleEnum = pgEnum('family_role', [
   'sibling'
 ]);
 
-// Family Units - groups household members for DGLF Family Literacy
-export const familyUnits = pgTable("family_units", {
-  id: serial("id").primaryKey(),
-  familyName: text("family_name").notNull(), // e.g., "The Johnson Family"
-  primaryContactId: integer("primary_contact_id").references(() => users.id),
-  cohortId: integer("cohort_id").references(() => cohorts.id),
-  targetPactHours: integer("target_pact_hours").default(20).notNull(), // DGLF requirement
-  totalPactMinutes: integer("total_pact_minutes").default(0).notNull(),
-  anthologyTitle: text("anthology_title"), // Family Anthology title
-  anthologyContent: text("anthology_content"), // Shared Family Anthology content
-  anthologyWordCount: integer("anthology_word_count").default(0).notNull(),
-  isActive: boolean("is_active").default(true).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
 
 // PACT Sessions - Parent and Child Together time tracking for DGLF
 export const pactSessions = pgTable("pact_sessions", {
@@ -841,16 +836,11 @@ export const draftingDocuments = pgTable("drafting_documents", {
 // Relations for Virtual Classroom
 // Family Units Relations
 export const familyUnitsRelations = relations(familyUnits, ({ one, many }) => ({
-  primaryContact: one(users, {
-    fields: [familyUnits.primaryContactId],
-    references: [users.id],
-  }),
   cohort: one(cohorts, {
     fields: [familyUnits.cohortId],
     references: [cohorts.id],
   }),
-  members: many(studentProfiles),
-  pactSessions: many(pactSessions),
+  members: many(users),
 }));
 
 // PACT Sessions Relations

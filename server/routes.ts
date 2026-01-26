@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import rateLimit from "express-rate-limit";
 import { db } from "./db";
-import { users, applications, contracts, publishingUpdates, calendarEvents, fundraisingCampaigns, donations, auditLogs, cohorts, operatingCosts, foundations, solicitationLogs, foundationGrants, pilotLedger, emailLogs, grantPrograms, organizationCredentials, grantCalendarAlerts } from "@shared/schema";
+import { users, applications, contracts, publishingUpdates, calendarEvents, fundraisingCampaigns, donations, auditLogs, cohorts, familyUnits, operatingCosts, foundations, solicitationLogs, foundationGrants, pilotLedger, emailLogs, grantPrograms, organizationCredentials, grantCalendarAlerts } from "@shared/schema";
 import { eq, desc, gte, sql, inArray, lt, and } from "drizzle-orm";
 import { hash, compare } from "./auth";
 import { migrateAuthorToIndieQuill, retryFailedMigrations, sendApplicationToLLC, sendStatusUpdateToLLC, sendContractSignatureToLLC, sendUserRoleUpdateToLLC } from "./indie-quill-integration";
@@ -1841,12 +1841,14 @@ export async function registerRoutes(app: Express) {
         lastName: users.lastName,
         role: users.role,
         shortId: users.shortId,
+        familyUnitId: users.familyUnitId,
         createdAt: users.createdAt,
       }).from(users).orderBy(desc(users.createdAt));
 
       const allCohorts = await db.select().from(cohorts);
       const allGrants = await db.select().from(foundationGrants);
       const allFoundations = await db.select().from(foundations);
+      const allFamilyUnits = await db.select().from(familyUnits);
 
       const usersWithStats = await Promise.all(
         allUsers.map(async (user) => {
@@ -1872,10 +1874,15 @@ export async function registerRoutes(app: Express) {
             }
           }
 
+          const familyUnit = user.familyUnitId 
+            ? allFamilyUnits.find(f => f.id === user.familyUnitId)
+            : null;
+
           return {
             ...user,
             cohortId: activeApp?.cohortId || null,
             grantLabel,
+            familyName: familyUnit?.name || null,
             applicationCount: userApps.length,
             hasAcceptedApp: userApps.some(a => a.status === "accepted" || a.status === "migrated"),
             hasMinorApp: userApps.some(a => a.isMinor),
@@ -1917,7 +1924,7 @@ export async function registerRoutes(app: Express) {
 
     try {
       const userId = req.params.id;
-      const { role, cohortId } = req.body;
+      const { role, cohortId, familyUnitId } = req.body;
 
       if (!["applicant", "admin", "board_member", "auditor", "student", "mentor"].includes(role)) {
         return res.status(400).json({ message: "Invalid role" });
@@ -1934,6 +1941,7 @@ export async function registerRoutes(app: Express) {
 
       let shortId: string | null = existingUser.shortId;
       let grantLabel: string | null = null;
+      let familyName: string | null = null;
 
       if (role === "student") {
         if (!cohortId) {
@@ -1956,6 +1964,13 @@ export async function registerRoutes(app: Express) {
           }
         }
 
+        if (familyUnitId) {
+          const [family] = await db.select().from(familyUnits).where(eq(familyUnits.id, familyUnitId));
+          if (family) {
+            familyName = family.name;
+          }
+        }
+
         if (userApps.length > 0) {
           await db.update(applications)
             .set({ cohortId, updatedAt: new Date() })
@@ -1964,7 +1979,10 @@ export async function registerRoutes(app: Express) {
       }
 
       const [updated] = await db.update(users)
-        .set({ role })
+        .set({ 
+          role,
+          familyUnitId: familyUnitId || existingUser.familyUnitId,
+        })
         .where(eq(users.id, userId))
         .returning();
 
@@ -1998,6 +2016,8 @@ export async function registerRoutes(app: Express) {
         lastName: updated.lastName,
         role: updated.role,
         shortId: updated.shortId,
+        familyUnitId: updated.familyUnitId,
+        familyName,
         grantLabel,
       });
     } catch (error) {
@@ -3002,6 +3022,81 @@ export async function registerRoutes(app: Express) {
     } catch (error) {
       console.error("Failed to fetch available cohorts:", error);
       return res.status(500).json({ message: "Failed to fetch available cohorts" });
+    }
+  });
+
+  // Family Units API endpoints
+  app.get("/api/admin/family-units", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    const [currentUser] = await db.select().from(users).where(eq(users.id, req.session.userId));
+    if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "board_member")) {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+
+    try {
+      const cohortIdParam = req.query.cohortId ? parseInt(req.query.cohortId as string) : null;
+      
+      let allFamilyUnits;
+      if (cohortIdParam) {
+        allFamilyUnits = await db.select().from(familyUnits)
+          .where(eq(familyUnits.cohortId, cohortIdParam))
+          .orderBy(familyUnits.name);
+      } else {
+        allFamilyUnits = await db.select().from(familyUnits).orderBy(familyUnits.name);
+      }
+
+      const familyUnitsWithMembers = await Promise.all(
+        allFamilyUnits.map(async (family) => {
+          const members = await db.select({
+            id: users.id,
+            firstName: users.firstName,
+            lastName: users.lastName,
+            shortId: users.shortId,
+            role: users.role,
+          }).from(users).where(eq(users.familyUnitId, family.id));
+
+          return {
+            ...family,
+            memberCount: members.length,
+            members,
+          };
+        })
+      );
+
+      return res.json(familyUnitsWithMembers);
+    } catch (error) {
+      console.error("Failed to fetch family units:", error);
+      return res.status(500).json({ message: "Failed to fetch family units" });
+    }
+  });
+
+  app.post("/api/admin/family-units", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    const [currentUser] = await db.select().from(users).where(eq(users.id, req.session.userId));
+    if (!currentUser || currentUser.role !== "admin") {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+
+    try {
+      const { name, cohortId } = req.body;
+
+      if (!name || name.trim().length === 0) {
+        return res.status(400).json({ message: "Family name is required" });
+      }
+
+      const [newFamily] = await db.insert(familyUnits).values({
+        name: name.trim(),
+        cohortId: cohortId || null,
+      }).returning();
+
+      return res.status(201).json(newFamily);
+    } catch (error) {
+      console.error("Failed to create family unit:", error);
+      return res.status(500).json({ message: "Failed to create family unit" });
     }
   });
 

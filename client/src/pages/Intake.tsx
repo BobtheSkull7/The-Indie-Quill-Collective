@@ -36,6 +36,8 @@ interface UserRecord {
   syncStatus?: string;
   indieQuillAuthorId?: string | null;
   shortId?: string | null;
+  familyUnitId?: number | null;
+  familyName?: string | null;
   createdAt: string;
   cohortId?: number | null;
   grantId?: number | null;
@@ -49,6 +51,13 @@ interface Cohort {
   capacity: number;
   grantId?: number | null;
   grantType?: string;
+}
+
+interface FamilyUnit {
+  id: number;
+  name: string;
+  cohortId: number | null;
+  memberCount: number;
 }
 
 const STATUS_OPTIONS = [
@@ -138,6 +147,7 @@ export default function Intake() {
   const [, setLocation] = useLocation();
   const [users, setUsers] = useState<UserRecord[]>([]);
   const [cohorts, setCohorts] = useState<Cohort[]>([]);
+  const [familyUnits, setFamilyUnits] = useState<FamilyUnit[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -146,9 +156,12 @@ export default function Intake() {
   const [showRoleModal, setShowRoleModal] = useState(false);
   const [showApprovalModal, setShowApprovalModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [approvalResult, setApprovalResult] = useState<{ shortId: string; grantLabel: string; firstName: string } | null>(null);
+  const [approvalResult, setApprovalResult] = useState<{ shortId: string; grantLabel: string; familyName?: string; firstName: string } | null>(null);
   const [newRole, setNewRole] = useState("");
   const [selectedCohortId, setSelectedCohortId] = useState<number | null>(null);
+  const [selectedFamilyUnitId, setSelectedFamilyUnitId] = useState<number | null>(null);
+  const [newFamilyName, setNewFamilyName] = useState("");
+  const [showNewFamilyInput, setShowNewFamilyInput] = useState(false);
   const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
@@ -167,9 +180,10 @@ export default function Intake() {
     setError(null);
     setLoading(true);
     try {
-      const [usersRes, cohortsRes] = await Promise.all([
+      const [usersRes, cohortsRes, familyUnitsRes] = await Promise.all([
         fetch("/api/admin/users", { credentials: "include" }),
         fetch("/api/admin/cohorts/available", { credentials: "include" }),
+        fetch("/api/admin/family-units", { credentials: "include" }),
       ]);
 
       if (usersRes.ok) {
@@ -182,6 +196,11 @@ export default function Intake() {
       if (cohortsRes.ok) {
         const cohortsData = await cohortsRes.json();
         setCohorts(Array.isArray(cohortsData) ? cohortsData : []);
+      }
+
+      if (familyUnitsRes.ok) {
+        const familyUnitsData = await familyUnitsRes.json();
+        setFamilyUnits(Array.isArray(familyUnitsData) ? familyUnitsData : []);
       }
     } catch (err: any) {
       console.error("Failed to load data:", err);
@@ -261,6 +280,30 @@ export default function Intake() {
     setUpdating(true);
 
     try {
+      let familyUnitIdToUse = selectedFamilyUnitId;
+      
+      if (showNewFamilyInput && newFamilyName.trim()) {
+        const newFamilyRes = await fetch("/api/admin/family-units", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            name: newFamilyName.trim(),
+            cohortId: selectedCohortId,
+          }),
+        });
+        
+        if (newFamilyRes.ok) {
+          const newFamily = await newFamilyRes.json();
+          familyUnitIdToUse = newFamily.id;
+        } else {
+          const errData = await newFamilyRes.json();
+          alert(errData.message || "Failed to create family unit");
+          setUpdating(false);
+          return;
+        }
+      }
+
       const res = await fetch(`/api/admin/users/${u.id}/role`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -268,6 +311,7 @@ export default function Intake() {
         body: JSON.stringify({
           role: "student",
           cohortId: selectedCohortId,
+          familyUnitId: familyUnitIdToUse,
         }),
       });
 
@@ -278,11 +322,15 @@ export default function Intake() {
         setApprovalResult({
           shortId: data.shortId || "N/A",
           grantLabel: data.grantLabel || "General",
+          familyName: data.familyName || undefined,
           firstName: u.firstName,
         });
         setShowSuccessModal(true);
         setSelectedUser(null);
         setSelectedCohortId(null);
+        setSelectedFamilyUnitId(null);
+        setNewFamilyName("");
+        setShowNewFamilyInput(false);
         loadData();
       } else {
         alert(data.message || "Failed to approve user");
@@ -459,6 +507,12 @@ export default function Intake() {
                         {u.grantLabel && (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-100 text-purple-800 rounded-md text-sm font-medium">
                             {u.grantLabel}
+                          </span>
+                        )}
+                        {u.familyName && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-800 rounded-md text-sm font-medium">
+                            <Users className="w-3 h-3" />
+                            {u.familyName}
                           </span>
                         )}
                       </div>
@@ -649,6 +703,61 @@ export default function Intake() {
                     </p>
                   )}
                 </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <Users className="w-4 h-4 inline mr-1" />
+                    Family Unit (Optional)
+                  </label>
+                  <p className="text-sm text-gray-500 mb-2">
+                    Group this student with their family for competitions
+                  </p>
+                  
+                  {!showNewFamilyInput ? (
+                    <>
+                      <select
+                        value={selectedFamilyUnitId || ""}
+                        onChange={(e) => {
+                          if (e.target.value === "new") {
+                            setShowNewFamilyInput(true);
+                            setSelectedFamilyUnitId(null);
+                          } else {
+                            setSelectedFamilyUnitId(e.target.value ? Number(e.target.value) : null);
+                          }
+                        }}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-collective-teal focus:border-transparent"
+                      >
+                        <option value="">No family unit</option>
+                        {familyUnits.map((f) => (
+                          <option key={f.id} value={f.id}>
+                            {f.name} ({f.memberCount} members)
+                          </option>
+                        ))}
+                        <option value="new">+ Create New Family</option>
+                      </select>
+                    </>
+                  ) : (
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={newFamilyName}
+                        onChange={(e) => setNewFamilyName(e.target.value)}
+                        placeholder="Enter family name (e.g., 'The Johnsons')"
+                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-collective-teal focus:border-transparent"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowNewFamilyInput(false);
+                          setNewFamilyName("");
+                        }}
+                        className="px-3 py-2 text-gray-600 hover:text-gray-900"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="flex justify-between gap-3 mt-6">
@@ -668,6 +777,9 @@ export default function Intake() {
                       setShowApprovalModal(false);
                       setSelectedUser(null);
                       setSelectedCohortId(null);
+                      setSelectedFamilyUnitId(null);
+                      setNewFamilyName("");
+                      setShowNewFamilyInput(false);
                     }}
                     className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                     disabled={updating}
@@ -703,6 +815,9 @@ export default function Intake() {
                 <div className="text-center">
                   <p className="text-gray-600 mb-4">
                     <span className="font-medium text-gray-900">{approvalResult.firstName}</span> has been approved for the <span className="font-medium text-teal-700">{approvalResult.grantLabel}</span> program.
+                    {approvalResult.familyName && (
+                      <> Assigned to family: <span className="font-medium text-blue-700">{approvalResult.familyName}</span></>
+                    )}
                   </p>
                   
                   <div className="bg-gray-50 rounded-xl p-6 border-2 border-dashed border-teal-300">
