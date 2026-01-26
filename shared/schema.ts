@@ -95,46 +95,38 @@ export const applications = pgTable("applications", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
   
-  internalId: text("internal_id"),
-  cohortId: integer("cohort_id").references(() => cohorts.id),
-  dateApproved: timestamp("date_approved"),
-  dateMigrated: timestamp("date_migrated"),
-  
-  pseudonym: text("pseudonym"),
-  dateOfBirth: text("date_of_birth").notNull(),
-  isMinor: boolean("is_minor").notNull().default(false),
+  pseudonym: text("pen_name"),
+  dateOfBirth: text("date_of_birth"),
+  isMinor: boolean("is_minor").default(false),
   
   guardianName: text("guardian_name"),
   guardianEmail: text("guardian_email"),
   guardianPhone: text("guardian_phone"),
   guardianRelationship: text("guardian_relationship"),
   
-  guardianConsentMethod: text("guardian_consent_method"),
-  guardianConsentVerified: boolean("guardian_consent_verified").default(false),
-  dataRetentionUntil: timestamp("data_retention_until"),
+  previouslyPublished: boolean("previously_published"),
+  publishingDetails: text("publishing_details"),
   
-  hasStoryToTell: boolean("has_story_to_tell").notNull().default(true),
-  personalStruggles: text("personal_struggles").notNull(),
-  expressionTypes: text("expression_types").notNull(),
-  expressionOther: text("expression_other"),
-  
-  whyCollective: text("why_collective").notNull(),
+  whyCollective: text("why_collective"),
   goals: text("goals"),
   hearAboutUs: text("hear_about_us"),
   
   status: applicationStatusEnum("status").default("pending").notNull(),
   reviewNotes: text("review_notes"),
-  reviewedBy: varchar("reviewed_by", { length: 36 }).references(() => users.id),
+  reviewedBy: integer("reviewed_by").references(() => users.id),
   reviewedAt: timestamp("reviewed_at"),
   
-  // Grant metrics - manuscript tracking
-  manuscriptWordCount: integer("manuscript_word_count").default(0),
-  manuscriptTitle: text("manuscript_title"),
+  hasStoryToTell: boolean("has_story_to_tell").default(true),
+  personalStruggles: text("personal_struggles"),
+  expressionTypes: text("expression_types"),
+  expressionOther: text("expression_other"),
   
-  // Identity visibility toggle - Zero-PII safety (default: false = Safe Mode with emoji + truncated name)
-  // When true, author opts in to use full name and photo for marketing
-  // For minors, this requires guardian counter-signature in the contract
-  publicIdentityEnabled: boolean("public_identity_enabled").default(false).notNull(),
+  publicIdentityEnabled: boolean("public_identity_enabled").default(false),
+  
+  internalId: text("internal_id"),
+  cohortId: integer("cohort_id").references(() => cohorts.id),
+  dateApproved: timestamp("date_approved"),
+  dateMigrated: timestamp("date_migrated"),
   
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -320,10 +312,9 @@ export const auditLogs = pgTable("audit_logs", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
   action: text("action").notNull(),
-  targetTable: text("target_table").notNull(),
-  targetId: text("target_id").notNull(),
+  entityType: text("entity_type").notNull(),
+  entityId: text("entity_id").notNull(),
   details: text("details"),
-  ipAddress: text("ip_address"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

@@ -45,10 +45,9 @@ export async function logAuditEvent({
     await db.insert(auditLogs).values({
       userId,
       action,
-      targetTable,
-      targetId: String(targetId),
+      entityType: targetTable,
+      entityId: String(targetId),
       details: JSON.stringify(enrichedDetails),
-      ipAddress: ipAddress || null,
     });
 
     if (isMinor) {

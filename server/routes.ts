@@ -268,10 +268,9 @@ export async function registerRoutes(app: Express) {
       const userAuditLogs = await db.select({
         id: auditLogs.id,
         action: auditLogs.action,
-        targetTable: auditLogs.targetTable,
-        targetId: auditLogs.targetId,
+        entityType: auditLogs.entityType,
+        entityId: auditLogs.entityId,
         details: auditLogs.details,
-        ipAddress: auditLogs.ipAddress,
         createdAt: auditLogs.createdAt,
       }).from(auditLogs)
         .where(eq(auditLogs.userId, userId))
