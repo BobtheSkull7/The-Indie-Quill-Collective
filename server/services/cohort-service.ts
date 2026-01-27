@@ -1,8 +1,19 @@
 import { db } from "../db";
-import { cohorts, applications } from "@shared/schema";
+import { cohorts, applications, users } from "@shared/schema";
 import { eq, and, lt, sql } from "drizzle-orm";
 
 const COHORT_CAPACITY = 10;
+
+export function generateVibeScribeId(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let part1 = '';
+  let part2 = '';
+  for (let i = 0; i < 3; i++) {
+    part1 += chars.charAt(Math.floor(Math.random() * chars.length));
+    part2 += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return `${part1}-${part2}`;
+}
 
 export function generateInternalId(
   lastName: string,
@@ -102,6 +113,7 @@ export async function processAcceptance(
   isMinor: boolean
 ): Promise<{
   internalId: string;
+  vibeScribeId: string;
   cohortId: number;
   cohortLabel: string;
   dateApproved: Date;
@@ -110,6 +122,7 @@ export async function processAcceptance(
     const dateApproved = new Date();
     
     const internalId = generateInternalId(lastName, firstName, isMinor, dateApproved);
+    const vibeScribeId = generateVibeScribeId();
     
     const { cohortId, cohortLabel } = await assignToCohortWithLock(tx);
     
@@ -122,8 +135,15 @@ export async function processAcceptance(
       })
       .where(eq(applications.id, applicationId));
 
+    await tx.update(users)
+      .set({
+        vibeScribeId,
+      })
+      .where(eq(users.id, userId));
+
     return {
       internalId,
+      vibeScribeId,
       cohortId,
       cohortLabel,
       dateApproved,

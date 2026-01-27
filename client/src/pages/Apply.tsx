@@ -13,6 +13,7 @@ export default function Apply() {
 
   const [formData, setFormData] = useState({
     pseudonym: "",
+    personaType: "" as "" | "writer" | "adult_student" | "family_student",
     identityMode: "safe" as "safe" | "public",
     dateOfBirth: "",
     isMinor: false,
@@ -50,6 +51,11 @@ export default function Apply() {
 
     if (!user) {
       setError("Please create an account or sign in to submit your application");
+      return;
+    }
+
+    if (!formData.personaType) {
+      setError("Please select how you are joining us (Writer, Adult Student, or Family Student)");
       return;
     }
 
@@ -171,6 +177,73 @@ export default function Apply() {
                 <div className="flex items-center space-x-3 mb-6">
                   <User className="w-6 h-6 text-teal-500" />
                   <h2 className="font-display text-xl font-semibold text-slate-800">Personal Information</h2>
+                </div>
+
+                <div className="p-4 bg-gradient-to-r from-teal-50 to-blue-50 rounded-lg border border-teal-200">
+                  <label className="label text-slate-800 font-medium">How are you joining us? *</label>
+                  <p className="text-sm text-gray-600 mb-4">This determines your learning path and curriculum.</p>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <label 
+                      className={`flex flex-col items-center p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                        formData.personaType === "writer" 
+                          ? "border-teal-500 bg-white shadow-md" 
+                          : "border-gray-200 bg-white hover:border-teal-300"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="personaType"
+                        value="writer"
+                        checked={formData.personaType === "writer"}
+                        onChange={(e) => setFormData({ ...formData, personaType: e.target.value as any })}
+                        className="sr-only"
+                      />
+                      <BookOpen className="w-8 h-8 text-teal-500 mb-2" />
+                      <span className="font-semibold text-slate-800">Writer</span>
+                      <span className="text-xs text-gray-500 text-center mt-1">I'm here to publish my book</span>
+                    </label>
+                    
+                    <label 
+                      className={`flex flex-col items-center p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                        formData.personaType === "adult_student" 
+                          ? "border-teal-500 bg-white shadow-md" 
+                          : "border-gray-200 bg-white hover:border-teal-300"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="personaType"
+                        value="adult_student"
+                        checked={formData.personaType === "adult_student"}
+                        onChange={(e) => setFormData({ ...formData, personaType: e.target.value as any })}
+                        className="sr-only"
+                      />
+                      <User className="w-8 h-8 text-blue-500 mb-2" />
+                      <span className="font-semibold text-slate-800">Adult Student</span>
+                      <span className="text-xs text-gray-500 text-center mt-1">I want literacy training + publishing</span>
+                    </label>
+                    
+                    <label 
+                      className={`flex flex-col items-center p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                        formData.personaType === "family_student" 
+                          ? "border-teal-500 bg-white shadow-md" 
+                          : "border-gray-200 bg-white hover:border-teal-300"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="personaType"
+                        value="family_student"
+                        checked={formData.personaType === "family_student"}
+                        onChange={(e) => setFormData({ ...formData, personaType: e.target.value as any })}
+                        className="sr-only"
+                      />
+                      <Users className="w-8 h-8 text-purple-500 mb-2" />
+                      <span className="font-semibold text-slate-800">Family Student</span>
+                      <span className="text-xs text-gray-500 text-center mt-1">My family is learning together</span>
+                    </label>
+                  </div>
                 </div>
 
                 <div>

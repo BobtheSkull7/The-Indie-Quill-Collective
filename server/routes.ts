@@ -2268,6 +2268,124 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  // DGLF Impact Report Generator - aggregates TABE EFL gains and PACT time for grant reporting
+  app.get("/api/auditor/dglf-impact-report", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    if (req.session.userRole !== "auditor" && req.session.userRole !== "admin") {
+      return res.status(403).json({ message: "Not authorized - Auditor access required" });
+    }
+
+    try {
+      const cohortYear = new Date().getFullYear();
+      
+      const cohortsResult = await db.execute(sql`
+        SELECT id, label, current_count FROM cohorts 
+        WHERE label LIKE ${`%${cohortYear}%`} OR created_at >= ${new Date(`${cohortYear}-01-01`).toISOString()}
+        ORDER BY id DESC LIMIT 1
+      `);
+      const activeCohort = cohortsResult.rows?.[0];
+
+      const tabeCountsResult = await db.execute(sql`
+        SELECT 
+          COUNT(DISTINCT user_id) as students_with_tabe,
+          COUNT(*) FILTER (WHERE NOT is_baseline) as post_tests_count,
+          COUNT(*) FILTER (WHERE is_baseline) as baseline_tests_count
+        FROM tabe_assessments
+        WHERE test_date >= ${new Date(`${cohortYear}-01-01`).toISOString()}
+      `);
+      const tabeStats = tabeCountsResult.rows?.[0] || {};
+
+      const eflGainsResult = await db.execute(sql`
+        WITH student_scores AS (
+          SELECT 
+            user_id,
+            MIN(CASE WHEN is_baseline THEN scale_score END) as baseline_score,
+            MAX(CASE WHEN NOT is_baseline THEN scale_score END) as current_score,
+            MIN(CASE WHEN is_baseline THEN efl_level END) as baseline_efl,
+            MAX(CASE WHEN NOT is_baseline THEN efl_level END) as current_efl
+          FROM tabe_assessments
+          WHERE test_date >= ${new Date(`${cohortYear}-01-01`).toISOString()}
+          GROUP BY user_id
+          HAVING COUNT(CASE WHEN is_baseline THEN 1 END) > 0 
+             AND COUNT(CASE WHEN NOT is_baseline THEN 1 END) > 0
+        )
+        SELECT 
+          COUNT(*) as students_with_both_tests,
+          COALESCE(AVG(current_score - baseline_score), 0) as avg_scale_score_gain,
+          COUNT(*) FILTER (WHERE current_efl != baseline_efl) as students_with_efl_gain
+        FROM student_scores
+      `);
+      const eflStats = eflGainsResult.rows?.[0] || {};
+      const studentsWithEflGain = parseInt(eflStats.students_with_efl_gain) || 0;
+
+      const pactTimeResult = await db.execute(sql`
+        SELECT 
+          COUNT(DISTINCT family_unit_id) as families_participating,
+          SUM(duration_minutes) as total_pact_minutes,
+          AVG(duration_minutes) as avg_session_duration,
+          COUNT(*) as total_sessions
+        FROM pact_sessions
+        WHERE start_time >= ${new Date(`${cohortYear}-01-01`).toISOString()}
+      `);
+      const pactStats = pactTimeResult.rows?.[0] || {};
+
+      const familyUnitsResult = await db.execute(sql`
+        SELECT 
+          id, family_name, total_pact_minutes, target_pact_hours,
+          ROUND((total_pact_minutes::numeric / NULLIF(target_pact_hours * 60, 0)) * 100, 1) as pact_completion_percent
+        FROM family_units
+        WHERE is_active = true
+        ORDER BY total_pact_minutes DESC
+      `);
+      const familyProgress = familyUnitsResult.rows || [];
+
+      const curriculumProgressResult = await db.execute(sql`
+        SELECT 
+          COUNT(DISTINCT user_id) as students_active,
+          AVG(percent_complete) as avg_module_completion,
+          SUM(hours_spent) as total_instruction_hours
+        FROM student_curriculum_progress
+        WHERE updated_at >= ${new Date(`${cohortYear}-01-01`).toISOString()}
+      `);
+      const curriculumStats = curriculumProgressResult.rows?.[0] || {};
+
+      const impactReport = {
+        reportTitle: `DGLF Family Literacy Impact Report - ${cohortYear}`,
+        generatedAt: new Date().toISOString(),
+        cohortInfo: {
+          label: activeCohort?.label || `${cohortYear} Cohort`,
+          studentCount: activeCohort?.current_count || 0,
+        },
+        tabeAssessments: {
+          studentsWithTabe: parseInt(tabeStats.students_with_tabe) || 0,
+          baselineTestsCompleted: parseInt(tabeStats.baseline_tests_count) || 0,
+          postTestsCompleted: parseInt(tabeStats.post_tests_count) || 0,
+          studentsShowingEflGain: studentsWithEflGain,
+        },
+        pactTime: {
+          familiesParticipating: parseInt(pactStats.families_participating) || 0,
+          totalPactHours: Math.round((parseInt(pactStats.total_pact_minutes) || 0) / 60 * 10) / 10,
+          totalSessions: parseInt(pactStats.total_sessions) || 0,
+          avgSessionMinutes: Math.round(parseFloat(pactStats.avg_session_duration) || 0),
+          familyProgress: familyProgress.slice(0, 10),
+        },
+        curriculumProgress: {
+          studentsActive: parseInt(curriculumStats.students_active) || 0,
+          totalInstructionHours: Math.round(parseInt(curriculumStats.total_instruction_hours) || 0),
+          avgModuleCompletion: Math.round(parseFloat(curriculumStats.avg_module_completion) || 0),
+        },
+      };
+
+      return res.json(impactReport);
+    } catch (error) {
+      console.error("DGLF Impact Report error:", error);
+      return res.status(500).json({ message: "Failed to generate DGLF Impact Report" });
+    }
+  });
+
   app.get("/api/board/stats", async (req: Request, res: Response) => {
     if (!req.session.userId || req.session.userRole !== "board_member") {
       return res.status(403).json({ message: "Not authorized" });
@@ -4658,19 +4776,61 @@ export async function registerDonationRoutes(app: Express) {
   // STUDENT DASHBOARD API ROUTES
   // ============================================
 
-  // Get curriculum modules
+  // Get curriculum modules with Traffic Cop logic (filters by persona and family_role)
   app.get("/api/student/curriculum", async (req: Request, res: Response) => {
     if (!req.session.userId) {
       return res.status(401).json({ message: "Not authenticated" });
     }
 
     try {
-      const modules = await db.execute(sql`
-        SELECT id, title, description, order_index, duration_hours, content_type, is_published
-        FROM curriculum_modules
-        WHERE is_published = true
-        ORDER BY order_index ASC
+      const applicationResult = await db.execute(sql`
+        SELECT persona_type FROM applications WHERE user_id = ${req.session.userId} LIMIT 1
       `);
+      const personaType = applicationResult.rows?.[0]?.persona_type || 'writer';
+
+      const profileResult = await db.execute(sql`
+        SELECT family_role FROM student_profiles WHERE user_id = ${req.session.userId} LIMIT 1
+      `);
+      const familyRole = profileResult.rows?.[0]?.family_role || null;
+
+      const totalHoursResult = await db.execute(sql`
+        SELECT COALESCE(SUM(hours_spent), 0) as total_hours
+        FROM student_curriculum_progress
+        WHERE user_id = ${req.session.userId}
+      `);
+      const totalHours = parseInt(totalHoursResult.rows?.[0]?.total_hours || '0');
+      const unlockPublishing = totalHours >= 120;
+
+      let pathFilter: string;
+      let audienceFilter: string;
+
+      if (personaType === 'writer') {
+        pathFilter = "path_type = 'general'";
+        audienceFilter = "audience_type = 'adult'";
+      } else if (personaType === 'adult_student') {
+        pathFilter = unlockPublishing 
+          ? "path_type IN ('literacy', 'general')" 
+          : "path_type = 'literacy'";
+        audienceFilter = "audience_type = 'adult'";
+      } else if (personaType === 'family_student') {
+        pathFilter = "path_type IN ('literacy', 'family')";
+        if (familyRole === 'child') {
+          audienceFilter = "audience_type IN ('child', 'shared')";
+        } else {
+          audienceFilter = "audience_type IN ('adult', 'shared')";
+        }
+      } else {
+        pathFilter = "path_type = 'general'";
+        audienceFilter = "audience_type = 'adult'";
+      }
+
+      const modules = await db.execute(sql.raw(`
+        SELECT id, title, description, order_index, duration_hours, content_type, is_published, path_type, audience_type
+        FROM curriculum_modules
+        WHERE is_published = true AND ${pathFilter} AND ${audienceFilter}
+        ORDER BY order_index ASC
+      `));
+
       res.json(modules.rows || []);
     } catch (error) {
       console.error("Error fetching curriculum:", error);

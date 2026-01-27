@@ -46,6 +46,24 @@ export const cohortStatusEnum = pgEnum('cohort_status', [
   'closed'
 ]);
 
+export const personaTypeEnum = pgEnum('persona_type', [
+  'writer',
+  'adult_student',
+  'family_student'
+]);
+
+export const curriculumPathTypeEnum = pgEnum('curriculum_path_type', [
+  'general',
+  'literacy', 
+  'family'
+]);
+
+export const curriculumAudienceTypeEnum = pgEnum('curriculum_audience_type', [
+  'adult',
+  'child',
+  'shared'
+]);
+
 // NPO Applications table - maps to existing Supabase table
 export const npoApplications = pgTable("npo_applications", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -92,6 +110,7 @@ export const users = pgTable("users", {
   lastName: text("last_name").notNull(),
   role: text("role").notNull().default("applicant"),
   indieQuillAuthorId: text("indie_quill_author_id"),
+  vibeScribeId: text("vibe_scribe_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -136,6 +155,7 @@ export const applications = pgTable("applications", {
   manuscriptWordCount: integer("manuscript_word_count").default(0),
   manuscriptTitle: text("manuscript_title"),
   publicIdentityEnabled: boolean("public_identity_enabled").default(false),
+  personaType: personaTypeEnum("persona_type"),
 });
 
 export const contracts = pgTable("contracts", {
@@ -734,6 +754,8 @@ export const curriculumModules = pgTable("curriculum_modules", {
   durationHours: integer("duration_hours").notNull().default(1),
   contentType: text("content_type").default("lesson"), // lesson, video, exercise, assessment
   contentUrl: text("content_url"), // Link to video or content
+  pathType: curriculumPathTypeEnum("path_type").default("general").notNull(),
+  audienceType: curriculumAudienceTypeEnum("audience_type").default("adult").notNull(),
   isPublished: boolean("is_published").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
