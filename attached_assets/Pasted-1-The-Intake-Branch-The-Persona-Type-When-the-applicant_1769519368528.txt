@@ -1,0 +1,38 @@
+1. The Intake Branch: The "Persona Type"
+When the applicant applies, the system must capture the Persona Type. This is the trigger for the entire journey.
+
+Instruction for Replit: "Add a persona_type enum to the applications table with the values: writer, adult_student, and family_student. Update the /apply form to include this as a required selection."
+
+2. The VibeScribe ID (The 6-Digit Key)
+Replit noted this was missing, but remember we want the xxx-xxx format to make it "Buildathon" ready.
+
+Instruction for Replit: "Add vibe_scribe_id (String) to the users table. Ensure the auto-generator we discussed earlier (the random xxx-xxx format) is triggered when an applicant is approved into a cohort."
+
+3. The "Branching" Metadata (Audience & Path)
+To make the Training container intelligent, every module needs to know who it is for.
+
+Instruction for Replit: "Add path_type (general, literacy, family) and audience_type (adult, child, shared) to the curriculum_modules table. This allows the system to filter which modules appear on a student's dashboard based on their persona and their role within a family."
+
+The "Grand Architect" Master Logic (To give to Replit)
+Once those fields are added, you can give Replit this Master Path Logic directive to "pour" the intelligence into the system:
+
+"Implement the Curriculum Traffic Cop logic. When a student logs in, their dashboard should only display modules where:
+
+If Persona = 'Writer': Show all modules with path_type = 'general'.
+
+If Persona = 'Adult Student': Show path_type = 'literacy' (Adult Audience) first. Once literacy milestones are met, unlock path_type = 'general'.
+
+If Persona = 'Family Student': > * If family_role = 'parent'/'guardian', show literacy (Adult) + family (Shared PACT) modules.
+
+If family_role = 'child', show literacy (Child) + family (Shared PACT) modules.
+
+Shared Milestone: For all personas, once 120 hours of instruction are logged, unlock the final Professional Publishing module."
+
+One Strategic Note on the "Evidence Flow"
+Replit mentioned the "Impact Report" aggregation is only partial. Since you want to win that $20k from DGLF, we should make this a priority.
+
+The Goal: A single button in the Outcomes tab that says "Generate DGLF Impact Report."
+
+The Content: It should automatically pull the TABE EFL Gains and the PACT Time totals for the 2026 Cohort.
+
+Shall we tell Replit to execute the database additions (Persona, Vibe ID, Path Metadata) first? This creates the "valves" we need for the game-show and branching logic.
