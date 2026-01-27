@@ -65,6 +65,23 @@ The project utilizes a client-server architecture with a React 19, Vite, and Tai
 - **student_activity_logs:** Tracks hours active and word count milestones for grant reporting.
 - **drafting_documents:** "Legacy Work" manuscript storage with word count tracking.
 
+**Branching Curriculum System:**
+- **Persona Types:** Writer, Adult Student, Family Student - selected during application
+- **VibeScribe ID:** Auto-generated xxx-xxx format ID assigned on cohort acceptance
+- **Curriculum Traffic Cop:** Filters modules based on persona_type and family_role:
+  - Writers see general/adult modules
+  - Adult Students see literacy modules, unlock general at 120+ hours
+  - Family Students see literacy/family modules filtered by adult vs child role
+- **Path Types:** literacy, general, publishing
+- **Audience Types:** adult, child, all
+
+**DGLF Grant Reporting:**
+- Impact Report generator in Auditor dashboard Outcomes tab
+- Aggregates TABE EFL gains (baseline vs post-test per student)
+- PACT time totals for family literacy sessions
+- Curriculum progress metrics
+- Family anthology completion status
+
 **Student Dashboard (/student):**
 - 4 key metrics: Hours Active, Word Count, Course Progress, Modules Completed
 - Curriculum progress visualization with completion status per module
