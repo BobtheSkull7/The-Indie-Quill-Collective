@@ -1,0 +1,86 @@
+
+> indie-quill-collective@1.0.0 db:push
+> drizzle-kit push
+
+No config path provided, using default 'drizzle.config.ts'
+Reading config file '/opt/render/project/src/drizzle.config.ts'
+Using 'pg' driver for database querying
+[✓] Pulling schema from database...
++ email_logs table will be created
++ grant_calendar_alerts table will be created
++ grant_programs table will be created
++ organization_credentials table will be created
+--- all table conflicts resolved ---
+
+
++ entity_type column will be created
+
++ entity_id column will be created
+--- all columns conflicts in audit_logs table resolved ---
+
+
++ content_url column will be created
+
++ path_type column will be created
+
++ audience_type column will be created
+
++ is_published column will be created
+--- all columns conflicts in curriculum_modules table resolved ---
+
+
++ percent_complete column will be created
+
++ started_at column will be created
+
++ last_accessed_at column will be created
+--- all columns conflicts in student_curriculum_progress table resolved ---
+
+
++ test_type column will be created
+
++ scale_score column will be created
+
++ grade_equivalent column will be created
+
++ efl_level column will be created
+
++ is_baseline column will be created
+
++ test_date column will be created
+
++ administered_by column will be created
+
++ notes column will be created
+--- all columns conflicts in tabe_assessments table resolved ---
+
+
++ session_date column will be created
+
++ minutes_active column will be created
+--- all columns conflicts in student_activity_logs table resolved ---
+
+ Warning  Found data-loss statements:
+· You're about to delete user_sessions table with 5 items
+· You're about to change user_id column type from varchar(36) to varchar with 230 items
+· You're about to change status column type from cohort_status to text with 3 items
+· You're about to change user_id column type from varchar(36) to varchar with 12 items
+· You're about to change id column type from varchar(36) to varchar with 14 items
+· You're about to change indie_quill_author_id column type from varchar(255) to text with 14 items
+· You're about to change user_id column type from varchar(36) to varchar with 3 items
+· You're about to change status column type from text to publishing_status with 3 items
+· You're about to change user_id column type from varchar(36) to varchar with 12 items
+· You're about to change reviewed_by column type from varchar(36) to varchar with 12 items
+· You're about to change status column type from text to grant_prospect_status with 40 items
+· You're about to add not-null entity_type column without default value, which contains 230 items
+· You're about to add not-null entity_id column without default value, which contains 230 items
+· You're about to delete target_table column in audit_logs table with 230 items
+· You're about to delete target_id column in audit_logs table with 230 items
+· You're about to delete ip_address column in audit_logs table with 230 items
+· You're about to delete words_processed column in publishing_updates table with 3 items
+
+THIS ACTION WILL CAUSE DATA LOSS AND CANNOT BE REVERTED
+
+Do you still want to push changes?
+❯ No, abort
+  Yes, I want to remove 1 table, remove 4 columns, truncate 7 tables 
