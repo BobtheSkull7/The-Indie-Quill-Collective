@@ -62,10 +62,28 @@ export default function Navbar() {
             ) : user.role === "board_member" ? (
               <>
                 <Link 
-                  href="/board" 
-                  className={`text-sm font-medium transition-colors ${location === "/board" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`}
+                  href="/admin/intake" 
+                  className={`text-sm font-medium transition-colors ${location === "/admin/intake" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`}
                 >
-                  Board
+                  Intake
+                </Link>
+                <Link 
+                  href="/admin/training" 
+                  className={`text-sm font-medium transition-colors ${location === "/admin/training" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`}
+                >
+                  Training
+                </Link>
+                <Link 
+                  href="/admin/publishing" 
+                  className={`text-sm font-medium transition-colors ${location === "/admin/publishing" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`}
+                >
+                  Publishing
+                </Link>
+                <Link 
+                  href="/admin/outcomes" 
+                  className={`text-sm font-medium transition-colors ${location === "/admin/outcomes" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`}
+                >
+                  Outcomes
                 </Link>
                 <div className="flex items-center space-x-3 border-l pl-6 border-gray-200">
                   <div className="flex items-center space-x-2">
@@ -85,10 +103,10 @@ export default function Navbar() {
             ) : user.role === "auditor" ? (
               <>
                 <Link 
-                  href="/auditor" 
-                  className={`text-sm font-medium transition-colors ${location === "/auditor" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`}
+                  href="/admin/outcomes" 
+                  className={`text-sm font-medium transition-colors ${location === "/admin/outcomes" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`}
                 >
-                  Analytics
+                  Outcomes
                 </Link>
                 <div className="flex items-center space-x-3 border-l pl-6 border-gray-200">
                   <div className="flex items-center space-x-2">
@@ -261,12 +279,15 @@ export default function Navbar() {
             </>
           ) : user.role === "board_member" ? (
             <>
-              <Link href="/board" className="block text-gray-600 hover:text-slate-800 py-2">Board</Link>
+              <Link href="/admin/intake" className="block text-gray-600 hover:text-slate-800 py-2">Intake</Link>
+              <Link href="/admin/training" className="block text-gray-600 hover:text-slate-800 py-2">Training</Link>
+              <Link href="/admin/publishing" className="block text-gray-600 hover:text-slate-800 py-2">Publishing</Link>
+              <Link href="/admin/outcomes" className="block text-gray-600 hover:text-slate-800 py-2">Outcomes</Link>
               <button onClick={handleLogout} className="block w-full text-left text-red-500 py-2">Logout</button>
             </>
           ) : user.role === "auditor" ? (
             <>
-              <Link href="/auditor" className="block text-gray-600 hover:text-slate-800 py-2">Analytics</Link>
+              <Link href="/admin/outcomes" className="block text-gray-600 hover:text-slate-800 py-2">Outcomes</Link>
               <button onClick={handleLogout} className="block w-full text-left text-red-500 py-2">Logout</button>
             </>
           ) : user.role === "student" ? (

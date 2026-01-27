@@ -3068,6 +3068,71 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  app.post("/api/admin/cohorts", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    const currentUser = await getUserById(req.session.userId);
+    if (!currentUser || currentUser.role !== "admin") {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+
+    const { label, capacity = 10 } = req.body;
+
+    if (!label || typeof label !== "string" || label.trim().length === 0) {
+      return res.status(400).json({ message: "Cohort label is required" });
+    }
+
+    try {
+      const result = await db.execute(sql`
+        INSERT INTO cohorts (label, capacity, current_count, status, created_at)
+        VALUES (${label.trim()}, ${capacity}, 0, 'open', NOW())
+        RETURNING id, label, capacity, current_count as "currentCount", status, created_at as "createdAt"
+      `);
+      
+      const newCohort = result.rows[0];
+      return res.status(201).json(newCohort);
+    } catch (error) {
+      console.error("Failed to create cohort:", error);
+      return res.status(500).json({ message: "Failed to create cohort" });
+    }
+  });
+
+  app.patch("/api/admin/cohorts/:id/status", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    const currentUser = await getUserById(req.session.userId);
+    if (!currentUser || currentUser.role !== "admin") {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+
+    const cohortId = parseInt(req.params.id);
+    const { status } = req.body;
+
+    if (!status || !["open", "closed"].includes(status)) {
+      return res.status(400).json({ message: "Invalid status. Must be 'open' or 'closed'" });
+    }
+
+    try {
+      const result = await db.execute(sql`
+        UPDATE cohorts 
+        SET status = ${status}
+        WHERE id = ${cohortId}
+        RETURNING id, label, capacity, current_count as "currentCount", status, created_at as "createdAt"
+      `);
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ message: "Cohort not found" });
+      }
+
+      return res.json(result.rows[0]);
+    } catch (error) {
+      console.error("Failed to update cohort status:", error);
+      return res.status(500).json({ message: "Failed to update cohort status" });
+    }
+  });
+
   // Family Units API endpoints
   app.get("/api/admin/family-units", async (req: Request, res: Response) => {
     if (!req.session.userId) {

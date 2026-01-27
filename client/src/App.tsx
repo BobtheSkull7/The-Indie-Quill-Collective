@@ -1,4 +1,4 @@
-import { Route, Switch } from "wouter";
+import { Route, Switch, Redirect } from "wouter";
 import { useState, useEffect, createContext, useContext } from "react";
 import Home from "./pages/Home";
 import Apply from "./pages/Apply";
@@ -10,17 +10,11 @@ import Board from "./pages/Board";
 import Contracts from "./pages/Contracts";
 import ContractSign from "./pages/ContractSign";
 import PublishingStatus from "./pages/PublishingStatus";
-import Cohorts from "./pages/Cohorts";
-import Grants from "./pages/Grants";
-import Vault from "./pages/Vault";
-import Ledger from "./pages/Ledger";
-import Auditor from "./pages/Auditor";
 import StudentDashboard from "./pages/StudentDashboard";
 import CurriculumPlayer from "./pages/CurriculumPlayer";
 import DraftingSuite from "./pages/DraftingSuite";
 import MentorDashboard from "./pages/MentorDashboard";
 import FamilyDashboard from "./pages/FamilyDashboard";
-import { Redirect } from "wouter";
 import Donations from "./pages/Donations";
 import DonationSuccess from "./pages/DonationSuccess";
 import AboutUs from "./pages/AboutUs";
@@ -88,25 +82,41 @@ function App() {
           <Route path="/login" component={Login} />
           <Route path="/register" component={Register} />
           <Route path="/dashboard" component={Dashboard} />
+          
           <Route path="/student" component={StudentDashboard} />
           <Route path="/student/module/:id" component={CurriculumPlayer} />
           <Route path="/student/drafts" component={DraftingSuite} />
           <Route path="/mentor" component={MentorDashboard} />
           <Route path="/family" component={FamilyDashboard} />
+          
           <Route path="/admin" component={AdminDashboard} />
           <Route path="/admin/intake" component={Intake} />
           <Route path="/admin/training" component={Training} />
           <Route path="/admin/publishing" component={Publishing} />
           <Route path="/admin/outcomes" component={Outcomes} />
-          <Route path="/admin/cohorts" component={Cohorts} />
-          <Route path="/admin/grants" component={Grants} />
-          <Route path="/admin/vault" component={Vault} />
-          <Route path="/admin/ledger" component={Ledger} />
-          <Route path="/auditor" component={Auditor} />
+          
+          <Route path="/admin/cohorts">
+            <Redirect to="/admin/intake" />
+          </Route>
+          <Route path="/admin/vault">
+            <Redirect to="/admin/intake" />
+          </Route>
+          <Route path="/admin/grants">
+            <Redirect to="/admin/outcomes" />
+          </Route>
+          <Route path="/admin/ledger">
+            <Redirect to="/admin/outcomes" />
+          </Route>
+          
+          <Route path="/auditor">
+            <Redirect to="/admin/outcomes" />
+          </Route>
+          
           <Route path="/board" component={Board} />
           <Route path="/contracts" component={Contracts} />
           <Route path="/contracts/:id" component={ContractSign} />
           <Route path="/publishing-status" component={PublishingStatus} />
+          
           <Route>
             <div className="min-h-screen flex items-center justify-center">
               <h1 className="text-2xl font-display text-gray-600">Page Not Found</h1>
