@@ -675,6 +675,12 @@ export async function registerRoutes(app: Express) {
       }
 
       if (status === "accepted") {
+        if (application.isMinor && !application.dateOfBirth) {
+          return res.status(400).json({ 
+            message: "Cannot approve minor without date of birth. COPPA compliance requires complete data." 
+          });
+        }
+
         const acceptanceResult = await processAcceptance(
           applicationId,
           application.userId,
@@ -1859,7 +1865,7 @@ export async function registerRoutes(app: Express) {
     try {
       // Use raw SQL to avoid column mismatch issues with Supabase
       const allUsersResult = await db.execute(sql`
-        SELECT id, email, first_name as "firstName", last_name as "lastName", role, created_at as "createdAt"
+        SELECT id, email, first_name as "firstName", last_name as "lastName", role, created_at as "createdAt", vibe_scribe_id as "vibeScribeId"
         FROM users ORDER BY created_at DESC
       `);
       const allUsers = allUsersResult.rows as any[];
@@ -1991,6 +1997,14 @@ export async function registerRoutes(app: Express) {
       if (role === "student") {
         if (!cohortId) {
           return res.status(400).json({ message: "Cohort assignment required for student role" });
+        }
+
+        // COPPA compliance: minors must have date of birth before approval
+        const minorAppWithoutDob = userApps.find(a => a.isMinor && !a.dateOfBirth);
+        if (minorAppWithoutDob) {
+          return res.status(400).json({ 
+            message: "Cannot approve minor without date of birth. COPPA compliance requires complete data." 
+          });
         }
 
         // Always assign author ID for students

@@ -39,6 +39,7 @@ interface UserRecord {
   createdAt: string;
   cohortId?: number | null;
   grantLabel?: string | null;
+  vibeScribeId?: string | null;
 }
 
 interface Cohort {
@@ -481,6 +482,11 @@ export default function ApplicantsContent() {
                       {u.shortId && (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-teal-100 text-teal-800 rounded-md font-mono text-sm">
                           ID: {u.shortId}
+                        </span>
+                      )}
+                      {u.vibeScribeId && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-800 rounded-md font-mono text-sm font-bold">
+                          VS: {u.vibeScribeId}
                         </span>
                       )}
                       {u.grantLabel && (
