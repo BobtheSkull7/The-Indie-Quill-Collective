@@ -167,6 +167,7 @@ export default function AdminDashboard() {
   const [selectedCohortId, setSelectedCohortId] = useState<number | null>(null);
   const [deletingUserId, setDeletingUserId] = useState<number | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<number | null>(null);
+  const [inlineActionId, setInlineActionId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -275,6 +276,25 @@ export default function AdminDashboard() {
       console.error("Update failed:", error);
     } finally {
       setUpdating(false);
+    }
+  };
+
+  const quickUpdateStatus = async (appId: number, status: "accepted" | "rejected") => {
+    setInlineActionId(appId);
+    try {
+      const res = await fetch(`/api/applications/${appId}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+
+      if (res.ok) {
+        await loadData();
+      }
+    } catch (error) {
+      console.error("Quick update failed:", error);
+    } finally {
+      setInlineActionId(null);
     }
   };
 
@@ -959,6 +979,26 @@ export default function AdminDashboard() {
                             >
                               <User className="w-4 h-4" />
                             </button>
+                            {app && (app.status === "pending" || app.status === "under_review") && (
+                              <>
+                                <button
+                                  onClick={() => quickUpdateStatus(app.id, "accepted")}
+                                  disabled={inlineActionId === app.id}
+                                  className="text-green-600 hover:text-green-800 transition-colors p-1.5 rounded hover:bg-green-50 disabled:opacity-50"
+                                  title="Approve"
+                                >
+                                  <Check className={`w-4 h-4 ${inlineActionId === app.id ? "animate-pulse" : ""}`} />
+                                </button>
+                                <button
+                                  onClick={() => quickUpdateStatus(app.id, "rejected")}
+                                  disabled={inlineActionId === app.id}
+                                  className="text-red-600 hover:text-red-800 transition-colors p-1.5 rounded hover:bg-red-50 disabled:opacity-50"
+                                  title="Reject"
+                                >
+                                  <X className={`w-4 h-4 ${inlineActionId === app.id ? "animate-pulse" : ""}`} />
+                                </button>
+                              </>
+                            )}
                             {app && app.contractId && (
                               <button
                                 onClick={() => setLocation(`/contracts/${app.contractId}`)}
@@ -978,7 +1018,7 @@ export default function AdminDashboard() {
                                 <RefreshCw className={`w-4 h-4 ${retrying === syncRecord.id ? "animate-spin" : ""}`} />
                               </button>
                             )}
-                            {u.role === "applicant" && u.id !== user?.id && (
+                            {u.id !== user?.id && (
                               <>
                                 {showDeleteConfirm === u.id ? (
                                   <div className="flex items-center space-x-1 bg-red-50 rounded px-2 py-1">
