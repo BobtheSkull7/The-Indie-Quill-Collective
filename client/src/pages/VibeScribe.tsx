@@ -160,110 +160,99 @@ export default function VibeScribe() {
     }, 1000);
   };
 
-  const initSpeechRecognition = useCallback(() => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      setError("Voice not supported. Try Chrome or Safari.");
-      return null;
-    }
-    
-    const recognition = new SpeechRecognition();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = "en-US";
-    
-    recognition.onstart = () => {
-      console.log("[VibeScribe] Speech recognition started");
-    };
-    
-    recognition.onaudiostart = () => {
-      console.log("[VibeScribe] Audio capture started");
-    };
-    
-    recognition.onspeechstart = () => {
-      console.log("[VibeScribe] Speech detected!");
-    };
-    
-    recognition.onresult = (event: any) => {
-      console.log("[VibeScribe] Got result event:", event.results.length, "results");
-      let finalTranscript = "";
-      let interimTranscript = "";
-      
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const result = event.results[i];
-        if (result.isFinal) {
-          finalTranscript += result[0].transcript + " ";
-        } else {
-          interimTranscript += result[0].transcript;
-        }
-      }
-      
-      console.log("[VibeScribe] Final:", finalTranscript, "Interim:", interimTranscript);
-      
-      if (finalTranscript) {
-        setTranscript((prev) => prev + finalTranscript);
-        setLastSnippet(finalTranscript.trim());
-      }
-      
-      // Show interim results too
-      if (interimTranscript && !finalTranscript) {
-        setLastSnippet(interimTranscript);
-      }
-    };
-    
-    recognition.onerror = (event: any) => {
-      console.error("[VibeScribe] Speech recognition error:", event.error);
-      if (event.error === 'not-allowed') {
-        setError("Microphone blocked. Please allow access.");
-      } else if (event.error === 'no-speech') {
-        setError("No speech detected. Try speaking louder.");
-      } else if (event.error === 'audio-capture') {
-        setError("No microphone found.");
-      } else if (event.error === 'network') {
-        setError("Network error. Check internet connection.");
-      } else {
-        setError(`Voice error: ${event.error}`);
+  const [interimText, setInterimText] = useState("");
+
+  const toggleRecording = async () => {
+    if (isRecording) {
+      // Stop recording
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+        recognitionRef.current = null;
       }
       setIsRecording(false);
-    };
-    
-    recognition.onend = () => {
-      console.log("[VibeScribe] Speech recognition ended");
-    };
-    
-    return recognition;
-  }, []);
-
-  const startRecording = async () => {
-    setError("");
-    
-    // Create fresh recognition instance each time for mobile compatibility
-    recognitionRef.current = initSpeechRecognition();
-    
-    if (recognitionRef.current) {
+      setInterimText("");
+      
+      // Save if we have content
+      if (transcript.trim() && user) {
+        await saveTranscript();
+      }
+    } else {
+      // Start recording
+      setError("");
+      setInterimText("");
+      
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        setError("Voice not supported. Use Chrome on Android.");
+        return;
+      }
+      
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false; // Mobile works better with single utterances
+      recognition.interimResults = true;
+      recognition.lang = "en-US";
+      recognition.maxAlternatives = 1;
+      
+      recognition.onresult = (event: any) => {
+        let finalText = "";
+        let interimText = "";
+        
+        for (let i = 0; i < event.results.length; i++) {
+          const result = event.results[i];
+          if (result.isFinal) {
+            finalText += result[0].transcript + " ";
+          } else {
+            interimText += result[0].transcript;
+          }
+        }
+        
+        if (finalText) {
+          setTranscript((prev) => prev + finalText);
+          setLastSnippet(finalText.trim());
+          setInterimText("");
+        } else if (interimText) {
+          setInterimText(interimText);
+        }
+      };
+      
+      recognition.onerror = (event: any) => {
+        if (event.error === 'no-speech') {
+          // Don't show error, just restart
+          if (isRecording) {
+            try { recognition.start(); } catch {}
+          }
+        } else if (event.error === 'not-allowed') {
+          setError("Microphone blocked. Allow in browser settings.");
+          setIsRecording(false);
+        } else if (event.error === 'aborted') {
+          // User stopped, ignore
+        } else {
+          setError(`Error: ${event.error}`);
+          setIsRecording(false);
+        }
+      };
+      
+      recognition.onend = () => {
+        // Auto-restart for continuous dictation while recording
+        if (isRecording && recognitionRef.current) {
+          try {
+            recognition.start();
+          } catch {
+            setIsRecording(false);
+          }
+        }
+      };
+      
+      recognitionRef.current = recognition;
+      
       try {
-        recognitionRef.current.start();
+        recognition.start();
         setIsRecording(true);
         if (navigator.vibrate) navigator.vibrate(100);
       } catch (err: any) {
-        console.error("Recognition start error:", err);
-        if (err.name === 'NotAllowedError') {
-          setError("Microphone blocked. Check browser settings.");
-        } else {
-          setError("Could not start voice. Try again.");
-        }
+        setError("Could not start. Try again.");
+        setIsRecording(false);
       }
-    }
-  };
-
-  const stopRecording = async () => {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-    }
-    setIsRecording(false);
-    
-    if (transcript.trim() && user) {
-      await saveTranscript();
     }
   };
 
@@ -384,26 +373,21 @@ export default function VibeScribe() {
           
           <div className="flex-1 flex flex-col items-center justify-center w-full max-w-md">
             <button
-              onMouseDown={startRecording}
-              onMouseUp={stopRecording}
-              onTouchStart={(e) => { e.preventDefault(); startRecording(); }}
-              onTouchEnd={(e) => { e.preventDefault(); stopRecording(); }}
-              onContextMenu={(e) => e.preventDefault()}
+              onClick={toggleRecording}
               style={{ WebkitUserSelect: 'none', userSelect: 'none', WebkitTouchCallout: 'none' }}
-              className={`w-48 h-48 rounded-full flex items-center justify-center transition-all duration-300 select-none touch-none ${
+              className={`w-48 h-48 rounded-full flex items-center justify-center transition-all duration-300 select-none ${
                 isRecording
                   ? "bg-red-500 scale-110 shadow-lg shadow-red-500/50 animate-pulse"
-                  : "bg-gradient-to-br from-teal-500 to-teal-600 hover:from-teal-400 hover:to-teal-500 shadow-lg shadow-teal-500/30"
+                  : "bg-gradient-to-br from-teal-500 to-teal-600 active:from-teal-400 active:to-teal-500 shadow-lg shadow-teal-500/30"
               }`}
             >
               <div className="text-center text-white pointer-events-none select-none">
                 {isRecording ? (
                   <>
                     <svg className="w-16 h-16 mx-auto mb-2" fill="currentColor" viewBox="0 0 24 24">
-                      <rect x="6" y="4" width="4" height="16" rx="1" />
-                      <rect x="14" y="4" width="4" height="16" rx="1" />
+                      <rect x="4" y="4" width="16" height="16" rx="2" />
                     </svg>
-                    <span className="text-sm font-medium">Release to Stop</span>
+                    <span className="text-sm font-medium">Tap to Stop</span>
                   </>
                 ) : (
                   <>
@@ -411,7 +395,7 @@ export default function VibeScribe() {
                       <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
                       <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
                     </svg>
-                    <span className="text-sm font-medium">Hold to Speak</span>
+                    <span className="text-sm font-medium">Tap to Speak</span>
                   </>
                 )}
               </div>
@@ -420,7 +404,15 @@ export default function VibeScribe() {
             {/* Always show status */}
             <div className="mt-6 bg-slate-800 rounded-xl p-4 w-full">
               {isRecording ? (
-                <p className="text-red-400 text-center animate-pulse">Listening... speak now</p>
+                <div>
+                  <p className="text-red-400 text-center animate-pulse mb-2">Listening... speak now</p>
+                  {interimText && (
+                    <p className="text-slate-400 text-sm italic text-center">"{interimText}"</p>
+                  )}
+                  {transcript && (
+                    <p className="text-slate-300 text-sm mt-2">{transcript}</p>
+                  )}
+                </div>
               ) : transcript ? (
                 <>
                   <p className="text-slate-300 text-sm line-clamp-3">{transcript}</p>
