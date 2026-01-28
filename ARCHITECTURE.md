@@ -548,8 +548,94 @@ See `render.yaml` in project root for Infrastructure-as-Code deployment configur
 
 ---
 
+## Database Schema Management
+
+### Production vs Development Environments
+
+| Environment | Database | Connection Variable |
+|-------------|----------|---------------------|
+| Development | Supabase Dev | `SUPABASE_DEV_URL` |
+| Production | Supabase Prod | `SUPABASE_PROD_URL` |
+
+### Schema Synchronization
+
+Production schema updates must be done carefully to avoid data loss:
+
+1. **Development:** Use `npm run db:push` for rapid iteration
+2. **Production:** Use additive-only SQL migrations (never DROP operations)
+
+### Complete Database Schema (32 Tables)
+
+| Table | Purpose | Key Columns |
+|-------|---------|-------------|
+| `session` | Express session storage | `sid`, `sess`, `expire` |
+| `users` | User accounts | `id` (VARCHAR/UUID), `email`, `role`, `vibe_scribe_id` |
+| `applications` | Author applications | `user_id`, `pseudonym`, `status`, `persona_type` |
+| `contracts` | Publishing agreements | `application_id`, `status`, `pdf_data` |
+| `cohorts` | Author groups (10 max) | `label`, `capacity`, `current_count` |
+| `family_units` | Family literacy groups | `family_name`, `target_pact_hours` |
+| `foundations` | Grant foundation CRM | `name`, `contact_person`, `status` |
+| `foundation_grants` | Grant allocations | `foundation_id`, `amount`, `assigned_cohort_id` |
+| `grant_programs` | Individual programs | `foundation_id`, `max_amount`, `deadline` |
+| `grant_calendar_alerts` | Deadline tracking | `program_id`, `alert_type`, `alert_date` |
+| `solicitation_logs` | Contact tracking | `foundation_id`, `contact_date`, `response` |
+| `operating_costs` | Quarterly expenses | `quarter`, `total_cost` |
+| `pilot_ledger` | $777 sponsorship tracking | `type`, `amount`, `linked_author_id` |
+| `organization_credentials` | Pre-verified credentials | `credential_type`, `credential_value` |
+| `calendar_events` | Board/event calendar | `title`, `start_date`, `google_calendar_event_id` |
+| `fundraising_campaigns` | Campaign tracking | `name`, `goal_amount`, `current_amount` |
+| `donations` | Individual donations | `campaign_id`, `amount`, `donor_name` |
+| `audit_logs` | COPPA compliance logs | `user_id`, `action`, `entity_type`, `entity_id` |
+| `email_logs` | Email delivery tracking | `email_type`, `status`, `recipient_email` |
+| `publishing_updates` | LLC sync status | `sync_status`, `indie_quill_author_id` |
+| `npo_applications` | Legacy Supabase data | `id` (UUID), `email`, `status` |
+| `student_profiles` | Student-specific data | `user_id`, `accessibility_mode`, `family_role` |
+| `mentor_profiles` | Mentor capabilities | `user_id`, `specialties`, `max_students` |
+| `mentor_student_assignments` | Mentor-student links | `mentor_id`, `student_id` |
+| `curriculum_modules` | 120-hour course content | `title`, `path_type`, `audience_type` |
+| `student_curriculum_progress` | Per-module progress | `user_id`, `module_id`, `percent_complete` |
+| `tabe_assessments` | EFL level tracking | `user_id`, `scale_score`, `efl_level` |
+| `meetings` | Video session scheduling | `mentor_id`, `start_time`, `provider` |
+| `meeting_attendees` | Meeting participation | `meeting_id`, `user_id`, `attended` |
+| `student_activity_logs` | Hours/words tracking | `user_id`, `minutes_active`, `word_count_end` |
+| `pact_sessions` | Family literacy time | `family_unit_id`, `duration_minutes` |
+| `drafting_documents` | "Legacy Work" manuscripts | `user_id`, `word_count`, `is_published` |
+
+### Critical Column Naming Conventions
+
+| Table | Column Name | Notes |
+|-------|-------------|-------|
+| `applications` | `pseudonym` | NOT `pen_name` - author's pen name |
+| `family_units` | `family_name` | NOT `name` - family unit identifier |
+| `audit_logs` | `entity_type`, `entity_id` | NOT `target_table`, `target_id` |
+| `users` | `id` as VARCHAR(36) | UUID format, not INTEGER |
+
+### User ID Reference Pattern
+
+All foreign key references to `users.id` must use VARCHAR(36) to match the UUID format:
+
+```sql
+user_id VARCHAR(36) REFERENCES users(id)
+recorded_by VARCHAR(36) REFERENCES users(id)
+created_by VARCHAR(36) REFERENCES users(id)
+```
+
+### Migration Scripts
+
+Production migration scripts are stored in `/scripts/`:
+
+| File | Purpose |
+|------|---------|
+| `complete-prod-migration.sql` | Full schema alignment (additive only) |
+| `prod-quick-fix.sql` | Targeted column fixes |
+
+**Important:** Always use `CREATE TABLE IF NOT EXISTS` and `ALTER TABLE ADD COLUMN IF NOT EXISTS` to ensure idempotent migrations.
+
+---
+
 ## Version History
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.1 | January 2026 | Added schema management section, documented all 32 tables, column naming conventions |
 | 1.0 | December 2024 | Initial architecture documentation |

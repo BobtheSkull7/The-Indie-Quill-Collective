@@ -37,7 +37,7 @@ The project utilizes a client-server architecture with a React 19, Vite, and Tai
 - **Source Control:** GitHub as the source of truth.
 - **Production Hosting:** Render for backend and frontend web services.
 - **Database:** Supabase for development and production PostgreSQL (SUPABASE_DEV_URL / SUPABASE_PROD_URL).
-- **Schema Management:** Drizzle for schema and migrations. Production schema updates require generating and applying migrations, never `db:push`.
+- **Schema Management:** Drizzle for schema and migrations. Production schema updates require additive-only SQL migrations via `/scripts/complete-prod-migration.sql`. Never use `db:push` on production. Key column conventions: `pseudonym` (not `pen_name`), `family_name` (not `name`), `entity_type`/`entity_id` for audit logs. All user ID references use VARCHAR(36) for UUID compatibility.
 
 **Author Self-Service & Transparency:**
 - **Consolidated Home Page (/):** Single-page landing experience optimized for donor conversion and author onboarding with 5 sections: Hero (mission statement), Identity Bridge (Legal Name vs Pseudonym visual), Chevron Path (7-phase publishing flywheel), Impact Analytics (4 key metrics side-by-side), and Unified CTA Footer (Apply + Donations). The /about route redirects to /.
