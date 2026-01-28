@@ -1,0 +1,102 @@
+| table_name         | column_name                   | data_type                   | is_nullable |
+| ------------------ | ----------------------------- | --------------------------- | ----------- |
+| applications       | id                            | integer                     | NO          |
+| applications       | user_id                       | character varying           | NO          |
+| applications       | internal_id                   | text                        | YES         |
+| applications       | cohort_id                     | integer                     | YES         |
+| applications       | date_approved                 | timestamp without time zone | YES         |
+| applications       | date_migrated                 | timestamp without time zone | YES         |
+| applications       | pseudonym                     | text                        | YES         |
+| applications       | date_of_birth                 | text                        | NO          |
+| applications       | is_minor                      | boolean                     | NO          |
+| applications       | guardian_name                 | text                        | YES         |
+| applications       | guardian_email                | text                        | YES         |
+| applications       | guardian_phone                | text                        | YES         |
+| applications       | guardian_relationship         | text                        | YES         |
+| applications       | guardian_consent_method       | text                        | YES         |
+| applications       | guardian_consent_verified     | boolean                     | YES         |
+| applications       | data_retention_until          | timestamp without time zone | YES         |
+| applications       | has_story_to_tell             | boolean                     | NO          |
+| applications       | personal_struggles            | text                        | NO          |
+| applications       | expression_types              | text                        | NO          |
+| applications       | expression_other              | text                        | YES         |
+| applications       | why_collective                | text                        | NO          |
+| applications       | goals                         | text                        | YES         |
+| applications       | hear_about_us                 | text                        | YES         |
+| applications       | status                        | USER-DEFINED                | NO          |
+| applications       | review_notes                  | text                        | YES         |
+| applications       | reviewed_by                   | character varying           | YES         |
+| applications       | reviewed_at                   | timestamp without time zone | YES         |
+| applications       | created_at                    | timestamp without time zone | NO          |
+| applications       | updated_at                    | timestamp without time zone | NO          |
+| applications       | manuscript_word_count         | integer                     | YES         |
+| applications       | manuscript_title              | text                        | YES         |
+| applications       | public_identity_enabled       | boolean                     | NO          |
+| applications       | persona_type                  | USER-DEFINED                | YES         |
+| audit_logs         | id                            | integer                     | NO          |
+| audit_logs         | user_id                       | character varying           | NO          |
+| audit_logs         | action                        | text                        | NO          |
+| audit_logs         | target_table                  | text                        | NO          |
+| audit_logs         | target_id                     | text                        | NO          |
+| audit_logs         | details                       | text                        | YES         |
+| audit_logs         | ip_address                    | text                        | YES         |
+| audit_logs         | created_at                    | timestamp without time zone | NO          |
+| calendar_events    | id                            | integer                     | NO          |
+| calendar_events    | title                         | text                        | NO          |
+| calendar_events    | description                   | text                        | YES         |
+| calendar_events    | start_date                    | timestamp without time zone | NO          |
+| calendar_events    | end_date                      | timestamp without time zone | YES         |
+| calendar_events    | all_day                       | boolean                     | NO          |
+| calendar_events    | event_type                    | text                        | NO          |
+| calendar_events    | location                      | text                        | YES         |
+| calendar_events    | created_by                    | character varying           | YES         |
+| calendar_events    | google_calendar_event_id      | text                        | YES         |
+| calendar_events    | last_synced_at                | timestamp without time zone | YES         |
+| calendar_events    | is_from_google                | boolean                     | NO          |
+| calendar_events    | created_at                    | timestamp without time zone | NO          |
+| calendar_events    | updated_at                    | timestamp without time zone | NO          |
+| cohorts            | id                            | integer                     | NO          |
+| cohorts            | label                         | text                        | NO          |
+| cohorts            | capacity                      | integer                     | NO          |
+| cohorts            | current_count                 | integer                     | NO          |
+| cohorts            | status                        | USER-DEFINED                | NO          |
+| cohorts            | created_at                    | timestamp without time zone | NO          |
+| contracts          | id                            | integer                     | NO          |
+| contracts          | application_id                | integer                     | NO          |
+| contracts          | user_id                       | character varying           | NO          |
+| contracts          | contract_type                 | text                        | NO          |
+| contracts          | contract_content              | text                        | NO          |
+| contracts          | author_signature              | text                        | YES         |
+| contracts          | author_signed_at              | timestamp without time zone | YES         |
+| contracts          | author_signature_ip           | text                        | YES         |
+| contracts          | author_signature_user_agent   | text                        | YES         |
+| contracts          | guardian_signature            | text                        | YES         |
+| contracts          | guardian_signed_at            | timestamp without time zone | YES         |
+| contracts          | guardian_signature_ip         | text                        | YES         |
+| contracts          | guardian_signature_user_agent | text                        | YES         |
+| contracts          | requires_guardian             | boolean                     | NO          |
+| contracts          | status                        | USER-DEFINED                | NO          |
+| contracts          | pdf_data                      | text                        | YES         |
+| contracts          | pdf_generated_at              | timestamp without time zone | YES         |
+| contracts          | created_at                    | timestamp without time zone | NO          |
+| contracts          | updated_at                    | timestamp without time zone | NO          |
+| curriculum_modules | id                            | integer                     | NO          |
+| curriculum_modules | title                         | text                        | NO          |
+| curriculum_modules | description                   | text                        | YES         |
+| curriculum_modules | content                       | text                        | YES         |
+| curriculum_modules | order_index                   | integer                     | NO          |
+| curriculum_modules | duration_hours                | numeric                     | NO          |
+| curriculum_modules | content_type                  | text                        | YES         |
+| curriculum_modules | created_at                    | timestamp without time zone | NO          |
+| curriculum_modules | updated_at                    | timestamp without time zone | NO          |
+| donations          | id                            | integer                     | NO          |
+| donations          | campaign_id                   | integer                     | YES         |
+| donations          | donor_name                    | text                        | NO          |
+| donations          | donor_email                   | text                        | YES         |
+| donations          | amount                        | integer                     | NO          |
+| donations          | is_anonymous                  | boolean                     | NO          |
+| donations          | notes                         | text                        | YES         |
+| donations          | donated_at                    | timestamp without time zone | NO          |
+| donations          | recorded_by                   | character varying           | NO          |
+| donations          | created_at                    | timestamp without time zone | NO          |
+| drafting_documents | id                            | integer                     | NO          |

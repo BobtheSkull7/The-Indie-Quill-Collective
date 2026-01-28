@@ -1,0 +1,21 @@
+theindiequillcollective.com/:11 Loading the stylesheet 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap' violates the following Content Security Policy directive: "style-src 'self' 'unsafe-inline'". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked.Understand this error
+/api/auth/me:1  Failed to load resource: the server responded with a status of 401 ()Understand this error
+/api/admin/email-logs:1  Failed to load resource: the server responded with a status of 500 ()Understand this error
+/api/admin/users:1  Failed to load resource: the server responded with a status of 500 ()Understand this error
+/api/admin/users:1  Failed to load resource: the server responded with a status of 500 ()Understand this error
+index-BlKvVMFP.js:500 Failed to load data: Error: Failed to fetch users
+    at be (index-BlKvVMFP.js:500:3286)
+be @ index-BlKvVMFP.js:500Understand this error
+/api/admin/users:1  Failed to load resource: the server responded with a status of 500 ()Understand this error
+index-BlKvVMFP.js:500 Failed to load data: Error: Failed to fetch users
+    at be (index-BlKvVMFP.js:500:3286)
+be @ index-BlKvVMFP.js:500Understand this error
+/api/admin/users:1  Failed to load resource: the server responded with a status of 500 ()Understand this error
+index-BlKvVMFP.js:500 Failed to load data: Error: Failed to fetch users
+    at be (index-BlKvVMFP.js:500:3286)
+be @ index-BlKvVMFP.js:500Understand this error
+/api/admin/users:1  Failed to load resource: the server responded with a status of 500 ()Understand this error
+index-BlKvVMFP.js:500 Failed to load data: Error: Failed to fetch users
+    at be (index-BlKvVMFP.js:500:3286)
+be @ index-BlKvVMFP.js:500Understand this error
+intake:1 Loading the stylesheet 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap' violates the following Content Security Policy directive: "style-src 'self' 'unsafe-inline'". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked.
