@@ -1,0 +1,31 @@
+Directive 1: High-Response Visual Feedback
+"We need the recording experience to feel 'alive' for the author. Please implement the following:
+
+The Pulse: When the recording is active, add a CSS 'breath' or 'pulse' animation to the Giant Teal Button. It should glow softly to show the mic is live.
+
+Waveform Visualizer: Add a simple, low-resource CSS or Canvas audio waveform above the button that reacts to the voice input. This provides immediate visual proof of capture.
+
+The 'Legacy Saved' Toast: When a transcription is successfully sent to the database, trigger a small, non-intrusive 'Success' notification (Toast) that says 'Story Saved to Legacy Work!'."
+
+Directive 2: The "Frictionless" PWA Install Flow
+"To ensure users can save an icon to their phone without an App Store, please polish the PWA (Progressive Web App) manifest:
+
+Custom Install Banner: Create a friendly popup for mobile browsers that says 'Save VibeScribe to your Home Screen for one-tap writing.'
+
+Platform Instructions: If on iOS, show a tiny tooltip: 'Tap Share > Add to Home Screen.' If on Android, trigger the native 'Install App' prompt.
+
+Standalone Mode: Ensure manifest.json is set to "display": "standalone" so that when opened from the icon, there is no browser address bar at the top."
+
+Directive 3: Continuous Engagement & Gamification
+"We need to make the word count feel rewarding.
+
+Live Counter Animation: Make the Family Word Count at the bottom 'odometer flip' or count up smoothly as words are added, rather than just jumping to the new number.
+
+Milestone Celebration: When the user hits a multiple of 100 words in a single session, trigger a quick, 0.5-second haptic vibration (vibrate) and a '100 Words Reached!' sparkle effect on the count."
+
+Directive 4: The "Emergency" Admin Trigger (The Demo Closer)
+"For the Buildathon demo, I need to trigger the Challenge Mode manually.
+
+Admin Trigger: In the Admin 'Training' tab, add a button labeled '🚀 Trigger Live Family Quiz'.
+
+The Handshake: When clicked, it should send a WebSocket signal to all mobile users in the DGLF 2026 Cohort to switch their VibeScribe screen to the A/B/C/D quiz layout immediately."
