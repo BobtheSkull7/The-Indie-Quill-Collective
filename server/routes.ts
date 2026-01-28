@@ -8,7 +8,7 @@ import { eq, desc, gte, sql, inArray, lt, and } from "drizzle-orm";
 async function getUserById(userId: number): Promise<any | null> {
   const result = await db.execute(sql`
     SELECT id, email, first_name as "firstName", last_name as "lastName", role
-    FROM users WHERE id = ${userId}
+    FROM public.users WHERE id = ${userId}
   `);
   return result.rows[0] || null;
 }
@@ -17,7 +17,7 @@ async function getUserById(userId: number): Promise<any | null> {
 async function getUserByEmail(email: string): Promise<any | null> {
   const result = await db.execute(sql`
     SELECT id, email, password, first_name as "firstName", last_name as "lastName", role
-    FROM users WHERE lower(email) = lower(${email})
+    FROM public.users WHERE lower(email) = lower(${email})
   `);
   return result.rows[0] || null;
 }
@@ -216,7 +216,7 @@ export async function registerRoutes(app: Express) {
     // Use raw SQL to bypass Drizzle ORM column issue
     const result = await db.execute(sql`
       SELECT id, email, first_name as "firstName", last_name as "lastName", role
-      FROM users WHERE id = ${req.session.userId}
+      FROM public.users WHERE id = ${req.session.userId}
     `);
     const user = result.rows[0] as any;
     if (!user) {
@@ -2038,7 +2038,7 @@ export async function registerRoutes(app: Express) {
 
       // Update user role using raw SQL to avoid column issues
       await db.execute(sql`
-        UPDATE users SET role = ${role} WHERE id = ${userId}
+        UPDATE public.users SET role = ${role} WHERE id = ${userId}
       `);
       
       // Fetch the updated user
@@ -2970,7 +2970,7 @@ export async function registerRoutes(app: Express) {
       if (userIds.length > 0) {
         const usersResult = await db.execute(sql`
           SELECT id, email, first_name as "firstName", last_name as "lastName", role
-          FROM users WHERE id = ANY(${userIds})
+          FROM public.users WHERE id = ANY(${userIds})
         `);
         appUsers = usersResult.rows as any[];
       }
@@ -3301,7 +3301,7 @@ export async function registerRoutes(app: Express) {
           // Use raw SQL to avoid column mismatch issues
           const membersResult = await db.execute(sql`
             SELECT id, first_name as "firstName", last_name as "lastName", role
-            FROM users WHERE family_unit_id = ${family.id}
+            FROM public.users WHERE family_unit_id = ${family.id}
           `);
           const members = membersResult.rows as any[];
 
