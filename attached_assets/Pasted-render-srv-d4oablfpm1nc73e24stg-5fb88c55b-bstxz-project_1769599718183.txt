@@ -1,0 +1,28 @@
+render@srv-d4oablfpm1nc73e24stg-5fb88c55b-bstxz:~/project/src/server$ cat /var/log/render/*.log | tail -50
+cat: '/var/log/render/*.log': No such file or directory
+render@srv-d4oablfpm1nc73e24stg-5fb88c55b-bstxz:~/project/src/server$ psql $DATABASE_URL -c "\d users"
+                                          Table "public.users"
+     Column     |            Type             | Collation | Nullable |              Default              
+----------------+-----------------------------+-----------+----------+-----------------------------------
+ id             | integer                     |           | not null | nextval('users_id_seq'::regclass)
+ email          | text                        |           | not null | 
+ password       | text                        |           | not null | 
+ first_name     | text                        |           | not null | 
+ last_name      | text                        |           | not null | 
+ role           | text                        |           | not null | 'applicant'::text
+ created_at     | timestamp without time zone |           | not null | now()
+ vibe_scribe_id | text                        |           |          | 
+Indexes:
+    "users_pkey" PRIMARY KEY, btree (id)
+    "users_email_unique" UNIQUE CONSTRAINT, btree (email)
+Referenced by:
+    TABLE "applications" CONSTRAINT "applications_reviewed_by_users_id_fk" FOREIGN KEY (reviewed_by) REFERENCES users(id)
+    TABLE "applications" CONSTRAINT "applications_user_id_users_id_fk" FOREIGN KEY (user_id) REFERENCES users(id)
+    TABLE "audit_logs" CONSTRAINT "audit_logs_user_id_users_id_fk" FOREIGN KEY (user_id) REFERENCES users(id)
+    TABLE "calendar_events" CONSTRAINT "calendar_events_created_by_users_id_fk" FOREIGN KEY (created_by) REFERENCES users(id)
+    TABLE "contracts" CONSTRAINT "contracts_user_id_users_id_fk" FOREIGN KEY (user_id) REFERENCES users(id)
+    TABLE "donations" CONSTRAINT "donations_recorded_by_users_id_fk" FOREIGN KEY (recorded_by) REFERENCES users(id)
+    TABLE "fundraising_campaigns" CONSTRAINT "fundraising_campaigns_created_by_users_id_fk" FOREIGN KEY (created_by) REFERENCES users(id)
+    TABLE "publishing_updates" CONSTRAINT "publishing_updates_user_id_users_id_fk" FOREIGN KEY (user_id) REFERENCES users(id)
+
+render@srv-d4oablfpm1nc73e24stg-5fb88c55b-bstxz:~/project/src/server$ 
