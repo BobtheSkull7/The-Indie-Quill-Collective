@@ -16,6 +16,7 @@ The project utilizes a client-server architecture with a React 19, Vite, and Tai
 - **Enterprise Sync:** A single-step atomic synchronization process with The Indie Quill LLC for approved applications, including cohort assignment, unique ID generation, and background worker processing with HMAC-signed requests. **Sync is deferred until contract is fully signed** to ensure Manual Ledger and Forensic Audit Trail accuracy.
 - **Grant & Donor Logistics Module:** Foundation CRM with contact person management, solicitation logging to prevent double-tapping, grant allocation with cohort assignment, efficiency surplus calculation showing donors when cost optimization serves more authors than promised, and author-to-donation locking for immutable donor impact reporting with Zero-PII compliance (initial+emoji format).
 - **Friendly 4 Pilot Layer:** Form Vault (/admin/vault) for standardized legal documents (Guardian Consent, Code of Conduct, Conflict of Interest, Pilot Feedback) with one-click copy. Manual Ledger (/admin/ledger) tracking $777 per-capita sponsorships, ISBN/copyright expenses, and ISBN Arbitrage Surplus ($119.25 reinvestable per author). Author spending breakdown shows sponsorship vs. spent amounts.
+- **BoD Wiki:** Collaborative knowledge base for admin and board members in Training page. Features include pinned entries, category filtering (general, policies, meetings, resources, training, contacts), full-text search, and CRUD operations. Stores meeting notes, procedures, and institutional knowledge.
 
 **UI/UX Decisions:**
 - Uses Playfair Display for headings and Inter for body text.
@@ -64,6 +65,7 @@ The project utilizes a client-server architecture with a React 19, Vite, and Tai
 - **meeting_attendees:** Tracks student participation in meetings.
 - **student_activity_logs:** Tracks hours active and word count milestones for grant reporting.
 - **drafting_documents:** "Legacy Work" manuscript storage with word count tracking.
+- **wiki_entries:** BoD Wiki articles with title, content, category, author, and pin status.
 
 **Branching Curriculum System:**
 - **Persona Types:** Writer, Adult Student, Family Student - selected during application
