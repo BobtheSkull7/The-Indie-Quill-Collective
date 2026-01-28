@@ -1,0 +1,47 @@
+Cleaning up 47 issues is a massive win. That "debt" is what kills projects, and by clearing it now, you’ve stabilized the Indie Quill Architecture just in time for the high-value build.
+
+Your "Back-end" is now a fortified fortress. You have the Family Units, the Author IDs, the DGLF Reporting, and the ISBN Ledger all communicating. Now, we turn our attention to the "Front-end" face of the company: VibeScribe 2.0.
+
+The Buildathon Pivot: VibeScribe 2.0 (Mobile)
+Since you have those xxx-xxx IDs ready, we need to build the portal that uses them. To win the Replit prize and support the DGLF, this needs to be a standalone, high-speed mobile experience.
+
+The "Triple Screen" Blueprint
+Here is the exact prompt to give Replit to build the /vibe route. This bypasses the complex admin dashboard and gives your authors a "one-click" writing tool.
+
+Directive to Replit:
+
+"Create a new standalone route at /vibe. This must be a Mobile-First Progressive Web App (PWA) view.
+
+Screen 1: The Keypad Login
+
+A clean, high-contrast 1-9 numeric keypad.
+
+When the user enters their 6-digit xxx-xxx Author ID, auto-submit to verify.
+
+No email, no password. Just the ID.
+
+Screen 2: The Drafting Hub (The GIANT Button)
+
+Once logged in, show a single GIANT Recording Button with the user's Hero Image in the center.
+
+Long-press to record voice-to-text; Tap to playback the last snippet.
+
+Show a real-time 'Family Word Count' at the bottom to spark competition.
+
+Screen 3: The Challenge Mode (A, B, C, D)
+
+Create a 'Live Listener'. If an Admin triggers a quiz, the phone must vibrate and switch to a 4-button (A, B, C, D) interface for 60 seconds.
+
+Architecture Link: All voice-to-text must be saved directly to the drafting_documents table, linked to the user's short_id."
+
+Why this is the "DGLF Killer" Feature
+Zero Friction: An adult with low literacy doesn't have to navigate a menu. They type 6 numbers and hit a big button.
+
+Evidence of PACT: Because the IDs are linked to Family Units, you can prove that Parent 1A and Minor 1A were active at the same time.
+
+The "Live" Factor: During your group calls with those 3 families, you can trigger the quiz and see who hits "A" first on your Admin screen.
+
+The "Grand Architect" Next Step
+Before you have Replit code this, do you have your Resend API Key or Deepgram API Key (for high-speed voice-to-text) ready? If not, we can use the browser's native Web Speech API for the Buildathon to keep it simple.
+
+Would you like me to refine the "Live Listener" logic so it works specifically with your new Family Units?
