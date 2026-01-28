@@ -1,4 +1,4 @@
-import { Route, Switch, Redirect } from "wouter";
+import { Route, Switch, Redirect, useLocation } from "wouter";
 import { useState, useEffect, createContext, useContext } from "react";
 import Home from "./pages/Home";
 import Apply from "./pages/Apply";
@@ -22,6 +22,7 @@ import Intake from "./pages/Intake";
 import Training from "./pages/Training";
 import Publishing from "./pages/Publishing";
 import Outcomes from "./pages/Outcomes";
+import VibeScribe from "./pages/VibeScribe";
 import Navbar from "./components/Navbar";
 
 interface User {
@@ -49,6 +50,8 @@ export const useAuth = () => useContext(AuthContext);
 function App() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [location] = useLocation();
+  const isVibeRoute = location.startsWith("/vibe");
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -71,8 +74,8 @@ function App() {
 
   return (
     <AuthContext.Provider value={{ user, setUser, loading }}>
-      <div className="min-h-screen bg-gray-50">
-        <Navbar />
+      <div className={`min-h-screen ${isVibeRoute ? '' : 'bg-gray-50'}`}>
+        {!isVibeRoute && <Navbar />}
         <Switch>
           <Route path="/" component={Home} />
           <Route path="/about" component={AboutUs} />
@@ -88,6 +91,7 @@ function App() {
           <Route path="/student/drafts" component={DraftingSuite} />
           <Route path="/mentor" component={MentorDashboard} />
           <Route path="/family" component={FamilyDashboard} />
+          <Route path="/vibe" component={VibeScribe} />
           
           <Route path="/admin" component={AdminDashboard} />
           <Route path="/admin/intake" component={Intake} />

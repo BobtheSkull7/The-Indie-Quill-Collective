@@ -845,6 +845,31 @@ export const draftingDocuments = pgTable("drafting_documents", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// VibeScribe 2.0 - Live Quiz System
+export const vibeQuizzes = pgTable("vibe_quizzes", {
+  id: serial("id").primaryKey(),
+  question: text("question").notNull(),
+  options: text("options").notNull(), // JSON array of 4 options
+  timeLimit: integer("time_limit").default(60).notNull(),
+  isActive: boolean("is_active").default(false).notNull(),
+  startedAt: timestamp("started_at"),
+  createdBy: integer("created_by"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const vibeQuizAnswers = pgTable("vibe_quiz_answers", {
+  id: serial("id").primaryKey(),
+  quizId: integer("quiz_id").references(() => vibeQuizzes.id).notNull(),
+  userId: integer("user_id").notNull(),
+  answer: text("answer").notNull(),
+  answeredAt: timestamp("answered_at").defaultNow().notNull(),
+});
+
+export type VibeQuiz = typeof vibeQuizzes.$inferSelect;
+export type InsertVibeQuiz = typeof vibeQuizzes.$inferInsert;
+export type VibeQuizAnswer = typeof vibeQuizAnswers.$inferSelect;
+export type InsertVibeQuizAnswer = typeof vibeQuizAnswers.$inferInsert;
+
 // Relations for Virtual Classroom
 // Family Units Relations
 export const familyUnitsRelations = relations(familyUnits, ({ one, many }) => ({

@@ -5720,4 +5720,261 @@ export async function registerDonationRoutes(app: Express) {
       res.status(500).json({ error: "Failed to delete wiki entry" });
     }
   });
+
+  // VibeScribe 2.0 - Mobile-first voice-to-text authoring
+  
+  // Verify VibeScribe ID (xxx-xxx format keypad login)
+  app.post("/api/vibe/verify", async (req: Request, res: Response) => {
+    try {
+      const { vibeScribeId } = req.body;
+      
+      if (!vibeScribeId || !/^\d{3}-\d{3}$/.test(vibeScribeId)) {
+        return res.status(400).json({ message: "Invalid ID format" });
+      }
+      
+      // Find user by vibeScribeId
+      const userResult = await db.execute(sql`
+        SELECT id, first_name as "firstName", last_name as "lastName", vibe_scribe_id as "vibeScribeId", family_unit_id as "familyUnitId"
+        FROM public.users 
+        WHERE vibe_scribe_id = ${vibeScribeId}
+      `);
+      
+      if (userResult.rows.length === 0) {
+        return res.status(404).json({ message: "Author ID not found" });
+      }
+      
+      const user = userResult.rows[0] as any;
+      
+      // Get family word count if user belongs to a family unit
+      let familyWordCount = 0;
+      if (user.familyUnitId) {
+        const wordCountResult = await db.execute(sql`
+          SELECT COALESCE(SUM(word_count), 0) as total
+          FROM drafting_documents dd
+          JOIN public.users u ON dd.user_id = u.id
+          WHERE u.family_unit_id = ${user.familyUnitId}
+        `);
+        familyWordCount = parseInt((wordCountResult.rows[0] as any)?.total || "0");
+      } else {
+        const wordCountResult = await db.execute(sql`
+          SELECT COALESCE(SUM(word_count), 0) as total
+          FROM drafting_documents
+          WHERE user_id = ${user.id}
+        `);
+        familyWordCount = parseInt((wordCountResult.rows[0] as any)?.total || "0");
+      }
+      
+      res.json({
+        user: {
+          id: user.id,
+          firstName: user.firstName,
+          vibeScribeId: user.vibeScribeId,
+          familyUnitId: user.familyUnitId,
+        },
+        familyWordCount,
+      });
+    } catch (error) {
+      console.error("Error verifying VibeScribe ID:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+  
+  // Save voice transcription as draft
+  app.post("/api/vibe/save-draft", async (req: Request, res: Response) => {
+    try {
+      const { vibeScribeId, content } = req.body;
+      
+      if (!vibeScribeId || !content) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+      
+      // Find user
+      const userResult = await db.execute(sql`
+        SELECT id, family_unit_id as "familyUnitId"
+        FROM public.users 
+        WHERE vibe_scribe_id = ${vibeScribeId}
+      `);
+      
+      if (userResult.rows.length === 0) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      const user = userResult.rows[0] as any;
+      const wordCount = content.trim().split(/\s+/).filter(Boolean).length;
+      const timestamp = new Date().toISOString().slice(0, 16).replace("T", " ");
+      
+      // Create new draft document
+      await db.execute(sql`
+        INSERT INTO drafting_documents (user_id, title, content, word_count, created_at, updated_at)
+        VALUES (${user.id}, ${"Voice Note " + timestamp}, ${content}, ${wordCount}, NOW(), NOW())
+      `);
+      
+      // Get updated family word count
+      let familyWordCount = 0;
+      if (user.familyUnitId) {
+        const wordCountResult = await db.execute(sql`
+          SELECT COALESCE(SUM(word_count), 0) as total
+          FROM drafting_documents dd
+          JOIN public.users u ON dd.user_id = u.id
+          WHERE u.family_unit_id = ${user.familyUnitId}
+        `);
+        familyWordCount = parseInt((wordCountResult.rows[0] as any)?.total || "0");
+      } else {
+        const wordCountResult = await db.execute(sql`
+          SELECT COALESCE(SUM(word_count), 0) as total
+          FROM drafting_documents
+          WHERE user_id = ${user.id}
+        `);
+        familyWordCount = parseInt((wordCountResult.rows[0] as any)?.total || "0");
+      }
+      
+      res.json({ success: true, familyWordCount });
+    } catch (error) {
+      console.error("Error saving draft:", error);
+      res.status(500).json({ message: "Failed to save draft" });
+    }
+  });
+  
+  // Check for active quiz (polling endpoint)
+  app.get("/api/vibe/quiz/active", async (req: Request, res: Response) => {
+    try {
+      // Check for active quiz in the database
+      const quizResult = await db.execute(sql`
+        SELECT id, question, options, time_limit as "timeLimit", started_at as "startedAt"
+        FROM vibe_quizzes
+        WHERE is_active = true
+        AND started_at > NOW() - INTERVAL '2 minutes'
+        ORDER BY started_at DESC
+        LIMIT 1
+      `);
+      
+      if (quizResult.rows.length === 0) {
+        return res.json({ quiz: null });
+      }
+      
+      const quiz = quizResult.rows[0] as any;
+      const elapsed = Math.floor((Date.now() - new Date(quiz.startedAt).getTime()) / 1000);
+      const timeLeft = Math.max(0, quiz.timeLimit - elapsed);
+      
+      if (timeLeft <= 0) {
+        return res.json({ quiz: null });
+      }
+      
+      res.json({
+        quiz: {
+          id: quiz.id,
+          question: quiz.question,
+          options: JSON.parse(quiz.options || "[]"),
+          timeLimit: timeLeft,
+        },
+      });
+    } catch (error) {
+      // Table might not exist yet - return null quiz
+      res.json({ quiz: null });
+    }
+  });
+  
+  // Submit quiz answer
+  app.post("/api/vibe/quiz/answer", async (req: Request, res: Response) => {
+    try {
+      const { vibeScribeId, quizId, answer } = req.body;
+      
+      if (!vibeScribeId || !quizId || !answer) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+      
+      // Find user
+      const userResult = await db.execute(sql`
+        SELECT id FROM public.users WHERE vibe_scribe_id = ${vibeScribeId}
+      `);
+      
+      if (userResult.rows.length === 0) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      const user = userResult.rows[0] as any;
+      
+      // Record the answer
+      await db.execute(sql`
+        INSERT INTO vibe_quiz_answers (quiz_id, user_id, answer, answered_at)
+        VALUES (${quizId}, ${user.id}, ${answer}, NOW())
+        ON CONFLICT (quiz_id, user_id) DO UPDATE SET answer = ${answer}, answered_at = NOW()
+      `);
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error recording quiz answer:", error);
+      res.status(500).json({ message: "Failed to record answer" });
+    }
+  });
+  
+  // Admin: Start a quiz (trigger for all connected VibeScribe users)
+  app.post("/api/vibe/quiz/start", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    const user = await getUserById(req.session.userId);
+    if (!user || (user.role !== "admin" && user.role !== "mentor")) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+    
+    try {
+      const { question, options, timeLimit = 60 } = req.body;
+      
+      if (!question || !options || options.length !== 4) {
+        return res.status(400).json({ message: "Question and 4 options required" });
+      }
+      
+      // Deactivate any existing quizzes
+      await db.execute(sql`UPDATE vibe_quizzes SET is_active = false WHERE is_active = true`);
+      
+      // Create new quiz
+      const result = await db.execute(sql`
+        INSERT INTO vibe_quizzes (question, options, time_limit, is_active, started_at, created_by)
+        VALUES (${question}, ${JSON.stringify(options)}, ${timeLimit}, true, NOW(), ${user.id})
+        RETURNING id
+      `);
+      
+      const quizId = (result.rows[0] as any).id;
+      
+      res.json({ success: true, quizId });
+    } catch (error) {
+      console.error("Error starting quiz:", error);
+      res.status(500).json({ message: "Failed to start quiz" });
+    }
+  });
+  
+  // Admin: Get quiz results
+  app.get("/api/vibe/quiz/:id/results", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    const user = await getUserById(req.session.userId);
+    if (!user || (user.role !== "admin" && user.role !== "mentor")) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+    
+    try {
+      const quizId = parseInt(req.params.id);
+      
+      const results = await db.execute(sql`
+        SELECT 
+          qa.answer,
+          u.first_name as "firstName",
+          u.vibe_scribe_id as "vibeScribeId",
+          qa.answered_at as "answeredAt"
+        FROM vibe_quiz_answers qa
+        JOIN public.users u ON qa.user_id = u.id::integer
+        WHERE qa.quiz_id = ${quizId}
+        ORDER BY qa.answered_at ASC
+      `);
+      
+      res.json({ results: results.rows });
+    } catch (error) {
+      console.error("Error fetching quiz results:", error);
+      res.status(500).json({ message: "Failed to fetch results" });
+    }
+  });
 }

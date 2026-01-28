@@ -110,6 +110,14 @@ The project utilizes a client-server architecture with a React 19, Vite, and Tai
 - Student email links for quick communication
 - Mentor statistics (total students, avg progress, avg hours active, upcoming meetings)
 
+**VibeScribe 2.0 (/vibe) - Mobile-First Voice Authoring PWA:**
+- **Screen 1 - Keypad Login:** Clean numeric keypad for xxx-xxx Author ID entry, auto-submit on 6 digits, no email/password required
+- **Screen 2 - Drafting Hub:** Giant recording button with hold-to-speak voice-to-text using Web Speech API, real-time family word count display, play last snippet functionality, auto-save to drafting_documents
+- **Screen 3 - Challenge Mode:** Live quiz system with A/B/C/D buttons, vibration alerts when quiz triggered, 60-second countdown timer
+- **PWA Features:** Standalone manifest, theme color integration, installable to home screen, works offline for voice capture
+- **DGLF Evidence:** Proves PACT time (Parent and Child Together) by linking activity to Family Units via vibeScribeId
+- **Database Tables:** vibe_quizzes (question, options, time_limit, is_active), vibe_quiz_answers (quiz_id, user_id, answer, answered_at)
+
 ## Documentation
 
 - **[ARCHITECTURE.md](./ARCHITECTURE.md):** Comprehensive technical reference including naming conventions, data flow diagrams, infrastructure map, UUID architecture, security layers, and deployment configuration.
