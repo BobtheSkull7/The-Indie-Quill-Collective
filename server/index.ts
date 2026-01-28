@@ -42,11 +42,11 @@ async function bootstrapFast() {
     contentSecurityPolicy: isProd ? {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
-        styleSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "blob:"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
         imgSrc: ["'self'", "data:", "https:"],
-        fontSrc: ["'self'", "data:", "https:"],
-        connectSrc: ["'self'", "https:"],
+        fontSrc: ["'self'", "data:", "https:", "https://fonts.gstatic.com"],
+        connectSrc: ["'self'", "https:", "wss:"],
       },
     } : false, // Disable CSP in development for Vite HMR
     crossOriginEmbedderPolicy: false, // Allow embedding for Replit preview
