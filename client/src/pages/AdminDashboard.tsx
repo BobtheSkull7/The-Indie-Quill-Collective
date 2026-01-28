@@ -126,6 +126,7 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [syncRecords, setSyncRecords] = useState<SyncRecord[]>([]);
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
+  const [viewOnlyMode, setViewOnlyMode] = useState(false);
   const [reviewNotes, setReviewNotes] = useState("");
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
@@ -959,6 +960,7 @@ export default function AdminDashboard() {
                               <button
                                 onClick={() => {
                                   setSelectedApp(app);
+                                  setViewOnlyMode(true);
                                   if (app.isMinor) {
                                     initCoppaState(app);
                                   }
@@ -1493,7 +1495,7 @@ export default function AdminDashboard() {
                     </p>
                   </div>
                   <button
-                    onClick={() => setSelectedApp(null)}
+                    onClick={() => { setSelectedApp(null); setViewOnlyMode(false); }}
                     className="text-gray-400 hover:text-gray-600"
                   >
                     <X className="w-6 h-6" />
@@ -1685,7 +1687,7 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                {(selectedApp.status === "pending" || selectedApp.status === "under_review") && (
+                {!viewOnlyMode && (selectedApp.status === "pending" || selectedApp.status === "under_review") && (
                   <div className="border-t pt-6 mt-6">
                     <label className="label">Review Notes (optional)</label>
                     <textarea
