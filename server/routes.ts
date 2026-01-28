@@ -1983,6 +1983,18 @@ export async function registerRoutes(app: Express) {
           dateOfBirth: activeApp?.dateOfBirth || null,
           isMinor: activeApp?.isMinor || false,
           contractId: activeApp?.contractId || null,
+          // Application detail fields
+          personalStruggles: activeApp?.personalStruggles || null,
+          whyCollective: activeApp?.whyCollective || null,
+          expressionTypes: activeApp?.expressionTypes || null,
+          expressionOther: activeApp?.expressionOther || null,
+          goals: activeApp?.goals || null,
+          hearAboutUs: activeApp?.hearAboutUs || null,
+          hasStoryToTell: activeApp?.hasStoryToTell || false,
+          guardianName: activeApp?.guardianName || null,
+          guardianEmail: activeApp?.guardianEmail || null,
+          guardianPhone: activeApp?.guardianPhone || null,
+          guardianRelationship: activeApp?.guardianRelationship || null,
         };
       });
 
