@@ -38,7 +38,7 @@ export async function assignAuthorId(userId: string): Promise<string> {
   const shortId = await generateAuthorId();
   
   await db.update(users)
-    .set({ indieQuillAuthorId: shortId })
+    .set({ indieQuillAuthorId: shortId, vibeScribeId: shortId })
     .where(eq(users.id, userId));
   
   return shortId;
