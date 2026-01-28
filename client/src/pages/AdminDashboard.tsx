@@ -32,6 +32,7 @@ interface Application {
   createdAt: string;
   authorName?: string;
   authorEmail?: string;
+  contractId?: number | null;
 }
 
 interface Stats {
@@ -958,9 +959,9 @@ export default function AdminDashboard() {
                             >
                               <User className="w-4 h-4" />
                             </button>
-                            {app && (app.status === "accepted" || app.status === "migrated") && (
+                            {app && app.contractId && (
                               <button
-                                onClick={() => setLocation(`/contract/${app.id}`)}
+                                onClick={() => setLocation(`/contracts/${app.contractId}`)}
                                 className="text-purple-600 hover:text-purple-800 transition-colors p-1.5 rounded hover:bg-purple-50"
                                 title="View Contract"
                               >

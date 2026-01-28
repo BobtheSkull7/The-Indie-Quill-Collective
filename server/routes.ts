@@ -501,10 +501,16 @@ export async function registerRoutes(app: Express) {
               lastName: users.lastName,
             }).from(users).where(eq(users.id, app.userId));
             
+            // Get contract if exists
+            const [contract] = await db.select({ id: contracts.id })
+              .from(contracts)
+              .where(eq(contracts.applicationId, app.id));
+            
             return {
               ...app,
               authorName: user ? `${user.firstName} ${user.lastName}` : "Unknown",
               authorEmail: user?.email,
+              contractId: contract?.id || null,
             };
           })
         );
