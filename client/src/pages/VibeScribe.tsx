@@ -441,7 +441,7 @@ export default function VibeScribe() {
                   </div>
                 </>
               ) : (
-                <p className="text-slate-500 text-center text-sm">Hold button and speak clearly</p>
+                <p className="text-slate-500 text-center text-sm">Tap button and speak clearly</p>
               )}
             </div>
             
