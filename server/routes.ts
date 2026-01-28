@@ -168,7 +168,7 @@ export async function registerRoutes(app: Express) {
       // Use raw SQL to bypass Drizzle ORM column issue
       const result = await db.execute(sql`
         SELECT id, email, password, first_name as "firstName", last_name as "lastName", role
-        FROM users 
+        FROM public.users 
         WHERE lower(email) = lower(${email})
       `);
       const user = result.rows[0] as any;
@@ -1866,7 +1866,7 @@ export async function registerRoutes(app: Express) {
       // Use raw SQL to avoid column mismatch issues with Supabase
       const allUsersResult = await db.execute(sql`
         SELECT id, email, first_name as "firstName", last_name as "lastName", role, created_at as "createdAt", vibe_scribe_id as "vibeScribeId"
-        FROM users ORDER BY created_at DESC
+        FROM public.users ORDER BY created_at DESC
       `);
       const allUsers = allUsersResult.rows as any[];
 
@@ -5375,7 +5375,7 @@ export async function registerDonationRoutes(app: Express) {
           COALESCE((SELECT SUM(minutes_active) / 60 FROM student_activity_logs WHERE user_id = u.id), 0) as "hoursActive",
           COALESCE((SELECT SUM(word_count) FROM drafting_documents WHERE user_id = u.id), 0) as "wordCount",
           COALESCE((SELECT AVG(percent_complete) FROM student_curriculum_progress WHERE user_id = u.id), 0) as "courseProgress"
-        FROM users u
+        FROM public.users u
         JOIN student_profiles sp ON sp.user_id = u.id
         WHERE sp.family_unit_id = ${family.id}
       `);
