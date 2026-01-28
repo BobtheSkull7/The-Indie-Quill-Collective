@@ -1902,7 +1902,7 @@ export async function registerRoutes(app: Express) {
 
       // Fetch ALL applications in one query instead of per-user to avoid connection pool exhaustion
       const allAppsResult = await db.execute(sql`
-        SELECT id, user_id as "userId", pen_name as "pseudonym", status, cohort_id as "cohortId", 
+        SELECT id, user_id as "userId", pseudonym, status, cohort_id as "cohortId", 
                is_minor as "isMinor", public_identity_enabled as "publicIdentityEnabled",
                internal_id as "internalId", date_migrated as "dateMigrated",
                created_at as "createdAt", date_of_birth as "dateOfBirth"
