@@ -5737,6 +5737,12 @@ export async function registerDonationRoutes(app: Express) {
         return res.status(400).json({ message: "Invalid ID format" });
       }
       
+      // Debug: show all vibe_scribe_ids in database
+      const allIds = await db.execute(sql`
+        SELECT id, first_name, vibe_scribe_id FROM public.users WHERE vibe_scribe_id IS NOT NULL LIMIT 10
+      `);
+      console.log("[VibeScribe] All IDs in DB:", allIds.rows);
+      
       // Find user by vibeScribeId
       const userResult = await db.execute(sql`
         SELECT id, first_name as "firstName", last_name as "lastName", vibe_scribe_id as "vibeScribeId", family_unit_id as "familyUnitId"
