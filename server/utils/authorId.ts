@@ -23,7 +23,7 @@ export async function generateAuthorId(): Promise<string> {
     
     const existing = await db.select({ id: users.id })
       .from(users)
-      .where(eq(users.shortId, shortId))
+      .where(eq(users.indieQuillAuthorId, shortId))
       .limit(1);
     
     if (existing.length === 0) {
@@ -38,7 +38,7 @@ export async function assignAuthorId(userId: string): Promise<string> {
   const shortId = await generateAuthorId();
   
   await db.update(users)
-    .set({ shortId })
+    .set({ indieQuillAuthorId: shortId })
     .where(eq(users.id, userId));
   
   return shortId;
