@@ -182,7 +182,13 @@ export default function VibeScribe() {
   const analyserRef = useRef<AnalyserNode | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
   const sessionWordCountRef = useRef(0);
+  const [transcribing, setTranscribing] = useState(false);
+  
+  const hasSpeechRecognition = typeof window !== 'undefined' && 
+    (window.SpeechRecognition || window.webkitSpeechRecognition);
 
   const formatVibeId = (value: string) => {
     const digits = value.replace(/\D/g, "").slice(0, 6);
@@ -371,15 +377,104 @@ export default function VibeScribe() {
     setAudioLevel(0);
   };
 
+  const transcribeAudioBlob = async (blob: Blob) => {
+    setTranscribing(true);
+    setInterimText("Transcribing...");
+    try {
+      const base64Audio = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const result = reader.result as string;
+          resolve(result.split(",")[1]);
+        };
+        reader.readAsDataURL(blob);
+      });
+      
+      const res = await fetch("/api/vibe/transcribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ audio: base64Audio }),
+      });
+      
+      if (!res.ok) throw new Error("Transcription failed");
+      
+      const data = await res.json();
+      if (data.transcript) {
+        setTranscript((prev) => prev + (prev ? " " : "") + data.transcript);
+        setLastSnippet(data.transcript);
+      }
+    } catch (err) {
+      setError("Could not transcribe. Try again.");
+    } finally {
+      setTranscribing(false);
+      setInterimText("");
+    }
+  };
+
+  const startMediaRecorder = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaStreamRef.current = stream;
+      audioChunksRef.current = [];
+      
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') 
+        ? 'audio/webm;codecs=opus' 
+        : 'audio/mp4';
+      
+      const recorder = new MediaRecorder(stream, { mimeType });
+      mediaRecorderRef.current = recorder;
+      
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          audioChunksRef.current.push(e.data);
+        }
+      };
+      
+      recorder.start(100);
+      isRecordingRef.current = true;
+      setIsRecording(true);
+      startAudioVisualization();
+      if (navigator.vibrate) navigator.vibrate(100);
+    } catch (err) {
+      setError("Microphone blocked. Allow in settings.");
+    }
+  };
+  
+  const stopMediaRecorder = async () => {
+    return new Promise<Blob>((resolve) => {
+      const recorder = mediaRecorderRef.current;
+      if (!recorder || recorder.state !== "recording") {
+        resolve(new Blob());
+        return;
+      }
+      
+      recorder.onstop = () => {
+        const mimeType = recorder.mimeType || 'audio/webm';
+        const blob = new Blob(audioChunksRef.current, { type: mimeType });
+        resolve(blob);
+      };
+      
+      recorder.stop();
+    });
+  };
+
   const toggleRecording = async () => {
     if (isRecording) {
       // Stop recording
       isRecordingRef.current = false;
       stopAudioVisualization();
-      if (recognitionRef.current) {
+      
+      if (hasSpeechRecognition && recognitionRef.current) {
         recognitionRef.current.stop();
         recognitionRef.current = null;
+      } else if (mediaRecorderRef.current) {
+        const blob = await stopMediaRecorder();
+        if (blob.size > 0) {
+          await transcribeAudioBlob(blob);
+        }
+        mediaRecorderRef.current = null;
       }
+      
       setIsRecording(false);
       setInterimText("");
       
@@ -393,85 +488,83 @@ export default function VibeScribe() {
       setInterimText("");
       sessionWordCountRef.current = 0;
       
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SpeechRecognition) {
-        setError("Voice not supported. Use Chrome on Android.");
-        return;
-      }
-      
-      const recognition = new SpeechRecognition();
-      recognition.continuous = false; // Mobile works better with single utterances
-      recognition.interimResults = true;
-      recognition.lang = "en-US";
-      recognition.maxAlternatives = 1;
-      
-      recognition.onresult = (event: any) => {
-        let finalText = "";
-        let interim = "";
+      if (hasSpeechRecognition) {
+        // Use native Web Speech API
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = true;
+        recognition.lang = "en-US";
+        recognition.maxAlternatives = 1;
         
-        for (let i = 0; i < event.results.length; i++) {
-          const result = event.results[i];
-          if (result.isFinal) {
-            finalText += result[0].transcript + " ";
-          } else {
-            interim += result[0].transcript;
+        recognition.onresult = (event: any) => {
+          let finalText = "";
+          let interim = "";
+          
+          for (let i = 0; i < event.results.length; i++) {
+            const result = event.results[i];
+            if (result.isFinal) {
+              finalText += result[0].transcript + " ";
+            } else {
+              interim += result[0].transcript;
+            }
           }
-        }
+          
+          if (finalText) {
+            setTranscript((prev) => prev + finalText);
+            setLastSnippet(finalText.trim());
+            setInterimText("");
+          } else if (interim) {
+            setInterimText(interim);
+          }
+        };
         
-        if (finalText) {
-          setTranscript((prev) => prev + finalText);
-          setLastSnippet(finalText.trim());
-          setInterimText("");
-        } else if (interim) {
-          setInterimText(interim);
-        }
-      };
-      
-      recognition.onerror = (event: any) => {
-        if (event.error === 'no-speech') {
-          // No speech detected, restart if still recording
+        recognition.onerror = (event: any) => {
+          if (event.error === 'no-speech') {
+            if (isRecordingRef.current) {
+              setTimeout(() => {
+                try { recognition.start(); } catch {}
+              }, 100);
+            }
+          } else if (event.error === 'not-allowed') {
+            setError("Microphone blocked. Allow in browser settings.");
+            isRecordingRef.current = false;
+            setIsRecording(false);
+          } else if (event.error === 'aborted') {
+          } else {
+            setError(`Error: ${event.error}`);
+            isRecordingRef.current = false;
+            setIsRecording(false);
+          }
+        };
+        
+        recognition.onend = () => {
           if (isRecordingRef.current) {
             setTimeout(() => {
-              try { recognition.start(); } catch {}
+              try {
+                recognition.start();
+              } catch {
+                isRecordingRef.current = false;
+                setIsRecording(false);
+              }
             }, 100);
           }
-        } else if (event.error === 'not-allowed') {
-          setError("Microphone blocked. Allow in browser settings.");
-          isRecordingRef.current = false;
-          setIsRecording(false);
-        } else if (event.error === 'aborted') {
-          // User stopped, ignore
-        } else {
-          setError(`Error: ${event.error}`);
-          isRecordingRef.current = false;
-          setIsRecording(false);
+        };
+        
+        recognitionRef.current = recognition;
+        isRecordingRef.current = true;
+        
+        try {
+          recognition.start();
+          setIsRecording(true);
+          startAudioVisualization();
+          if (navigator.vibrate) navigator.vibrate(100);
+        } catch (err: any) {
+          setError("Could not start. Try again.");
         }
-      };
-      
-      recognition.onend = () => {
-        // Auto-restart for continuous dictation while recording
-        if (isRecordingRef.current) {
-          setTimeout(() => {
-            try {
-              recognition.start();
-            } catch {
-              isRecordingRef.current = false;
-              setIsRecording(false);
-            }
-          }, 100);
-        }
-      };
-      
-      recognitionRef.current = recognition;
-      isRecordingRef.current = true;
-      
-      try {
-        recognition.start();
-        setIsRecording(true);
-        startAudioVisualization();
-        if (navigator.vibrate) navigator.vibrate(100);
-      } catch (err: any) {
-        setError("Could not start. Try again.");
+      } else {
+        // Use MediaRecorder + API transcription (iOS PWA fallback)
+        await startMediaRecorder();
         isRecordingRef.current = false;
         setIsRecording(false);
       }

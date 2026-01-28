@@ -1037,3 +1037,5 @@ export type DraftingDocument = typeof draftingDocuments.$inferSelect;
 export type InsertDraftingDocument = typeof draftingDocuments.$inferInsert;
 export type WikiEntry = typeof wikiEntries.$inferSelect;
 export type InsertWikiEntry = typeof wikiEntries.$inferInsert;
+
+export * from "./models/chat";

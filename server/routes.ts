@@ -28,6 +28,8 @@ import { logAuditEvent, logMinorDataAccess, getClientIp } from "./utils/auditLog
 import { syncCalendarEvents, getGoogleCalendarConnectionStatus, deleteGoogleCalendarEvent } from "./google-calendar-sync";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { ContractPDF } from "./pdf-templates/ContractTemplate";
+import { ensureCompatibleFormat, speechToText } from "./replit_integrations/audio";
+import express from "express";
 import { processAcceptance } from "./services/cohort-service";
 import { createSyncJob, processSyncJob, registerNpoAuthorWithLLC } from "./services/npo-sync-service";
 import { assignAuthorId } from "./utils/authorId";
@@ -5789,6 +5791,31 @@ export async function registerDonationRoutes(app: Express) {
     } catch (error) {
       console.error("Error verifying VibeScribe ID:", error);
       res.status(500).json({ message: "Server error" });
+    }
+  });
+  
+  // Transcribe audio using Whisper AI
+  app.post("/api/vibe/transcribe", express.json({ limit: "50mb" }), async (req: Request, res: Response) => {
+    try {
+      const { audio } = req.body;
+      
+      if (!audio) {
+        return res.status(400).json({ message: "Audio data required" });
+      }
+      
+      // Convert base64 to buffer
+      const rawBuffer = Buffer.from(audio, "base64");
+      
+      // Auto-detect format and convert to OpenAI-compatible format
+      const { buffer: audioBuffer, format } = await ensureCompatibleFormat(rawBuffer);
+      
+      // Transcribe using Whisper
+      const transcript = await speechToText(audioBuffer, format);
+      
+      res.json({ transcript });
+    } catch (error) {
+      console.error("Error transcribing audio:", error);
+      res.status(500).json({ message: "Failed to transcribe audio" });
     }
   });
   

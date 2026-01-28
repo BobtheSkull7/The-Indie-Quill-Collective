@@ -7,6 +7,7 @@ requiredFiles = [".replit", "replit.nix", "package.json", "package-lock.json"]
 
 [nix]
 channel = "stable-24_11"
+packages = ["ffmpeg"]
 
 [deployment]
 run = ["npm", "run", "start"]
@@ -16,7 +17,7 @@ build = ["npm", "run", "build"]
 
 [agent]
 expertMode = true
-integrations = ["javascript_database:1.0.0", "resend:1.0.0", "github:1.0.0", "google-calendar:1.0.0", "stripe:2.0.0"]
+integrations = ["javascript_database:1.0.0", "resend:1.0.0", "github:1.0.0", "google-calendar:1.0.0", "stripe:2.0.0", "javascript_openai_ai_integrations:2.0.0"]
 
 [workflows]
 runButton = "Project"
@@ -45,3 +46,9 @@ outputType = "webview"
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[userenv]
+
+[userenv.shared]
+AI_INTEGRATIONS_OPENAI_BASE_URL = "http://localhost:1106/modelfarm/openai"
+AI_INTEGRATIONS_OPENAI_API_KEY = "_DUMMY_API_KEY_"
