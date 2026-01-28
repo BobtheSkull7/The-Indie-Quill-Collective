@@ -1900,56 +1900,86 @@ export async function registerRoutes(app: Express) {
       `);
       const allFamilyUnits = allFamilyUnitsResult.rows as any[];
 
-      const usersWithStats = await Promise.all(
-        allUsers.map(async (user) => {
-          // Use raw SQL to avoid type mismatch issues with varchar user_id
-          const userAppsResult = await db.execute(sql`
-            SELECT id, user_id as "userId", pseudonym, status, cohort_id as "cohortId", 
-                   is_minor as "isMinor", public_identity_enabled as "publicIdentityEnabled",
-                   internal_id as "internalId", date_migrated as "dateMigrated",
-                   created_at as "createdAt"
-            FROM applications WHERE user_id = ${user.id}
-          `);
-          const userApps = userAppsResult.rows as any[];
-          
-          const activeApp = userApps.find((a: any) => 
-            a.status === "accepted" || a.status === "migrated" || a.cohortId
-          ) || userApps[0];
-          
-          let grantLabel: string | null = null;
-          if (activeApp?.cohortId) {
-            const cohort = allCohorts.find(c => c.id === activeApp.cohortId);
-            if (cohort?.grantId) {
-              const grant = allGrants.find(g => g.id === cohort.grantId);
-              if (grant) {
-                const foundation = allFoundations.find(f => f.id === grant.foundationId);
-                if (foundation) {
-                  const year = new Date(grant.grantDate).getFullYear();
-                  grantLabel = `${foundation.name.split(' ')[0].toUpperCase()}-${year}`;
-                }
+      // Fetch ALL applications in one query instead of per-user to avoid connection pool exhaustion
+      const allAppsResult = await db.execute(sql`
+        SELECT id, user_id as "userId", pen_name as "pseudonym", status, cohort_id as "cohortId", 
+               is_minor as "isMinor", public_identity_enabled as "publicIdentityEnabled",
+               internal_id as "internalId", date_migrated as "dateMigrated",
+               created_at as "createdAt", date_of_birth as "dateOfBirth"
+        FROM applications
+      `);
+      const allApps = allAppsResult.rows as any[];
+
+      // Fetch contracts to check which apps have contracts
+      const allContractsResult = await db.execute(sql`
+        SELECT id, application_id as "applicationId" FROM contracts
+      `);
+      const allContracts = allContractsResult.rows as any[];
+
+      // Group applications by user_id in memory
+      const appsByUserId = new Map<number, any[]>();
+      for (const app of allApps) {
+        const userId = app.userId;
+        if (!appsByUserId.has(userId)) {
+          appsByUserId.set(userId, []);
+        }
+        appsByUserId.get(userId)!.push(app);
+      }
+
+      // Create contracts lookup by applicationId
+      const contractByAppId = new Map<number, any>();
+      for (const contract of allContracts) {
+        contractByAppId.set(contract.applicationId, contract);
+      }
+
+      // Now process users synchronously (no more async per-user queries)
+      const usersWithStats = allUsers.map((user) => {
+        const userApps = appsByUserId.get(user.id) || [];
+        
+        const activeApp = userApps.find((a: any) => 
+          a.status === "accepted" || a.status === "migrated" || a.cohortId
+        ) || userApps[0];
+        
+        // Add contractId to activeApp if exists
+        if (activeApp) {
+          const contract = contractByAppId.get(activeApp.id);
+          activeApp.contractId = contract?.id || null;
+        }
+        
+        let grantLabel: string | null = null;
+        if (activeApp?.cohortId) {
+          const cohort = allCohorts.find(c => c.id === activeApp.cohortId);
+          if (cohort?.grantId) {
+            const grant = allGrants.find(g => g.id === cohort.grantId);
+            if (grant) {
+              const foundation = allFoundations.find(f => f.id === grant.foundationId);
+              if (foundation) {
+                const year = new Date(grant.grantDate).getFullYear();
+                grantLabel = `${foundation.name.split(' ')[0].toUpperCase()}-${year}`;
               }
             }
           }
+        }
 
-          const familyUnit = user.familyUnitId 
-            ? allFamilyUnits.find(f => f.id === user.familyUnitId)
-            : null;
+        const familyUnit = user.familyUnitId 
+          ? allFamilyUnits.find(f => f.id === user.familyUnitId)
+          : null;
 
-          return {
-            ...user,
-            cohortId: activeApp?.cohortId || null,
-            grantLabel,
-            familyName: familyUnit?.name || null,
-            applicationCount: userApps.length,
-            hasAcceptedApp: userApps.some(a => a.status === "accepted" || a.status === "migrated"),
-            hasMinorApp: userApps.some(a => a.isMinor),
-            status: activeApp?.status || null,
-            pseudonym: activeApp?.pseudonym || null,
-            dateOfBirth: activeApp?.dateOfBirth || null,
-            isMinor: activeApp?.isMinor || false,
-          };
-        })
-      );
+        return {
+          ...user,
+          cohortId: activeApp?.cohortId || null,
+          grantLabel,
+          familyName: familyUnit?.name || null,
+          applicationCount: userApps.length,
+          hasAcceptedApp: userApps.some(a => a.status === "accepted" || a.status === "migrated"),
+          hasMinorApp: userApps.some(a => a.isMinor),
+          status: activeApp?.status || null,
+          pseudonym: activeApp?.pseudonym || null,
+          dateOfBirth: activeApp?.dateOfBirth || null,
+          isMinor: activeApp?.isMinor || false,
+          contractId: activeApp?.contractId || null,
+        };
+      });
 
       const usersWithMinorApps = usersWithStats.filter(u => u.hasMinorApp);
       if (usersWithMinorApps.length > 0) {

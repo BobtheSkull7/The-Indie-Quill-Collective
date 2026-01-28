@@ -20,7 +20,10 @@ if (!supabaseUrl) {
 
 export const pool = new Pool({ 
   connectionString: supabaseUrl,
-  ssl: { rejectUnauthorized: false }
+  ssl: { rejectUnauthorized: false },
+  max: 5,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 10000,
 });
 
 export const db = drizzle(pool, { schema });
