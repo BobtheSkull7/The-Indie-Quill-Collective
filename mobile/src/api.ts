@@ -1,0 +1,68 @@
+import { API_BASE_URL } from "./config";
+import { User } from "./types";
+
+export async function verifyVibeId(vibeScribeId: string): Promise<User | null> {
+  const res = await fetch(`${API_BASE_URL}/api/vibe/verify`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ vibeScribeId }),
+  });
+  
+  if (!res.ok) return null;
+  
+  const data = await res.json();
+  return data.user || null;
+}
+
+export async function transcribeAudio(base64Audio: string): Promise<string> {
+  const res = await fetch(`${API_BASE_URL}/api/vibe/transcribe`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ audio: base64Audio }),
+  });
+  
+  if (!res.ok) throw new Error("Transcription failed");
+  
+  const data = await res.json();
+  return data.transcript || "";
+}
+
+export async function saveDraft(
+  vibeScribeId: string, 
+  content: string
+): Promise<{ success: boolean; familyWordCount: number }> {
+  const res = await fetch(`${API_BASE_URL}/api/vibe/save-draft`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ vibeScribeId, content }),
+  });
+  
+  if (!res.ok) throw new Error("Failed to save");
+  
+  return res.json();
+}
+
+export async function checkActiveQuiz(vibeScribeId: string) {
+  const res = await fetch(
+    `${API_BASE_URL}/api/vibe/quiz/active?vibeScribeId=${vibeScribeId}`
+  );
+  
+  if (!res.ok) return null;
+  
+  const data = await res.json();
+  return data.quiz || null;
+}
+
+export async function submitQuizAnswer(
+  quizId: number,
+  vibeScribeId: string,
+  answer: string
+) {
+  const res = await fetch(`${API_BASE_URL}/api/vibe/quiz/answer`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ quizId, vibeScribeId, answer }),
+  });
+  
+  return res.json();
+}

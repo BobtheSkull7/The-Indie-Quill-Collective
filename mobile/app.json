@@ -1,0 +1,46 @@
+{
+  "expo": {
+    "name": "VibeScribe",
+    "slug": "vibescribe",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0f172a"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.theindiequill.vibescribe",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "Allow VibeScribe to record your legacy stories."
+      }
+    },
+    "android": {
+      "package": "com.theindiequill.vibescribe",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0f172a"
+      },
+      "edgeToEdgeEnabled": true,
+      "permissions": ["RECORD_AUDIO"]
+    },
+    "plugins": [
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Allow VibeScribe to record your legacy stories."
+        }
+      ]
+    ],
+    "extra": {
+      "apiBaseUrl": "https://262e50f1-3284-42c0-9793-2016d4dcb634-00-wn8uok722vqq.picard.replit.dev",
+      "eas": {
+        "projectId": "vibescribe"
+      }
+    }
+  }
+}
