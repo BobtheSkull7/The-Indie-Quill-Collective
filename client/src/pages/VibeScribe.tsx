@@ -172,28 +172,55 @@ export default function VibeScribe() {
     recognition.interimResults = true;
     recognition.lang = "en-US";
     
+    recognition.onstart = () => {
+      console.log("[VibeScribe] Speech recognition started");
+    };
+    
+    recognition.onaudiostart = () => {
+      console.log("[VibeScribe] Audio capture started");
+    };
+    
+    recognition.onspeechstart = () => {
+      console.log("[VibeScribe] Speech detected!");
+    };
+    
     recognition.onresult = (event: any) => {
+      console.log("[VibeScribe] Got result event:", event.results.length, "results");
       let finalTranscript = "";
+      let interimTranscript = "";
       
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const result = event.results[i];
         if (result.isFinal) {
           finalTranscript += result[0].transcript + " ";
+        } else {
+          interimTranscript += result[0].transcript;
         }
       }
+      
+      console.log("[VibeScribe] Final:", finalTranscript, "Interim:", interimTranscript);
       
       if (finalTranscript) {
         setTranscript((prev) => prev + finalTranscript);
         setLastSnippet(finalTranscript.trim());
       }
+      
+      // Show interim results too
+      if (interimTranscript && !finalTranscript) {
+        setLastSnippet(interimTranscript);
+      }
     };
     
     recognition.onerror = (event: any) => {
-      console.error("Speech recognition error:", event.error);
+      console.error("[VibeScribe] Speech recognition error:", event.error);
       if (event.error === 'not-allowed') {
         setError("Microphone blocked. Please allow access.");
       } else if (event.error === 'no-speech') {
-        // Ignore no-speech errors
+        setError("No speech detected. Try speaking louder.");
+      } else if (event.error === 'audio-capture') {
+        setError("No microphone found.");
+      } else if (event.error === 'network') {
+        setError("Network error. Check internet connection.");
       } else {
         setError(`Voice error: ${event.error}`);
       }
@@ -201,7 +228,7 @@ export default function VibeScribe() {
     };
     
     recognition.onend = () => {
-      // Only auto-restart if still recording
+      console.log("[VibeScribe] Speech recognition ended");
     };
     
     return recognition;
