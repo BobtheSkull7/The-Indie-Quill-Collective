@@ -237,17 +237,8 @@ export default function VibeScribe() {
   const startRecording = async () => {
     setError("");
     
-    // Request microphone permission first
-    try {
-      await navigator.mediaDevices.getUserMedia({ audio: true });
-    } catch (err) {
-      setError("Microphone access denied. Please allow in browser settings.");
-      return;
-    }
-    
-    if (!recognitionRef.current) {
-      recognitionRef.current = initSpeechRecognition();
-    }
+    // Create fresh recognition instance each time for mobile compatibility
+    recognitionRef.current = initSpeechRecognition();
     
     if (recognitionRef.current) {
       try {
@@ -255,11 +246,11 @@ export default function VibeScribe() {
         setIsRecording(true);
         if (navigator.vibrate) navigator.vibrate(100);
       } catch (err: any) {
-        if (err.message?.includes('already started')) {
-          setIsRecording(true);
+        console.error("Recognition start error:", err);
+        if (err.name === 'NotAllowedError') {
+          setError("Microphone blocked. Check browser settings.");
         } else {
           setError("Could not start voice. Try again.");
-          console.error("Recognition start error:", err);
         }
       }
     }
