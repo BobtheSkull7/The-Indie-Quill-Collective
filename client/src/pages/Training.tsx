@@ -6,7 +6,8 @@ import CurriculumContent from "../components/tabs/CurriculumContent";
 import StudentsContent from "../components/tabs/StudentsContent";
 import MentorsContent from "../components/tabs/MentorsContent";
 import FamiliesContent from "../components/tabs/FamiliesContent";
-import { BookOpen, Users, UserCheck, Heart } from "lucide-react";
+import WikiContent from "../components/tabs/WikiContent";
+import { BookOpen, Users, UserCheck, Heart, FileText } from "lucide-react";
 
 export default function Training() {
   const { user } = useAuth();
@@ -55,6 +56,13 @@ export default function Training() {
       icon: <Heart className="w-4 h-4" />,
       component: <FamiliesContent />,
       allowedRoles: ["admin"],
+    },
+    {
+      id: "wiki",
+      label: "BoD Wiki",
+      icon: <FileText className="w-4 h-4" />,
+      component: <WikiContent />,
+      allowedRoles: ["admin", "board_member"],
     },
   ];
 

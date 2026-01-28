@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import rateLimit from "express-rate-limit";
 import { db } from "./db";
-import { users, applications, contracts, publishingUpdates, calendarEvents, fundraisingCampaigns, donations, auditLogs, cohorts, familyUnits, operatingCosts, foundations, solicitationLogs, foundationGrants, pilotLedger, emailLogs, grantPrograms, organizationCredentials, grantCalendarAlerts } from "@shared/schema";
+import { users, applications, contracts, publishingUpdates, calendarEvents, fundraisingCampaigns, donations, auditLogs, cohorts, familyUnits, operatingCosts, foundations, solicitationLogs, foundationGrants, pilotLedger, emailLogs, grantPrograms, organizationCredentials, grantCalendarAlerts, wikiEntries } from "@shared/schema";
 import { eq, desc, gte, sql, inArray, lt, and } from "drizzle-orm";
 
 // Helper function to fetch user by ID using raw SQL to avoid Drizzle ORM column mismatch issues
@@ -5538,6 +5538,133 @@ export async function registerDonationRoutes(app: Express) {
     } catch (error) {
       console.error("Error ending PACT session:", error);
       res.status(500).json({ error: "Failed to end PACT session" });
+    }
+  });
+
+  // =============== BoD Wiki API ===============
+
+  // Get all wiki entries
+  app.get("/api/wiki", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    // Only admin and board_member can access wiki
+    if (req.session.userRole !== "admin" && req.session.userRole !== "board_member") {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    try {
+      const result = await db.execute(sql`
+        SELECT 
+          w.id, w.title, w.content, w.category, w.author_id as "authorId",
+          w.is_pinned as "isPinned", w.created_at as "createdAt", w.updated_at as "updatedAt",
+          COALESCE(u.first_name || ' ' || u.last_name, 'Unknown') as "authorName"
+        FROM wiki_entries w
+        LEFT JOIN public.users u ON u.id = w.author_id
+        ORDER BY w.is_pinned DESC, w.updated_at DESC
+      `);
+
+      res.json(result.rows);
+    } catch (error) {
+      console.error("Error fetching wiki entries:", error);
+      res.status(500).json({ error: "Failed to fetch wiki entries" });
+    }
+  });
+
+  // Create wiki entry
+  app.post("/api/wiki", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    if (req.session.userRole !== "admin" && req.session.userRole !== "board_member") {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    try {
+      const { title, content, category, isPinned } = req.body;
+
+      if (!title || !content) {
+        return res.status(400).json({ error: "Title and content are required" });
+      }
+
+      const [entry] = await db.insert(wikiEntries).values({
+        title,
+        content,
+        category: category || "general",
+        authorId: req.session.userId,
+        isPinned: isPinned || false,
+      }).returning();
+
+      res.status(201).json(entry);
+    } catch (error) {
+      console.error("Error creating wiki entry:", error);
+      res.status(500).json({ error: "Failed to create wiki entry" });
+    }
+  });
+
+  // Update wiki entry
+  app.patch("/api/wiki/:id", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    if (req.session.userRole !== "admin" && req.session.userRole !== "board_member") {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    try {
+      const id = parseInt(req.params.id);
+      const { title, content, category, isPinned } = req.body;
+
+      const updateData: any = { updatedAt: new Date() };
+      if (title !== undefined) updateData.title = title;
+      if (content !== undefined) updateData.content = content;
+      if (category !== undefined) updateData.category = category;
+      if (isPinned !== undefined) updateData.isPinned = isPinned;
+
+      const [updated] = await db.update(wikiEntries)
+        .set(updateData)
+        .where(eq(wikiEntries.id, id))
+        .returning();
+
+      if (!updated) {
+        return res.status(404).json({ error: "Wiki entry not found" });
+      }
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating wiki entry:", error);
+      res.status(500).json({ error: "Failed to update wiki entry" });
+    }
+  });
+
+  // Delete wiki entry
+  app.delete("/api/wiki/:id", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    if (req.session.userRole !== "admin" && req.session.userRole !== "board_member") {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    try {
+      const id = parseInt(req.params.id);
+
+      const [deleted] = await db.delete(wikiEntries)
+        .where(eq(wikiEntries.id, id))
+        .returning();
+
+      if (!deleted) {
+        return res.status(404).json({ error: "Wiki entry not found" });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting wiki entry:", error);
+      res.status(500).json({ error: "Failed to delete wiki entry" });
     }
   });
 }

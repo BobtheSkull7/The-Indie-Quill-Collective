@@ -963,6 +963,25 @@ export const draftingDocumentsRelations = relations(draftingDocuments, ({ one })
   }),
 }));
 
+// Wiki entries for Board of Directors notes and tips
+export const wikiEntries = pgTable("wiki_entries", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  category: text("category").default("general"),
+  authorId: varchar("author_id", { length: 36 }).references(() => users.id),
+  isPinned: boolean("is_pinned").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const wikiEntriesRelations = relations(wikiEntries, ({ one }) => ({
+  author: one(users, {
+    fields: [wikiEntries.authorId],
+    references: [users.id],
+  }),
+}));
+
 // Type exports for Virtual Classroom
 export type StudentProfile = typeof studentProfiles.$inferSelect;
 export type InsertStudentProfile = typeof studentProfiles.$inferInsert;
@@ -984,3 +1003,5 @@ export type StudentActivityLog = typeof studentActivityLogs.$inferSelect;
 export type InsertStudentActivityLog = typeof studentActivityLogs.$inferInsert;
 export type DraftingDocument = typeof draftingDocuments.$inferSelect;
 export type InsertDraftingDocument = typeof draftingDocuments.$inferInsert;
+export type WikiEntry = typeof wikiEntries.$inferSelect;
+export type InsertWikiEntry = typeof wikiEntries.$inferInsert;
