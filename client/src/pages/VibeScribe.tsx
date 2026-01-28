@@ -399,23 +399,30 @@ export default function VibeScribe() {
               </div>
             </button>
             
-            {transcript && (
-              <div className="mt-6 bg-slate-800 rounded-xl p-4 w-full">
-                <p className="text-slate-300 text-sm line-clamp-3">{transcript}</p>
-                <div className="flex justify-between items-center mt-2">
-                  <span className="text-slate-500 text-xs">
-                    {transcript.split(/\s+/).filter(Boolean).length} words
-                  </span>
-                  <button
-                    onClick={saveTranscript}
-                    disabled={saving}
-                    className="text-teal-400 text-sm font-medium hover:text-teal-300 disabled:opacity-50"
-                  >
-                    {saving ? "Saving..." : "Save Now"}
-                  </button>
-                </div>
-              </div>
-            )}
+            {/* Always show status */}
+            <div className="mt-6 bg-slate-800 rounded-xl p-4 w-full">
+              {isRecording ? (
+                <p className="text-red-400 text-center animate-pulse">Listening... speak now</p>
+              ) : transcript ? (
+                <>
+                  <p className="text-slate-300 text-sm line-clamp-3">{transcript}</p>
+                  <div className="flex justify-between items-center mt-2">
+                    <span className="text-slate-500 text-xs">
+                      {transcript.split(/\s+/).filter(Boolean).length} words
+                    </span>
+                    <button
+                      onClick={saveTranscript}
+                      disabled={saving}
+                      className="text-teal-400 text-sm font-medium hover:text-teal-300 disabled:opacity-50"
+                    >
+                      {saving ? "Saving..." : "Save Now"}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <p className="text-slate-500 text-center text-sm">Hold button and speak clearly</p>
+              )}
+            </div>
             
             {lastSnippet && !isRecording && (
               <button
