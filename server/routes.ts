@@ -5731,6 +5731,7 @@ export async function registerDonationRoutes(app: Express) {
   app.post("/api/vibe/verify", async (req: Request, res: Response) => {
     try {
       const { vibeScribeId } = req.body;
+      console.log("[VibeScribe] Verify request for ID:", vibeScribeId);
       
       if (!vibeScribeId || !/^\d{3}-\d{3}$/.test(vibeScribeId)) {
         return res.status(400).json({ message: "Invalid ID format" });
@@ -5742,6 +5743,8 @@ export async function registerDonationRoutes(app: Express) {
         FROM public.users 
         WHERE vibe_scribe_id = ${vibeScribeId}
       `);
+      
+      console.log("[VibeScribe] Query result rows:", userResult.rows.length);
       
       if (userResult.rows.length === 0) {
         return res.status(404).json({ message: "Author ID not found" });
