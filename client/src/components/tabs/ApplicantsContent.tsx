@@ -40,6 +40,18 @@ interface UserRecord {
   cohortId?: number | null;
   grantLabel?: string | null;
   vibeScribeId?: string | null;
+  // Application details
+  personalStruggles?: string;
+  whyCollective?: string;
+  expressionTypes?: string;
+  expressionOther?: string;
+  goals?: string;
+  hearAboutUs?: string;
+  hasStoryToTell?: boolean;
+  guardianName?: string;
+  guardianEmail?: string;
+  guardianPhone?: string;
+  guardianRelationship?: string;
 }
 
 interface Cohort {
@@ -147,8 +159,10 @@ export default function ApplicantsContent() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedUser, setSelectedUser] = useState<UserRecord | null>(null);
+  const [viewingApplication, setViewingApplication] = useState<UserRecord | null>(null);
   const [showRoleModal, setShowRoleModal] = useState(false);
   const [showApprovalModal, setShowApprovalModal] = useState(false);
+  const [showApplicationModal, setShowApplicationModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [approvalResult, setApprovalResult] = useState<{ shortId: string; grantLabel: string; familyName?: string; firstName: string } | null>(null);
   const [newRole, setNewRole] = useState("");
@@ -209,7 +223,12 @@ export default function ApplicantsContent() {
     return matchesStatus && matchesSearch;
   });
 
-  const handleViewUser = (u: UserRecord) => {
+  const handleViewApplication = (u: UserRecord) => {
+    setViewingApplication(u);
+    setShowApplicationModal(true);
+  };
+
+  const handleApproveUser = (u: UserRecord) => {
     setSelectedUser(u);
     setShowApprovalModal(true);
     setSelectedCohortId(null);
@@ -505,9 +524,9 @@ export default function ApplicantsContent() {
 
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => handleViewUser(u)}
+                      onClick={() => handleViewApplication(u)}
                       className="p-2 text-gray-600 hover:text-collective-teal hover:bg-collective-teal/10 rounded-lg transition-colors"
-                      title="View details"
+                      title="View Application"
                     >
                       <Eye className="w-5 h-5" />
                     </button>
@@ -773,6 +792,158 @@ export default function ApplicantsContent() {
                   {updating && <Loader2 className="w-4 h-4 animate-spin" />}
                   <Check className="w-4 h-4" />
                   Approve as Student
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Read-only Application Details Modal */}
+      {showApplicationModal && viewingApplication && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-gray-900">
+                Application Details
+              </h2>
+              <button
+                onClick={() => {
+                  setShowApplicationModal(false);
+                  setViewingApplication(null);
+                }}
+                className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Applicant Info */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h3 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
+                  <User className="w-5 h-5 text-teal-600" />
+                  Applicant Information
+                </h3>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-gray-500">Name:</span>
+                    <p className="font-medium text-gray-900">{viewingApplication.firstName} {viewingApplication.lastName}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Email:</span>
+                    <p className="font-medium text-gray-900">{viewingApplication.email}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Pseudonym:</span>
+                    <p className="font-medium text-gray-900 italic">{viewingApplication.pseudonym || "Not provided"}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Date of Birth:</span>
+                    <p className="font-medium text-gray-900">{viewingApplication.dateOfBirth || "Not provided"}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Is Minor:</span>
+                    <p className="font-medium text-gray-900">{viewingApplication.isMinor ? "Yes (Under 18)" : "No"}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Applied:</span>
+                    <p className="font-medium text-gray-900">{new Date(viewingApplication.createdAt).toLocaleDateString()}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Guardian Info (if minor) */}
+              {viewingApplication.isMinor && viewingApplication.guardianName && (
+                <div className="bg-blue-50 rounded-lg p-4">
+                  <h3 className="font-medium text-blue-900 mb-3 flex items-center gap-2">
+                    <Shield className="w-5 h-5 text-blue-600" />
+                    Guardian Information
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-blue-600">Guardian Name:</span>
+                      <p className="font-medium text-blue-900">{viewingApplication.guardianName}</p>
+                    </div>
+                    <div>
+                      <span className="text-blue-600">Relationship:</span>
+                      <p className="font-medium text-blue-900">{viewingApplication.guardianRelationship || "Not specified"}</p>
+                    </div>
+                    <div>
+                      <span className="text-blue-600">Email:</span>
+                      <p className="font-medium text-blue-900">{viewingApplication.guardianEmail || "Not provided"}</p>
+                    </div>
+                    <div>
+                      <span className="text-blue-600">Phone:</span>
+                      <p className="font-medium text-blue-900">{viewingApplication.guardianPhone || "Not provided"}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Their Story */}
+              <div className="bg-amber-50 rounded-lg p-4">
+                <h3 className="font-medium text-amber-900 mb-3">Their Story</h3>
+                <div className="space-y-3 text-sm">
+                  <div>
+                    <span className="text-amber-700">Has a Story to Tell:</span>
+                    <p className="font-medium text-amber-900">{viewingApplication.hasStoryToTell ? "Yes" : "Not sure yet"}</p>
+                  </div>
+                  <div>
+                    <span className="text-amber-700">Expression Type(s):</span>
+                    <p className="font-medium text-amber-900">{viewingApplication.expressionTypes || "Not specified"}</p>
+                  </div>
+                  {viewingApplication.expressionOther && (
+                    <div>
+                      <span className="text-amber-700">Other Expression Details:</span>
+                      <p className="font-medium text-amber-900">{viewingApplication.expressionOther}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Personal Background */}
+              {viewingApplication.personalStruggles && (
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="font-medium text-gray-900 mb-2">Personal Struggles & Background</h3>
+                  <p className="text-gray-700 whitespace-pre-wrap">{viewingApplication.personalStruggles}</p>
+                </div>
+              )}
+
+              {/* Why They Want to Join */}
+              {viewingApplication.whyCollective && (
+                <div className="bg-teal-50 rounded-lg p-4">
+                  <h3 className="font-medium text-teal-900 mb-2">Why They Want to Join The Collective</h3>
+                  <p className="text-teal-800 whitespace-pre-wrap">{viewingApplication.whyCollective}</p>
+                </div>
+              )}
+
+              {/* Goals */}
+              {viewingApplication.goals && (
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="font-medium text-gray-900 mb-2">Publishing Goals</h3>
+                  <p className="text-gray-700 whitespace-pre-wrap">{viewingApplication.goals}</p>
+                </div>
+              )}
+
+              {/* How They Heard About Us */}
+              {viewingApplication.hearAboutUs && (
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="font-medium text-gray-900 mb-2">How They Heard About Us</h3>
+                  <p className="text-gray-700">{viewingApplication.hearAboutUs}</p>
+                </div>
+              )}
+
+              {/* Close Button */}
+              <div className="flex justify-end pt-4 border-t">
+                <button
+                  onClick={() => {
+                    setShowApplicationModal(false);
+                    setViewingApplication(null);
+                  }}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Close
                 </button>
               </div>
             </div>
