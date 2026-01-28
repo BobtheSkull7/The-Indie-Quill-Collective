@@ -7,7 +7,8 @@ import StudentsContent from "../components/tabs/StudentsContent";
 import MentorsContent from "../components/tabs/MentorsContent";
 import FamiliesContent from "../components/tabs/FamiliesContent";
 import WikiContent from "../components/tabs/WikiContent";
-import { BookOpen, Users, UserCheck, Heart, FileText } from "lucide-react";
+import GrantCohortsContent from "../components/tabs/GrantCohortsContent";
+import { BookOpen, Users, UserCheck, Heart, FileText, Rocket } from "lucide-react";
 
 export default function Training() {
   const { user } = useAuth();
@@ -63,6 +64,13 @@ export default function Training() {
       icon: <FileText className="w-4 h-4" />,
       component: <WikiContent />,
       allowedRoles: ["admin", "board_member"],
+    },
+    {
+      id: "cohorts",
+      label: "Grant Cohorts",
+      icon: <Rocket className="w-4 h-4" />,
+      component: <GrantCohortsContent />,
+      allowedRoles: ["admin"],
     },
   ];
 

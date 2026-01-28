@@ -5851,9 +5851,11 @@ export async function registerDonationRoutes(app: Express) {
   // Check for active quiz (polling endpoint)
   app.get("/api/vibe/quiz/active", async (req: Request, res: Response) => {
     try {
+      const vibeScribeId = req.query.vibeScribeId as string;
+      
       // Check for active quiz in the database
       const quizResult = await db.execute(sql`
-        SELECT id, question, options, time_limit as "timeLimit", started_at as "startedAt"
+        SELECT id, question, options, time_limit as "timeLimit", started_at as "startedAt", target_cohort_id as "targetCohortId"
         FROM vibe_quizzes
         WHERE is_active = true
         AND started_at > NOW() - INTERVAL '2 minutes'
@@ -5866,6 +5868,28 @@ export async function registerDonationRoutes(app: Express) {
       }
       
       const quiz = quizResult.rows[0] as any;
+      
+      // If quiz targets a specific cohort, require vibeScribeId and check membership
+      if (quiz.targetCohortId) {
+        // Cohort-targeted quiz requires vibeScribeId to verify membership
+        if (!vibeScribeId) {
+          return res.json({ quiz: null });
+        }
+        
+        const userCohortCheck = await db.execute(sql`
+          SELECT sp.cohort_id
+          FROM public.users u
+          JOIN student_profiles sp ON sp.user_id = u.id::varchar
+          WHERE u.vibe_scribe_id = ${vibeScribeId}
+          AND sp.cohort_id = ${quiz.targetCohortId}
+        `);
+        
+        if (userCohortCheck.rows.length === 0) {
+          // User is not in the targeted cohort
+          return res.json({ quiz: null });
+        }
+      }
+      
       const elapsed = Math.floor((Date.now() - new Date(quiz.startedAt).getTime()) / 1000);
       const timeLeft = Math.max(0, quiz.timeLimit - elapsed);
       
@@ -5988,6 +6012,169 @@ export async function registerDonationRoutes(app: Express) {
     } catch (error) {
       console.error("Error fetching quiz results:", error);
       res.status(500).json({ message: "Failed to fetch results" });
+    }
+  });
+
+  // ============================================
+  // GRANT COHORTS MANAGEMENT
+  // ============================================
+
+  // Get all grant cohorts
+  app.get("/api/admin/grant-cohorts", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    const user = await getUserById(req.session.userId);
+    if (!user || user.role !== "admin") {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+    
+    try {
+      const result = await db.execute(sql`
+        SELECT 
+          c.id,
+          c.label,
+          c.cohort_type as "cohortType",
+          c.capacity,
+          c.current_count as "currentCount",
+          c.status,
+          c.grant_id as "grantId",
+          c.grant_name as "grantName",
+          c.grant_year as "grantYear",
+          c.description,
+          c.created_at as "createdAt",
+          COUNT(DISTINCT fu.id) as "familyCount",
+          COUNT(DISTINCT sp.id) as "studentCount"
+        FROM cohorts c
+        LEFT JOIN family_units fu ON fu.cohort_id = c.id
+        LEFT JOIN student_profiles sp ON sp.cohort_id = c.id
+        WHERE c.cohort_type = 'grant'
+        GROUP BY c.id
+        ORDER BY c.created_at DESC
+      `);
+      
+      res.json({ cohorts: result.rows });
+    } catch (error) {
+      console.error("Error fetching grant cohorts:", error);
+      res.status(500).json({ message: "Failed to fetch cohorts" });
+    }
+  });
+
+  // Create a new grant cohort
+  app.post("/api/admin/grant-cohorts", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    const user = await getUserById(req.session.userId);
+    if (!user || user.role !== "admin") {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+    
+    try {
+      const { label, grantId, grantName, grantYear, capacity, description } = req.body;
+      
+      if (!label) {
+        return res.status(400).json({ message: "Label is required" });
+      }
+      
+      const result = await db.execute(sql`
+        INSERT INTO cohorts (label, cohort_type, grant_id, grant_name, grant_year, capacity, description, status)
+        VALUES (${label}, 'grant', ${grantId || null}, ${grantName || null}, ${grantYear || new Date().getFullYear()}, ${capacity || 20}, ${description || null}, 'open')
+        RETURNING *
+      `);
+      
+      res.json({ cohort: result.rows[0] });
+    } catch (error) {
+      console.error("Error creating grant cohort:", error);
+      res.status(500).json({ message: "Failed to create cohort" });
+    }
+  });
+
+  // Get all cohorts for quiz trigger dropdown (both writer and grant)
+  app.get("/api/admin/cohorts/for-quiz", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    const user = await getUserById(req.session.userId);
+    if (!user || (user.role !== "admin" && user.role !== "mentor")) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+    
+    try {
+      const result = await db.execute(sql`
+        SELECT 
+          c.id,
+          c.label,
+          c.cohort_type as "cohortType",
+          c.grant_name as "grantName",
+          c.grant_year as "grantYear",
+          c.status,
+          COUNT(DISTINCT CASE WHEN u.vibe_scribe_id IS NOT NULL THEN u.id END) as "activeVibeUsers"
+        FROM cohorts c
+        LEFT JOIN student_profiles sp ON sp.cohort_id = c.id
+        LEFT JOIN public.users u ON u.id::varchar = sp.user_id
+        WHERE c.status = 'open'
+        GROUP BY c.id
+        ORDER BY c.cohort_type DESC, c.created_at DESC
+      `);
+      
+      res.json({ cohorts: result.rows });
+    } catch (error) {
+      console.error("Error fetching cohorts for quiz:", error);
+      res.status(500).json({ message: "Failed to fetch cohorts" });
+    }
+  });
+
+  // Trigger quiz for a specific cohort
+  app.post("/api/admin/trigger-cohort-quiz", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    const user = await getUserById(req.session.userId);
+    if (!user || (user.role !== "admin" && user.role !== "mentor")) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+    
+    try {
+      const { cohortId, question, options, timeLimit = 60 } = req.body;
+      
+      if (!cohortId || !question || !options || options.length !== 4) {
+        return res.status(400).json({ message: "Cohort, question and 4 options required" });
+      }
+      
+      // Deactivate any existing quizzes
+      await db.execute(sql`UPDATE vibe_quizzes SET is_active = false WHERE is_active = true`);
+      
+      // Create new quiz with cohort targeting
+      const result = await db.execute(sql`
+        INSERT INTO vibe_quizzes (question, options, time_limit, is_active, started_at, created_by, target_cohort_id)
+        VALUES (${question}, ${JSON.stringify(options)}, ${timeLimit}, true, NOW(), ${user.id}, ${cohortId})
+        RETURNING id
+      `);
+      
+      const quizId = (result.rows[0] as any).id;
+      
+      // Get count of users who will receive this quiz
+      const userCount = await db.execute(sql`
+        SELECT COUNT(DISTINCT u.id) as count
+        FROM public.users u
+        JOIN student_profiles sp ON sp.user_id = u.id::varchar
+        WHERE sp.cohort_id = ${cohortId}
+        AND u.vibe_scribe_id IS NOT NULL
+      `);
+      
+      res.json({ 
+        success: true, 
+        quizId,
+        targetedUsers: parseInt((userCount.rows[0] as any)?.count || "0")
+      });
+    } catch (error) {
+      console.error("Error triggering cohort quiz:", error);
+      res.status(500).json({ message: "Failed to trigger quiz" });
     }
   });
 }

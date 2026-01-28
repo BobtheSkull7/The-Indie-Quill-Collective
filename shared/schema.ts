@@ -78,12 +78,19 @@ export const npoApplications = pgTable("npo_applications", {
 export type NpoApplication = typeof npoApplications.$inferSelect;
 export type InsertNpoApplication = typeof npoApplications.$inferInsert;
 
+export const cohortTypeEnum = pgEnum("cohort_type", ["writer", "grant"]);
+
 export const cohorts = pgTable("cohorts", {
   id: serial("id").primaryKey(),
   label: text("label").notNull(),
+  cohortType: cohortTypeEnum("cohort_type").default("writer").notNull(),
   capacity: integer("capacity").notNull().default(10),
   currentCount: integer("current_count").notNull().default(0),
   status: text("status").default("open"),
+  grantId: integer("grant_id"),
+  grantName: text("grant_name"),
+  grantYear: integer("grant_year"),
+  description: text("description"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

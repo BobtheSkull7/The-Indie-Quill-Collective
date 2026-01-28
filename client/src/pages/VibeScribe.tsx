@@ -17,6 +17,146 @@ interface Quiz {
   timeLimit: number;
 }
 
+function AnimatedCounter({ value, className }: { value: number; className?: string }) {
+  const [displayValue, setDisplayValue] = useState(value);
+  const prevValue = useRef(value);
+  
+  useEffect(() => {
+    if (value === prevValue.current) return;
+    
+    const diff = value - prevValue.current;
+    const steps = Math.min(Math.abs(diff), 20);
+    const stepValue = diff / steps;
+    let current = prevValue.current;
+    let step = 0;
+    
+    const timer = setInterval(() => {
+      step++;
+      current += stepValue;
+      setDisplayValue(Math.round(current));
+      
+      if (step >= steps) {
+        clearInterval(timer);
+        setDisplayValue(value);
+        prevValue.current = value;
+      }
+    }, 30);
+    
+    return () => clearInterval(timer);
+  }, [value]);
+  
+  return <span className={className}>{displayValue.toLocaleString()}</span>;
+}
+
+function Toast({ message, visible, onHide }: { message: string; visible: boolean; onHide: () => void }) {
+  useEffect(() => {
+    if (visible) {
+      const timer = setTimeout(onHide, 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [visible, onHide]);
+  
+  if (!visible) return null;
+  
+  return (
+    <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 animate-toast-slide">
+      <div className="bg-gradient-to-r from-teal-500 to-emerald-500 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-2">
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+        </svg>
+        <span className="font-medium">{message}</span>
+      </div>
+    </div>
+  );
+}
+
+function MilestoneSparkle({ visible }: { visible: boolean }) {
+  if (!visible) return null;
+  
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden">
+      {[...Array(12)].map((_, i) => (
+        <div
+          key={i}
+          className="absolute w-2 h-2 bg-yellow-400 rounded-full animate-sparkle"
+          style={{
+            left: `${50 + 40 * Math.cos((i * 30 * Math.PI) / 180)}%`,
+            top: `${50 + 40 * Math.sin((i * 30 * Math.PI) / 180)}%`,
+            animationDelay: `${i * 0.05}s`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function InstallPrompt({ visible, onDismiss }: { visible: boolean; onDismiss: () => void }) {
+  const [isIOS, setIsIOS] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  
+  useEffect(() => {
+    const ios = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    setIsIOS(ios);
+    
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+  
+  const handleInstall = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      setDeferredPrompt(null);
+      onDismiss();
+    }
+  };
+  
+  if (!visible) return null;
+  
+  return (
+    <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-slate-900 to-slate-800 p-4 border-t border-teal-500/30 z-50 animate-slide-up">
+      <div className="max-w-md mx-auto">
+        <div className="flex items-start gap-3">
+          <div className="w-12 h-12 bg-teal-500 rounded-xl flex items-center justify-center flex-shrink-0">
+            <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
+              <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
+            </svg>
+          </div>
+          <div className="flex-1">
+            <h3 className="text-white font-semibold mb-1">Save VibeScribe to Home Screen</h3>
+            {isIOS ? (
+              <p className="text-slate-400 text-sm">
+                Tap <span className="text-white">Share</span> <svg className="inline w-4 h-4 -mt-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l-5 5h3v9h4V7h3l-5-5z"/><path d="M19 15v4H5v-4H3v6h18v-6h-2z"/></svg> then <span className="text-white">"Add to Home Screen"</span>
+              </p>
+            ) : (
+              <p className="text-slate-400 text-sm">One-tap access to your writing!</p>
+            )}
+          </div>
+          <button onClick={onDismiss} className="text-slate-500 hover:text-white p-1">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        {!isIOS && deferredPrompt && (
+          <button
+            onClick={handleInstall}
+            className="w-full mt-3 bg-teal-500 hover:bg-teal-400 text-white font-semibold py-2 rounded-lg transition-colors"
+          >
+            Install Now
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function VibeScribe() {
   const [screen, setScreen] = useState<Screen>("keypad");
   const [vibeId, setVibeId] = useState("");
@@ -30,10 +170,19 @@ export default function VibeScribe() {
   const [quizTimeLeft, setQuizTimeLeft] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const [showMilestone, setShowMilestone] = useState(false);
+  const [audioLevel, setAudioLevel] = useState(0);
+  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   
   const recognitionRef = useRef<any>(null);
   const isRecordingRef = useRef(false);
   const quizPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const sessionWordCountRef = useRef(0);
 
   const formatVibeId = (value: string) => {
     const digits = value.replace(/\D/g, "").slice(0, 6);
@@ -83,7 +232,15 @@ export default function VibeScribe() {
         setUser(data.user);
         setFamilyWordCount(data.familyWordCount || 0);
         setScreen("hub");
-        startQuizPolling();
+        startQuizPolling(data.user.vibeScribeId);
+        
+        // Show install prompt if not in standalone mode
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                            (window.navigator as any).standalone === true;
+        const dismissed = localStorage.getItem('vibescribe-install-dismissed');
+        if (!isStandalone && !dismissed) {
+          setTimeout(() => setShowInstallPrompt(true), 2000);
+        }
       } else {
         const data = await res.json();
         setError(data.message || "ID not found");
@@ -94,12 +251,12 @@ export default function VibeScribe() {
     }
   };
 
-  const startQuizPolling = () => {
+  const startQuizPolling = (userVibeScribeId: string) => {
     if (quizPollRef.current) clearInterval(quizPollRef.current);
     
     quizPollRef.current = setInterval(async () => {
       try {
-        const res = await fetch("/api/vibe/quiz/active");
+        const res = await fetch(`/api/vibe/quiz/active?vibeScribeId=${encodeURIComponent(userVibeScribeId)}`);
         if (res.ok) {
           const data = await res.json();
           if (data.quiz && !activeQuiz) {
@@ -163,10 +320,62 @@ export default function VibeScribe() {
 
   const [interimText, setInterimText] = useState("");
 
+  const startAudioVisualization = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaStreamRef.current = stream;
+      
+      const audioContext = new AudioContext();
+      const analyser = audioContext.createAnalyser();
+      const source = audioContext.createMediaStreamSource(stream);
+      
+      analyser.fftSize = 256;
+      source.connect(analyser);
+      
+      audioContextRef.current = audioContext;
+      analyserRef.current = analyser;
+      
+      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+      
+      const updateLevel = () => {
+        if (!isRecordingRef.current) {
+          setAudioLevel(0);
+          return;
+        }
+        
+        analyser.getByteFrequencyData(dataArray);
+        const average = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
+        setAudioLevel(average / 255);
+        animationFrameRef.current = requestAnimationFrame(updateLevel);
+      };
+      
+      updateLevel();
+    } catch {
+    }
+  };
+  
+  const stopAudioVisualization = () => {
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
+    // Stop all tracks on the MediaStream to release the microphone
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach(track => track.stop());
+      mediaStreamRef.current = null;
+    }
+    setAudioLevel(0);
+  };
+
   const toggleRecording = async () => {
     if (isRecording) {
       // Stop recording
       isRecordingRef.current = false;
+      stopAudioVisualization();
       if (recognitionRef.current) {
         recognitionRef.current.stop();
         recognitionRef.current = null;
@@ -182,6 +391,7 @@ export default function VibeScribe() {
       // Start recording
       setError("");
       setInterimText("");
+      sessionWordCountRef.current = 0;
       
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) {
@@ -258,6 +468,7 @@ export default function VibeScribe() {
       try {
         recognition.start();
         setIsRecording(true);
+        startAudioVisualization();
         if (navigator.vibrate) navigator.vibrate(100);
       } catch (err: any) {
         setError("Could not start. Try again.");
@@ -269,6 +480,9 @@ export default function VibeScribe() {
 
   const saveTranscript = async () => {
     if (!transcript.trim() || !user) return;
+    
+    const wordsSaved = transcript.trim().split(/\s+/).filter(Boolean).length;
+    sessionWordCountRef.current += wordsSaved;
     
     setSaving(true);
     try {
@@ -283,9 +497,22 @@ export default function VibeScribe() {
       
       if (res.ok) {
         const data = await res.json();
-        setFamilyWordCount(data.familyWordCount || familyWordCount);
+        const prevCount = familyWordCount;
+        const newCount = data.familyWordCount || familyWordCount;
+        setFamilyWordCount(newCount);
         setTranscript("");
-        if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+        setShowToast(true);
+        
+        // Check for 100-word milestone
+        const prevHundred = Math.floor(prevCount / 100);
+        const newHundred = Math.floor(newCount / 100);
+        if (newHundred > prevHundred) {
+          setShowMilestone(true);
+          if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 100]);
+          setTimeout(() => setShowMilestone(false), 1000);
+        } else {
+          if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+        }
       }
     } catch {
       setError("Failed to save");
@@ -366,6 +593,12 @@ export default function VibeScribe() {
 
       {screen === "hub" && user && (
         <div className="flex-1 flex flex-col items-center justify-between p-6">
+          <Toast 
+            message="Story Saved to Legacy Work!" 
+            visible={showToast} 
+            onHide={() => setShowToast(false)} 
+          />
+          
           <div className="text-center">
             <button
               onClick={logout}
@@ -383,15 +616,37 @@ export default function VibeScribe() {
           </div>
           
           <div className="flex-1 flex flex-col items-center justify-center w-full max-w-md">
-            <button
-              onClick={toggleRecording}
-              style={{ WebkitUserSelect: 'none', userSelect: 'none', WebkitTouchCallout: 'none' }}
-              className={`w-48 h-48 rounded-full flex items-center justify-center transition-all duration-300 select-none ${
-                isRecording
-                  ? "bg-red-500 scale-110 shadow-lg shadow-red-500/50 animate-pulse"
-                  : "bg-gradient-to-br from-teal-500 to-teal-600 active:from-teal-400 active:to-teal-500 shadow-lg shadow-teal-500/30"
-              }`}
-            >
+            {/* Waveform visualizer */}
+            {isRecording && (
+              <div className="flex items-end justify-center gap-1 h-12 mb-4">
+                {[...Array(7)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="w-2 bg-gradient-to-t from-teal-500 to-teal-300 rounded-full transition-all duration-75"
+                    style={{
+                      height: `${Math.max(8, audioLevel * 48 * (0.5 + Math.sin(Date.now() / 100 + i) * 0.5))}px`,
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+            
+            <div className="relative">
+              <button
+                onClick={toggleRecording}
+                style={{ WebkitUserSelect: 'none', userSelect: 'none', WebkitTouchCallout: 'none' }}
+                className={`w-48 h-48 rounded-full flex items-center justify-center transition-all duration-300 select-none ${
+                  isRecording
+                    ? "bg-red-500 scale-110 animate-recording-pulse"
+                    : "bg-gradient-to-br from-teal-500 to-teal-600 active:from-teal-400 active:to-teal-500 shadow-lg shadow-teal-500/30"
+                }`}
+                >
+                {isRecording && (
+                  <div 
+                    className="absolute inset-0 rounded-full bg-red-500/30 animate-ping"
+                    style={{ animationDuration: '1.5s' }}
+                  />
+                )}
               <div className="text-center text-white pointer-events-none select-none">
                 {isRecording ? (
                   <>
@@ -411,6 +666,7 @@ export default function VibeScribe() {
                 )}
               </div>
             </button>
+            </div>
             
             {/* Always show status */}
             <div className="mt-6 bg-slate-800 rounded-xl p-4 w-full">
@@ -458,12 +714,28 @@ export default function VibeScribe() {
             )}
           </div>
           
-          <div className="text-center bg-slate-800/50 rounded-xl p-4 w-full max-w-md">
-            <p className="text-slate-400 text-sm mb-1">Word Count</p>
-            <p className="text-4xl font-bold text-teal-400 font-mono">
-              {familyWordCount.toLocaleString()}
+          <div className="relative text-center bg-slate-800/50 rounded-xl p-4 w-full max-w-md">
+            <MilestoneSparkle visible={showMilestone} />
+            <p className="text-slate-400 text-sm mb-1">
+              {user.familyUnitId ? "Family Word Count" : "Word Count"}
             </p>
+            <p className="text-4xl font-bold text-teal-400 font-mono">
+              <AnimatedCounter value={familyWordCount} />
+            </p>
+            {showMilestone && (
+              <p className="text-yellow-400 text-sm mt-1 animate-bounce">
+                🎉 Milestone Reached!
+              </p>
+            )}
           </div>
+          
+          <InstallPrompt 
+            visible={showInstallPrompt} 
+            onDismiss={() => {
+              setShowInstallPrompt(false);
+              localStorage.setItem('vibescribe-install-dismissed', 'true');
+            }} 
+          />
         </div>
       )}
 

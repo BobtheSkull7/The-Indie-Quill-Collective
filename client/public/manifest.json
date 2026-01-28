@@ -3,16 +3,32 @@
   "short_name": "VibeScribe",
   "description": "Voice-to-text authoring for The Indie Quill Collective",
   "start_url": "/vibe",
+  "scope": "/vibe",
   "display": "standalone",
   "background_color": "#1e293b",
   "theme_color": "#0d9488",
   "orientation": "portrait",
+  "categories": ["education", "productivity"],
   "icons": [
     {
       "src": "/logo.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any"
     }
-  ]
+  ],
+  "screenshots": [],
+  "prefer_related_applications": false
 }
