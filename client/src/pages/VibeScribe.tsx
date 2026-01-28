@@ -163,7 +163,7 @@ export default function VibeScribe() {
   const initSpeechRecognition = useCallback(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      setError("Voice not supported on this device");
+      setError("Voice not supported. Try Chrome or Safari.");
       return null;
     }
     
@@ -174,14 +174,11 @@ export default function VibeScribe() {
     
     recognition.onresult = (event: any) => {
       let finalTranscript = "";
-      let interimTranscript = "";
       
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const result = event.results[i];
         if (result.isFinal) {
           finalTranscript += result[0].transcript + " ";
-        } else {
-          interimTranscript += result[0].transcript;
         }
       }
       
@@ -193,27 +190,51 @@ export default function VibeScribe() {
     
     recognition.onerror = (event: any) => {
       console.error("Speech recognition error:", event.error);
+      if (event.error === 'not-allowed') {
+        setError("Microphone blocked. Please allow access.");
+      } else if (event.error === 'no-speech') {
+        // Ignore no-speech errors
+      } else {
+        setError(`Voice error: ${event.error}`);
+      }
       setIsRecording(false);
     };
     
     recognition.onend = () => {
-      if (isRecording) {
-        recognition.start();
-      }
+      // Only auto-restart if still recording
     };
     
     return recognition;
-  }, [isRecording]);
+  }, []);
 
-  const startRecording = () => {
+  const startRecording = async () => {
+    setError("");
+    
+    // Request microphone permission first
+    try {
+      await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (err) {
+      setError("Microphone access denied. Please allow in browser settings.");
+      return;
+    }
+    
     if (!recognitionRef.current) {
       recognitionRef.current = initSpeechRecognition();
     }
     
     if (recognitionRef.current) {
-      recognitionRef.current.start();
-      setIsRecording(true);
-      if (navigator.vibrate) navigator.vibrate(100);
+      try {
+        recognitionRef.current.start();
+        setIsRecording(true);
+        if (navigator.vibrate) navigator.vibrate(100);
+      } catch (err: any) {
+        if (err.message?.includes('already started')) {
+          setIsRecording(true);
+        } else {
+          setError("Could not start voice. Try again.");
+          console.error("Recognition start error:", err);
+        }
+      }
     }
   };
 
@@ -338,21 +359,26 @@ export default function VibeScribe() {
               Welcome, {user.firstName}!
             </h2>
             <p className="text-slate-400 font-mono">{user.vibeScribeId}</p>
+            {error && (
+              <p className="text-red-400 text-sm mt-2">{error}</p>
+            )}
           </div>
           
           <div className="flex-1 flex flex-col items-center justify-center w-full max-w-md">
             <button
               onMouseDown={startRecording}
               onMouseUp={stopRecording}
-              onTouchStart={startRecording}
-              onTouchEnd={stopRecording}
-              className={`w-48 h-48 rounded-full flex items-center justify-center transition-all duration-300 ${
+              onTouchStart={(e) => { e.preventDefault(); startRecording(); }}
+              onTouchEnd={(e) => { e.preventDefault(); stopRecording(); }}
+              onContextMenu={(e) => e.preventDefault()}
+              style={{ WebkitUserSelect: 'none', userSelect: 'none', WebkitTouchCallout: 'none' }}
+              className={`w-48 h-48 rounded-full flex items-center justify-center transition-all duration-300 select-none touch-none ${
                 isRecording
                   ? "bg-red-500 scale-110 shadow-lg shadow-red-500/50 animate-pulse"
                   : "bg-gradient-to-br from-teal-500 to-teal-600 hover:from-teal-400 hover:to-teal-500 shadow-lg shadow-teal-500/30"
               }`}
             >
-              <div className="text-center text-white">
+              <div className="text-center text-white pointer-events-none select-none">
                 {isRecording ? (
                   <>
                     <svg className="w-16 h-16 mx-auto mb-2" fill="currentColor" viewBox="0 0 24 24">
@@ -405,7 +431,7 @@ export default function VibeScribe() {
           </div>
           
           <div className="text-center bg-slate-800/50 rounded-xl p-4 w-full max-w-md">
-            <p className="text-slate-400 text-sm mb-1">Family Word Count</p>
+            <p className="text-slate-400 text-sm mb-1">Word Count</p>
             <p className="text-4xl font-bold text-teal-400 font-mono">
               {familyWordCount.toLocaleString()}
             </p>
