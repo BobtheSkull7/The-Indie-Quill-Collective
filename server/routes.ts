@@ -1905,7 +1905,12 @@ export async function registerRoutes(app: Express) {
         SELECT id, user_id as "userId", pseudonym, status, cohort_id as "cohortId", 
                is_minor as "isMinor", public_identity_enabled as "publicIdentityEnabled",
                internal_id as "internalId", date_migrated as "dateMigrated",
-               created_at as "createdAt", date_of_birth as "dateOfBirth"
+               created_at as "createdAt", date_of_birth as "dateOfBirth",
+               personal_struggles as "personalStruggles", why_collective as "whyCollective",
+               expression_types as "expressionTypes", expression_other as "expressionOther",
+               goals, hear_about_us as "hearAboutUs", has_story_to_tell as "hasStoryToTell",
+               guardian_name as "guardianName", guardian_email as "guardianEmail",
+               guardian_phone as "guardianPhone", guardian_relationship as "guardianRelationship"
         FROM applications
       `);
       const allApps = allAppsResult.rows as any[];
