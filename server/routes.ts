@@ -5,7 +5,7 @@ import { users, applications, contracts, publishingUpdates, calendarEvents, fund
 import { eq, desc, gte, sql, inArray, lt, and } from "drizzle-orm";
 
 // Helper function to fetch user by ID using raw SQL to avoid Drizzle ORM column mismatch issues
-async function getUserById(userId: number): Promise<any | null> {
+async function getUserById(userId: string | number): Promise<any | null> {
   const result = await db.execute(sql`
     SELECT id, email, first_name as "firstName", last_name as "lastName", role
     FROM public.users WHERE id = ${userId}
@@ -2027,11 +2027,10 @@ export async function registerRoutes(app: Express) {
     }
 
     try {
-      const userIdParam = req.params.id;
-      const userId = parseInt(userIdParam, 10);
+      const userId = req.params.id;
       const { role, cohortId, familyUnitId } = req.body;
 
-      if (isNaN(userId)) {
+      if (!userId) {
         return res.status(400).json({ message: "Invalid user ID" });
       }
 
@@ -2045,7 +2044,7 @@ export async function registerRoutes(app: Express) {
       }
 
       const userApps = await db.select().from(applications)
-        .where(eq(applications.userId, userIdParam));
+        .where(eq(applications.userId, userId));
       const hasMinorApp = userApps.some(a => a.isMinor);
 
       let shortId: string | null = null;
@@ -2066,7 +2065,7 @@ export async function registerRoutes(app: Express) {
         }
 
         // Always assign author ID for students
-        shortId = await assignAuthorId(userIdParam);
+        shortId = await assignAuthorId(userId);
 
         const [cohort] = await db.select().from(cohorts).where(eq(cohorts.id, cohortId));
         if (cohort && cohort.grantId) {
@@ -2090,7 +2089,7 @@ export async function registerRoutes(app: Express) {
         if (userApps.length > 0) {
           await db.update(applications)
             .set({ cohortId, updatedAt: new Date() })
-            .where(eq(applications.userId, userIdParam));
+            .where(eq(applications.userId, userId));
         }
       }
 
