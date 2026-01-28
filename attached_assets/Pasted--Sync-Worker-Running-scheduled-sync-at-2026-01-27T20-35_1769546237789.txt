@@ -1,0 +1,46 @@
+[Sync Worker] Running scheduled sync at 2026-01-27T20:35:00.008Z
+[Sync Worker] Running scheduled sync at 2026-01-27T20:30:00.008Z
+[Sync Worker] Running scheduled sync at 2026-01-27T20:25:00.007Z
+[Sync Worker] Running scheduled sync at 2026-01-27T20:20:00.007Z
+[Sync Worker] Running scheduled sync at 2026-01-27T20:15:00.009Z
+[Sync Worker] Running scheduled sync at 2026-01-27T20:10:00.006Z
+[Sync Worker] Running scheduled sync at 2026-01-27T20:05:00.008Z
+[Sync Worker] Running scheduled sync at 2026-01-27T20:00:00.008Z
+[Sync Worker] Running scheduled sync at 2026-01-27T19:55:00.006Z
+[Sync Worker] Running scheduled sync at 2026-01-27T19:50:00.008Z
+Menu
+[Sync Worker] Running scheduled sync at 2026-01-27T19:45:00.010Z
+[Sync Worker] Running scheduled sync at 2026-01-27T19:40:00.006Z
+[Sync Worker] Running scheduled sync at 2026-01-27T19:35:00.008Z
+[Sync Worker] Running scheduled sync at 2026-01-27T19:30:00.006Z
+[Sync Worker] Running scheduled sync at 2026-01-27T19:25:00.007Z
+[Sync Worker] Running scheduled sync at 2026-01-27T19:20:00.007Z
+[Sync Worker] Running scheduled sync at 2026-01-27T19:15:00.006Z
+[Sync Worker] Running scheduled sync at 2026-01-27T19:10:00.009Z
+[Sync Worker] Running scheduled sync at 2026-01-27T19:05:00.006Z
+[Sync Worker] Running scheduled sync at 2026-01-27T19:00:00.008Z
+[Sync Worker] Running scheduled sync at 2026-01-27T18:55:00.015Z
+[Sync Worker] Running scheduled sync at 2026-01-27T18:50:00.007Z
+[Sync Worker] Running scheduled sync at 2026-01-27T18:45:00.007Z
+[Sync Worker] Running scheduled sync at 2026-01-27T18:40:00.007Z
+[Sync Worker] Running scheduled sync at 2026-01-27T18:35:00.007Z
+[Sync Worker] Running scheduled sync at 2026-01-27T18:30:00.008Z
+[Sync Worker] Running scheduled sync at 2026-01-27T18:25:00.008Z
+[Sync Worker] Running scheduled sync at 2026-01-27T18:20:00.009Z
+[Sync Worker] Running scheduled sync at 2026-01-27T18:15:00.009Z
+[Sync Worker] Running scheduled sync at 2026-01-27T18:10:00.010Z
+==> Docs on specifying a port: https://render.com/docs/web-services#port-binding
+==> Detected service running on port 10000
+[GET]
+the-indie-quill-collective.onrender.com/ clientIP="34.82.80.145" requestID="3a5e42e1-b34d-4951" responseTimeMS=29928 responseBytes=76 userAgent="Go-http-client/2.0"
+App initialized
+[Sync Worker] Sync worker initialized - will run every 5 minutes
+[Sync Worker] Starting scheduled sync job (*/5 * * * *)
+==> ///////////////////////////////////////////////////////////
+==> 
+==> Available at your primary URL https://the-indie-quill-collective.onrender.com
+==> 
+==> ///////////////////////////////////////////////////////////
+==> 
+==> Your service is live 🎉
+Server listening on port 10000
