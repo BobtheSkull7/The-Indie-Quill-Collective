@@ -32,6 +32,7 @@ export default function VibeScribe() {
   const [saving, setSaving] = useState(false);
   
   const recognitionRef = useRef<any>(null);
+  const isRecordingRef = useRef(false);
   const quizPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const formatVibeId = (value: string) => {
@@ -165,6 +166,7 @@ export default function VibeScribe() {
   const toggleRecording = async () => {
     if (isRecording) {
       // Stop recording
+      isRecordingRef.current = false;
       if (recognitionRef.current) {
         recognitionRef.current.stop();
         recognitionRef.current = null;
@@ -195,14 +197,14 @@ export default function VibeScribe() {
       
       recognition.onresult = (event: any) => {
         let finalText = "";
-        let interimText = "";
+        let interim = "";
         
         for (let i = 0; i < event.results.length; i++) {
           const result = event.results[i];
           if (result.isFinal) {
             finalText += result[0].transcript + " ";
           } else {
-            interimText += result[0].transcript;
+            interim += result[0].transcript;
           }
         }
         
@@ -210,40 +212,48 @@ export default function VibeScribe() {
           setTranscript((prev) => prev + finalText);
           setLastSnippet(finalText.trim());
           setInterimText("");
-        } else if (interimText) {
-          setInterimText(interimText);
+        } else if (interim) {
+          setInterimText(interim);
         }
       };
       
       recognition.onerror = (event: any) => {
         if (event.error === 'no-speech') {
-          // Don't show error, just restart
-          if (isRecording) {
-            try { recognition.start(); } catch {}
+          // No speech detected, restart if still recording
+          if (isRecordingRef.current) {
+            setTimeout(() => {
+              try { recognition.start(); } catch {}
+            }, 100);
           }
         } else if (event.error === 'not-allowed') {
           setError("Microphone blocked. Allow in browser settings.");
+          isRecordingRef.current = false;
           setIsRecording(false);
         } else if (event.error === 'aborted') {
           // User stopped, ignore
         } else {
           setError(`Error: ${event.error}`);
+          isRecordingRef.current = false;
           setIsRecording(false);
         }
       };
       
       recognition.onend = () => {
         // Auto-restart for continuous dictation while recording
-        if (isRecording && recognitionRef.current) {
-          try {
-            recognition.start();
-          } catch {
-            setIsRecording(false);
-          }
+        if (isRecordingRef.current) {
+          setTimeout(() => {
+            try {
+              recognition.start();
+            } catch {
+              isRecordingRef.current = false;
+              setIsRecording(false);
+            }
+          }, 100);
         }
       };
       
       recognitionRef.current = recognition;
+      isRecordingRef.current = true;
       
       try {
         recognition.start();
@@ -251,6 +261,7 @@ export default function VibeScribe() {
         if (navigator.vibrate) navigator.vibrate(100);
       } catch (err: any) {
         setError("Could not start. Try again.");
+        isRecordingRef.current = false;
         setIsRecording(false);
       }
     }
