@@ -2027,8 +2027,13 @@ export async function registerRoutes(app: Express) {
     }
 
     try {
-      const userId = req.params.id;
+      const userIdParam = req.params.id;
+      const userId = parseInt(userIdParam, 10);
       const { role, cohortId, familyUnitId } = req.body;
+
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
 
       if (!["applicant", "admin", "board_member", "auditor", "student", "mentor"].includes(role)) {
         return res.status(400).json({ message: "Invalid role" });
@@ -2040,7 +2045,7 @@ export async function registerRoutes(app: Express) {
       }
 
       const userApps = await db.select().from(applications)
-        .where(eq(applications.userId, userId));
+        .where(eq(applications.userId, userIdParam));
       const hasMinorApp = userApps.some(a => a.isMinor);
 
       let shortId: string | null = null;
@@ -2061,7 +2066,7 @@ export async function registerRoutes(app: Express) {
         }
 
         // Always assign author ID for students
-        shortId = await assignAuthorId(userId);
+        shortId = await assignAuthorId(userIdParam);
 
         const [cohort] = await db.select().from(cohorts).where(eq(cohorts.id, cohortId));
         if (cohort && cohort.grantId) {
@@ -2085,7 +2090,7 @@ export async function registerRoutes(app: Express) {
         if (userApps.length > 0) {
           await db.update(applications)
             .set({ cohortId, updatedAt: new Date() })
-            .where(eq(applications.userId, userId));
+            .where(eq(applications.userId, userIdParam));
         }
       }
 
