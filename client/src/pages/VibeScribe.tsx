@@ -668,30 +668,37 @@ export default function VibeScribe() {
             </button>
             </div>
             
-            {/* Text input area - always visible for typing fallback */}
+            {/* Always show status */}
             <div className="mt-6 bg-slate-800 rounded-xl p-4 w-full">
-              <textarea
-                value={transcript}
-                onChange={(e) => setTranscript(e.target.value)}
-                placeholder="Tap mic to speak, or type your story here..."
-                className="w-full bg-slate-700 text-white rounded-lg p-3 text-sm min-h-[100px] resize-none focus:outline-none focus:ring-2 focus:ring-teal-500 placeholder-slate-400"
-                disabled={isRecording}
-              />
-              {isRecording && interimText && (
-                <p className="text-slate-400 text-sm italic mt-2">Hearing: "{interimText}"</p>
+              {isRecording ? (
+                <div>
+                  <p className="text-red-400 text-center animate-pulse mb-2">Listening... speak now</p>
+                  {interimText && (
+                    <p className="text-slate-400 text-sm italic text-center">"{interimText}"</p>
+                  )}
+                  {transcript && (
+                    <p className="text-slate-300 text-sm mt-2">{transcript}</p>
+                  )}
+                </div>
+              ) : transcript ? (
+                <>
+                  <p className="text-slate-300 text-sm line-clamp-3">{transcript}</p>
+                  <div className="flex justify-between items-center mt-2">
+                    <span className="text-slate-500 text-xs">
+                      {transcript.split(/\s+/).filter(Boolean).length} words
+                    </span>
+                    <button
+                      onClick={saveTranscript}
+                      disabled={saving}
+                      className="text-teal-400 text-sm font-medium hover:text-teal-300 disabled:opacity-50"
+                    >
+                      {saving ? "Saving..." : "Save Now"}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <p className="text-slate-500 text-center text-sm">Tap button and speak clearly</p>
               )}
-              <div className="flex justify-between items-center mt-2">
-                <span className="text-slate-500 text-xs">
-                  {transcript.split(/\s+/).filter(Boolean).length} words
-                </span>
-                <button
-                  onClick={saveTranscript}
-                  disabled={saving || !transcript.trim()}
-                  className="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-teal-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {saving ? "Saving..." : "Save Story"}
-                </button>
-              </div>
             </div>
             
             {lastSnippet && !isRecording && (
