@@ -431,9 +431,9 @@ export default function VibeScribe() {
   const startMediaRecorder = async () => {
     console.log("[VibeScribe] startMediaRecorder called");
     try {
-      console.log("[VibeScribe] Requesting microphone access...");
+      alert("Step 1: Requesting mic...");
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      console.log("[VibeScribe] Microphone access granted");
+      alert("Step 2: Mic granted!");
       mediaStreamRef.current = stream;
       audioChunksRef.current = [];
       
@@ -446,7 +446,7 @@ export default function VibeScribe() {
       } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
         mimeType = 'audio/mp4';
       }
-      console.log("[VibeScribe] Using mimeType:", mimeType || "default");
+      alert("Step 3: mimeType = " + (mimeType || "default"));
       
       const options = mimeType ? { mimeType } : {};
       const recorder = new MediaRecorder(stream, options);
@@ -467,7 +467,7 @@ export default function VibeScribe() {
       };
       
       recorder.start(500);
-      console.log("[VibeScribe] MediaRecorder started");
+      alert("Step 4: Recording started!");
       isRecordingRef.current = true;
       setIsRecording(true);
       startAudioVisualization();
@@ -476,7 +476,7 @@ export default function VibeScribe() {
       console.error("[VibeScribe] startMediaRecorder error:", err);
       const msg = `Microphone error: ${err.message || err.name || 'blocked'}`;
       setError(msg);
-      alert(msg);
+      alert("ERROR: " + msg);
     }
   };
   
