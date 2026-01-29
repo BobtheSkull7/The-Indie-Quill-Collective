@@ -19,7 +19,8 @@ services:
     branch: main
     
     # Build & Start Commands
-    buildCommand: npm install && npm run build
+    # Install ffmpeg for audio format conversion (VibeScribe transcription)
+    buildCommand: apt-get update && apt-get install -y ffmpeg && npm install && npm run build
     startCommand: npm run start
     
     # Custom Domain
