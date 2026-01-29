@@ -565,8 +565,6 @@ export default function VibeScribe() {
       } else {
         // Use MediaRecorder + API transcription (iOS PWA fallback)
         await startMediaRecorder();
-        isRecordingRef.current = false;
-        setIsRecording(false);
       }
     }
   };
