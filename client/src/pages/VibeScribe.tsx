@@ -645,7 +645,12 @@ export default function VibeScribe() {
         }
       } else {
         // Use MediaRecorder + API transcription (iOS PWA fallback)
-        await startMediaRecorder();
+        alert("Starting MediaRecorder path...");
+        try {
+          await startMediaRecorder();
+        } catch (err: any) {
+          alert("MediaRecorder failed: " + err.message);
+        }
       }
     }
   };
