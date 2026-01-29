@@ -433,14 +433,11 @@ export default function VibeScribe() {
     
     // Check if mediaDevices is available
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      const msg = "Microphone not supported on this browser/device";
-      setError(msg);
-      alert("NOT SUPPORTED: " + msg);
+      setError("Microphone not supported on this browser");
       return;
     }
     
     try {
-      // Request microphone access
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaStreamRef.current = stream;
       audioChunksRef.current = [];
@@ -468,9 +465,7 @@ export default function VibeScribe() {
       
       recorder.onerror = (e: any) => {
         console.error("[VibeScribe] MediaRecorder error:", e);
-        const msg = `Recording error: ${e.error?.name || 'unknown'}`;
-        setError(msg);
-        alert("RECORDER ERROR: " + msg);
+        setError(`Recording error: ${e.error?.name || 'unknown'}`);
       };
       
       recorder.start(500);
@@ -481,9 +476,7 @@ export default function VibeScribe() {
       if (navigator.vibrate) navigator.vibrate(100);
     } catch (err: any) {
       console.error("[VibeScribe] startMediaRecorder error:", err);
-      const msg = `Microphone error: ${err.message || err.name || 'blocked'}`;
-      setError(msg);
-      alert("ERROR: " + msg);
+      setError(`Microphone error: ${err.message || err.name || 'Permission denied'}`);
     }
   };
   
