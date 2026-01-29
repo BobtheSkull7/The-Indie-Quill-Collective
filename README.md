@@ -1,8 +1,8 @@
 # VibeScribe: Voice-First Literacy Tools
 **Developed for The Indie Quill Collective**
 
-> **JUDGE'S NOTE:** VibeScribe is a **Native-First** application. Due to mobile browser iframe restrictions on microphone access, the recording/transcription features are exclusively available via our iOS TestFlight build. Please use the link below for the full "Four Pillars" experience.
->
+> **Professional Native Experience**  
+> VibeScribe is engineered as a **Native-First iOS Application** to leverage OS-level high-fidelity audio processing.  
 > **[Download on TestFlight](https://testflight.apple.com/join/4PWDvNFK)** | Access Code: `123-456`
 
 ---
