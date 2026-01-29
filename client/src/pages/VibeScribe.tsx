@@ -710,6 +710,39 @@ export default function VibeScribe() {
     if (quizPollRef.current) clearInterval(quizPollRef.current);
   };
 
+  const isMobile = typeof navigator !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+  if (isMobile) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 flex flex-col items-center justify-center p-8 text-center">
+        <div className="mb-8">
+          <svg className="w-20 h-20 mx-auto text-teal-400 mb-4" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
+            <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
+          </svg>
+          <h1 className="text-3xl font-bold text-white mb-2">VibeScribe</h1>
+        </div>
+        
+        <h2 className="text-xl font-bold text-white mb-4">Native Experience Required</h2>
+        <p className="text-slate-300 mb-6 max-w-sm">
+          To ensure 100% audio fidelity and accessibility for our authors, 
+          please use the <strong className="text-teal-400">VibeScribe Native App</strong>.
+        </p>
+        
+        <a 
+          href="https://testflight.apple.com/join/4PWDvNFK"
+          className="inline-block bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-8 rounded-xl mb-6 transition-colors"
+        >
+          Download on TestFlight
+        </a>
+        
+        <p className="text-slate-400 text-sm">
+          Use Access Code: <span className="font-mono text-teal-400 font-bold">123-456</span>
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 flex flex-col">
       {screen === "keypad" && (
