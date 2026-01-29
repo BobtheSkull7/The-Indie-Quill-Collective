@@ -431,9 +431,8 @@ export default function VibeScribe() {
   const startMediaRecorder = async () => {
     console.log("[VibeScribe] startMediaRecorder called");
     try {
-      alert("Step 1: Requesting mic...");
+      // No alert before getUserMedia - it can block the permission prompt!
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      alert("Step 2: Mic granted!");
       mediaStreamRef.current = stream;
       audioChunksRef.current = [];
       
@@ -446,7 +445,6 @@ export default function VibeScribe() {
       } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
         mimeType = 'audio/mp4';
       }
-      alert("Step 3: mimeType = " + (mimeType || "default"));
       
       const options = mimeType ? { mimeType } : {};
       const recorder = new MediaRecorder(stream, options);
@@ -463,11 +461,11 @@ export default function VibeScribe() {
         console.error("[VibeScribe] MediaRecorder error:", e);
         const msg = `Recording error: ${e.error?.name || 'unknown'}`;
         setError(msg);
-        alert(msg);
+        alert("RECORDER ERROR: " + msg);
       };
       
       recorder.start(500);
-      alert("Step 4: Recording started!");
+      console.log("[VibeScribe] MediaRecorder started with mimeType:", mimeType || "default");
       isRecordingRef.current = true;
       setIsRecording(true);
       startAudioVisualization();
@@ -644,13 +642,8 @@ export default function VibeScribe() {
           alert(msg);
         }
       } else {
-        // Use MediaRecorder + API transcription (iOS PWA fallback)
-        alert("Starting MediaRecorder path...");
-        try {
-          await startMediaRecorder();
-        } catch (err: any) {
-          alert("MediaRecorder failed: " + err.message);
-        }
+        // Use MediaRecorder + API transcription
+        await startMediaRecorder();
       }
     }
   };
