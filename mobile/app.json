@@ -16,7 +16,8 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.theindiequill.vibescribe",
       "infoPlist": {
-        "NSMicrophoneUsageDescription": "Allow VibeScribe to record your legacy stories."
+        "NSMicrophoneUsageDescription": "Allow VibeScribe to record your legacy stories.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -26,7 +27,11 @@
         "backgroundColor": "#0f172a"
       },
       "edgeToEdgeEnabled": true,
-      "permissions": ["RECORD_AUDIO"]
+      "permissions": [
+        "RECORD_AUDIO",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ]
     },
     "plugins": [
       [
@@ -39,8 +44,9 @@
     "extra": {
       "apiBaseUrl": "https://262e50f1-3284-42c0-9793-2016d4dcb634-00-wn8uok722vqq.picard.replit.dev",
       "eas": {
-        "projectId": "vibescribe"
+        "projectId": "9b66cbc1-fe5b-4a3a-8042-fe9130439f37"
       }
-    }
+    },
+    "owner": "mcjon"
   }
 }
