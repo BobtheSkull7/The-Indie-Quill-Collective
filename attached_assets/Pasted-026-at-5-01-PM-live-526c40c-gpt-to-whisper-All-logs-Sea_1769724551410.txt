@@ -1,0 +1,103 @@
+026 at 5:01 PM
+live
+526c40c
+gpt to whisper
+
+All logs
+Search
+Search
+
+Live tail
+
+
+
+==> Docs on specifying a port: https://render.com/docs/web-services#port-binding
+==> Detected service running on port 10000
+POST /api/vibe/verify 200 in 9ms
+Menu
+[VibeScribe] Query result rows: 3
+]
+  }
+    vibe_scribe_id: '123-456'
+    first_name: 'Buildathon',
+    id: 'ec5e2685-86f6-4444-92e3-b81d0524b993',
+  {
+  },
+    vibe_scribe_id: '123-456'
+    first_name: 'Buildathon',
+    id: 'bb0d57e5-462e-4924-9ba5-1664251cb257',
+  {
+  },
+    vibe_scribe_id: '123-456'
+    first_name: 'Marcella',
+    id: '7f7c2142-c98a-4309-8944-eec3821d15e0',
+  {
+[VibeScribe] All IDs in DB: [
+[VibeScribe] Verify request for ID: 123-456
+POST /api/vibe/transcribe 500 in 1635ms
+}
+  type: 'invalid_request_error'
+  param: 'file',
+  code: 'audio_too_short',
+  },
+    code: 'audio_too_short'
+    param: 'file',
+    type: 'invalid_request_error',
+    message: 'Audio file is too short. Minimum audio length is 0.1 seconds.',
+  error: {
+  requestID: 'req_bff617868593401396e2d4e2dbc87c52',
+  },
+    'alt-svc': 'h3=":443"; ma=86400'
+    'cf-ray': '9c5c07c238b5054d-PDX',
+    server: 'cloudflare',
+    'x-content-type-options': 'nosniff',
+    'set-cookie': '__cf_bm=huqDVUbmYRNZRx9QhCI66KM_ZzpcR2WRsfd6ftqLvpk-1769724320-1.0.1.1-_067Xq1MiK.x0rDqLRyZsBGfwWr4LwJ9FnyIQctVfybNs7jxUgitToIIDp9Y13yRz93tkcpa5HE_pK1Cc.mD5FwqbCL6hajD.YNIC9GnHi4; path=/; expires=Thu, 29-Jan-26 22:35:20 GMT; domain=.api.openai.com; HttpOnly; Secure; SameSite=None, _cfuvid=qVSdC6Bf.ri9P0CauT0YrwSu0GGn0ZtZ9BIRK3f.uHs-1769724320648-0.0.1.1-604800000; path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None',
+    'cf-cache-status': 'DYNAMIC',
+    'x-openai-proxy-wasm': 'v0.1',
+    'x-request-id': 'req_bff617868593401396e2d4e2dbc87c52',
+    'x-ratelimit-reset-requests': '120ms',
+    'x-ratelimit-remaining-requests': '499',
+    'x-ratelimit-limit-requests': '500',
+    via: 'envoy-router-b76b9484f-j4gnz',
+    'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
+    'openai-version': '2020-10-01',
+    'openai-project': 'proj_25VnKNgQqu8v0hjv1NbTxs1n',
+    'openai-processing-ms': '411',
+    'openai-organization': 'the-indie-quill-api-maker',
+    'access-control-expose-headers': 'X-Request-ID',
+    connection: 'keep-alive',
+    'content-length': '196',
+    'content-type': 'application/json',
+    date: 'Thu, 29 Jan 2026 22:05:20 GMT',
+  headers: Headers {
+  status: 400,
+    at async <anonymous> (/opt/render/project/src/server/routes.ts:5813:26) {
+    at async speechToText (/opt/render/project/src/server/replit_integrations/audio/client.ts:245:20)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at OpenAI.makeRequest (/opt/render/project/src/node_modules/openai/src/client.ts:728:24)
+    at OpenAI.makeStatusError (/opt/render/project/src/node_modules/openai/src/client.ts:478:28)
+    at Function.generate (/opt/render/project/src/node_modules/openai/src/core/error.ts:72:14)
+Error transcribing audio: BadRequestError: 400 Audio file is too short. Minimum audio length is 0.1 seconds.
+[Sync Worker] Running scheduled sync at 2026-01-29T22:05:00.015Z
+GET /api/vibe/quiz/active 304 in 36ms
+GET /api/vibe/quiz/active 304 in 8ms
+POST /api/vibe/verify 200 in 134ms
+[VibeScribe] Query result rows: 3
+]
+  }
+    vibe_scribe_id: '123-456'
+    first_name: 'Buildathon',
+    id: 'ec5e2685-86f6-4444-92e3-b81d0524b993',
+  {
+  },
+    vibe_scribe_id: '123-456'
+    first_name: 'Buildathon',
+    id: 'bb0d57e5-462e-4924-9ba5-1664251cb257',
+  {
+  },
+    vibe_scribe_id: '123-456'
+    first_name: 'Marcella',
+    id: '7f7c2142-c98a-4309-8944-eec3821d15e0',
+  {
+[VibeScribe] All IDs in DB: [
+[VibeScribe] Verify request for ID: 123-456
