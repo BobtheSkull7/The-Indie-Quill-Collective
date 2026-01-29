@@ -1,0 +1,141 @@
+
+Production
+Status
+Jonathon published 10 days ago
+Visibility
+Public
+Domain
+https://the-indie-quill-collective--jon625.replit.app
+https://theindiequillcollective.com
+Type
+Autoscale
+(4 vCPU / 8 GiB RAM / 5 Max)
+See all usage
+0c041fee
+
+jon625
+Jonathon
+published 10 days ago
+19f93189
+
+jon625
+Jonathon
+published 10 days ago
+67309557
+
+jon625
+Jonathon
+published 10 days ago
+4277c447
+
+jon625
+Jonathon
+published 10 days ago
+24ca13b6
+
+jon625
+Jonathon
+published 10 days ago
+6c8e05e5
+
+jon625
+Jonathon
+published 10 days ago
+797a404c
+
+jon625
+Jonathon
+published 11 days ago
+58557e54
+
+jon625
+Jonathon
+published 11 days ago
+134c5007
+
+jon625
+Jonathon
+published 11 days ago
+8f4d2e33
+
+jon625
+Jonathon
+published about 2 months ago
+cc97eea9
+
+jon625
+Jonathon
+published about 2 months ago
+9cbc3fca
+
+jon625
+Jonathon
+published about 2 months ago
+770773d9
+
+jon625
+Jonathon
+published about 2 months ago
+0320c789
+
+jon625
+Jonathon
+failed to publish about 2 months ago
+8393e5ba
+
+jon625
+Jonathon
+failed to publish about 2 months ago
+38fdc0b2
+
+jon625
+Jonathon
+failed to publish about 2 months ago
+64eafe63
+
+jon625
+Jonathon
+failed to publish about 2 months ago
+c3c67f67
+
+jon625
+Jonathon
+failed to publish about 2 months ago
+bcc9159f
+
+jon625
+Jonathon
+failed to publish about 2 months ago
+Secrets
+SESSION_SECRET
+••••••••
+PGDATABASE
+••••••••
+PGHOST
+••••••••
+PGPORT
+••••••••
+PGUSER
+••••••••
+PGPASSWORD
+••••••••
+INDIE_QUILL_API_KEY
+••••••••
+INDIE_QUILL_API_SECRET
+••••••••
+SUPABASE_PROD_URL
+••••••••
+SUPABASE_DEV_URL
+••••••••
+INDIE_QUILL_API_URL
+••••••••
+Configurations
+Configurations are similar to secrets, but should only be used for non-sensitive information. They're useful for having a variable that's different between your published app and when testing on Replit.
+AI_INTEGRATIONS_OPENAI_API_KEY
+_DUMMY_API_KEY_
+AI_INTEGRATIONS_OPENAI_BASE_URL
+http://localhost:1106/modelfarm/openai
+/
+
+Unsupported state: your index is currently locked. This can happen if multiple git processes are running operations at the same time.
+Please resolve the issue by ending those git operations. If you are sure you do not have git operations running, you can delete your .git/index.lock file.

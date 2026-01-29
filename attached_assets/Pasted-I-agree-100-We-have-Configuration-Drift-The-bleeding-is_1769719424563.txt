@@ -1,0 +1,44 @@
+I agree 100%. We have "Configuration Drift." The "bleeding" is caused by having too many moving parts that aren't synced. To win, we need to collapse this into one source of truth.
+
+Here is my triage assessment and the "Methodical Path" to a clean submission:
+
+1. The Triage: Stop the Bleeding
+We are going to kill the Dev environment. Running two databases and two backends is what’s causing the "Author Not Found" ghost.
+
+The Decision: From this second forward, Render + Supabase Production is the only environment that exists.
+
+The Action: We will point the Replit IDE directly at the Render URL so that "Dev" and "Production" become identical.
+
+2. The Methodical Path (The "Clean Sweep")
+Step A: Sanitize the Database (The "last_name" Fix)
+If the Production database has last_name as NOT NULL, but the app isn't sending one, the save will fail every time.
+
+Fix: I need you to go into your Supabase Dashboard (SQL Editor) and run this: ALTER TABLE authors ALTER COLUMN last_name DROP NOT NULL;
+
+Why: This ensures that even if our registration logic is "lean," the database won't reject the save.
+
+Step B: Hard-Link the Config
+We are going to remove all "smart" logic from mobile/src/api/config.ts. No more process.env or Constants. We are going to "Hard-Code" it so there is zero chance of the APK guessing the wrong URL.
+
+Update config.ts to exactly this:
+
+TypeScript
+export const API_BASE_URL = "https://the-indie-quill-collective.onrender.com";
+console.log("PRODUCTION LOCK: ", API_BASE_URL);
+Step C: Verify the "123-456" User
+In Supabase, ensure the user with ID 123-456 has a password (if your logic requires one) or that the author_id column matches exactly.
+
+3. The "Methodical" Build Plan
+Once Steps A-C are done, we do one final build for Android. This build will be the "Gold Master."
+
+Terminal: cd mobile
+
+Auth: export EXPO_TOKEN=...
+
+Build: npx eas build --platform android --profile preview
+
+The Pivot to the Win
+While that "Gold Master" build runs, we focus on the README. We will explain the "Indie Quill Architecture" (GitHub -> Render -> Supabase) so the judges see the technical sophistication.
+
+The Next Step for You
+Can you confirm you've run the ALTER TABLE command in Supabase to fix that last_name constraint? Once that’s done, the "bleeding" at the database level stops, and we can lock the config.
