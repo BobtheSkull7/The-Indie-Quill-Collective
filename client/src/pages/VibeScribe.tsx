@@ -429,31 +429,54 @@ export default function VibeScribe() {
   };
 
   const startMediaRecorder = async () => {
+    console.log("[VibeScribe] startMediaRecorder called");
     try {
+      console.log("[VibeScribe] Requesting microphone access...");
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      console.log("[VibeScribe] Microphone access granted");
       mediaStreamRef.current = stream;
       audioChunksRef.current = [];
       
-      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') 
-        ? 'audio/webm;codecs=opus' 
-        : 'audio/mp4';
+      // Try webm first, then mp4, then let browser decide
+      let mimeType = '';
+      if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+        mimeType = 'audio/webm;codecs=opus';
+      } else if (MediaRecorder.isTypeSupported('audio/webm')) {
+        mimeType = 'audio/webm';
+      } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
+        mimeType = 'audio/mp4';
+      }
+      console.log("[VibeScribe] Using mimeType:", mimeType || "default");
       
-      const recorder = new MediaRecorder(stream, { mimeType });
+      const options = mimeType ? { mimeType } : {};
+      const recorder = new MediaRecorder(stream, options);
       mediaRecorderRef.current = recorder;
       
       recorder.ondataavailable = (e) => {
+        console.log("[VibeScribe] Data available:", e.data.size, "bytes");
         if (e.data.size > 0) {
           audioChunksRef.current.push(e.data);
         }
       };
       
-      recorder.start(100);
+      recorder.onerror = (e: any) => {
+        console.error("[VibeScribe] MediaRecorder error:", e);
+        const msg = `Recording error: ${e.error?.name || 'unknown'}`;
+        setError(msg);
+        alert(msg);
+      };
+      
+      recorder.start(500);
+      console.log("[VibeScribe] MediaRecorder started");
       isRecordingRef.current = true;
       setIsRecording(true);
       startAudioVisualization();
       if (navigator.vibrate) navigator.vibrate(100);
-    } catch (err) {
-      setError("Microphone blocked. Allow in settings.");
+    } catch (err: any) {
+      console.error("[VibeScribe] startMediaRecorder error:", err);
+      const msg = `Microphone error: ${err.message || err.name || 'blocked'}`;
+      setError(msg);
+      alert(msg);
     }
   };
   
