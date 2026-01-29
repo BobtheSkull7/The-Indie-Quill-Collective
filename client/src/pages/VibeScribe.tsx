@@ -524,14 +524,28 @@ export default function VibeScribe() {
       
       if (hasSpeechRecognition) {
         // Use native Web Speech API
+        console.log("[VibeScribe] Starting Web Speech API");
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         const recognition = new SpeechRecognition();
-        recognition.continuous = false;
+        recognition.continuous = true;
         recognition.interimResults = true;
         recognition.lang = "en-US";
         recognition.maxAlternatives = 1;
         
+        recognition.onstart = () => {
+          console.log("[VibeScribe] Web Speech started");
+        };
+        
+        recognition.onaudiostart = () => {
+          console.log("[VibeScribe] Audio capture started");
+        };
+        
+        recognition.onspeechstart = () => {
+          console.log("[VibeScribe] Speech detected");
+        };
+        
         recognition.onresult = (event: any) => {
+          console.log("[VibeScribe] Got result, results count:", event.results.length);
           let finalText = "";
           let interim = "";
           
@@ -544,6 +558,8 @@ export default function VibeScribe() {
             }
           }
           
+          console.log("[VibeScribe] Final:", finalText, "Interim:", interim);
+          
           if (finalText) {
             setTranscript((prev) => prev + finalText);
             setLastSnippet(finalText.trim());
@@ -554,30 +570,41 @@ export default function VibeScribe() {
         };
         
         recognition.onerror = (event: any) => {
+          console.error("[VibeScribe] Speech error:", event.error);
           if (event.error === 'no-speech') {
-            if (isRecordingRef.current) {
-              setTimeout(() => {
-                try { recognition.start(); } catch {}
-              }, 100);
-            }
+            console.log("[VibeScribe] No speech detected, will restart if still recording");
           } else if (event.error === 'not-allowed') {
-            setError("Microphone blocked. Allow in browser settings.");
+            const msg = "Microphone blocked. Allow in browser settings.";
+            setError(msg);
+            alert(msg);
             isRecordingRef.current = false;
             setIsRecording(false);
           } else if (event.error === 'aborted') {
+            console.log("[VibeScribe] Recognition aborted");
+          } else if (event.error === 'network') {
+            const msg = "Network error - Speech recognition requires internet.";
+            setError(msg);
+            alert(msg);
+            isRecordingRef.current = false;
+            setIsRecording(false);
           } else {
-            setError(`Error: ${event.error}`);
+            const msg = `Speech error: ${event.error}`;
+            setError(msg);
+            alert(msg);
             isRecordingRef.current = false;
             setIsRecording(false);
           }
         };
         
         recognition.onend = () => {
+          console.log("[VibeScribe] Recognition ended, isRecordingRef:", isRecordingRef.current);
           if (isRecordingRef.current) {
             setTimeout(() => {
               try {
+                console.log("[VibeScribe] Restarting recognition");
                 recognition.start();
-              } catch {
+              } catch (e) {
+                console.error("[VibeScribe] Failed to restart:", e);
                 isRecordingRef.current = false;
                 setIsRecording(false);
               }
@@ -590,11 +617,15 @@ export default function VibeScribe() {
         
         try {
           recognition.start();
+          console.log("[VibeScribe] Recognition.start() called");
           setIsRecording(true);
           startAudioVisualization();
           if (navigator.vibrate) navigator.vibrate(100);
         } catch (err: any) {
-          setError("Could not start. Try again.");
+          const msg = `Could not start: ${err.message}`;
+          console.error("[VibeScribe] Start failed:", err);
+          setError(msg);
+          alert(msg);
         }
       } else {
         // Use MediaRecorder + API transcription (iOS PWA fallback)
