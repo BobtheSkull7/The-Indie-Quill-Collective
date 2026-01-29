@@ -499,13 +499,7 @@ export default function VibeScribe() {
   };
 
   const toggleRecording = async () => {
-    try {
-      alert("Button tapped! Starting...");
-      console.log("[VibeScribe] toggleRecording called, isRecording:", isRecording, "usingWhisperAI: true");
-    } catch (e: any) {
-      alert("EARLY ERROR: " + e.message);
-      return;
-    }
+    console.log("[VibeScribe] toggleRecording called, isRecording:", isRecording);
     
     if (isRecording) {
       // Stop recording
