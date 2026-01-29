@@ -430,8 +430,17 @@ export default function VibeScribe() {
 
   const startMediaRecorder = async () => {
     console.log("[VibeScribe] startMediaRecorder called");
+    
+    // Check if mediaDevices is available
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      const msg = "Microphone not supported on this browser/device";
+      setError(msg);
+      alert("NOT SUPPORTED: " + msg);
+      return;
+    }
+    
     try {
-      // No alert before getUserMedia - it can block the permission prompt!
+      // Request microphone access
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaStreamRef.current = stream;
       audioChunksRef.current = [];
