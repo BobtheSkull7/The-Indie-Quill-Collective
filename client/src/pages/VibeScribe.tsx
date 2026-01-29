@@ -385,33 +385,50 @@ export default function VibeScribe() {
   };
 
   const transcribeAudioBlob = async (blob: Blob) => {
+    console.log("[VibeScribe] Transcribing blob:", blob.size, "bytes, type:", blob.type);
     setTranscribing(true);
     setInterimText("Transcribing...");
     try {
-      const base64Audio = await new Promise<string>((resolve) => {
+      const base64Audio = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.onloadend = () => {
           const result = reader.result as string;
-          resolve(result.split(",")[1]);
+          if (!result) {
+            reject(new Error("FileReader returned empty result"));
+            return;
+          }
+          const base64 = result.split(",")[1];
+          console.log("[VibeScribe] Base64 audio length:", base64?.length || 0);
+          resolve(base64);
         };
+        reader.onerror = () => reject(new Error("FileReader error"));
         reader.readAsDataURL(blob);
       });
       
+      console.log("[VibeScribe] Sending to /api/vibe/transcribe");
       const res = await fetch("/api/vibe/transcribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ audio: base64Audio }),
       });
       
-      if (!res.ok) throw new Error("Transcription failed");
+      console.log("[VibeScribe] Response status:", res.status);
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || `Transcription failed: ${res.status}`);
+      }
       
       const data = await res.json();
+      console.log("[VibeScribe] Transcript received:", data.transcript?.slice(0, 50));
       if (data.transcript) {
         setTranscript((prev) => prev + (prev ? " " : "") + data.transcript);
         setLastSnippet(data.transcript);
+      } else {
+        setError("No speech detected. Try again.");
       }
-    } catch (err) {
-      setError("Could not transcribe. Try again.");
+    } catch (err: any) {
+      console.error("[VibeScribe] Transcribe error:", err);
+      setError(err.message || "Could not transcribe. Try again.");
     } finally {
       setTranscribing(false);
       setInterimText("");
@@ -466,20 +483,30 @@ export default function VibeScribe() {
   };
 
   const toggleRecording = async () => {
+    console.log("[VibeScribe] toggleRecording called, isRecording:", isRecording, "hasSpeechRecognition:", hasSpeechRecognition, "isIOSPWA:", isIOSPWA);
+    
     if (isRecording) {
       // Stop recording
+      console.log("[VibeScribe] Stopping recording...");
       isRecordingRef.current = false;
       stopAudioVisualization();
       
       if (hasSpeechRecognition && recognitionRef.current) {
+        console.log("[VibeScribe] Stopping Web Speech API");
         recognitionRef.current.stop();
         recognitionRef.current = null;
       } else if (mediaRecorderRef.current) {
+        console.log("[VibeScribe] Stopping MediaRecorder");
         const blob = await stopMediaRecorder();
+        console.log("[VibeScribe] MediaRecorder blob size:", blob.size);
         if (blob.size > 0) {
           await transcribeAudioBlob(blob);
+        } else {
+          setError("No audio captured. Try again.");
         }
         mediaRecorderRef.current = null;
+      } else {
+        console.log("[VibeScribe] No recorder to stop");
       }
       
       setIsRecording(false);
