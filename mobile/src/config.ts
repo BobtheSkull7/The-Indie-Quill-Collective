@@ -1,6 +1,11 @@
 import Constants from "expo-constants";
 
+// The Unified Production Backend
+const COLLECTIVE_BACKEND_URL = "https://the-indie-quill-collective.onrender.com";
+
 export const API_BASE_URL = 
+  process.env.EXPO_PUBLIC_API_BASE_URL || 
   Constants.expoConfig?.extra?.apiBaseUrl || 
-  process.env.EXPO_PUBLIC_API_BASE_URL ||
-  "https://262e50f1-3284-42c0-9793-2016d4dcb634-00-wn8uok722vqq.picard.replit.dev";
+  COLLECTIVE_BACKEND_URL;
+
+console.log("Indie Quill Architecture: Unified Production Lock Active");
