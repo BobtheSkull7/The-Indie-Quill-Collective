@@ -187,15 +187,8 @@ export default function VibeScribe() {
   const sessionWordCountRef = useRef(0);
   const [transcribing, setTranscribing] = useState(false);
   
-  // Detect iOS PWA - Web Speech API exists but doesn't work in standalone mode
-  const isIOSPWA = typeof window !== 'undefined' && 
-    /iPad|iPhone|iPod/.test(navigator.userAgent) &&
-    ((window.navigator as any).standalone === true || window.matchMedia('(display-mode: standalone)').matches);
-  
-  // Only use Web Speech API if available AND not in iOS PWA mode
-  const hasSpeechRecognition = typeof window !== 'undefined' && 
-    !isIOSPWA &&
-    (window.SpeechRecognition || window.webkitSpeechRecognition);
+  // Force MediaRecorder + Whisper AI for all browsers (more reliable)
+  const hasSpeechRecognition = false;
 
   const formatVibeId = (value: string) => {
     const digits = value.replace(/\D/g, "").slice(0, 6);
@@ -483,7 +476,7 @@ export default function VibeScribe() {
   };
 
   const toggleRecording = async () => {
-    console.log("[VibeScribe] toggleRecording called, isRecording:", isRecording, "hasSpeechRecognition:", hasSpeechRecognition, "isIOSPWA:", isIOSPWA);
+    console.log("[VibeScribe] toggleRecording called, isRecording:", isRecording, "usingWhisperAI: true");
     
     if (isRecording) {
       // Stop recording
