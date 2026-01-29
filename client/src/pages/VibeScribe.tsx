@@ -187,7 +187,14 @@ export default function VibeScribe() {
   const sessionWordCountRef = useRef(0);
   const [transcribing, setTranscribing] = useState(false);
   
+  // Detect iOS PWA - Web Speech API exists but doesn't work in standalone mode
+  const isIOSPWA = typeof window !== 'undefined' && 
+    /iPad|iPhone|iPod/.test(navigator.userAgent) &&
+    ((window.navigator as any).standalone === true || window.matchMedia('(display-mode: standalone)').matches);
+  
+  // Only use Web Speech API if available AND not in iOS PWA mode
   const hasSpeechRecognition = typeof window !== 'undefined' && 
+    !isIOSPWA &&
     (window.SpeechRecognition || window.webkitSpeechRecognition);
 
   const formatVibeId = (value: string) => {
