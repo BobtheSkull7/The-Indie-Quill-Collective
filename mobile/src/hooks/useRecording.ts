@@ -46,6 +46,13 @@ export function useRecording() {
 
       if (!uri) return null;
 
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        playsInSilentModeIOS: true,
+        playThroughEarpieceAndroid: false,
+        staysActiveInBackground: true,
+      });
+
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
       return uri;

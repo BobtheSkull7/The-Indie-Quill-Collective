@@ -31,6 +31,7 @@ export function RecordingScreen({ user, onLogout }: Props) {
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [lastAudioUri, setLastAudioUri] = useState<string | null>(null);
   const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const [isSpeakerMode, setIsSpeakerMode] = useState(true);
 
   const { isRecording, isTranscribing, startRecording, stopRecording } = useRecording();
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -106,9 +107,31 @@ export function RecordingScreen({ user, onLogout }: Props) {
     }
   }, [transcript]);
 
+  const toggleSpeakerMode = async () => {
+    const newMode = !isSpeakerMode;
+    setIsSpeakerMode(newMode);
+    try {
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: !newMode,
+        playsInSilentModeIOS: true,
+        playThroughEarpieceAndroid: !newMode,
+        staysActiveInBackground: true,
+      });
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch (err) {
+      console.error("Failed to toggle speaker mode:", err);
+    }
+  };
+
   const playLastSnippet = async () => {
     if (!lastAudioUri) return;
     try {
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: !isSpeakerMode,
+        playsInSilentModeIOS: true,
+        playThroughEarpieceAndroid: !isSpeakerMode,
+        staysActiveInBackground: true,
+      });
       if (sound) await sound.unloadAsync();
       const { sound: newSound } = await Audio.Sound.createAsync({ uri: lastAudioUri });
       setSound(newSound);
@@ -257,18 +280,35 @@ export function RecordingScreen({ user, onLogout }: Props) {
           </TouchableOpacity>
         </Animated.View>
 
+        <View style={styles.audioModeToggle}>
+          <TouchableOpacity 
+            onPress={toggleSpeakerMode}
+            style={[styles.speakerButton, isSpeakerMode && styles.speakerButtonActive]}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Text style={styles.speakerIcon}>{isSpeakerMode ? '🔊' : '📱'}</Text>
+            <Text style={styles.speakerText}>{isSpeakerMode ? 'Speaker' : 'Earpiece'}</Text>
+          </TouchableOpacity>
+        </View>
+
         <View style={styles.statusBox}>
           {isRecording ? (
             <Text style={styles.statusRecording}>Listening... speak now</Text>
           ) : isTranscribing || transcribing ? (
-            <Text style={styles.statusTranscribing}>Transcribing to Cloud...</Text>
+            <View style={styles.transcribingContainer}>
+              <ActivityIndicator size="small" color="#14b8a6" />
+              <Text style={styles.statusTranscribing}>Sending to server...</Text>
+            </View>
           ) : transcript ? (
             <ScrollView 
               ref={transcriptScrollRef}
               style={styles.transcriptScroll}
               onContentSizeChange={() => transcriptScrollRef.current?.scrollToEnd({ animated: true })}
             >
-              <Text style={styles.transcriptText}>{transcript}</Text>
+              <View style={styles.transcriptBox}>
+                <Text style={styles.transcriptLabel}>Your words:</Text>
+                <Text style={styles.transcriptText}>{transcript}</Text>
+              </View>
               <View style={styles.transcriptActions}>
                 <TouchableOpacity 
                   onPress={playLastSnippet} 
@@ -338,12 +378,20 @@ const styles = StyleSheet.create({
   micHead: { width: 40, height: 60, backgroundColor: "#fff", borderRadius: 20 },
   micBase: { width: 70, height: 20, backgroundColor: "#fff", borderTopLeftRadius: 35, borderTopRightRadius: 35, marginTop: -10 },
   recordButtonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
-  statusBox: { marginTop: 24, backgroundColor: "#1e293b", borderRadius: 16, padding: 16, width: "100%", minHeight: 120, justifyContent: 'center' },
-  statusRecording: { color: "#f87171", textAlign: "center", fontWeight: 'bold' },
-  statusTranscribing: { color: "#94a3b8", textAlign: "center" },
-  statusIdle: { color: "#64748b", textAlign: "center" },
-  transcriptScroll: { maxHeight: 150 },
-  transcriptText: { color: "#cbd5e1", fontSize: 15, lineHeight: 22 },
+  audioModeToggle: { marginTop: 16, alignItems: 'center' },
+  speakerButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#334155', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20 },
+  speakerButtonActive: { backgroundColor: '#14b8a6' },
+  speakerIcon: { fontSize: 20, marginRight: 8 },
+  speakerText: { color: '#fff', fontSize: 14, fontWeight: '600' },
+  statusBox: { marginTop: 16, backgroundColor: "#1e293b", borderRadius: 16, padding: 16, width: "100%", minHeight: 140, justifyContent: 'center' },
+  statusRecording: { color: "#f87171", textAlign: "center", fontWeight: 'bold', fontSize: 18 },
+  transcribingContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 },
+  statusTranscribing: { color: "#14b8a6", textAlign: "center", fontSize: 16, marginLeft: 8 },
+  statusIdle: { color: "#64748b", textAlign: "center", fontSize: 16 },
+  transcriptScroll: { maxHeight: 180 },
+  transcriptBox: { backgroundColor: '#0f172a', borderRadius: 12, padding: 12, marginBottom: 8 },
+  transcriptLabel: { color: '#14b8a6', fontSize: 12, fontWeight: 'bold', marginBottom: 6 },
+  transcriptText: { color: "#ffffff", fontSize: 18, lineHeight: 26, fontWeight: '500' },
   transcriptActions: { flexDirection: "row", justifyContent: "space-between", alignItems: 'center', marginTop: 12, borderTopWidth: 1, borderTopColor: '#334155', paddingTop: 8 },
   actionButton: { flexDirection: 'row', alignItems: 'center', padding: 8 },
   actionButtonText: { color: '#94a3b8', fontWeight: 'bold', fontSize: 16 },
