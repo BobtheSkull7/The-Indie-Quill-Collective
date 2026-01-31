@@ -1,13 +1,6 @@
 import { useState, useRef } from "react";
 import { Audio } from "expo-av";
-import * as FileSystem from "expo-file-system";
 import * as Haptics from "expo-haptics";
-
-// Define the shape of our return object
-interface StopRecordingResult {
-  base64: string;
-  uri: string;
-}
 
 export function useRecording() {
   const [isRecording, setIsRecording] = useState(false);
@@ -38,7 +31,7 @@ export function useRecording() {
     }
   };
 
-  const stopRecording = async (): Promise<StopRecordingResult | null> => {
+  const stopRecording = async (): Promise<string | null> => {
     if (!recordingRef.current) return null;
 
     setIsRecording(false);
@@ -51,15 +44,9 @@ export function useRecording() {
 
       if (!uri) return null;
 
-      // Read as base64 for the API
-      const base64 = await FileSystem.readAsStringAsync(uri, {
-        encoding: FileSystem.EncodingType.Base64,
-      });
-
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-      // RETURN BOTH: base64 for Render, uri for local Replay
-      return { base64, uri };
+      return uri;
     } catch (err) {
       console.error("Failed to stop recording:", err);
       throw err;

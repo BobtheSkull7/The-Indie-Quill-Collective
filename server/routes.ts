@@ -1,8 +1,11 @@
 import type { Express, Request, Response } from "express";
 import rateLimit from "express-rate-limit";
+import multer from "multer";
 import { db } from "./db";
 import { users, applications, contracts, publishingUpdates, calendarEvents, fundraisingCampaigns, donations, auditLogs, cohorts, familyUnits, operatingCosts, foundations, solicitationLogs, foundationGrants, pilotLedger, emailLogs, grantPrograms, organizationCredentials, grantCalendarAlerts, wikiEntries } from "@shared/schema";
 import { eq, desc, gte, sql, inArray, lt, and } from "drizzle-orm";
+
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
 
 // Helper function to fetch user by ID using raw SQL to avoid Drizzle ORM column mismatch issues
 async function getUserById(userId: string | number): Promise<any | null> {
@@ -5794,28 +5797,44 @@ export async function registerDonationRoutes(app: Express) {
     }
   });
   
-  // Transcribe audio using Whisper AI
-  app.post("/api/vibe/transcribe", express.json({ limit: "50mb" }), async (req: Request, res: Response) => {
+  // Transcribe audio using Whisper AI (multipart file upload for mobile stability)
+  // Use both multer for file uploads AND express.json for base64 fallback
+  app.post("/api/vibe/transcribe", 
+    upload.single("audio"),
+    express.json({ limit: "50mb" }),
+    async (req: Request, res: Response) => {
     try {
-      const { audio } = req.body;
+      console.log("[VibeScribe] Transcribe request received");
+      console.log("[VibeScribe] Content-Type:", req.headers["content-type"]);
+      console.log("[VibeScribe] Has file:", !!req.file);
+      console.log("[VibeScribe] Has body.audio:", !!req.body?.audio);
       
-      if (!audio) {
-        return res.status(400).json({ message: "Audio data required" });
+      let rawBuffer: Buffer;
+      
+      // Support both multipart file upload (mobile) and base64 JSON (web fallback)
+      if (req.file) {
+        console.log("[VibeScribe] Multipart file received:", req.file.mimetype, req.file.size, "bytes");
+        rawBuffer = req.file.buffer;
+      } else if (req.body?.audio) {
+        console.log("[VibeScribe] Base64 audio received, length:", req.body.audio.length);
+        rawBuffer = Buffer.from(req.body.audio, "base64");
+      } else {
+        console.log("[VibeScribe] No audio data found in request");
+        return res.status(400).json({ message: "Audio data required (file or base64)" });
       }
-      
-      // Convert base64 to buffer
-      const rawBuffer = Buffer.from(audio, "base64");
       
       // Auto-detect format and convert to OpenAI-compatible format
       const { buffer: audioBuffer, format } = await ensureCompatibleFormat(rawBuffer);
+      console.log("[VibeScribe] Audio converted to format:", format, "size:", audioBuffer.length);
       
       // Transcribe using Whisper
       const transcript = await speechToText(audioBuffer, format);
+      console.log("[VibeScribe] Transcription complete:", transcript.substring(0, 100));
       
       res.json({ transcript });
     } catch (error) {
-      console.error("Error transcribing audio:", error);
-      res.status(500).json({ message: "Failed to transcribe audio" });
+      console.error("[VibeScribe] Error transcribing audio:", error);
+      res.status(500).json({ message: "Failed to transcribe audio", error: String(error) });
     }
   });
   

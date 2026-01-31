@@ -8,6 +8,7 @@ import {
   Animated,
   ActivityIndicator,
   ScrollView,
+  Alert,
 } from "react-native";
 import * as Haptics from "expo-haptics";
 import { Audio } from 'expo-av';
@@ -113,11 +114,10 @@ export function RecordingScreen({ user, onLogout }: Props) {
 
     if (isRecording) {
       try {
-        // stopRecording returns { base64, uri }
-        const result = await stopRecording();
-        if (result) {
-          setLastAudioUri(result.uri);
-          const text = await transcribeAudio(result.base64);
+        const uri = await stopRecording();
+        if (uri) {
+          setLastAudioUri(uri);
+          const text = await transcribeAudio(uri);
           if (text) {
             setTranscript((prev) => prev + (prev ? " " : "") + text);
             // Auto-save logic
@@ -126,7 +126,13 @@ export function RecordingScreen({ user, onLogout }: Props) {
         }
       } catch (err: any) {
         console.error("Transcription Failed:", err);
-        setError(`Error: ${err.message || "Could not connect to server"}`);
+        const errorMsg = err.message || "Could not connect to server";
+        setError(`Error: ${errorMsg}`);
+        Alert.alert(
+          "Transcription Failed",
+          errorMsg,
+          [{ text: "OK" }]
+        );
       }
     } else {
       try {

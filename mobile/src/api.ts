@@ -14,14 +14,38 @@ export async function verifyVibeId(vibeScribeId: string): Promise<User | null> {
   return data.user || null;
 }
 
-export async function transcribeAudio(base64Audio: string): Promise<string> {
+export async function transcribeAudio(fileUri: string): Promise<string> {
+  const formData = new FormData();
+  
+  // Detect file extension from URI to set correct MIME type
+  const extension = fileUri.split('.').pop()?.toLowerCase() || 'm4a';
+  const mimeTypes: Record<string, string> = {
+    'm4a': 'audio/m4a',
+    'caf': 'audio/x-caf',
+    'wav': 'audio/wav',
+    'mp4': 'audio/mp4',
+    '3gp': 'audio/3gpp',
+    'aac': 'audio/aac',
+  };
+  const mimeType = mimeTypes[extension] || 'audio/mpeg';
+  
+  formData.append("audio", {
+    uri: fileUri,
+    type: mimeType,
+    name: `recording.${extension}`,
+  } as any);
+
+  console.log("[VibeScribe] Sending audio:", { uri: fileUri, type: mimeType, extension });
+
   const res = await fetch(`${API_BASE_URL}/api/vibe/transcribe`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ audio: base64Audio }),
+    body: formData,
   });
   
-  if (!res.ok) throw new Error("Transcription failed");
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(`Transcription failed: ${res.status} - ${errorText}`);
+  }
   
   const data = await res.json();
   return data.transcript || "";
