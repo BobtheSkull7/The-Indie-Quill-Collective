@@ -1,0 +1,71 @@
+
+Search
+
+Live tail
+
+
+
+GET /api/vibe/quiz/active 304 in 36ms
+GET /api/vibe/quiz/active 304 in 31ms
+GET /api/vibe/quiz/active 304 in 27ms
+GET /api/vibe/quiz/active 304 in 36ms
+GET /api/vibe/quiz/active 304 in 28ms
+GET /api/vibe/quiz/active 304 in 31ms
+GET /api/vibe/quiz/active 304 in 36ms
+GET /api/vibe/quiz/active 304 in 36ms
+GET /api/vibe/quiz/active 304 in 30ms
+GET /api/vibe/quiz/active 304 in 33ms
+GET /api/vibe/quiz/active 304 in 33ms
+GET /api/vibe/quiz/active 304 in 6ms
+POST /api/vibe/save-draft 200 in 39ms
+POST /api/vibe/transcribe 200 in 2847ms
+[VibeScribe] Transcription complete: Hello, my name is John. I'm looking at Bob. Bob will not look at me.
+GET /api/vibe/quiz/active 304 in 29ms
+[VibeScribe] Audio converted to format: wav size: 191040
+[VibeScribe] Using multipart file: audio/x-m4a 141098 bytes
+[VibeScribe] Body keys: []
+[VibeScribe] Has body.audio: false
+}
+  size: 141098
+  mimetype: 'audio/x-m4a',
+  originalname: 'recording.m4a',
+  fieldname: 'audio',
+[VibeScribe] req.file details: {
+[VibeScribe] Has req.file: true
+[VibeScribe] Content-Length: 141351
+[VibeScribe] Content-Type: multipart/form-data; boundary=q5F-DX6R4YIRr3jbIgP.s8DO.K4yZZ3Z32THrjwxTGnjBrDyWK_kaIC.pv4G4DulTmM.IT
+[VibeScribe] ========== TRANSCRIBE REQUEST ==========
+GET /api/vibe/quiz/active 304 in 4ms
+POST /api/vibe/verify 200 in 40ms
+[VibeScribe] Query result rows: 3
+]
+  }
+    vibe_scribe_id: '123-456'
+    first_name: 'Buildathon',
+    id: '24f15d74-61a3-4a7a-848e-a56118cdf948',
+  {
+  },
+    vibe_scribe_id: '999111'
+    first_name: 'Marcella',
+    id: '7f7c2142-c98a-4309-8944-eec3821d15e0',
+  {
+  },
+    vibe_scribe_id: '123-456'
+    first_name: 'Buildathon',
+    id: 'ec5e2685-86f6-4444-92e3-b81d0524b993',
+  {
+  },
+    vibe_scribe_id: '123-456'
+    first_name: 'Buildathon',
+    id: 'bb0d57e5-462e-4924-9ba5-1664251cb257',
+  {
+[VibeScribe] All IDs in DB: [
+[VibeScribe] Verify request for ID: 123-456
+GET /api/vibe/quiz/active 304 in 28ms
+GET /api/vibe/quiz/active 304 in 89ms
+==> ///////////////////////////////////////////////////////////
+==> 
+==> Available at your primary URL https://the-indie-quill-collective.onrender.com
+==> 
+==> ///////////////////////////////////////////////////////////
+==> 

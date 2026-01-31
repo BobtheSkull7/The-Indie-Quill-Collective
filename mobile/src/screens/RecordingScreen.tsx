@@ -120,7 +120,6 @@ export function RecordingScreen({ user, onLogout }: Props) {
         if (uri) {
           setLastAudioUri(uri);
           setTranscribing(true);
-          Alert.alert("Debug", `Sending to server...\nURI: ${uri.substring(0, 50)}...`);
           const text = await transcribeAudio(uri);
           setTranscribing(false);
           if (text) {
