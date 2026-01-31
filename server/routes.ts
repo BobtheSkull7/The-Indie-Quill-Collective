@@ -4877,35 +4877,31 @@ export async function registerDonationRoutes(app: Express) {
       const totalHours = parseInt(totalHoursResult.rows?.[0]?.total_hours || '0');
       const unlockPublishing = totalHours >= 120;
 
-      let pathFilter: string;
-      let audienceFilter: string;
+      let pathTypes: string[];
+      let audienceTypes: string[];
 
       if (personaType === 'writer') {
-        pathFilter = "path_type = 'general'";
-        audienceFilter = "audience_type = 'adult'";
+        pathTypes = ['general'];
+        audienceTypes = ['adult'];
       } else if (personaType === 'adult_student') {
-        pathFilter = unlockPublishing 
-          ? "path_type IN ('literacy', 'general')" 
-          : "path_type = 'literacy'";
-        audienceFilter = "audience_type = 'adult'";
+        pathTypes = unlockPublishing ? ['literacy', 'general'] : ['literacy'];
+        audienceTypes = ['adult'];
       } else if (personaType === 'family_student') {
-        pathFilter = "path_type IN ('literacy', 'family')";
-        if (familyRole === 'child') {
-          audienceFilter = "audience_type IN ('child', 'shared')";
-        } else {
-          audienceFilter = "audience_type IN ('adult', 'shared')";
-        }
+        pathTypes = ['literacy', 'family'];
+        audienceTypes = familyRole === 'child' ? ['child', 'shared'] : ['adult', 'shared'];
       } else {
-        pathFilter = "path_type = 'general'";
-        audienceFilter = "audience_type = 'adult'";
+        pathTypes = ['general'];
+        audienceTypes = ['adult'];
       }
 
-      const modules = await db.execute(sql.raw(`
+      const modules = await db.execute(sql`
         SELECT id, title, description, order_index, duration_hours, content_type, is_published, path_type, audience_type
         FROM curriculum_modules
-        WHERE is_published = true AND ${pathFilter} AND ${audienceFilter}
+        WHERE is_published = true 
+          AND path_type = ANY(${pathTypes})
+          AND audience_type = ANY(${audienceTypes})
         ORDER BY order_index ASC
-      `));
+      `);
 
       res.json(modules.rows || []);
     } catch (error) {
