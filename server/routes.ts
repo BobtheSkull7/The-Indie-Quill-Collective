@@ -5797,29 +5797,37 @@ export async function registerDonationRoutes(app: Express) {
     }
   });
   
-  // Transcribe audio using Whisper AI (multipart file upload for mobile stability)
-  // Use both multer for file uploads AND express.json for base64 fallback
+  // Transcribe audio using Whisper AI (multipart file upload for mobile)
+  // Removed express.json from chain - multer handles multipart, global middleware handles JSON
   app.post("/api/vibe/transcribe", 
     upload.single("audio"),
-    express.json({ limit: "50mb" }),
     async (req: Request, res: Response) => {
     try {
-      console.log("[VibeScribe] Transcribe request received");
+      console.log("[VibeScribe] ========== TRANSCRIBE REQUEST ==========");
       console.log("[VibeScribe] Content-Type:", req.headers["content-type"]);
-      console.log("[VibeScribe] Has file:", !!req.file);
+      console.log("[VibeScribe] Content-Length:", req.headers["content-length"]);
+      console.log("[VibeScribe] Has req.file:", !!req.file);
+      console.log("[VibeScribe] req.file details:", req.file ? { 
+        fieldname: req.file.fieldname,
+        originalname: req.file.originalname, 
+        mimetype: req.file.mimetype, 
+        size: req.file.size 
+      } : "no file");
       console.log("[VibeScribe] Has body.audio:", !!req.body?.audio);
+      console.log("[VibeScribe] Body keys:", Object.keys(req.body || {}));
       
       let rawBuffer: Buffer;
       
       // Support both multipart file upload (mobile) and base64 JSON (web fallback)
       if (req.file) {
-        console.log("[VibeScribe] Multipart file received:", req.file.mimetype, req.file.size, "bytes");
+        console.log("[VibeScribe] Using multipart file:", req.file.mimetype, req.file.size, "bytes");
         rawBuffer = req.file.buffer;
       } else if (req.body?.audio) {
-        console.log("[VibeScribe] Base64 audio received, length:", req.body.audio.length);
+        console.log("[VibeScribe] Using Base64 audio, length:", req.body.audio.length);
         rawBuffer = Buffer.from(req.body.audio, "base64");
       } else {
-        console.log("[VibeScribe] No audio data found in request");
+        console.log("[VibeScribe] ERROR: No audio data found!");
+        console.log("[VibeScribe] Full headers:", JSON.stringify(req.headers));
         return res.status(400).json({ message: "Audio data required (file or base64)" });
       }
       
