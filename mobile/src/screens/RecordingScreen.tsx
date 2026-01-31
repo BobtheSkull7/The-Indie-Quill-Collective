@@ -36,6 +36,7 @@ export function RecordingScreen({ user, onLogout }: Props) {
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const quizPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const quizTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const transcriptScrollRef = useRef<ScrollView>(null);
 
   // Clean up sound on unmount
   useEffect(() => {
@@ -96,6 +97,14 @@ export function RecordingScreen({ user, onLogout }: Props) {
       if (quizPollRef.current) clearInterval(quizPollRef.current);
     };
   }, [user.vibeScribeId, activeQuiz]);
+
+  useEffect(() => {
+    if (transcript && transcriptScrollRef.current) {
+      setTimeout(() => {
+        transcriptScrollRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    }
+  }, [transcript]);
 
   const playLastSnippet = async () => {
     if (!lastAudioUri) return;
@@ -223,6 +232,7 @@ export function RecordingScreen({ user, onLogout }: Props) {
             ]}
             onPress={handleToggleRecording}
             disabled={isTranscribing || transcribing || saving}
+            hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
           >
             {isTranscribing || transcribing ? (
               <ActivityIndicator size="large" color="#fff" />
@@ -253,11 +263,20 @@ export function RecordingScreen({ user, onLogout }: Props) {
           ) : isTranscribing || transcribing ? (
             <Text style={styles.statusTranscribing}>Transcribing to Cloud...</Text>
           ) : transcript ? (
-            <ScrollView style={styles.transcriptScroll}>
+            <ScrollView 
+              ref={transcriptScrollRef}
+              style={styles.transcriptScroll}
+              onContentSizeChange={() => transcriptScrollRef.current?.scrollToEnd({ animated: true })}
+            >
               <Text style={styles.transcriptText}>{transcript}</Text>
               <View style={styles.transcriptActions}>
-                <TouchableOpacity onPress={playLastSnippet} style={styles.actionButton}>
-                  <Text style={styles.actionButtonText}>▶ Replay</Text>
+                <TouchableOpacity 
+                  onPress={playLastSnippet} 
+                  style={styles.actionButton}
+                  hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
+                >
+                  <Text style={styles.playButtonText}>▶</Text>
+                  <Text style={styles.actionButtonText}>Replay</Text>
                 </TouchableOpacity>
                 <Text style={styles.wordCount}>
                   {transcript.split(/\s+/).filter(Boolean).length} words
@@ -266,8 +285,9 @@ export function RecordingScreen({ user, onLogout }: Props) {
                   onPress={() => saveCurrentDraft(transcript)}
                   disabled={saving}
                   style={styles.actionButton}
+                  hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
                 >
-                  <Text style={[styles.actionButtonText, { color: '#14b8a6' }]}>
+                  <Text style={[styles.saveButtonText, saving && { opacity: 0.5 }]}>
                     {saving ? "..." : "Save"}
                   </Text>
                 </TouchableOpacity>
@@ -277,8 +297,12 @@ export function RecordingScreen({ user, onLogout }: Props) {
             <View>
               <Text style={styles.statusIdle}>Tap button and speak clearly</Text>
               {lastAudioUri && (
-                <TouchableOpacity onPress={playLastSnippet} style={{marginTop: 10}}>
-                   <Text style={{color: '#94a3b8', textAlign: 'center'}}>▶ Review Last Recording</Text>
+                <TouchableOpacity 
+                  onPress={playLastSnippet} 
+                  style={styles.reviewButton}
+                  hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
+                >
+                   <Text style={styles.reviewButtonText}>▶ Review Last Recording</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -306,14 +330,14 @@ const styles = StyleSheet.create({
   toastText: { color: "#fff", fontWeight: "bold", textAlign: "center" },
   content: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 24 },
   error: { color: "#f87171", marginBottom: 16, textAlign: 'center' },
-  recordButton: { width: 180, height: 180, borderRadius: 90, backgroundColor: "#14b8a6", alignItems: "center", justifyContent: "center" },
+  recordButton: { width: 200, height: 200, borderRadius: 100, backgroundColor: "#14b8a6", alignItems: "center", justifyContent: "center" },
   recordButtonActive: { backgroundColor: "#ef4444" },
   recordButtonContent: { alignItems: "center" },
-  stopIcon: { width: 40, height: 40, backgroundColor: "#fff", borderRadius: 4, marginBottom: 8 },
+  stopIcon: { width: 80, height: 80, backgroundColor: "#fff", borderRadius: 8, marginBottom: 8 },
   micIcon: { alignItems: "center", marginBottom: 8 },
-  micHead: { width: 24, height: 36, backgroundColor: "#fff", borderRadius: 12 },
-  micBase: { width: 40, height: 12, backgroundColor: "#fff", borderTopLeftRadius: 20, borderTopRightRadius: 20, marginTop: -6 },
-  recordButtonText: { color: "#fff", fontSize: 14, fontWeight: "600" },
+  micHead: { width: 40, height: 60, backgroundColor: "#fff", borderRadius: 20 },
+  micBase: { width: 70, height: 20, backgroundColor: "#fff", borderTopLeftRadius: 35, borderTopRightRadius: 35, marginTop: -10 },
+  recordButtonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
   statusBox: { marginTop: 24, backgroundColor: "#1e293b", borderRadius: 16, padding: 16, width: "100%", minHeight: 120, justifyContent: 'center' },
   statusRecording: { color: "#f87171", textAlign: "center", fontWeight: 'bold' },
   statusTranscribing: { color: "#94a3b8", textAlign: "center" },
@@ -321,9 +345,13 @@ const styles = StyleSheet.create({
   transcriptScroll: { maxHeight: 150 },
   transcriptText: { color: "#cbd5e1", fontSize: 15, lineHeight: 22 },
   transcriptActions: { flexDirection: "row", justifyContent: "space-between", alignItems: 'center', marginTop: 12, borderTopWidth: 1, borderTopColor: '#334155', paddingTop: 8 },
-  actionButton: { padding: 4 },
-  actionButtonText: { color: '#94a3b8', fontWeight: 'bold' },
-  wordCount: { color: "#64748b", fontSize: 12 },
+  actionButton: { flexDirection: 'row', alignItems: 'center', padding: 8 },
+  actionButtonText: { color: '#94a3b8', fontWeight: 'bold', fontSize: 16 },
+  playButtonText: { color: '#94a3b8', fontSize: 24, marginRight: 4 },
+  saveButtonText: { color: '#14b8a6', fontWeight: 'bold', fontSize: 18 },
+  reviewButton: { marginTop: 16, padding: 12 },
+  reviewButtonText: { color: '#94a3b8', textAlign: 'center', fontSize: 16 },
+  wordCount: { color: "#64748b", fontSize: 14 },
   footer: { backgroundColor: "rgba(30, 41, 59, 0.5)", borderRadius: 16, padding: 16, margin: 24, alignItems: "center" },
   footerLabel: { color: "#94a3b8", fontSize: 14 },
   footerCount: { color: "#14b8a6", fontSize: 40, fontWeight: "bold", fontFamily: "monospace" },
