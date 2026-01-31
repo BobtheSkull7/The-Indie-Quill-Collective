@@ -172,6 +172,8 @@ export function RecordingScreen({ user, onLogout }: Props) {
       }
     } else {
       try {
+        setTranscript("");
+        setError("");
         await startRecording();
       } catch {
         setError("Microphone access denied.");
@@ -186,7 +188,6 @@ export function RecordingScreen({ user, onLogout }: Props) {
     try {
       const result = await saveDraft(user.vibeScribeId, content);
       setFamilyWordCount(result.familyWordCount);
-      setTranscript("");
       setShowToast(true);
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setTimeout(() => setShowToast(false), 2000);

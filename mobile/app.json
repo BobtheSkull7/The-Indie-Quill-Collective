@@ -2,7 +2,7 @@
   "expo": {
     "name": "VibeScribe",
     "slug": "vibescribe",
-    "version": "1.0.6",
+    "version": "1.0.7",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -15,7 +15,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.theindiequill.vibescribe",
-      "buildNumber": "4",
+      "buildNumber": "5",
       "infoPlist": {
         "NSMicrophoneUsageDescription": "Allow VibeScribe to record your legacy stories.",
         "ITSAppUsesNonExemptEncryption": false
