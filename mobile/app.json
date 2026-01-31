@@ -43,7 +43,9 @@
     ],
     "extra": {
       "apiBaseUrl": "https://the-indie-quill-collective.onrender.com",
-      "eas": {}
+      "eas": {
+        "projectId": "9b66cbc1-fe5b-4a3a-8042-fe9130439f37"
+      }
     },
     "owner": "mcjon"
   }
