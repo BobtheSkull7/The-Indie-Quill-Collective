@@ -109,6 +109,8 @@ export function RecordingScreen({ user, onLogout }: Props) {
     }
   };
 
+  const [transcribing, setTranscribing] = useState(false);
+
   const handleToggleRecording = async () => {
     setError("");
 
@@ -117,14 +119,17 @@ export function RecordingScreen({ user, onLogout }: Props) {
         const uri = await stopRecording();
         if (uri) {
           setLastAudioUri(uri);
+          setTranscribing(true);
+          Alert.alert("Debug", `Sending to server...\nURI: ${uri.substring(0, 50)}...`);
           const text = await transcribeAudio(uri);
+          setTranscribing(false);
           if (text) {
             setTranscript((prev) => prev + (prev ? " " : "") + text);
-            // Auto-save logic
             await saveCurrentDraft(text);
           }
         }
       } catch (err: any) {
+        setTranscribing(false);
         console.error("Transcription Failed:", err);
         const errorMsg = err.message || "Could not connect to server";
         setError(`Error: ${errorMsg}`);
@@ -218,9 +223,9 @@ export function RecordingScreen({ user, onLogout }: Props) {
               isRecording && styles.recordButtonActive,
             ]}
             onPress={handleToggleRecording}
-            disabled={isTranscribing || saving}
+            disabled={isTranscribing || transcribing || saving}
           >
-            {isTranscribing ? (
+            {isTranscribing || transcribing ? (
               <ActivityIndicator size="large" color="#fff" />
             ) : (
               <View style={styles.recordButtonContent}>
@@ -246,7 +251,7 @@ export function RecordingScreen({ user, onLogout }: Props) {
         <View style={styles.statusBox}>
           {isRecording ? (
             <Text style={styles.statusRecording}>Listening... speak now</Text>
-          ) : isTranscribing ? (
+          ) : isTranscribing || transcribing ? (
             <Text style={styles.statusTranscribing}>Transcribing to Cloud...</Text>
           ) : transcript ? (
             <ScrollView style={styles.transcriptScroll}>

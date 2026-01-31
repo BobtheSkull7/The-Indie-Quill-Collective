@@ -15,9 +15,12 @@ export async function verifyVibeId(vibeScribeId: string): Promise<User | null> {
 }
 
 export async function transcribeAudio(fileUri: string): Promise<string> {
+  const targetUrl = `${API_BASE_URL}/api/vibe/transcribe`;
+  console.log("[VibeScribe] Starting transcription to:", targetUrl);
+  console.log("[VibeScribe] File URI:", fileUri);
+  
   const formData = new FormData();
   
-  // Detect file extension from URI to set correct MIME type
   const extension = fileUri.split('.').pop()?.toLowerCase() || 'm4a';
   const mimeTypes: Record<string, string> = {
     'm4a': 'audio/m4a',
@@ -29,26 +32,35 @@ export async function transcribeAudio(fileUri: string): Promise<string> {
   };
   const mimeType = mimeTypes[extension] || 'audio/mpeg';
   
+  console.log("[VibeScribe] MIME type:", mimeType, "extension:", extension);
+  
   formData.append("audio", {
     uri: fileUri,
     type: mimeType,
     name: `recording.${extension}`,
   } as any);
 
-  console.log("[VibeScribe] Sending audio:", { uri: fileUri, type: mimeType, extension });
-
-  const res = await fetch(`${API_BASE_URL}/api/vibe/transcribe`, {
-    method: "POST",
-    body: formData,
-  });
-  
-  if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(`Transcription failed: ${res.status} - ${errorText}`);
+  try {
+    console.log("[VibeScribe] Calling fetch now...");
+    const res = await fetch(targetUrl, {
+      method: "POST",
+      body: formData,
+    });
+    
+    console.log("[VibeScribe] Got response:", res.status);
+    
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`Server error ${res.status}: ${errorText}`);
+    }
+    
+    const data = await res.json();
+    console.log("[VibeScribe] Transcript received:", data.transcript?.substring(0, 50));
+    return data.transcript || "";
+  } catch (err: any) {
+    console.error("[VibeScribe] Fetch failed:", err.message);
+    throw new Error(`Network error: ${err.message}`);
   }
-  
-  const data = await res.json();
-  return data.transcript || "";
 }
 
 export async function saveDraft(
