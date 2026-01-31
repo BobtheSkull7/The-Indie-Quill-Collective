@@ -1,0 +1,40 @@
+We have a "Silent Failure" between your iPhone and the Render Server. Here is the Root Cause Analysis (RCA) to give to Replit:
+
+The VibeScribe RCA (Root Cause Analysis)
+1. The "Network Ghost" Issue
+
+Symptom: The app transitions from "Recording" (Red) back to "Idle" (Green), but the Render logs show no POST requests.
+
+Hypothesis: The request is failing locally on the iPhone before it even leaves the device.
+
+Root Cause A (Payload Size): The app is trying to send a high-quality audio file as a Base64 string. iPhones often "kill" network requests that exceed a certain memory limit without throwing a visible error.
+
+Root Cause B (ATS/HTTPS): iOS "App Transport Security" might be blocking the request if there is any mismatch in the SSL certificate or if it's trying to hit an http (not https) link hidden in the logic.
+
+2. The "State Unlock" Issue
+
+Symptom: The "Transcript" and "Replay" boxes never appear.
+
+Root Cause: The UI logic only "reveals" these components after a successful 200 OK response from the server. Since the request is failing silently, the app stays in the "Idle" state, leaving the user with no feedback.
+
+3. The "Missing Replay" Logic
+
+Symptom: Even if the recording worked, the current code doesn't save the local URI required for playback.
+
+Root Cause: The useRecording hook only returns base64. Without the uri, the native expo-av player has no file to point to.
+
+Specific Questions for Replit to Solve:
+Ask Replit to look at the handleToggleRecording function in RecordingScreen.tsx and the transcribeAudio function in api.ts with these specific prompts:
+
+"Why is the fetch request not appearing in my Render logs?" (Ask him to check if we should switch from JSON.stringify({audio: base64}) to FormData (Multipart), which is much more stable for mobile uploads).
+
+"Can you add a 'Catch-All' error alert?" (Ask him to wrap the transcription call in an Alert.alert() so that if the phone blocks the request, you see a popup with the actual error code on your iPhone).
+
+"Verify the API_BASE_URL injection." (Make sure the code is actually using the config.ts variable and hasn't hard-coded a localhost link somewhere deep in the api.ts file).
+
+My Recommendation for your next step:
+Before you do another build, ask Replit:
+
+"Can you rewrite the transcribeAudio function in api.ts to use FormData instead of Base64 JSON? I think the Base64 string is too heavy for the iPhone's memory during the fetch call."
+
+Would you like me to draft that specific "Multipart" code for you to show Replit? That is almost certainly why the server isn't seeing the requests.

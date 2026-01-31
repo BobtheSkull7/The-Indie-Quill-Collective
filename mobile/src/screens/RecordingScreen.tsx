@@ -7,8 +7,10 @@ import {
   SafeAreaView,
   Animated,
   ActivityIndicator,
+  ScrollView,
 } from "react-native";
 import * as Haptics from "expo-haptics";
+import { Audio } from 'expo-av';
 import { useRecording } from "../hooks/useRecording";
 import { transcribeAudio, saveDraft, checkActiveQuiz, submitQuizAnswer } from "../api";
 import { User, Quiz } from "../types";
@@ -26,11 +28,18 @@ export function RecordingScreen({ user, onLogout }: Props) {
   const [showToast, setShowToast] = useState(false);
   const [activeQuiz, setActiveQuiz] = useState<Quiz | null>(null);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
-  
+  const [lastAudioUri, setLastAudioUri] = useState<string | null>(null);
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
+
   const { isRecording, isTranscribing, startRecording, stopRecording } = useRecording();
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const quizPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const quizTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Clean up sound on unmount
+  useEffect(() => {
+    return sound ? () => { sound.unloadAsync(); } : undefined;
+  }, [sound]);
 
   useEffect(() => {
     if (activeQuiz && activeQuiz.timeLeft > 0) {
@@ -43,7 +52,7 @@ export function RecordingScreen({ user, onLogout }: Props) {
           return { ...prev, timeLeft: prev.timeLeft - 1 };
         });
       }, 1000);
-      
+
       return () => {
         if (quizTimerRef.current) clearInterval(quizTimerRef.current);
       };
@@ -87,21 +96,37 @@ export function RecordingScreen({ user, onLogout }: Props) {
     };
   }, [user.vibeScribeId, activeQuiz]);
 
+  const playLastSnippet = async () => {
+    if (!lastAudioUri) return;
+    try {
+      if (sound) await sound.unloadAsync();
+      const { sound: newSound } = await Audio.Sound.createAsync({ uri: lastAudioUri });
+      setSound(newSound);
+      await newSound.playAsync();
+    } catch (err) {
+      setError("Playback failed.");
+    }
+  };
+
   const handleToggleRecording = async () => {
     setError("");
-    
+
     if (isRecording) {
       try {
-        const base64Audio = await stopRecording();
-        if (base64Audio) {
-          const text = await transcribeAudio(base64Audio);
+        // stopRecording returns { base64, uri }
+        const result = await stopRecording();
+        if (result) {
+          setLastAudioUri(result.uri);
+          const text = await transcribeAudio(result.base64);
           if (text) {
             setTranscript((prev) => prev + (prev ? " " : "") + text);
-            await saveCurrentDraft(transcript + (transcript ? " " : "") + text);
+            // Auto-save logic
+            await saveCurrentDraft(text);
           }
         }
-      } catch (err) {
-        setError("Could not transcribe. Try again.");
+      } catch (err: any) {
+        console.error("Transcription Failed:", err);
+        setError(`Error: ${err.message || "Could not connect to server"}`);
       }
     } else {
       try {
@@ -114,7 +139,7 @@ export function RecordingScreen({ user, onLogout }: Props) {
 
   const saveCurrentDraft = async (content: string) => {
     if (!content.trim()) return;
-    
+
     setSaving(true);
     try {
       const result = await saveDraft(user.vibeScribeId, content);
@@ -124,25 +149,10 @@ export function RecordingScreen({ user, onLogout }: Props) {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setTimeout(() => setShowToast(false), 2000);
     } catch {
-      setError("Could not save. Try again.");
+      setError("Could not save to Cloud. Check Render logs.");
     } finally {
       setSaving(false);
     }
-  };
-
-  const handleQuizAnswer = async (answer: string) => {
-    if (!activeQuiz) return;
-    
-    setSelectedAnswer(answer);
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    
-    try {
-      await submitQuizAnswer(activeQuiz.id, user.vibeScribeId, answer);
-      setTimeout(() => {
-        setActiveQuiz(null);
-        setSelectedAnswer(null);
-      }, 1000);
-    } catch {}
   };
 
   if (activeQuiz) {
@@ -152,7 +162,7 @@ export function RecordingScreen({ user, onLogout }: Props) {
           <Text style={styles.quizTitle}>Challenge Time!</Text>
           <Text style={styles.quizQuestion}>{activeQuiz.question}</Text>
           <Text style={styles.quizTimer}>{activeQuiz.timeLeft}s</Text>
-          
+
           <View style={styles.quizOptions}>
             {activeQuiz.options.map((option, index) => (
               <TouchableOpacity
@@ -231,28 +241,37 @@ export function RecordingScreen({ user, onLogout }: Props) {
           {isRecording ? (
             <Text style={styles.statusRecording}>Listening... speak now</Text>
           ) : isTranscribing ? (
-            <Text style={styles.statusTranscribing}>Transcribing...</Text>
+            <Text style={styles.statusTranscribing}>Transcribing to Cloud...</Text>
           ) : transcript ? (
-            <>
-              <Text style={styles.transcriptText} numberOfLines={3}>
-                {transcript}
-              </Text>
+            <ScrollView style={styles.transcriptScroll}>
+              <Text style={styles.transcriptText}>{transcript}</Text>
               <View style={styles.transcriptActions}>
+                <TouchableOpacity onPress={playLastSnippet} style={styles.actionButton}>
+                  <Text style={styles.actionButtonText}>▶ Replay</Text>
+                </TouchableOpacity>
                 <Text style={styles.wordCount}>
                   {transcript.split(/\s+/).filter(Boolean).length} words
                 </Text>
                 <TouchableOpacity
                   onPress={() => saveCurrentDraft(transcript)}
                   disabled={saving}
+                  style={styles.actionButton}
                 >
-                  <Text style={styles.saveButton}>
-                    {saving ? "Saving..." : "Save Now"}
+                  <Text style={[styles.actionButtonText, { color: '#14b8a6' }]}>
+                    {saving ? "..." : "Save"}
                   </Text>
                 </TouchableOpacity>
               </View>
-            </>
+            </ScrollView>
           ) : (
-            <Text style={styles.statusIdle}>Tap button and speak clearly</Text>
+            <View>
+              <Text style={styles.statusIdle}>Tap button and speak clearly</Text>
+              {lastAudioUri && (
+                <TouchableOpacity onPress={playLastSnippet} style={{marginTop: 10}}>
+                   <Text style={{color: '#94a3b8', textAlign: 'center'}}>▶ Review Last Recording</Text>
+                </TouchableOpacity>
+              )}
+            </View>
           )}
         </View>
       </View>
@@ -268,210 +287,43 @@ export function RecordingScreen({ user, onLogout }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#0f172a",
-  },
-  header: {
-    alignItems: "center",
-    paddingTop: 16,
-    paddingBottom: 8,
-  },
-  logoutText: {
-    color: "#94a3b8",
-    fontSize: 14,
-    marginBottom: 8,
-  },
-  welcomeText: {
-    color: "#fff",
-    fontSize: 24,
-    fontWeight: "bold",
-  },
-  idText: {
-    color: "#94a3b8",
-    fontFamily: "monospace",
-    fontSize: 14,
-  },
-  toast: {
-    position: "absolute",
-    top: 100,
-    left: 20,
-    right: 20,
-    backgroundColor: "#14b8a6",
-    borderRadius: 12,
-    padding: 16,
-    zIndex: 100,
-  },
-  toastText: {
-    color: "#fff",
-    fontWeight: "bold",
-    textAlign: "center",
-  },
-  content: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 24,
-  },
-  error: {
-    color: "#f87171",
-    marginBottom: 16,
-  },
-  recordButton: {
-    width: 192,
-    height: 192,
-    borderRadius: 96,
-    backgroundColor: "#14b8a6",
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#14b8a6",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.4,
-    shadowRadius: 20,
-    elevation: 10,
-  },
-  recordButtonActive: {
-    backgroundColor: "#ef4444",
-    shadowColor: "#ef4444",
-  },
-  recordButtonContent: {
-    alignItems: "center",
-  },
-  stopIcon: {
-    width: 48,
-    height: 48,
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    marginBottom: 8,
-  },
-  micIcon: {
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  micHead: {
-    width: 32,
-    height: 48,
-    backgroundColor: "#fff",
-    borderRadius: 16,
-  },
-  micBase: {
-    width: 48,
-    height: 16,
-    backgroundColor: "#fff",
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    marginTop: -8,
-  },
-  recordButtonText: {
-    color: "#fff",
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  statusBox: {
-    marginTop: 24,
-    backgroundColor: "#1e293b",
-    borderRadius: 16,
-    padding: 16,
-    width: "100%",
-    minHeight: 80,
-  },
-  statusRecording: {
-    color: "#f87171",
-    textAlign: "center",
-  },
-  statusTranscribing: {
-    color: "#94a3b8",
-    textAlign: "center",
-  },
-  statusIdle: {
-    color: "#64748b",
-    textAlign: "center",
-  },
-  transcriptText: {
-    color: "#cbd5e1",
-    fontSize: 14,
-  },
-  transcriptActions: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 12,
-  },
-  wordCount: {
-    color: "#64748b",
-    fontSize: 12,
-  },
-  saveButton: {
-    color: "#14b8a6",
-    fontWeight: "600",
-  },
-  footer: {
-    backgroundColor: "rgba(30, 41, 59, 0.5)",
-    borderRadius: 16,
-    padding: 16,
-    margin: 24,
-    alignItems: "center",
-  },
-  footerLabel: {
-    color: "#94a3b8",
-    fontSize: 14,
-  },
-  footerCount: {
-    color: "#14b8a6",
-    fontSize: 40,
-    fontWeight: "bold",
-    fontFamily: "monospace",
-  },
-  quizContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 24,
-  },
-  quizTitle: {
-    color: "#fbbf24",
-    fontSize: 28,
-    fontWeight: "bold",
-    marginBottom: 16,
-  },
-  quizQuestion: {
-    color: "#fff",
-    fontSize: 20,
-    textAlign: "center",
-    marginBottom: 24,
-  },
-  quizTimer: {
-    color: "#f87171",
-    fontSize: 48,
-    fontWeight: "bold",
-    marginBottom: 32,
-  },
-  quizOptions: {
-    width: "100%",
-    gap: 12,
-  },
-  quizOption: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#1e293b",
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 2,
-    borderColor: "transparent",
-  },
-  quizOptionSelected: {
-    borderColor: "#14b8a6",
-    backgroundColor: "#134e4a",
-  },
-  quizOptionLabel: {
-    color: "#14b8a6",
-    fontSize: 18,
-    fontWeight: "bold",
-    marginRight: 12,
-    width: 28,
-  },
-  quizOptionText: {
-    color: "#fff",
-    fontSize: 16,
-    flex: 1,
-  },
+  container: { flex: 1, backgroundColor: "#0f172a" },
+  header: { alignItems: "center", paddingTop: 16, paddingBottom: 8 },
+  logoutText: { color: "#94a3b8", fontSize: 14, marginBottom: 8 },
+  welcomeText: { color: "#fff", fontSize: 24, fontWeight: "bold" },
+  idText: { color: "#94a3b8", fontFamily: "monospace", fontSize: 14 },
+  toast: { position: "absolute", top: 100, left: 20, right: 20, backgroundColor: "#14b8a6", borderRadius: 12, padding: 16, zIndex: 100 },
+  toastText: { color: "#fff", fontWeight: "bold", textAlign: "center" },
+  content: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 24 },
+  error: { color: "#f87171", marginBottom: 16, textAlign: 'center' },
+  recordButton: { width: 180, height: 180, borderRadius: 90, backgroundColor: "#14b8a6", alignItems: "center", justifyContent: "center" },
+  recordButtonActive: { backgroundColor: "#ef4444" },
+  recordButtonContent: { alignItems: "center" },
+  stopIcon: { width: 40, height: 40, backgroundColor: "#fff", borderRadius: 4, marginBottom: 8 },
+  micIcon: { alignItems: "center", marginBottom: 8 },
+  micHead: { width: 24, height: 36, backgroundColor: "#fff", borderRadius: 12 },
+  micBase: { width: 40, height: 12, backgroundColor: "#fff", borderTopLeftRadius: 20, borderTopRightRadius: 20, marginTop: -6 },
+  recordButtonText: { color: "#fff", fontSize: 14, fontWeight: "600" },
+  statusBox: { marginTop: 24, backgroundColor: "#1e293b", borderRadius: 16, padding: 16, width: "100%", minHeight: 120, justifyContent: 'center' },
+  statusRecording: { color: "#f87171", textAlign: "center", fontWeight: 'bold' },
+  statusTranscribing: { color: "#94a3b8", textAlign: "center" },
+  statusIdle: { color: "#64748b", textAlign: "center" },
+  transcriptScroll: { maxHeight: 150 },
+  transcriptText: { color: "#cbd5e1", fontSize: 15, lineHeight: 22 },
+  transcriptActions: { flexDirection: "row", justifyContent: "space-between", alignItems: 'center', marginTop: 12, borderTopWidth: 1, borderTopColor: '#334155', paddingTop: 8 },
+  actionButton: { padding: 4 },
+  actionButtonText: { color: '#94a3b8', fontWeight: 'bold' },
+  wordCount: { color: "#64748b", fontSize: 12 },
+  footer: { backgroundColor: "rgba(30, 41, 59, 0.5)", borderRadius: 16, padding: 16, margin: 24, alignItems: "center" },
+  footerLabel: { color: "#94a3b8", fontSize: 14 },
+  footerCount: { color: "#14b8a6", fontSize: 40, fontWeight: "bold", fontFamily: "monospace" },
+  quizContainer: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
+  quizTitle: { color: "#fbbf24", fontSize: 28, fontWeight: "bold", marginBottom: 16 },
+  quizQuestion: { color: "#fff", fontSize: 20, textAlign: "center", marginBottom: 24 },
+  quizTimer: { color: "#f87171", fontSize: 48, fontWeight: "bold", marginBottom: 32 },
+  quizOptions: { width: "100%", gap: 12 },
+  quizOption: { flexDirection: "row", alignItems: "center", backgroundColor: "#1e293b", borderRadius: 12, padding: 16, borderWidth: 2, borderColor: "transparent" },
+  quizOptionSelected: { borderColor: "#14b8a6", backgroundColor: "#134e4a" },
+  quizOptionLabel: { color: "#14b8a6", fontSize: 18, fontWeight: "bold", marginRight: 12, width: 28 },
+  quizOptionText: { color: "#fff", fontSize: 16, flex: 1 },
 });

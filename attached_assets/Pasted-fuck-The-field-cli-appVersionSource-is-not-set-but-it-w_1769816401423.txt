@@ -1,0 +1,83 @@
+fuck.
+
+The field "cli.appVersionSource" is not set, but it will be required in the future. Learn more: https://docs.expo.dev/build-reference/app-versions/
+
+Resolved "preview" environment for the build. Learn more: https://docs.expo.dev/eas/environment-variables/#setting-the-environment-for-your-builds
+
+No environment variables with visibility "Plain text" and "Sensitive" found for the "preview" environment on EAS.
+
+
+
+
+
+
+
+The field "cli.appVersionSource" is not set, but it will be required in the future. Learn more: https://docs.expo.dev/build-reference/app-versions/
+
+✔ Using remote iOS credentials (Expo server)
+
+
+
+If you provide your Apple account credentials we will be able to generate all necessary build credentials and fully validate them.
+
+This is optional, but without Apple account access you will need to provide all the missing values manually and we can only run minimal validation on them.
+
+✔ Do you want to log in to your Apple account? … yes
+
+
+
+› Log in to your Apple Developer account to continue
+
+✔ Apple ID: … jon@theindiequill.com
+
+› The password is only used to authenticate with Apple and never stored on EAS servers
+
+  Learn more: https://bit.ly/2VtGWhU
+
+✔ Password (for jon@theindiequill.com): … ***************
+
+› Saving Apple ID password to the local Keychain
+
+  Learn more: https://docs.expo.dev/distribution/security#keychain
+
+✔ Logged in, verify your Apple account to continue
+
+Two-factor Authentication (6 digit code) is enabled for jon@theindiequill.com. Learn more: https://support.apple.com/en-us/HT204915
+
+
+
+✔ Please enter the 6 digit code you received at +1 (•••) •••-••54: … 520151
+
+✔ Valid code
+
+✔ Logged in and verified
+
+› Team Jonathon Mccutcheon (JD7969WZCA)
+
+› Provider Jonathon Mccutcheon (128497277)
+
+✔ Bundle identifier registered com.theindiequill.vibescribe
+
+✔ Synced capabilities: No updates
+
+✔ Synced capability identifiers: No updates
+
+✔ Fetched Apple distribution certificates
+
+✔ Reuse this distribution certificate?
+
+Cert ID: L9NNG2A492, Serial number: 6BEFC7182D98989853A815F92EA87D4A, Team ID: JD7969WZCA, Team name: Jonathon Mccutcheon (Individual)
+
+    Created: 2 days ago, Updated: 2 days ago,
+
+    Expires: Thu, 28 Jan 2027 23:21:48 UTC
+
+    📲 Used by: @mcjon/vibescribe … yes
+
+Using distribution certificate with serial number 6BEFC7182D98989853A815F92EA87D4A
+
+✔ You don't have any registered devices yet. Would you like to register them now? … yes
+
+✖ How would you like to register your devices? › Website - generates a registration URL to be opened on your devices
+
+~/workspace/mobile$ 
