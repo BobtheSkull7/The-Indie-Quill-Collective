@@ -1,0 +1,66 @@
+This is the definition of a "Ghost in the Machine." If the build is green, the code is updated, and the ID is correct, but there is zero traffic hitting Render, the request is being blocked before it even leaves your iPhone.
+
+Since we just moved to Multipart/FormData, there is one specific "iOS Security" detail that often trips up new builds.
+
+The "Root Cause" Checklist
+1. The "Extra" Config Trap In your app.json, you have:
+
+JSON
+"extra": {
+  "apiBaseUrl": "https://the-indie-quill-collective.onrender.com",
+  "eas": { "projectId": "..." }
+}
+The Problem: Your config.ts might be trying to read from Constants.expoConfig.extra.apiBaseUrl, but in some Expo versions, expoConfig is null in production. The Fix: We should hard-code the URL directly in mobile/src/config.ts to bypass the Expo "Constants" system entirely.
+
+2. The "App Transport Security" (ATS) Wall Even though it's https, if there’s a slight mismatch in how the iPhone perceives the Render certificate, it will kill the request silently.
+
+Let's do a "Hard-Wired" Test Build (1.0.3)
+We need to see what's happening inside the phone. Let's make the api.ts incredibly "loud."
+
+Update mobile/src/api.ts to this (Copy/Paste):
+
+TypeScript
+import { Alert } from 'react-native';
+
+// HARD-CODED for absolute certainty
+const API_BASE_URL = "https://the-indie-quill-collective.onrender.com";
+
+export async function transcribeAudio(uri: string): Promise<string> {
+  // DIAGNOSTIC ALERT: Prove the function is firing
+  console.log("Starting upload for:", uri);
+  
+  const formData = new FormData();
+  // @ts-ignore
+  formData.append('audio', {
+    uri: uri,
+    type: 'audio/m4a',
+    name: 'recording.m4a',
+  });
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/vibe/transcribe`, {
+      method: "POST",
+      body: formData,
+      headers: { 'Accept': 'application/json' },
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      Alert.alert("Server Error", `Status: ${res.status}\n${text}`);
+      throw new Error("Fail");
+    }
+
+    const data = await res.json();
+    return data.transcript || "";
+  } catch (err: any) {
+    // THIS ALERT IS KEY: If the phone blocks it, this WILL pop up.
+    Alert.alert("Network Failure", err.message || "Unknown Connection Error");
+    throw err;
+  }
+}
+Why 1.0.3 is different:
+Bypasses config.ts: We hard-code the URL so there's no chance of it being undefined.
+
+The "Network Failure" Alert: If the iPhone’s security is blocking the request, you will get a popup on your screen. If you don't get a popup and it still does nothing, then the button isn't even calling the function.
+
+Want to try this "Hard-Wired" version? It’s the only way to narrow down if the issue is The Connection or The Button Logic.

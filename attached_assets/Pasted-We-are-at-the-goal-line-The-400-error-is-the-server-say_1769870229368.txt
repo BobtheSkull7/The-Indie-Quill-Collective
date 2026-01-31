@@ -1,0 +1,54 @@
+We are at the goal line. The 400 error is the server saying, "I hear you knocking, but you're not holding the package I expected."
+
+Because the mobile app (1.0.3) is now sending a Multipart File (the right way for iOS), your Render backend needs one specific update to "catch" that file using a tool called multer.
+
+The Fix: Update Render Backend
+Open your server-side file (likely server/index.ts or wherever your routes are defined) and apply these two changes:
+
+1. Initialize Multer
+Add this near your imports at the top of the file:
+
+JavaScript
+const multer = require('multer');
+const upload = multer({ storage: multer.memoryStorage() }); 
+2. Update the Route
+Find your app.post('/api/vibe/transcribe'...) and change it to this:
+
+JavaScript
+// Add 'upload.single('audio')' as middleware
+app.post('/api/vibe/transcribe', upload.single('audio'), async (req, res) => {
+  try {
+    // IMPORTANT: The file is now in req.file, NOT req.body.audio
+    const audioFile = req.file;
+
+    if (!audioFile) {
+      console.error("No file found in request. Check if field name is 'audio'");
+      return res.status(400).json({ error: "audio data required" });
+    }
+
+    console.log(`[VibeScribe] Received file: ${audioFile.originalname} (${audioFile.size} bytes)`);
+
+    // Pass the buffer directly to your Whisper function
+    const transcript = await transcribeAudioBuffer(audioFile.buffer); 
+    
+    res.json({ transcript });
+  } catch (err) {
+    console.error("Transcription Error:", err);
+    res.status(500).json({ error: "Processing failed" });
+  }
+});
+Why this fixes the 400 Error:
+Field Matching: The mobile app (1.0.3) appends the file with the key 'audio'. upload.single('audio') tells the server to look specifically for that key.
+
+Memory Storage: Since these are small voice-to-text clips, we keep them in RAM (memoryStorage) for speed, rather than writing them to disk on Render.
+
+No More Base64: The server is no longer waiting for a giant string; it's waiting for a binary file.
+
+The Checkpoint
+Apply the change in Replit.
+
+Deploy to Render (Wait for the "Live" status).
+
+Run the 1.0.3 test on your phone.
+
+Would you like me to rewrite your specific transcribeAudioBuffer function to make sure it handles the raw buffer correctly for the OpenAI/Whisper API?
