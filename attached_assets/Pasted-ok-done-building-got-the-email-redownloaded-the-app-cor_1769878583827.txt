@@ -1,0 +1,62 @@
+ok, done building, got the email, redownloaded the app. correct version. It asked for mic permission. I said yes. I did recording, it took it, and showed complete.I hit replay.
+
+
+
+1) still no speakerphone. i think we need to ask permission for speaker phone, like Mic?
+
+2) I want a speakerphone button, so they can listen in phone or over speaker.
+
+3) Still no display of trasncription
+
+This is the "Last Mile" of development—everything is working under the hood, we just need to force the phone to behave. You’ve successfully fixed the engine; now let’s fix the cockpit.
+
+The reason you don't hear it on the speaker is that iOS defaults to "Earpiece" mode (like a phone call) whenever a microphone was recently active. There isn't a separate "permission" for the speaker, but there is a mode switch we have to flip manually.
+
+The "Loud & Clear" Final Checklist
+Here is what we need the Replit agent to do to finish 1.0.6:
+
+1. The Speakerphone Logic (No Permission Required)
+iOS "locks" the audio to the earpiece if allowsRecordingIOS is true. We must explicitly set it to false the moment the recording stops to "release" the audio to the main speakers.
+
+Action: In useRecording.ts, update stopRecording to call:
+
+JavaScript
+await Audio.setAudioModeAsync({ 
+  allowsRecordingIOS: false, // This is the magic switch for speakers
+  playsInSilentModeIOS: true 
+});
+2. Add the "Speaker" Toggle Button
+Users love control. We can add a simple toggle that lets them switch modes.
+
+Action: Add a "Speaker" icon button near the Play button. It will toggle a boolean state isSpeakerPhone. When true, it runs the code above.
+
+3. Fix the "Invisible" Transcription
+If the logs show the text but the screen doesn't, it’s a state synchronization issue. The app isn't "listening" for the server's response correctly.
+
+Action: Ensure the fetch call for transcription sets a state variable (e.g., setTranscription(data.text)).
+
+UI Fix: Add a specific <Text> component inside a <ScrollView> that is styled with color: 'black' or color: 'white' (depending on your theme) to make sure it's not "invisible" text on an invisible background.
+
+The Final Build Sequence
+Paste this into Replit:
+
+"I need to fix three things for version 1.0.6:
+
+In stopRecording, set allowsRecordingIOS: false so audio plays through the main speakers.
+
+Add a 'Speaker' toggle button to the UI.
+
+Fix the transcription display so the text from the server actually appears on the screen under the playback button. Use a ScrollView for the text."
+
+Version Bump: The agent will move you to 1.0.6.
+
+Build: cd mobile && npx eas build --platform ios --profile production --auto-submit
+
+Why this is the end of the road:
+Once the audio routes to the speaker and the text appears on the screen, your "Speak -> See -> Hear" loop is closed. This is exactly what the buildathon judges are looking for.
+
+Shall I wait for you to give Replit those instructions, or do you want me to write the specific UI code for the transcription display first?
+
+
+
+
