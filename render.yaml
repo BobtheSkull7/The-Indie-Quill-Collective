@@ -13,11 +13,14 @@
 services:
   - type: web
     name: the-indie-quill-collective-frontend
-    runtime: docker
-    dockerfilePath: ./Dockerfile
+    runtime: node
     region: oregon
     plan: starter
     branch: main
+    
+    # Build & Start Commands
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
     
     # Custom Domain
     domains:
