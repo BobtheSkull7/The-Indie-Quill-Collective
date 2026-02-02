@@ -1,0 +1,51 @@
+
+Search
+
+Live tail
+
+
+
+    at async bootstrapFast (/opt/render/project/src/server/index.ts:162:30)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:644:26)
+    at ModuleJob.run (node:internal/modules/esm/module_job:274:25)
+    at <anonymous> (/opt/render/project/src/server/replit_integrations/audio/client.ts:10:23)
+    at new OpenAI (/opt/render/project/src/node_modules/openai/src/client.ts:376:13)
+Bootstrap failed: OpenAIError: Missing credentials. Please pass an `apiKey`, or set the `OPENAI_API_KEY` environment variable.
+==> ///////////////////////////////////////////////////////////
+==> 
+==> Available at your primary URL https://theindiequillcollective.com + 2 more domains
+==> 
+==> ///////////////////////////////////////////////////////////
+==> 
+==> Your service is live 🎉
+Server listening on port 10000
+> NODE_ENV=production tsx server/index.ts
+> indie-quill-collective@1.0.0 start
+==> Running 'npm run start'
+==> Deploying...
+==> Build successful 🎉
+==> Uploaded in 6.5s. Compression took 24.4s
+==> Uploading build...
+✓ built in 4.20s
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Using dynamic import() to code-split the application
+(!) Some chunks are larger than 500 kB after minification. Consider:
+../dist/public/assets/index-VYPAZPAw.js   667.08 kB │ gzip: 154.13 kB
+../dist/public/assets/index-BR-AbN3l.css   62.08 kB │ gzip:  10.11 kB
+../dist/public/index.html                   1.40 kB │ gzip:   0.66 kB
+computing gzip size...
+rendering chunks...
+✓ 1947 modules transformed.
+transforming...
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+vite v6.4.1 building for production...
+> vite build
+> indie-quill-collective@1.0.0 build
+Run `npm audit` for details.
+  npm audit fix --force
+To address all issues (including breaking changes), run:
+4 moderate severity vulnerabilities
+  run `npm fund` for details
+80 packages are looking for funding
+up to date, audited 497 packages in 1s

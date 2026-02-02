@@ -1,0 +1,49 @@
+[GET]
+theindiequillcollective.com/ clientIP="143.103.10.5" requestID="6c50c5fa-95ff-4b73" responseTimeMS=3 responseBytes=758 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+[GET]
+theindiequillcollective.com/ clientIP="143.103.10.5" requestID="5d0e1ef7-3af1-43d3" responseTimeMS=3 responseBytes=758 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+[GET]
+theindiequillcollective.com/dashboard clientIP="143.103.10.5" requestID="495cbc61-0e7f-4da1" responseTimeMS=13 responseBytes=767 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+    at async bootstrapFast (/opt/render/project/src/server/index.ts:162:30)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:644:26)
+    at ModuleJob.run (node:internal/modules/esm/module_job:274:25)
+    at <anonymous> (/opt/render/project/src/server/replit_integrations/audio/client.ts:10:23)
+    at new OpenAI (/opt/render/project/src/node_modules/openai/src/client.ts:376:13)
+Bootstrap failed: OpenAIError: Missing credentials. Please pass an `apiKey`, or set the `OPENAI_API_KEY` environment variable.
+[GET]
+the-indie-quill-collective-frontend.onrender.com/ clientIP="34.82.80.145" requestID="0ec6fc5e-3801-4fa1" responseTimeMS=4 responseBytes=758 userAgent="Go-http-client/2.0"
+Menu
+==> ///////////////////////////////////////////////////////////
+==> 
+==> Available at your primary URL https://theindiequillcollective.com + 2 more domains
+==> 
+==> ///////////////////////////////////////////////////////////
+==> 
+==> Your service is live 🎉
+Server listening on port 10000
+> NODE_ENV=production tsx server/index.ts
+> indie-quill-collective@1.0.0 start
+==> Running 'npm run start'
+==> Deploying...
+[GET]
+theindiequillcollective.com/dashboard clientIP="143.103.10.5" requestID="2cc30d9c-f1a6-43d7" responseTimeMS=12 responseBytes=767 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+[GET]
+theindiequillcollective.com/dashboard clientIP="143.103.10.5" requestID="d58f5e6e-24e0-43d6" responseTimeMS=24 responseBytes=767 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+[GET]
+theindiequillcollective.com/dashboard clientIP="143.103.10.5" requestID="31248f7b-df2a-4f76" responseTimeMS=64 responseBytes=767 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+[GET]
+theindiequillcollective.com/dashboard clientIP="143.103.10.5" requestID="44616ee1-563e-4081" responseTimeMS=3 responseBytes=767 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+[GET]
+theindiequillcollective.com/dashboard clientIP="143.103.10.5" requestID="6e31ccaa-2ee7-432b" responseTimeMS=3 responseBytes=767 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+[GET]
+theindiequillcollective.com/dashboard clientIP="143.103.10.5" requestID="9755e20b-a136-45b4" responseTimeMS=10 responseBytes=767 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+[GET]
+theindiequillcollective.com/ clientIP="159.65.225.95" requestID="6feb818f-45d7-44ff" responseTimeMS=9 responseBytes=758 userAgent="Mozilla/5.0 (X11; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0"
+[GET]
+theindiequillcollective.com/favicon.ico clientIP="159.65.225.95" requestID="440bb062-0233-4e33" responseTimeMS=4 responseBytes=764 userAgent="Mozilla/5.0 (X11; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0"
+[GET]
+theindiequillcollective.com/ clientIP="3.131.102.28" requestID="df3df9f5-ac79-4a66" responseTimeMS=5 responseBytes=758 userAgent="NLD.org/1.0 (Website Availability Checker Bot)"
+[GET]
+theindiequillcollective.com/ clientIP="43.157.180.116" requestID="81263008-9ff7-4755" responseTimeMS=5 responseBytes=758 userAgent="Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1"
+[GET]
+www.theindiequillcollective.com/ clientIP="43.157.180.116" requestID="" responseTimeMS=0 responseBytes=159 userAgent="Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X)
