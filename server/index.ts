@@ -31,7 +31,9 @@ app.get("/api/status", (_req, res) => {
   res.set("Cache-Control", "no-cache, no-store, must-revalidate");
   res.json({
     bootstrapComplete,
-    bootstrapError,
+    bootstrapError: isProd 
+      ? (bootstrapError ? "Initialization error" : null) 
+      : bootstrapError,
     nodeEnv: process.env.NODE_ENV,
     hasSupabaseUrl: !!process.env.SUPABASE_PROD_URL,
     hasSessionSecret: !!process.env.SESSION_SECRET,
