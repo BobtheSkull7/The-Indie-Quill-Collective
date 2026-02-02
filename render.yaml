@@ -13,15 +13,11 @@
 services:
   - type: web
     name: the-indie-quill-collective-frontend
-    runtime: node
+    runtime: docker
+    dockerfilePath: ./Dockerfile
     region: oregon
     plan: starter
     branch: main
-    
-    # Build & Start Commands
-    # Install ffmpeg for audio format conversion (VibeScribe transcription)
-    buildCommand: apt-get update && apt-get install -y ffmpeg && npm install && npm run build
-    startCommand: npm run start
     
     # Custom Domain
     domains:
