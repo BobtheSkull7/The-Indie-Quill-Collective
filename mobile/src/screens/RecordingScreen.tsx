@@ -131,18 +131,7 @@ export function RecordingScreen({ user, onLogout }: Props) {
         setSound(null);
       }
       
-      // Reset audio mode first (clears recording session)
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: false,
-        playsInSilentModeIOS: true,
-        playThroughEarpieceAndroid: false,
-        staysActiveInBackground: false,
-      });
-      
-      // Small delay to let iOS audio session switch
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Now set the desired playback mode
+      // Set playback mode (speaker by default, earpiece if toggled)
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: !isSpeakerMode,
         playsInSilentModeIOS: true,
@@ -152,12 +141,9 @@ export function RecordingScreen({ user, onLogout }: Props) {
       
       const { sound: newSound } = await Audio.Sound.createAsync(
         { uri: lastAudioUri },
-        { shouldPlay: false }
+        { shouldPlay: true, volume: 1.0 }
       );
       setSound(newSound);
-      
-      await newSound.setVolumeAsync(1.0);
-      await newSound.playAsync();
     } catch (err) {
       console.error("Playback error:", err);
       setError("Playback failed.");

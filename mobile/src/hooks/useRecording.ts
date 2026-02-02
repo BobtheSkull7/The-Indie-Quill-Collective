@@ -46,19 +46,7 @@ export function useRecording() {
 
       if (!uri) return null;
 
-      // Force iOS to fully release the recording audio session
-      // First reset to clear recording mode completely
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: false,
-        playsInSilentModeIOS: true,
-        playThroughEarpieceAndroid: false,
-        staysActiveInBackground: false,
-      });
-      
-      // Brief delay for iOS to switch audio routes
-      await new Promise(resolve => setTimeout(resolve, 50));
-      
-      // Set to media playback mode (speaker)
+      // Switch to playback mode (speaker) after recording
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: false,
         playsInSilentModeIOS: true,
