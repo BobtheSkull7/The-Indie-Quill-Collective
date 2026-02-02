@@ -141,6 +141,21 @@ export function RecordingScreen({ user, onLogout }: Props) {
     }
   };
 
+  const handleQuizAnswer = async (answer: string) => {
+    if (!activeQuiz) return;
+    setSelectedAnswer(answer);
+    try {
+      await submitQuizAnswer(activeQuiz.id, user.id, answer);
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setTimeout(() => {
+        setActiveQuiz(null);
+        setSelectedAnswer(null);
+      }, 1500);
+    } catch (err) {
+      setError("Failed to submit answer");
+    }
+  };
+
   const [transcribing, setTranscribing] = useState(false);
 
   const handleToggleRecording = async () => {
