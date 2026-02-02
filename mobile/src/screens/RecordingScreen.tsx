@@ -199,8 +199,14 @@ export function RecordingScreen({ user, onLogout }: Props) {
         setTranscript("");
         setError("");
         await startRecording();
-      } catch {
-        setError("Microphone access denied.");
+      } catch (err: any) {
+        const msg = err?.message?.toLowerCase() || "";
+        console.error("Recording start error:", err);
+        if (msg.includes("permission") || msg.includes("denied")) {
+          setError("Microphone access denied.");
+        } else {
+          setError("Could not start recording.");
+        }
       }
     }
   };

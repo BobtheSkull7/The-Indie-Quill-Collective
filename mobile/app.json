@@ -15,7 +15,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.theindiequill.vibescribe",
-      "buildNumber": "7",
+      "buildNumber": "8",
       "infoPlist": {
         "NSMicrophoneUsageDescription": "Allow VibeScribe to record your legacy stories.",
         "ITSAppUsesNonExemptEncryption": false
