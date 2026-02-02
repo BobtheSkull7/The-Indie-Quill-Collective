@@ -11,6 +11,10 @@ const server = createServer(app);
 const PORT = parseInt(process.env.PORT || "5000", 10);
 const isProd = process.env.NODE_ENV === "production";
 
+// Track initialization state for diagnostics
+let bootstrapError: string | null = null;
+let bootstrapComplete = false;
+
 // Register health check routes IMMEDIATELY, before server starts
 app.get("/health", (_req, res) => {
   res.set("Cache-Control", "no-cache, no-store, must-revalidate");
@@ -22,13 +26,32 @@ app.get("/api/health", (_req, res) => {
   res.status(200).send("OK");
 });
 
+// Diagnostic endpoint to check initialization status
+app.get("/api/status", (_req, res) => {
+  res.set("Cache-Control", "no-cache, no-store, must-revalidate");
+  res.json({
+    bootstrapComplete,
+    bootstrapError,
+    nodeEnv: process.env.NODE_ENV,
+    hasSupabaseUrl: !!process.env.SUPABASE_PROD_URL,
+    hasSessionSecret: !!process.env.SESSION_SECRET,
+    hasOpenAIKey: !!(process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY),
+  });
+});
+
 // Start server IMMEDIATELY with health check routes only
 server.listen(PORT, "0.0.0.0", () => {
   console.log(`Server listening on port ${PORT}`);
   // Now run bootstrap in background after server is listening
-  bootstrapFast().catch((err) => {
-    console.error("Bootstrap failed:", err);
-  });
+  bootstrapFast()
+    .then(() => {
+      bootstrapComplete = true;
+      console.log("App initialized");
+    })
+    .catch((err) => {
+      bootstrapError = err.message || String(err);
+      console.error("Bootstrap failed:", err);
+    });
 });
 
 async function bootstrapFast() {
@@ -195,5 +218,4 @@ async function bootstrapFast() {
   }
 
   (app as any).__initialized = true;
-  console.log("App initialized");
 }
