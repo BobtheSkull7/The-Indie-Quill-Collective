@@ -380,16 +380,11 @@ export function RecordingScreen({ user, onLogout }: Props) {
               <View style={styles.transcriptActions}>
                 <TouchableOpacity 
                   onPress={playLastSnippet} 
-                  style={[styles.actionButton, !isAudioReady && { opacity: 0.5 }]}
-                  disabled={!isAudioReady}
+                  style={styles.actionButton}
                   hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
                 >
-                  {!isAudioReady ? (
-                    <ActivityIndicator size="small" color="#14b8a6" />
-                  ) : (
-                    <Text style={styles.playButtonText}>▶</Text>
-                  )}
-                  <Text style={styles.actionButtonText}>{isAudioReady ? 'Replay' : 'Loading...'}</Text>
+                  <Text style={styles.playButtonText}>▶</Text>
+                  <Text style={styles.actionButtonText}>Replay</Text>
                 </TouchableOpacity>
                 <Text style={styles.wordCount}>
                   {transcript.split(/\s+/).filter(Boolean).length} words
@@ -412,13 +407,10 @@ export function RecordingScreen({ user, onLogout }: Props) {
               {lastAudioUri && (
                 <TouchableOpacity 
                   onPress={playLastSnippet} 
-                  style={[styles.reviewButton, !isAudioReady && { opacity: 0.5 }]}
-                  disabled={!isAudioReady}
+                  style={styles.reviewButton}
                   hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
                 >
-                   <Text style={styles.reviewButtonText}>
-                     {isAudioReady ? '▶ Review Last Recording' : 'Loading audio...'}
-                   </Text>
+                   <Text style={styles.reviewButtonText}>▶ Review Last Recording</Text>
                 </TouchableOpacity>
               )}
             </View>
