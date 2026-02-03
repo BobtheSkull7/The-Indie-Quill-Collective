@@ -2,6 +2,31 @@ import { useState, useRef } from "react";
 import { Audio } from "expo-av";
 import * as Haptics from "expo-haptics";
 
+// AAC recording preset - 10x smaller than WAV, same voice quality
+const AAC_RECORDING_OPTIONS: Audio.RecordingOptions = {
+  isMeteringEnabled: false,
+  android: {
+    extension: '.m4a',
+    outputFormat: Audio.AndroidOutputFormat.MPEG_4,
+    audioEncoder: Audio.AndroidAudioEncoder.AAC,
+    sampleRate: 44100,
+    numberOfChannels: 1,
+    bitRate: 128000,
+  },
+  ios: {
+    extension: '.m4a',
+    outputFormat: Audio.IOSOutputFormat.MPEG4AAC,
+    audioQuality: Audio.IOSAudioQuality.HIGH,
+    sampleRate: 44100,
+    numberOfChannels: 1,
+    bitRate: 128000,
+  },
+  web: {
+    mimeType: 'audio/webm',
+    bitsPerSecond: 128000,
+  },
+};
+
 export function useRecording() {
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
@@ -19,9 +44,8 @@ export function useRecording() {
         staysActiveInBackground: true,
       });
 
-      const { recording } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY
-      );
+      // Use AAC for smaller file size and faster uploads
+      const { recording } = await Audio.Recording.createAsync(AAC_RECORDING_OPTIONS);
 
       recordingRef.current = recording;
       setIsRecording(true);
