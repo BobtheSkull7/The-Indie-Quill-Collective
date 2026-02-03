@@ -32,8 +32,19 @@ export function RecordingScreen({ user, onLogout }: Props) {
   const [lastAudioUri, setLastAudioUri] = useState<string | null>(null);
   const [sound, setSound] = useState<Audio.Sound | null>(null);
   const [isSpeakerMode, setIsSpeakerMode] = useState(true);
+  const [isAudioReady, setIsAudioReady] = useState(false);
 
   const { isRecording, isTranscribing, startRecording, stopRecording } = useRecording();
+  
+  // Initialize audio mode once on mount (not per action)
+  useEffect(() => {
+    Audio.setAudioModeAsync({
+      allowsRecordingIOS: false,
+      playsInSilentModeIOS: true,
+      playThroughEarpieceAndroid: false,
+      staysActiveInBackground: true,
+    });
+  }, []);
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const quizPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const quizTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -123,15 +134,28 @@ export function RecordingScreen({ user, onLogout }: Props) {
     }
   };
 
-  const playLastSnippet = async () => {
-    if (!lastAudioUri) return;
+  // Pre-load audio for instant playback
+  const preloadAudio = async (uri: string) => {
     try {
+      setIsAudioReady(false);
       if (sound) {
         await sound.unloadAsync();
-        setSound(null);
       }
-      
-      // Set playback mode (speaker by default, earpiece if toggled)
+      const { sound: newSound } = await Audio.Sound.createAsync(
+        { uri },
+        { shouldPlay: false, volume: 1.0 }
+      );
+      setSound(newSound);
+      setIsAudioReady(true);
+    } catch (err) {
+      console.error("Audio preload error:", err);
+    }
+  };
+
+  const playLastSnippet = async () => {
+    if (!sound && !lastAudioUri) return;
+    try {
+      // Set speaker/earpiece mode
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: !isSpeakerMode,
         playsInSilentModeIOS: true,
@@ -139,11 +163,19 @@ export function RecordingScreen({ user, onLogout }: Props) {
         staysActiveInBackground: true,
       });
       
-      const { sound: newSound } = await Audio.Sound.createAsync(
-        { uri: lastAudioUri },
-        { shouldPlay: true, volume: 1.0 }
-      );
-      setSound(newSound);
+      if (sound && isAudioReady) {
+        // Use pre-loaded sound - instant playback
+        await sound.setPositionAsync(0);
+        await sound.playAsync();
+      } else if (lastAudioUri) {
+        // Fallback: load and play
+        const { sound: newSound } = await Audio.Sound.createAsync(
+          { uri: lastAudioUri },
+          { shouldPlay: true, volume: 1.0 }
+        );
+        setSound(newSound);
+        setIsAudioReady(true);
+      }
     } catch (err) {
       console.error("Playback error:", err);
       setError("Playback failed.");
@@ -175,7 +207,12 @@ export function RecordingScreen({ user, onLogout }: Props) {
         const uri = await stopRecording();
         if (uri) {
           setLastAudioUri(uri);
+          setIsAudioReady(false);
           setTranscribing(true);
+          
+          // Pre-load audio in background while transcribing
+          preloadAudio(uri);
+          
           const text = await transcribeAudio(uri);
           setTranscribing(false);
           if (text) {
@@ -343,11 +380,16 @@ export function RecordingScreen({ user, onLogout }: Props) {
               <View style={styles.transcriptActions}>
                 <TouchableOpacity 
                   onPress={playLastSnippet} 
-                  style={styles.actionButton}
+                  style={[styles.actionButton, !isAudioReady && { opacity: 0.5 }]}
+                  disabled={!isAudioReady}
                   hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
                 >
-                  <Text style={styles.playButtonText}>▶</Text>
-                  <Text style={styles.actionButtonText}>Replay</Text>
+                  {!isAudioReady ? (
+                    <ActivityIndicator size="small" color="#14b8a6" />
+                  ) : (
+                    <Text style={styles.playButtonText}>▶</Text>
+                  )}
+                  <Text style={styles.actionButtonText}>{isAudioReady ? 'Replay' : 'Loading...'}</Text>
                 </TouchableOpacity>
                 <Text style={styles.wordCount}>
                   {transcript.split(/\s+/).filter(Boolean).length} words
@@ -370,10 +412,13 @@ export function RecordingScreen({ user, onLogout }: Props) {
               {lastAudioUri && (
                 <TouchableOpacity 
                   onPress={playLastSnippet} 
-                  style={styles.reviewButton}
+                  style={[styles.reviewButton, !isAudioReady && { opacity: 0.5 }]}
+                  disabled={!isAudioReady}
                   hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
                 >
-                   <Text style={styles.reviewButtonText}>▶ Review Last Recording</Text>
+                   <Text style={styles.reviewButtonText}>
+                     {isAudioReady ? '▶ Review Last Recording' : 'Loading audio...'}
+                   </Text>
                 </TouchableOpacity>
               )}
             </View>
