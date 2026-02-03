@@ -1,0 +1,38 @@
+That 5–9 second delay is a "conversion bottleneck." In the world of audio apps, that feels like an eternity.
+
+There are two likely culprits: File Size (it’s trying to send a massive, uncompressed .wav over the wire) or Asset Loading (it's re-initializing the entire audio engine every time you hit play).
+
+Here is the architectural fix to give to the Agent before you sign off for the night:
+
+The "Zero-Latency" Plan
+Audio Compression (The Biggest Win): Right now, the app is likely recording in a high-bitrate format. We need to switch to AAC (.m4a). It sounds exactly the same for voice, but the file size is 10x smaller, meaning it uploads to the server and downloads for playback almost instantly.
+
+Pre-Loading the Sound Object: The 5–9 second delay suggests the app is waiting to download the entire file before it even starts the "Play" logic. We need to implement "Load Async" the moment the transcription finishes, so the audio is buffered and ready before you even think about hitting the Play button.
+
+The "Spinner" Feedback: If there is a delay, the user needs to see a "Loading Audio..." state. Currently, the "frozen" feeling makes you want to leave the app.
+
+The "Final Build" Instructions for Replit Agent
+Copy and paste this into the Agent:
+
+"This is the final build for the night (Version 1.0.8). We need to solve the 5-9 second playback delay and the 3-second transcription lag in VibeScribe.
+
+Please implement the following optimizations:
+
+Compression: Update the recording configuration to use MPEG4/AAC (.m4a) instead of WAV. This will reduce file size and speed up the 'Sending to server' phase.
+
+Immediate Buffering: In handleStopRecording, as soon as the file is saved to the server, trigger the sound.loadAsync() function in the background. Do not wait for the user to press 'Play' to start loading the audio.
+
+Audio Session Management: Ensure setAudioModeAsync is called once at the app's root or during initialization, rather than re-configuring the speaker/audio category every single time a button is pressed.
+
+Transcription Speed: Check the server request logic. Ensure we aren't waiting for a 'Double Confirmation' from the DB before showing the text to the UI.
+
+Once these are applied, run the final iOS production build: cd mobile && npx eas build --platform ios --profile production --auto-submit"
+
+The Morning Result
+When you wake up and download Version 1.0.8 from TestFlight:
+
+The "Sending to server" spinner should vanish in under 1 second.
+
+The Playback should be near-instant (under 1 second) because the file was compressed and pre-buffered.
+
+Kick that off, head to your calls/sleep, and let the "Empire" build itself overnight. You've done the heavy lifting—let the compilers take it from here!
