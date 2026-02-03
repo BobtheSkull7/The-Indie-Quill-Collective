@@ -11,7 +11,7 @@ import {
   Alert,
 } from "react-native";
 import * as Haptics from "expo-haptics";
-import { Audio } from 'expo-av';
+import { Audio, InterruptionModeIOS, InterruptionModeAndroid } from 'expo-av';
 import { useRecording } from "../hooks/useRecording";
 import { transcribeAudio, saveDraft, checkActiveQuiz, submitQuizAnswer } from "../api";
 import { User, Quiz } from "../types";
@@ -36,11 +36,14 @@ export function RecordingScreen({ user, onLogout }: Props) {
 
   const { isRecording, isTranscribing, startRecording, stopRecording } = useRecording();
   
-  // Initialize audio mode once on mount (not per action)
+  // Initialize audio mode once on mount with MixWithOthers for screen recording compatibility
   useEffect(() => {
     Audio.setAudioModeAsync({
       allowsRecordingIOS: false,
       playsInSilentModeIOS: true,
+      interruptionModeIOS: InterruptionModeIOS.MixWithOthers,
+      interruptionModeAndroid: InterruptionModeAndroid.DuckOthers,
+      shouldDuckAndroid: true,
       playThroughEarpieceAndroid: false,
       staysActiveInBackground: true,
     });
@@ -125,6 +128,9 @@ export function RecordingScreen({ user, onLogout }: Props) {
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: !newMode,
         playsInSilentModeIOS: true,
+        interruptionModeIOS: InterruptionModeIOS.MixWithOthers,
+        interruptionModeAndroid: InterruptionModeAndroid.DuckOthers,
+        shouldDuckAndroid: true,
         playThroughEarpieceAndroid: !newMode,
         staysActiveInBackground: true,
       });
@@ -155,10 +161,13 @@ export function RecordingScreen({ user, onLogout }: Props) {
   const playLastSnippet = async () => {
     if (!sound && !lastAudioUri) return;
     try {
-      // Set speaker/earpiece mode
+      // Set speaker/earpiece mode with MixWithOthers for screen recording compatibility
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: !isSpeakerMode,
         playsInSilentModeIOS: true,
+        interruptionModeIOS: InterruptionModeIOS.MixWithOthers,
+        interruptionModeAndroid: InterruptionModeAndroid.DuckOthers,
+        shouldDuckAndroid: true,
         playThroughEarpieceAndroid: !isSpeakerMode,
         staysActiveInBackground: true,
       });

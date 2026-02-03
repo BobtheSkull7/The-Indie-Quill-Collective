@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Audio } from "expo-av";
+import { Audio, InterruptionModeIOS, InterruptionModeAndroid } from "expo-av";
 import * as Haptics from "expo-haptics";
 
 // AAC recording preset - 10x smaller than WAV, same voice quality
@@ -32,14 +32,18 @@ export function useRecording() {
   const [isTranscribing, setIsTranscribing] = useState(false);
   const recordingRef = useRef<Audio.Recording | null>(null);
 
-  const startRecording = async () => {
+  const startRecording = async (retryCount = 0) => {
     try {
       const permission = await Audio.requestPermissionsAsync();
       if (permission.status !== 'granted') throw new Error("Permission denied");
 
+      // MixWithOthers allows screen recording to capture audio
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: true,
         playsInSilentModeIOS: true,
+        interruptionModeIOS: InterruptionModeIOS.MixWithOthers,
+        interruptionModeAndroid: InterruptionModeAndroid.DuckOthers,
+        shouldDuckAndroid: true,
         playThroughEarpieceAndroid: false,
         staysActiveInBackground: true,
       });
@@ -53,6 +57,23 @@ export function useRecording() {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } catch (err) {
       console.error("Failed to start recording:", err);
+      
+      // Retry once after resetting audio session (handles screen recording conflicts)
+      if (retryCount < 1) {
+        console.log("Retrying recording after audio session reset...");
+        await Audio.setAudioModeAsync({
+          allowsRecordingIOS: false,
+          playsInSilentModeIOS: true,
+          interruptionModeIOS: InterruptionModeIOS.MixWithOthers,
+          interruptionModeAndroid: InterruptionModeAndroid.DuckOthers,
+          shouldDuckAndroid: true,
+          playThroughEarpieceAndroid: false,
+          staysActiveInBackground: false,
+        });
+        await new Promise(resolve => setTimeout(resolve, 100));
+        return startRecording(retryCount + 1);
+      }
+      
       throw err;
     }
   };
@@ -70,10 +91,13 @@ export function useRecording() {
 
       if (!uri) return null;
 
-      // Switch to playback mode (speaker) after recording
+      // Return mic to system (for screen recording) and switch to playback mode
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: false,
         playsInSilentModeIOS: true,
+        interruptionModeIOS: InterruptionModeIOS.MixWithOthers,
+        interruptionModeAndroid: InterruptionModeAndroid.DuckOthers,
+        shouldDuckAndroid: true,
         playThroughEarpieceAndroid: false,
         staysActiveInBackground: true,
       });
