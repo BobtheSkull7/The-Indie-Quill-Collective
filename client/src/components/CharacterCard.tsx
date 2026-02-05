@@ -49,16 +49,21 @@ interface CharacterCardProps {
   apiEndpoint?: string;
 }
 
-const SLOT_ICONS: Record<string, string> = {
-  head: "👑",
-  body: "👕",
-  main_hand: "⚔️",
-  off_hand: "🛡️",
-  hands: "🧤",
-  feet: "👢",
-};
+interface SlotConfig {
+  key: keyof EquippedItems;
+  label: string;
+  icon: string;
+  unlockLevel: number;
+}
 
-const SLOT_ORDER = ["head", "body", "main_hand", "off_hand", "hands", "feet"];
+const PAPER_DOLL_SLOTS: SlotConfig[] = [
+  { key: "head", label: "Hat", icon: "🎩", unlockLevel: 1 },
+  { key: "off_hand", label: "Satchel", icon: "📚", unlockLevel: 2 },
+  { key: "main_hand", label: "Quill", icon: "🪶", unlockLevel: 3 },
+  { key: "body", label: "Shirt", icon: "👔", unlockLevel: 4 },
+  { key: "hands", label: "Gloves", icon: "🧤", unlockLevel: 5 },
+  { key: "feet", label: "Shoes", icon: "👞", unlockLevel: 6 },
+];
 
 const PHASE_COLORS: Record<number, string> = {
   1: "bg-blue-600",
@@ -202,25 +207,123 @@ export default function CharacterCard({ userId = 1, className = "", apiEndpoint 
             Character Sheet
           </h3>
           
-          {/* Equipment Grid - 2x3 */}
-          <div className="grid grid-cols-3 gap-2 mb-5">
-            {SLOT_ORDER.map((slot) => {
-              const itemName = equippedItems[slot as keyof EquippedItems];
-              const hasItem = !!itemName;
-              return (
-                <div
-                  key={slot}
-                  className={`aspect-square rounded-lg flex items-center justify-center text-2xl transition-all ${
-                    hasItem 
-                      ? "bg-gradient-to-br from-purple-600 to-blue-600 shadow-lg" 
-                      : "bg-[#1a1a2e] border border-[#3a3a5e]"
-                  }`}
-                  title={itemName || slot.replace("_", " ")}
-                >
-                  {SLOT_ICONS[slot]}
-                </div>
-              );
-            })}
+          {/* Paper Doll - Humanoid Layout */}
+          <div className="mb-5">
+            {/* Row 1: Hat (top center) */}
+            <div className="flex justify-center mb-2">
+              {(() => {
+                const slot = PAPER_DOLL_SLOTS[0];
+                const isUnlocked = currentLevel >= slot.unlockLevel;
+                const itemName = equippedItems[slot.key as keyof EquippedItems];
+                const hasItem = isUnlocked && !!itemName;
+                return (
+                  <div
+                    className={`w-14 h-14 rounded-lg flex flex-col items-center justify-center transition-all relative ${
+                      hasItem 
+                        ? "bg-gradient-to-br from-purple-600 to-blue-600 shadow-lg shadow-purple-500/30" 
+                        : isUnlocked 
+                          ? "bg-[#1a1a2e] border-2 border-dashed border-[#4a4a6e]"
+                          : "bg-[#0d0d1a] border border-[#2a2a3e] opacity-50"
+                    }`}
+                    title={isUnlocked ? (itemName || slot.label) : `Unlocks at Level ${slot.unlockLevel}`}
+                  >
+                    <span className={`text-2xl ${!isUnlocked ? "grayscale" : ""}`}>{slot.icon}</span>
+                    {!isUnlocked && <span className="absolute -bottom-1 -right-1 text-xs">🔒</span>}
+                  </div>
+                );
+              })()}
+            </div>
+            
+            {/* Row 2: Satchel | Face Oval | Quill */}
+            <div className="flex justify-center items-center gap-2 mb-2">
+              {/* Satchel (off_hand) */}
+              {(() => {
+                const slot = PAPER_DOLL_SLOTS[1];
+                const isUnlocked = currentLevel >= slot.unlockLevel;
+                const itemName = equippedItems[slot.key as keyof EquippedItems];
+                const hasItem = isUnlocked && !!itemName;
+                return (
+                  <div
+                    className={`w-12 h-12 rounded-lg flex flex-col items-center justify-center transition-all relative ${
+                      hasItem 
+                        ? "bg-gradient-to-br from-amber-600 to-orange-600 shadow-lg shadow-amber-500/30" 
+                        : isUnlocked 
+                          ? "bg-[#1a1a2e] border-2 border-dashed border-[#4a4a6e]"
+                          : "bg-[#0d0d1a] border border-[#2a2a3e] opacity-50"
+                    }`}
+                    title={isUnlocked ? (itemName || slot.label) : `Unlocks at Level ${slot.unlockLevel}`}
+                  >
+                    <span className={`text-xl ${!isUnlocked ? "grayscale" : ""}`}>{slot.icon}</span>
+                    {!isUnlocked && <span className="absolute -bottom-1 -right-1 text-xs">🔒</span>}
+                  </div>
+                );
+              })()}
+              
+              {/* Face Oval (Avatar placeholder) */}
+              <div className="w-16 h-20 rounded-full bg-gradient-to-b from-[#3a3a5e] to-[#252542] border-2 border-[#4a4a6e] flex items-center justify-center">
+                <span className="text-3xl">👤</span>
+              </div>
+              
+              {/* Quill (main_hand) */}
+              {(() => {
+                const slot = PAPER_DOLL_SLOTS[2];
+                const isUnlocked = currentLevel >= slot.unlockLevel;
+                const itemName = equippedItems[slot.key as keyof EquippedItems];
+                const hasItem = isUnlocked && !!itemName;
+                return (
+                  <div
+                    className={`w-12 h-12 rounded-lg flex flex-col items-center justify-center transition-all relative ${
+                      hasItem 
+                        ? "bg-gradient-to-br from-cyan-600 to-blue-600 shadow-lg shadow-cyan-500/30" 
+                        : isUnlocked 
+                          ? "bg-[#1a1a2e] border-2 border-dashed border-[#4a4a6e]"
+                          : "bg-[#0d0d1a] border border-[#2a2a3e] opacity-50"
+                    }`}
+                    title={isUnlocked ? (itemName || slot.label) : `Unlocks at Level ${slot.unlockLevel}`}
+                  >
+                    <span className={`text-xl ${!isUnlocked ? "grayscale" : ""}`}>{slot.icon}</span>
+                    {!isUnlocked && <span className="absolute -bottom-1 -right-1 text-xs">🔒</span>}
+                  </div>
+                );
+              })()}
+            </div>
+            
+            {/* Row 3: Shirt | Gloves | Shoes */}
+            <div className="flex justify-center gap-2">
+              {PAPER_DOLL_SLOTS.slice(3).map((slot) => {
+                const isUnlocked = currentLevel >= slot.unlockLevel;
+                const itemName = equippedItems[slot.key as keyof EquippedItems];
+                const hasItem = isUnlocked && !!itemName;
+                const bgColor = slot.key === "body" 
+                  ? "from-green-600 to-emerald-600 shadow-green-500/30"
+                  : slot.key === "hands"
+                    ? "from-indigo-600 to-violet-600 shadow-indigo-500/30"
+                    : "from-rose-600 to-pink-600 shadow-rose-500/30";
+                return (
+                  <div
+                    key={slot.key}
+                    className={`w-12 h-12 rounded-lg flex flex-col items-center justify-center transition-all relative ${
+                      hasItem 
+                        ? `bg-gradient-to-br ${bgColor} shadow-lg` 
+                        : isUnlocked 
+                          ? "bg-[#1a1a2e] border-2 border-dashed border-[#4a4a6e]"
+                          : "bg-[#0d0d1a] border border-[#2a2a3e] opacity-50"
+                    }`}
+                    title={isUnlocked ? (itemName || slot.label) : `Unlocks at Level ${slot.unlockLevel}`}
+                  >
+                    <span className={`text-xl ${!isUnlocked ? "grayscale" : ""}`}>{slot.icon}</span>
+                    {!isUnlocked && <span className="absolute -bottom-1 -right-1 text-xs">🔒</span>}
+                  </div>
+                );
+              })}
+            </div>
+            
+            {/* Legend */}
+            <div className="flex justify-center gap-4 mt-3 text-xs text-gray-500">
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-purple-500"></span> Equipped</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded border border-dashed border-gray-500"></span> Empty</span>
+              <span className="flex items-center gap-1">🔒 Locked</span>
+            </div>
           </div>
 
           {/* Stats */}
