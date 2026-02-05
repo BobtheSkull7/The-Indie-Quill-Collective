@@ -13,7 +13,9 @@ import {
   Play,
   CheckCircle,
   ChevronRight,
-  Edit3
+  Edit3,
+  Mic,
+  Scroll
 } from "lucide-react";
 
 interface CurriculumModule {
@@ -63,6 +65,16 @@ interface StudentStats {
   totalModules: number;
 }
 
+interface StudentWorkEntry {
+  id: number;
+  questId: number | null;
+  contentType: string;
+  contentBody: string;
+  wordCount: number;
+  sourceDevice: string | null;
+  createdAt: string;
+}
+
 export default function StudentDashboard() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
@@ -71,6 +83,8 @@ export default function StudentDashboard() {
   const [progress, setProgress] = useState<ModuleProgress[]>([]);
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [tabeScores, setTabeScores] = useState<TabeScore[]>([]);
+  const [activeTab, setActiveTab] = useState<'overview' | 'manuscript'>('overview');
+  const [studentWork, setStudentWork] = useState<StudentWorkEntry[]>([]);
   const [stats, setStats] = useState<StudentStats>({
     totalHoursActive: 0,
     totalWordCount: 0,
@@ -95,18 +109,20 @@ export default function StudentDashboard() {
 
   const loadDashboardData = async () => {
     try {
-      const [modulesRes, progressRes, meetingsRes, tabeRes, statsRes] = await Promise.all([
+      const [modulesRes, progressRes, meetingsRes, tabeRes, statsRes, workRes] = await Promise.all([
         fetch("/api/student/curriculum").then(r => r.json()),
         fetch("/api/student/progress").then(r => r.json()),
         fetch("/api/student/meetings").then(r => r.json()),
         fetch("/api/student/tabe-scores").then(r => r.json()),
-        fetch("/api/student/stats").then(r => r.json())
+        fetch("/api/student/stats").then(r => r.json()),
+        fetch("/api/student/work").then(r => r.json())
       ]);
 
       setModules(Array.isArray(modulesRes) ? modulesRes : []);
       setProgress(Array.isArray(progressRes) ? progressRes : []);
       setMeetings(Array.isArray(meetingsRes) ? meetingsRes : []);
       setTabeScores(Array.isArray(tabeRes) ? tabeRes : []);
+      setStudentWork(Array.isArray(workRes) ? workRes : []);
       if (statsRes && typeof statsRes === 'object') {
         setStats(statsRes);
       }
@@ -202,7 +218,99 @@ export default function StudentDashboard() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Tab Navigation */}
+        <div className="flex gap-2 mb-6">
+          <button
+            onClick={() => setActiveTab('overview')}
+            className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors flex items-center gap-2 ${
+              activeTab === 'overview'
+                ? 'bg-teal-500 text-white'
+                : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
+            }`}
+          >
+            <BookOpen className="w-4 h-4" />
+            Overview
+          </button>
+          <button
+            onClick={() => setActiveTab('manuscript')}
+            className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors flex items-center gap-2 ${
+              activeTab === 'manuscript'
+                ? 'bg-purple-500 text-white'
+                : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
+            }`}
+          >
+            <Scroll className="w-4 h-4" />
+            My Manuscript
+            {studentWork.length > 0 && (
+              <span className="bg-purple-100 text-purple-600 px-2 py-0.5 rounded-full text-xs">
+                {studentWork.length}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {activeTab === 'manuscript' ? (
+          /* My Manuscript Tab Content */
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="font-display text-xl font-bold text-slate-800 flex items-center gap-2">
+                <Scroll className="w-5 h-5 text-purple-500" />
+                My Manuscript
+              </h2>
+              <div className="text-sm text-gray-500">
+                {studentWork.reduce((sum, w) => sum + w.wordCount, 0).toLocaleString()} total words
+              </div>
+            </div>
+
+            {studentWork.length === 0 ? (
+              <div className="text-center py-12 text-gray-500">
+                <Mic className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                <p className="text-lg font-medium mb-2">No entries yet</p>
+                <p className="text-sm">
+                  Use the VibeScribe app to record your voice and your snippets will appear here.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {studentWork.map((entry) => (
+                  <div
+                    key={entry.id}
+                    className={`p-4 rounded-lg border ${
+                      entry.contentType === 'vibescribe_snippet'
+                        ? 'bg-teal-50 border-teal-200'
+                        : 'bg-purple-50 border-purple-200'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        {entry.contentType === 'vibescribe_snippet' ? (
+                          <Mic className="w-4 h-4 text-teal-600" />
+                        ) : (
+                          <FileText className="w-4 h-4 text-purple-600" />
+                        )}
+                        <span className="text-sm font-medium text-gray-700">
+                          {entry.contentType === 'vibescribe_snippet' ? 'Voice Recording' : 'Draft'}
+                        </span>
+                        {entry.questId && (
+                          <span className="bg-white px-2 py-0.5 rounded text-xs text-gray-500">
+                            Chapter {entry.questId}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 text-xs text-gray-500">
+                        <span>{entry.wordCount} words</span>
+                        <span>{new Date(entry.createdAt).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                    <p className="text-gray-700 text-sm line-clamp-3">{entry.contentBody}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          /* Overview Tab Content (Original) */
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
               <div className="flex items-center justify-between mb-4">
@@ -410,6 +518,7 @@ export default function StudentDashboard() {
             </div>
           </div>
         </div>
+        )}
       </div>
     </div>
   );

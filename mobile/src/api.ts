@@ -1,4 +1,4 @@
-import { API_BASE_URL } from "./config";
+import { API_BASE_URL, GAME_ENGINE_URL } from "./config";
 import { User } from "./types";
 
 export async function verifyVibeId(vibeScribeId: string): Promise<User | null> {
@@ -101,4 +101,30 @@ export async function submitQuizAnswer(
   });
   
   return res.json();
+}
+
+export async function submitQuestProof(
+  userId: string,
+  questId: number,
+  proofText: string
+): Promise<{ success: boolean; message?: string }> {
+  try {
+    const res = await fetch(`${GAME_ENGINE_URL}/quest/submit/${userId}/${questId}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ proof_text: proofText }),
+    });
+    
+    if (!res.ok) {
+      console.log("[VibeScribe] Quest proof submission failed:", res.status);
+      return { success: false, message: `Server error ${res.status}` };
+    }
+    
+    const data = await res.json();
+    console.log("[VibeScribe] Quest proof submitted successfully");
+    return { success: true, message: data.message };
+  } catch (err: any) {
+    console.error("[VibeScribe] Quest proof submission error:", err.message);
+    return { success: false, message: err.message };
+  }
 }

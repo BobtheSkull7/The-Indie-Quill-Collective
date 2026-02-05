@@ -2,7 +2,7 @@ import type { Express, Request, Response } from "express";
 import rateLimit from "express-rate-limit";
 import multer from "multer";
 import { db } from "./db";
-import { users, applications, contracts, publishingUpdates, calendarEvents, fundraisingCampaigns, donations, auditLogs, cohorts, familyUnits, operatingCosts, foundations, solicitationLogs, foundationGrants, pilotLedger, emailLogs, grantPrograms, organizationCredentials, grantCalendarAlerts, wikiEntries } from "@shared/schema";
+import { users, applications, contracts, publishingUpdates, calendarEvents, fundraisingCampaigns, donations, auditLogs, cohorts, familyUnits, operatingCosts, foundations, solicitationLogs, foundationGrants, pilotLedger, emailLogs, grantPrograms, organizationCredentials, grantCalendarAlerts, wikiEntries, studentWork } from "@shared/schema";
 import { eq, desc, gte, sql, inArray, lt, and } from "drizzle-orm";
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
@@ -26,7 +26,7 @@ async function getUserByEmail(email: string): Promise<any | null> {
 }
 import { hash, compare } from "./auth";
 import { migrateAuthorToIndieQuill, retryFailedMigrations, sendApplicationToLLC, sendStatusUpdateToLLC, sendContractSignatureToLLC, sendUserRoleUpdateToLLC } from "./indie-quill-integration";
-import { sendApplicationReceivedEmail, sendApplicationAcceptedEmail, sendApplicationRejectedEmail, sendTestEmailSamples } from "./email";
+import { sendApplicationReceivedEmail, sendApplicationAcceptedEmail, sendApplicationRejectedEmail, sendTestEmailSamples, sendWelcomeToCollectiveEmail } from "./email";
 import { logAuditEvent, logMinorDataAccess, getClientIp } from "./utils/auditLogger";
 import { syncCalendarEvents, getGoogleCalendarConnectionStatus, deleteGoogleCalendarEvent } from "./google-calendar-sync";
 import { renderToBuffer } from "@react-pdf/renderer";
@@ -2171,6 +2171,46 @@ export async function registerRoutes(app: Express) {
         await sendUserRoleUpdateToLLC(userId, existingUser.email, role);
       } catch (syncError) {
         console.error("Failed to sync role update to LLC:", syncError);
+      }
+
+      // If approving as student, initialize Game Engine character and send welcome email
+      if (role === "student") {
+        // Get user's vibeScribeId for the welcome email
+        const userVibeScribeId = updated?.vibeScribeId || shortId || "N/A";
+        
+        // Call Game Engine to create character (NO PII - only user_id and vibeScribeId)
+        const GAME_ENGINE_URL = process.env.GAME_ENGINE_URL;
+        if (GAME_ENGINE_URL) {
+          try {
+            const gameEngineRes = await fetch(`${GAME_ENGINE_URL}/character/create`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                user_id: userId,
+                username: userVibeScribeId, // Use VibeScribe ID as username (no PII)
+              }),
+            });
+            if (gameEngineRes.ok) {
+              console.log(`Game Engine character created for user ${userId}`);
+            } else {
+              console.error(`Game Engine character creation failed: ${gameEngineRes.status}`);
+            }
+          } catch (gameError) {
+            console.error("Failed to create Game Engine character:", gameError);
+          }
+        }
+        
+        // Send welcome email with Student Dashboard link
+        try {
+          await sendWelcomeToCollectiveEmail(
+            existingUser.email,
+            existingUser.firstName,
+            userVibeScribeId,
+            userId
+          );
+        } catch (emailError) {
+          console.error("Failed to send welcome email:", emailError);
+        }
       }
 
       return res.json({
@@ -5198,6 +5238,79 @@ export async function registerDonationRoutes(app: Express) {
     } catch (error) {
       console.error("Error deleting draft:", error);
       res.status(500).json({ error: "Failed to delete draft" });
+    }
+  });
+
+  // ============ STUDENT WORK VAULT ENDPOINTS ============
+
+  // Internal API for Game Engine to submit student work
+  app.post("/api/internal/student-work", async (req: Request, res: Response) => {
+    try {
+      const { user_id, quest_id, content_type, content_body, source_device } = req.body;
+
+      if (!user_id || !content_body || !content_type) {
+        return res.status(400).json({ error: "Missing required fields: user_id, content_type, content_body" });
+      }
+
+      // Calculate word count
+      const wordCount = content_body.trim().split(/\s+/).filter((w: string) => w.length > 0).length;
+
+      const [newWork] = await db.insert(studentWork).values({
+        userId: user_id,
+        questId: quest_id || null,
+        contentType: content_type,
+        contentBody: content_body,
+        wordCount,
+        sourceDevice: source_device || 'unknown',
+      }).returning();
+
+      console.log(`Student work saved: user=${user_id}, type=${content_type}, words=${wordCount}`);
+      res.status(201).json({ success: true, id: newWork.id, wordCount });
+    } catch (error) {
+      console.error("Error saving student work:", error);
+      res.status(500).json({ error: "Failed to save student work" });
+    }
+  });
+
+  // Get all student work for the logged-in student (My Manuscript tab)
+  app.get("/api/student/work", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const work = await db.select().from(studentWork)
+        .where(eq(studentWork.userId, req.session.userId))
+        .orderBy(desc(studentWork.createdAt));
+
+      res.json(work);
+    } catch (error) {
+      console.error("Error fetching student work:", error);
+      res.status(500).json({ error: "Failed to fetch student work" });
+    }
+  });
+
+  // Get student work summary (word counts, snippet counts)
+  app.get("/api/student/work/summary", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const result = await db.execute(sql`
+        SELECT 
+          COUNT(*) as total_entries,
+          SUM(word_count) as total_words,
+          SUM(CASE WHEN content_type = 'vibescribe_snippet' THEN 1 ELSE 0 END) as snippet_count,
+          SUM(CASE WHEN content_type = 'manuscript_draft' THEN 1 ELSE 0 END) as draft_count
+        FROM student_work
+        WHERE user_id = ${req.session.userId}
+      `);
+
+      res.json(result.rows[0] || { total_entries: 0, total_words: 0, snippet_count: 0, draft_count: 0 });
+    } catch (error) {
+      console.error("Error fetching student work summary:", error);
+      res.status(500).json({ error: "Failed to fetch work summary" });
     }
   });
 

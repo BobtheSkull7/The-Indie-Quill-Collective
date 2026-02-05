@@ -13,7 +13,7 @@ import {
 import * as Haptics from "expo-haptics";
 import { Audio, InterruptionModeIOS, InterruptionModeAndroid } from 'expo-av';
 import { useRecording } from "../hooks/useRecording";
-import { transcribeAudio, saveDraft, checkActiveQuiz, submitQuizAnswer } from "../api";
+import { transcribeAudio, saveDraft, checkActiveQuiz, submitQuizAnswer, submitQuestProof } from "../api";
 import { User, Quiz } from "../types";
 
 interface Props {
@@ -262,11 +262,22 @@ export function RecordingScreen({ user, onLogout }: Props) {
 
     setSaving(true);
     try {
+      // Save to Collective's drafting documents
       const result = await saveDraft(user.vibeScribeId, content);
       setFamilyWordCount(result.familyWordCount);
-      setShowToast(true);
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      setTimeout(() => setShowToast(false), 2000);
+      
+      // Submit to Game Engine as quest proof (using quest_id 1 as default active quest)
+      const proofResult = await submitQuestProof(user.id, 1, content);
+      
+      if (proofResult.success) {
+        setShowToast(true);
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        setTimeout(() => setShowToast(false), 2000);
+      } else {
+        // Still saved to drafts but Game Engine submission failed
+        setError("Saved to drafts, but quest proof failed. Try again later.");
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      }
     } catch {
       setError("Could not save to Cloud. Check Render logs.");
     } finally {
@@ -317,7 +328,7 @@ export function RecordingScreen({ user, onLogout }: Props) {
 
       {showToast && (
         <View style={styles.toast}>
-          <Text style={styles.toastText}>Story Saved to Legacy Work!</Text>
+          <Text style={styles.toastText}>Proof Submitted! Check your Dashboard for rewards.</Text>
         </View>
       )}
 

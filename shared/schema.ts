@@ -852,6 +852,22 @@ export const draftingDocuments = pgTable("drafting_documents", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Student Work Vault - VibeScribe snippets and manuscript drafts from Game Engine
+export const studentWork = pgTable("student_work", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  questId: integer("quest_id"), // Links to curriculum chapter/quest
+  contentType: text("content_type").notNull(), // 'vibescribe_snippet' | 'manuscript_draft'
+  contentBody: text("content_body").notNull(),
+  wordCount: integer("word_count").default(0).notNull(),
+  sourceDevice: text("source_device"), // 'ios' | 'android' | 'web'
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type StudentWork = typeof studentWork.$inferSelect;
+export type InsertStudentWork = typeof studentWork.$inferInsert;
+
 // VibeScribe 2.0 - Live Quiz System
 export const vibeQuizzes = pgTable("vibe_quizzes", {
   id: serial("id").primaryKey(),

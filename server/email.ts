@@ -325,6 +325,86 @@ export async function sendApplicationRejectedEmail(
   }
 }
 
+export async function sendWelcomeToCollectiveEmail(
+  toEmail: string, 
+  firstName: string,
+  vibeScribeId: string,
+  userId?: string
+) {
+  try {
+    const { client, fromEmail } = await getCredentials().then(() => getResendClient());
+    
+    const baseUrl = process.env.REPLIT_DEV_DOMAIN 
+      ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
+      : 'https://indie-quill-collective.replit.app';
+    const dashboardUrl = `${baseUrl}/student`;
+    
+    await client.emails.send({
+      from: fromEmail || 'The Indie Quill Collective <noreply@resend.dev>',
+      to: toEmail,
+      cc: ADMIN_CC_EMAIL,
+      subject: '[COLLECTIVE-LOG] Welcome to the Collective!',
+      html: `
+        <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background: #0F172A; padding: 30px; text-align: center;">
+            <h1 style="font-family: 'Playfair Display', Georgia, serif; color: white; font-size: 28px; margin: 0;">
+              The Indie Quill Collective
+            </h1>
+            <p style="color: #EF4444; font-size: 12px; margin: 8px 0 0 0; letter-spacing: 1px;">501(c)(3) NON-PROFIT ORGANIZATION</p>
+          </div>
+          
+          <div style="background: #f8fafc; padding: 40px 30px;">
+            <div style="background: white; border-radius: 12px; padding: 30px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+              <p style="color: #374151; font-size: 16px; line-height: 1.8; margin: 0 0 20px 0;">
+                Dear ${firstName},
+              </p>
+              
+              <p style="color: #374151; font-size: 16px; line-height: 1.8; margin: 0 0 20px 0;">
+                Congratulations! You have been approved and are now an official member of The Indie Quill Collective. Your author journey begins now!
+              </p>
+              
+              <div style="background: #f0fdf4; border: 2px solid #22c55e; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                <p style="color: #166534; font-size: 14px; margin: 0 0 10px 0; font-weight: bold;">Your VibeScribe ID:</p>
+                <p style="color: #166534; font-size: 24px; font-family: monospace; margin: 0; text-align: center;">${vibeScribeId}</p>
+              </div>
+              
+              <hr style="border: none; border-top: 3px solid #EF4444; margin: 30px 0;">
+              
+              <p style="color: #374151; font-size: 16px; line-height: 1.8; margin: 0 0 20px 0;">
+                Visit your Student Dashboard to begin your curriculum and track your progress:
+              </p>
+              
+              <div style="text-align: center; margin: 25px 0;">
+                <a href="${dashboardUrl}" style="display: inline-block; background: linear-gradient(135deg, #14b8a6, #0ea5e9); color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+                  Go to Student Dashboard
+                </a>
+              </div>
+              
+              <p style="color: #64748b; font-size: 14px; line-height: 1.6; margin: 0;">
+                Use the VibeScribe mobile app to record your voice and submit your work. Your character awaits!
+              </p>
+            </div>
+          </div>
+          
+          <div style="background: #0F172A; padding: 20px; text-align: center;">
+            <p style="color: #9ca3af; font-size: 12px; margin: 0;">
+              &copy; ${new Date().getFullYear()} The Indie Quill Collective. All rights reserved.
+            </p>
+          </div>
+        </div>
+      `
+    });
+    
+    console.log(`Welcome to Collective email sent to ${toEmail} (CC: ${ADMIN_CC_EMAIL})`);
+    return true;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    await sendFailureNotification('Welcome to Collective', toEmail, firstName, errorMessage);
+    console.error('Failed to send welcome to collective email:', error);
+    return false;
+  }
+}
+
 export async function sendActiveAuthorEmail(
   toEmail: string, 
   firstName: string, 
