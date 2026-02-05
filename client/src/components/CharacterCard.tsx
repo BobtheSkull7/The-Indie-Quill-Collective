@@ -221,10 +221,10 @@ export default function CharacterCard({ userId = 1, className = "", apiEndpoint 
                   <div
                     className={`w-14 h-14 rounded-lg flex flex-col items-center justify-center transition-all relative ${
                       hasItem 
-                        ? "bg-gradient-to-br from-red-600 to-red-800 shadow-lg shadow-red-500/30" 
+                        ? "bg-gradient-to-br from-green-500 to-emerald-600 shadow-lg shadow-green-500/30" 
                         : isUnlocked 
-                          ? "bg-[#1a1a2e] border-2 border-dashed border-[#4a4a6e]"
-                          : "bg-[#0d0d1a] border border-[#2a2a3e] opacity-50"
+                          ? "bg-[#2a2a3e] border-2 border-dashed border-[#4a4a6e]"
+                          : "bg-[#3a3a4a]"
                     }`}
                     title={isUnlocked ? (itemName || slot.label) : `Unlocks at Level ${slot.unlockLevel}`}
                   >
@@ -232,10 +232,10 @@ export default function CharacterCard({ userId = 1, className = "", apiEndpoint 
                       <img 
                         src={slot.icon} 
                         alt={slot.label} 
-                        className={`w-10 h-10 object-contain ${!isUnlocked ? "grayscale opacity-50" : ""}`}
+                        className={`w-10 h-10 object-contain ${!isUnlocked ? "grayscale opacity-40" : ""}`}
                       />
                     ) : (
-                      <span className={`text-2xl ${!isUnlocked ? "grayscale" : ""}`}>{slot.icon}</span>
+                      <span className={`text-2xl ${!isUnlocked ? "grayscale opacity-40" : ""}`}>{slot.icon}</span>
                     )}
                     {!isUnlocked && <span className="absolute -bottom-1 -right-1 text-xs">🔒</span>}
                   </div>
@@ -245,7 +245,7 @@ export default function CharacterCard({ userId = 1, className = "", apiEndpoint 
             
             {/* Row 2: Backpack | Quill */}
             <div className="flex justify-center items-center gap-4 mb-2">
-              {/* Backpack (off_hand) */}
+              {/* Briefcase (off_hand) */}
               {(() => {
                 const slot = PAPER_DOLL_SLOTS[1];
                 const isUnlocked = currentLevel >= slot.unlockLevel;
@@ -255,14 +255,14 @@ export default function CharacterCard({ userId = 1, className = "", apiEndpoint 
                   <div
                     className={`w-14 h-14 rounded-lg flex flex-col items-center justify-center transition-all relative ${
                       hasItem 
-                        ? "bg-gradient-to-br from-amber-600 to-orange-600 shadow-lg shadow-amber-500/30" 
+                        ? "bg-gradient-to-br from-green-500 to-emerald-600 shadow-lg shadow-green-500/30" 
                         : isUnlocked 
-                          ? "bg-[#1a1a2e] border-2 border-dashed border-[#4a4a6e]"
-                          : "bg-[#0d0d1a] border border-[#2a2a3e] opacity-50"
+                          ? "bg-[#2a2a3e] border-2 border-dashed border-[#4a4a6e]"
+                          : "bg-[#3a3a4a]"
                     }`}
                     title={isUnlocked ? (itemName || slot.label) : `Unlocks at Level ${slot.unlockLevel}`}
                   >
-                    <span className={`text-2xl ${!isUnlocked ? "grayscale" : ""}`}>{slot.icon}</span>
+                    <span className={`text-2xl ${!isUnlocked ? "grayscale opacity-40" : ""}`}>{slot.icon}</span>
                     {!isUnlocked && <span className="absolute -bottom-1 -right-1 text-xs">🔒</span>}
                   </div>
                 );
@@ -278,14 +278,14 @@ export default function CharacterCard({ userId = 1, className = "", apiEndpoint 
                   <div
                     className={`w-14 h-14 rounded-lg flex flex-col items-center justify-center transition-all relative ${
                       hasItem 
-                        ? "bg-gradient-to-br from-cyan-600 to-blue-600 shadow-lg shadow-cyan-500/30" 
+                        ? "bg-gradient-to-br from-green-500 to-emerald-600 shadow-lg shadow-green-500/30" 
                         : isUnlocked 
-                          ? "bg-[#1a1a2e] border-2 border-dashed border-[#4a4a6e]"
-                          : "bg-[#0d0d1a] border border-[#2a2a3e] opacity-50"
+                          ? "bg-[#2a2a3e] border-2 border-dashed border-[#4a4a6e]"
+                          : "bg-[#3a3a4a]"
                     }`}
                     title={isUnlocked ? (itemName || slot.label) : `Unlocks at Level ${slot.unlockLevel}`}
                   >
-                    <span className={`text-2xl ${!isUnlocked ? "grayscale" : ""}`}>{slot.icon}</span>
+                    <span className={`text-2xl ${!isUnlocked ? "grayscale opacity-40" : ""}`}>{slot.icon}</span>
                     {!isUnlocked && <span className="absolute -bottom-1 -right-1 text-xs">🔒</span>}
                   </div>
                 );
@@ -298,24 +298,19 @@ export default function CharacterCard({ userId = 1, className = "", apiEndpoint 
                 const isUnlocked = currentLevel >= slot.unlockLevel;
                 const itemName = equippedItems[slot.key as keyof EquippedItems];
                 const hasItem = isUnlocked && !!itemName;
-                const bgColor = slot.key === "body" 
-                  ? "from-green-600 to-emerald-600 shadow-green-500/30"
-                  : slot.key === "hands"
-                    ? "from-indigo-600 to-violet-600 shadow-indigo-500/30"
-                    : "from-rose-600 to-pink-600 shadow-rose-500/30";
                 return (
                   <div
                     key={slot.key}
                     className={`w-12 h-12 rounded-lg flex flex-col items-center justify-center transition-all relative ${
                       hasItem 
-                        ? `bg-gradient-to-br ${bgColor} shadow-lg` 
+                        ? "bg-gradient-to-br from-green-500 to-emerald-600 shadow-lg shadow-green-500/30" 
                         : isUnlocked 
-                          ? "bg-[#1a1a2e] border-2 border-dashed border-[#4a4a6e]"
-                          : "bg-[#0d0d1a] border border-[#2a2a3e] opacity-50"
+                          ? "bg-[#2a2a3e] border-2 border-dashed border-[#4a4a6e]"
+                          : "bg-[#3a3a4a]"
                     }`}
                     title={isUnlocked ? (itemName || slot.label) : `Unlocks at Level ${slot.unlockLevel}`}
                   >
-                    <span className={`text-xl ${!isUnlocked ? "grayscale" : ""}`}>{slot.icon}</span>
+                    <span className={`text-xl ${!isUnlocked ? "grayscale opacity-40" : ""}`}>{slot.icon}</span>
                     {!isUnlocked && <span className="absolute -bottom-1 -right-1 text-xs">🔒</span>}
                   </div>
                 );
@@ -324,7 +319,7 @@ export default function CharacterCard({ userId = 1, className = "", apiEndpoint 
             
             {/* Legend */}
             <div className="flex justify-center gap-4 mt-3 text-xs text-gray-500">
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-purple-500"></span> Equipped</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-green-500"></span> Equipped</span>
               <span className="flex items-center gap-1"><span className="w-2 h-2 rounded border border-dashed border-gray-500"></span> Empty</span>
               <span className="flex items-center gap-1">🔒 Locked</span>
             </div>
