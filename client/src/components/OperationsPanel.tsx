@@ -3,6 +3,7 @@ import {
   BarChart3, Users, FileCheck, Activity, TrendingUp, Shield, 
   Download, RefreshCw, Clock, Zap, AlertTriangle, CheckCircle
 } from "lucide-react";
+import CharacterCard from "./CharacterCard";
 
 interface OperationsMetrics {
   cohortVelocity: number;
@@ -336,6 +337,13 @@ export default function OperationsPanel() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Game Engine Character Card - Admin Testing */}
+      <div className="card">
+        <h3 className="font-display text-lg font-bold text-slate-800 mb-4">Game Engine Integration</h3>
+        <p className="text-sm text-gray-500 mb-4">Test character card from external Game Engine API</p>
+        <CharacterCard apiEndpoint="/api/admin/game-character" />
       </div>
     </div>
   );

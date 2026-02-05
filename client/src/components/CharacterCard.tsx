@@ -33,6 +33,7 @@ interface CharacterData {
 interface CharacterCardProps {
   userId?: number;
   className?: string;
+  apiEndpoint?: string;
 }
 
 const SLOT_CONFIG = [
@@ -44,7 +45,7 @@ const SLOT_CONFIG = [
   { key: "feet", label: "Feet", icon: Footprints },
 ];
 
-export default function CharacterCard({ userId = 1, className = "" }: CharacterCardProps) {
+export default function CharacterCard({ userId = 1, className = "", apiEndpoint = "/api/student/game-character" }: CharacterCardProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [character, setCharacter] = useState<CharacterData | null>(null);
@@ -54,7 +55,7 @@ export default function CharacterCard({ userId = 1, className = "" }: CharacterC
     setError(null);
     try {
       const timestamp = Date.now();
-      const res = await fetch(`/api/student/game-character?_t=${timestamp}`, {
+      const res = await fetch(`${apiEndpoint}?_t=${timestamp}`, {
         credentials: "include",
         cache: "no-store",
         headers: {
