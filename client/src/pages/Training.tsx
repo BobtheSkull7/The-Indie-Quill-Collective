@@ -73,28 +73,35 @@ export default function Training() {
       component: <GrantCohortsContent />,
       allowedRoles: ["admin"],
     },
+    {
+      id: "game",
+      label: "Game Test",
+      icon: <Gamepad2 className="w-4 h-4" />,
+      component: (
+        <div className="p-6 text-center">
+          <Gamepad2 className="w-16 h-16 mx-auto text-purple-500 mb-4" />
+          <h3 className="text-xl font-bold mb-2">Game Engine Testing</h3>
+          <p className="text-gray-600 mb-6">Preview character data from the RPG system</p>
+          <Link
+            href="/admin/game-test"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
+          >
+            <Gamepad2 className="w-5 h-5" />
+            Open Game Test Dashboard
+          </Link>
+        </div>
+      ),
+      allowedRoles: ["admin"],
+    },
   ];
 
   return (
-    <div>
-      <TabbedPillar
-        title="Training"
-        subtitle="Education delivery & mentor coordination"
-        tabs={tabs}
-        userRole={user.role}
-        defaultTab="curriculum"
-      />
-      {user.role === "admin" && (
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <Link
-            href="/admin/game-test"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors"
-          >
-            <Gamepad2 className="w-4 h-4" />
-            Game Engine Test
-          </Link>
-        </div>
-      )}
-    </div>
+    <TabbedPillar
+      title="Training"
+      subtitle="Education delivery & mentor coordination"
+      tabs={tabs}
+      userRole={user.role}
+      defaultTab="curriculum"
+    />
   );
 }
