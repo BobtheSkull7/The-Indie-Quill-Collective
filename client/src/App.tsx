@@ -23,6 +23,7 @@ import Training from "./pages/Training";
 import Publishing from "./pages/Publishing";
 import Outcomes from "./pages/Outcomes";
 import VibeScribe from "./pages/VibeScribe";
+import GameTest from "./pages/GameTest";
 import Navbar from "./components/Navbar";
 
 interface User {
@@ -98,6 +99,7 @@ function App() {
           <Route path="/admin/training" component={Training} />
           <Route path="/admin/publishing" component={Publishing} />
           <Route path="/admin/outcomes" component={Outcomes} />
+          <Route path="/admin/game-test" component={GameTest} />
           
           <Route path="/admin/cohorts">
             <Redirect to="/admin/intake" />

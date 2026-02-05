@@ -1614,6 +1614,40 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  // Game Engine proxy endpoint - Admin only
+  app.get("/api/admin/game-engine/character/:id", async (req: Request, res: Response) => {
+    if (!req.session.userId || req.session.userRole !== "admin") {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    const GAME_ENGINE_URL = process.env.GAME_ENGINE_URL;
+    if (!GAME_ENGINE_URL) {
+      return res.status(500).json({ message: "Game Engine URL not configured" });
+    }
+
+    const characterId = req.params.id;
+    const endpoint = `${GAME_ENGINE_URL}/character/status/${characterId}`;
+
+    try {
+      const response = await fetch(endpoint);
+      if (!response.ok) {
+        const errorText = await response.text();
+        return res.status(response.status).json({ 
+          message: `Game Engine returned ${response.status}`,
+          details: errorText
+        });
+      }
+      const data = await response.json();
+      return res.json(data);
+    } catch (error) {
+      console.error("Game Engine fetch error:", error);
+      return res.status(502).json({ 
+        message: "Failed to connect to Game Engine",
+        error: String(error)
+      });
+    }
+  });
+
   app.post("/api/admin/force-sync-all-migrated", async (req: Request, res: Response) => {
     if (!req.session.userId || req.session.userRole !== "admin") {
       return res.status(403).json({ message: "Not authorized" });
