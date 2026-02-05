@@ -57,12 +57,12 @@ interface SlotConfig {
 }
 
 const PAPER_DOLL_SLOTS: SlotConfig[] = [
-  { key: "head", label: "Hat", icon: "🎩", unlockLevel: 1 },
-  { key: "off_hand", label: "Satchel", icon: "📚", unlockLevel: 2 },
+  { key: "head", label: "Fedora", icon: "🤠", unlockLevel: 1 },
+  { key: "off_hand", label: "Backpack", icon: "🎒", unlockLevel: 2 },
   { key: "main_hand", label: "Quill", icon: "🪶", unlockLevel: 3 },
-  { key: "body", label: "Shirt", icon: "👔", unlockLevel: 4 },
-  { key: "hands", label: "Gloves", icon: "🧤", unlockLevel: 5 },
-  { key: "feet", label: "Shoes", icon: "👞", unlockLevel: 6 },
+  { key: "body", label: "Shirt", icon: "😊", unlockLevel: 4 },
+  { key: "hands", label: "Pants", icon: "👖", unlockLevel: 5 },
+  { key: "feet", label: "Sneakers", icon: "👟", unlockLevel: 6 },
 ];
 
 const PHASE_COLORS: Record<number, string> = {
@@ -288,7 +288,7 @@ export default function CharacterCard({ userId = 1, className = "", apiEndpoint 
               })()}
             </div>
             
-            {/* Row 3: Shirt | Gloves | Shoes */}
+            {/* Row 3: Shirt | Pants | Sneakers */}
             <div className="flex justify-center gap-2">
               {PAPER_DOLL_SLOTS.slice(3).map((slot) => {
                 const isUnlocked = currentLevel >= slot.unlockLevel;
