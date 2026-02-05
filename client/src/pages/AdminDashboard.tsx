@@ -225,7 +225,8 @@ export default function AdminDashboard() {
 
   const fetchAvailableCohorts = async () => {
     try {
-      const res = await fetch("/api/admin/cohorts/available", { credentials: "include" });
+      // Fetch ALL cohorts so admins can override and assign to any cohort
+      const res = await fetch("/api/admin/cohorts", { credentials: "include" });
       if (res.ok) {
         const cohorts = await res.json();
         setAvailableCohorts(cohorts);
@@ -1714,7 +1715,7 @@ export default function AdminDashboard() {
                         <option value="">Auto-assign to first available</option>
                         {availableCohorts.map((cohort) => (
                           <option key={cohort.id} value={cohort.id}>
-                            {cohort.label} ({cohort.currentCount}/{cohort.capacity} slots filled)
+                            {cohort.label} ({cohort.currentCount}/{cohort.capacity} slots){cohort.status === "closed" ? " - CLOSED" : ""}
                           </option>
                         ))}
                       </select>

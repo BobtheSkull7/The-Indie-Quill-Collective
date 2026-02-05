@@ -182,7 +182,7 @@ export default function ApplicantsContent() {
     try {
       const [usersRes, cohortsRes, familyUnitsRes] = await Promise.all([
         fetch("/api/admin/users", { credentials: "include" }),
-        fetch("/api/admin/cohorts/available", { credentials: "include" }),
+        fetch("/api/admin/cohorts", { credentials: "include" }), // Fetch ALL cohorts so admins can override
         fetch("/api/admin/family-units", { credentials: "include" }),
       ]);
 
