@@ -178,6 +178,12 @@ export default function Navbar() {
             ) : user.role === "admin" ? (
               <>
                 <Link 
+                  href="/admin" 
+                  className={`text-sm font-medium transition-colors ${location === "/admin" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`}
+                >
+                  Dashboard
+                </Link>
+                <Link 
                   href="/admin/intake" 
                   className={`text-sm font-medium transition-colors ${location === "/admin/intake" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`}
                 >
@@ -303,6 +309,7 @@ export default function Navbar() {
             </>
           ) : user.role === "admin" ? (
             <>
+              <Link href="/admin" className="block text-gray-600 hover:text-slate-800 py-2">Dashboard</Link>
               <Link href="/admin/intake" className="block text-gray-600 hover:text-slate-800 py-2">Intake</Link>
               <Link href="/admin/training" className="block text-gray-600 hover:text-slate-800 py-2">Training</Link>
               <Link href="/admin/publishing" className="block text-gray-600 hover:text-slate-800 py-2">Publishing</Link>
