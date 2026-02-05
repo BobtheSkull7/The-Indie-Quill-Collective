@@ -209,83 +209,67 @@ export default function CharacterCard({ userId = 1, className = "", apiEndpoint 
           
           {/* Paper Doll - Humanoid Layout */}
           <div className="mb-5">
-            {/* Row 1: Fedora (top center) */}
+            {/* Row 1: Graduation Cap (top center) */}
             <div className="flex justify-center mb-2">
               {(() => {
                 const slot = PAPER_DOLL_SLOTS[0];
                 const isUnlocked = currentLevel >= slot.unlockLevel;
-                const itemName = equippedItems[slot.key as keyof EquippedItems];
-                const hasItem = isUnlocked && !!itemName;
-                const isImage = slot.icon.startsWith('/');
                 return (
                   <div
                     className={`w-14 h-14 rounded-lg flex flex-col items-center justify-center transition-all relative ${
-                      hasItem 
+                      isUnlocked 
                         ? "bg-gradient-to-br from-green-500 to-emerald-600 shadow-lg shadow-green-500/30" 
-                        : isUnlocked 
-                          ? "bg-[#2a2a3e] border-2 border-dashed border-[#4a4a6e]"
-                          : "bg-[#3a3a4a]"
+                        : "bg-[#3a3a4a]"
                     }`}
-                    title={isUnlocked ? (itemName || slot.label) : `Unlocks at Level ${slot.unlockLevel}`}
+                    title={isUnlocked ? slot.label : `Unlocks at Level ${slot.unlockLevel}`}
                   >
-                    {isImage ? (
-                      <img 
-                        src={slot.icon} 
-                        alt={slot.label} 
-                        className={`w-10 h-10 object-contain ${!isUnlocked ? "grayscale opacity-40" : ""}`}
-                      />
-                    ) : (
-                      <span className={`text-2xl ${!isUnlocked ? "grayscale opacity-40" : ""}`}>{slot.icon}</span>
-                    )}
+                    <span className={`text-2xl ${!isUnlocked ? "grayscale opacity-40" : ""}`}>{slot.icon}</span>
                     {!isUnlocked && <span className="absolute -bottom-1 -right-1 text-xs">🔒</span>}
                   </div>
                 );
               })()}
             </div>
             
-            {/* Row 2: Backpack | Quill */}
-            <div className="flex justify-center items-center gap-4 mb-2">
+            {/* Row 2: Briefcase | Face Oval | Quill */}
+            <div className="flex justify-center items-center gap-2 mb-2">
               {/* Briefcase (off_hand) */}
               {(() => {
                 const slot = PAPER_DOLL_SLOTS[1];
                 const isUnlocked = currentLevel >= slot.unlockLevel;
-                const itemName = equippedItems[slot.key as keyof EquippedItems];
-                const hasItem = isUnlocked && !!itemName;
                 return (
                   <div
-                    className={`w-14 h-14 rounded-lg flex flex-col items-center justify-center transition-all relative ${
-                      hasItem 
+                    className={`w-12 h-12 rounded-lg flex flex-col items-center justify-center transition-all relative ${
+                      isUnlocked 
                         ? "bg-gradient-to-br from-green-500 to-emerald-600 shadow-lg shadow-green-500/30" 
-                        : isUnlocked 
-                          ? "bg-[#2a2a3e] border-2 border-dashed border-[#4a4a6e]"
-                          : "bg-[#3a3a4a]"
+                        : "bg-[#3a3a4a]"
                     }`}
-                    title={isUnlocked ? (itemName || slot.label) : `Unlocks at Level ${slot.unlockLevel}`}
+                    title={isUnlocked ? slot.label : `Unlocks at Level ${slot.unlockLevel}`}
                   >
-                    <span className={`text-2xl ${!isUnlocked ? "grayscale opacity-40" : ""}`}>{slot.icon}</span>
+                    <span className={`text-xl ${!isUnlocked ? "grayscale opacity-40" : ""}`}>{slot.icon}</span>
                     {!isUnlocked && <span className="absolute -bottom-1 -right-1 text-xs">🔒</span>}
                   </div>
                 );
               })()}
               
+              {/* Face Oval (Student Picture placeholder) */}
+              <div className="w-16 h-20 rounded-full bg-gradient-to-b from-[#3a3a5e] to-[#252542] border-2 border-[#4a4a6e] flex items-center justify-center">
+                <span className="text-3xl">👤</span>
+              </div>
+              
               {/* Quill (main_hand) */}
               {(() => {
                 const slot = PAPER_DOLL_SLOTS[2];
                 const isUnlocked = currentLevel >= slot.unlockLevel;
-                const itemName = equippedItems[slot.key as keyof EquippedItems];
-                const hasItem = isUnlocked && !!itemName;
                 return (
                   <div
-                    className={`w-14 h-14 rounded-lg flex flex-col items-center justify-center transition-all relative ${
-                      hasItem 
+                    className={`w-12 h-12 rounded-lg flex flex-col items-center justify-center transition-all relative ${
+                      isUnlocked 
                         ? "bg-gradient-to-br from-green-500 to-emerald-600 shadow-lg shadow-green-500/30" 
-                        : isUnlocked 
-                          ? "bg-[#2a2a3e] border-2 border-dashed border-[#4a4a6e]"
-                          : "bg-[#3a3a4a]"
+                        : "bg-[#3a3a4a]"
                     }`}
-                    title={isUnlocked ? (itemName || slot.label) : `Unlocks at Level ${slot.unlockLevel}`}
+                    title={isUnlocked ? slot.label : `Unlocks at Level ${slot.unlockLevel}`}
                   >
-                    <span className={`text-2xl ${!isUnlocked ? "grayscale opacity-40" : ""}`}>{slot.icon}</span>
+                    <span className={`text-xl ${!isUnlocked ? "grayscale opacity-40" : ""}`}>{slot.icon}</span>
                     {!isUnlocked && <span className="absolute -bottom-1 -right-1 text-xs">🔒</span>}
                   </div>
                 );
@@ -296,19 +280,15 @@ export default function CharacterCard({ userId = 1, className = "", apiEndpoint 
             <div className="flex justify-center gap-2">
               {PAPER_DOLL_SLOTS.slice(3).map((slot) => {
                 const isUnlocked = currentLevel >= slot.unlockLevel;
-                const itemName = equippedItems[slot.key as keyof EquippedItems];
-                const hasItem = isUnlocked && !!itemName;
                 return (
                   <div
                     key={slot.key}
                     className={`w-12 h-12 rounded-lg flex flex-col items-center justify-center transition-all relative ${
-                      hasItem 
+                      isUnlocked 
                         ? "bg-gradient-to-br from-green-500 to-emerald-600 shadow-lg shadow-green-500/30" 
-                        : isUnlocked 
-                          ? "bg-[#2a2a3e] border-2 border-dashed border-[#4a4a6e]"
-                          : "bg-[#3a3a4a]"
+                        : "bg-[#3a3a4a]"
                     }`}
-                    title={isUnlocked ? (itemName || slot.label) : `Unlocks at Level ${slot.unlockLevel}`}
+                    title={isUnlocked ? slot.label : `Unlocks at Level ${slot.unlockLevel}`}
                   >
                     <span className={`text-xl ${!isUnlocked ? "grayscale opacity-40" : ""}`}>{slot.icon}</span>
                     {!isUnlocked && <span className="absolute -bottom-1 -right-1 text-xs">🔒</span>}
