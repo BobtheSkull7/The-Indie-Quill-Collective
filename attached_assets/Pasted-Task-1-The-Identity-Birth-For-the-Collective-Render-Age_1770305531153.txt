@@ -1,0 +1,61 @@
+Task 1: The "Identity Birth" (For the Collective/Render Agent)
+Goal: Automate the transition from a "New Signup" to a "Live RPG Character."
+
+The Instruction for Replit:
+
+"Implement the Admin Approval Handshake.
+
+Database: In the users table, ensure there is a status column (default: 'pending').
+
+Admin Action: On the Admin Dashboard, create an 'Approve Student' button for pending users.
+
+The Trigger: When clicked, the app must:
+
+Update user status to 'active'.
+
+Send a POST request to the Game Engine API (/character/create) with the user_id and username.
+
+Send an automated 'Welcome to the Collective' email that includes a link to the Student Dashboard."
+
+Task 2: The "Student Vault" (For the Collective/Render Agent)
+Goal: Create the storage for VibeScribe snippets and manuscripts.
+
+The Instruction for Replit:
+
+"Set up the Student Work Vault using our Supabase connection.
+
+New Table: Create a student_work table with columns for user_id, quest_id, content_type (e.g., 'vibescribe_snippet', 'manuscript_draft'), and content_body (text).
+
+API Endpoint: Create a secure internal API route that accepts incoming text from the Game Engine and saves it to this table.
+
+The Workspace: Create a 'My Manuscript' tab on the Student Dashboard that pulls all entries from this table so the student can see their voice-to-text snippets in one place."
+
+Task 3: The "VibeScribe Handshake" (For the VibeScribe Agent)
+Goal: Make the mobile app talk to the Game Engine.
+
+The Instruction for Replit:
+
+"Connect VibeScribe to the Indie Quill Game Engine.
+
+Authentication: On login, store the student's user_id.
+
+Submission Logic: When a user hits 'Save' on a voice-to-text recording:
+
+Send a POST request to https://curriculum-import-tool.replit.app/quest/submit/{user_id}/{quest_id}.
+
+Include the transcribed text in the proof_text field of the JSON body.
+
+Success Feedback: Show a 'Proof Submitted!' message to the student so they know to check their Collective Dashboard for rewards."
+
+Task 4: The "Quest Logic" (For the Game Engine/Replit Agent)
+Goal: Define the targets and rewards for the remaining chapters.
+
+The Instruction for Replit:
+
+"We need to finalize the Curriculum Logic for all 24 chapters.
+
+Target Mapping: Update the database to ensure every quest (1–24) has a defined XP reward and specific item unlock.
+
+Proof Verification: Ensure that when a POST is received from VibeScribe, the quest status in the Game Engine shifts to 'claimable'.
+
+The 'Ding' Sync: Ensure the claim_reward function correctly triggers the Level Up logic and updates the equipped_items if a student reaches a phase milestone (Level 2, 3, etc.)."
