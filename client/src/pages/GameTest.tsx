@@ -40,8 +40,14 @@ export default function GameTest() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/admin/game-engine/character/1", {
+      const timestamp = Date.now();
+      const res = await fetch(`/api/admin/game-engine/character/1?_t=${timestamp}`, {
         credentials: "include",
+        cache: "no-store",
+        headers: {
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          "Pragma": "no-cache",
+        },
       });
       if (!res.ok) {
         const data = await res.json();
