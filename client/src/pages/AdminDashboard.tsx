@@ -974,7 +974,11 @@ export default function AdminDashboard() {
                             <button
                               onClick={() => {
                                 setEditingUser(u);
-                                setNewRole(u.role);
+                                // Default to persona type from application if user is applicant
+                                const suggestedRole = (u.role === "applicant" && app?.personaType) 
+                                  ? app.personaType 
+                                  : u.role;
+                                setNewRole(suggestedRole);
                               }}
                               className="text-gray-600 hover:text-gray-800 transition-colors p-1.5 rounded hover:bg-gray-100"
                               title="Edit User"
@@ -1449,6 +1453,8 @@ export default function AdminDashboard() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   >
                     <option value="applicant">Applicant</option>
+                    <option value="student">Student</option>
+                    <option value="mentor">Mentor</option>
                     <option value="admin">Admin</option>
                     <option value="board_member">Board Member</option>
                   </select>
