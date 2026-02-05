@@ -5446,6 +5446,57 @@ export async function registerDonationRoutes(app: Express) {
     }
   });
 
+  // Get student's game character data from Game Engine
+  app.get("/api/student/game-character", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    // Verify user is a student
+    const userResult = await db.select().from(users).where(eq(users.id, req.session.userId)).limit(1);
+    if (userResult.length === 0 || userResult[0].role !== "student") {
+      return res.status(403).json({ message: "Student access required" });
+    }
+
+    try {
+      const GAME_ENGINE_URL = process.env.GAME_ENGINE_URL;
+      if (!GAME_ENGINE_URL) {
+        return res.status(503).json({ message: "Game Engine not configured" });
+      }
+
+      // TODO: In production, map user to game character ID via student_profiles.game_character_id
+      // For now, use a hardcoded ID until the mapping is established
+      const gameCharacterId = 1;
+      const timestamp = Date.now();
+      const endpoint = `${GAME_ENGINE_URL}/character/status/${gameCharacterId}?_t=${timestamp}`;
+
+      const response = await fetch(endpoint, {
+        headers: {
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          "Pragma": "no-cache",
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Game Engine error:", errorText);
+        return res.status(response.status).json({ 
+          message: `Game Engine returned ${response.status}`,
+          details: errorText
+        });
+      }
+
+      const data = await response.json();
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
+      return res.json(data);
+    } catch (error) {
+      console.error("Error fetching game character:", error);
+      res.status(502).json({ message: "Failed to connect to Game Engine" });
+    }
+  });
+
   // ============ FAMILY LITERACY ENDPOINTS ============
 
   // Get family dashboard data
