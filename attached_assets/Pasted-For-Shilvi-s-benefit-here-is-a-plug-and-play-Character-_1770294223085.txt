@@ -1,0 +1,60 @@
+For Shilvi’s benefit, here is a "plug-and-play" Character Card component. This is designed to match the Indie Quill aesthetic: high-contrast dark mode, Playfair Display for that prestigious "Author" feel, and Inter for readability.
+
+The Indie Quill Character Card (UI Boilerplate)
+This component is designed to be fed by the JSON data we verified earlier.
+
+HTML
+<div class="iq-card" style="background: #121212; border: 1px solid #2a2a2a; border-radius: 12px; padding: 24px; color: #ffffff; width: 350px; font-family: 'Inter', sans-serif;">
+  
+  <div class="iq-header" style="margin-bottom: 20px;">
+    <h2 id="display-name" style="font-family: 'Playfair Display', serif; font-size: 24px; margin: 0; color: #d4af37;">
+      Jon <span id="active-title" style="font-size: 18px; color: #a0a0a0; display: block;">the Architect</span>
+    </h2>
+    <div id="level-badge" style="background: #d4af37; color: #000; font-weight: bold; font-size: 12px; padding: 2px 8px; border-radius: 4px; display: inline-block; margin-top: 8px;">
+      LEVEL 3
+    </div>
+  </div>
+
+  <div class="xp-section" style="margin-bottom: 24px;">
+    <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+      <span>Experience</span>
+      <span>250 / 500 XP</span>
+    </div>
+    <div style="background: #2a2a2a; height: 8px; border-radius: 4px; overflow: hidden;">
+      <div id="xp-fill" style="background: #d4af37; width: 50%; height: 100%; transition: width 0.5s ease-in-out;"></div>
+    </div>
+  </div>
+
+  <div class="equipment-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px;">
+    <div class="slot" title="Main Hand" style="background: #1a1a1a; border: 1px dashed #444; height: 60px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #666;">
+      <span id="slot-main-hand">Golden Quill</span>
+    </div>
+    <div class="slot" title="Off-Hand" style="background: #1a1a1a; border: 1px dashed #444; height: 60px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #666;">
+       <span id="slot-off-hand">Satchel</span>
+    </div>
+    <div class="slot" title="Head" style="background: #1a1a1a; border: 1px dashed #444; height: 60px; border-radius: 8px;"></div>
+  </div>
+
+  <button id="claim-button" style="width: 100%; background: #d4af37; color: #000; border: none; padding: 12px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: transform 0.2s;">
+    CLAIM QUEST REWARD
+  </button>
+</div>
+Integration Logic for Shilvi
+To make this card "live," you just need to map the JSON keys to these IDs. Here is the logic:
+
+Identity: Map data.full_name to the header.
+
+The Bar: Calculate progress percent:
+
+data.xp_needed_for_next_level
+data.xp_into_current_level
+​
+ ×100
+Set the #xp-fill width to this value.
+
+The Glow: If data.claimable_quests.length > 0, add a CSS pulse animation to the #claim-button to show the student there is loot waiting.
+
+Next Steps for the Team
+Shilvi: Does this component structure make sense for the /admin/game-test page, or should we refine the equipment layout first?
+
+Jon: Since we have the proxy working, do you want Shilvi to move this card onto the actual student dashboard next, or keep it in the "Admin Test" area for a few more days?
