@@ -90,6 +90,7 @@ The project utilizes a client-server architecture with a React 19, Vite, and Tai
 - TABE score display showing baseline vs. current grade level gains
 - Upcoming video sessions with "Join Session" button
 - Mobile-first, accessible design
+- **CharacterCard Component:** RPG-style character display with dark theme (#121212), Playfair Display headers, gold accents (#d4af37). Shows level, XP progress bar, 2x3 equipment grid (6 slots), quest completion, and pulsing "Claim Reward" button when quests are claimable. Fetches live data from Game Engine via `/api/student/game-character` endpoint (student-role protected).
 
 **Curriculum Player (/student/module/:id):**
 - Full module content display with progress tracking
