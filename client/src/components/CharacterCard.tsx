@@ -58,7 +58,7 @@ interface SlotConfig {
 
 const PAPER_DOLL_SLOTS: SlotConfig[] = [
   { key: "head", label: "Graduation Cap", icon: "🎓", unlockLevel: 1 },
-  { key: "off_hand", label: "Backpack", icon: "🎒", unlockLevel: 2 },
+  { key: "off_hand", label: "Briefcase", icon: "💼", unlockLevel: 2 },
   { key: "main_hand", label: "Quill", icon: "🪶", unlockLevel: 3 },
   { key: "body", label: "Shirt", icon: "👕", unlockLevel: 4 },
   { key: "hands", label: "Pants", icon: "👖", unlockLevel: 5 },
