@@ -8,7 +8,8 @@ import MentorsContent from "../components/tabs/MentorsContent";
 import FamiliesContent from "../components/tabs/FamiliesContent";
 import WikiContent from "../components/tabs/WikiContent";
 import GrantCohortsContent from "../components/tabs/GrantCohortsContent";
-import { BookOpen, Users, UserCheck, Heart, FileText, Rocket } from "lucide-react";
+import { BookOpen, Users, UserCheck, Heart, FileText, Rocket, Gamepad2 } from "lucide-react";
+import { Link } from "wouter";
 
 export default function Training() {
   const { user } = useAuth();
@@ -75,12 +76,25 @@ export default function Training() {
   ];
 
   return (
-    <TabbedPillar
-      title="Training"
-      subtitle="Education delivery & mentor coordination"
-      tabs={tabs}
-      userRole={user.role}
-      defaultTab="curriculum"
-    />
+    <div>
+      <TabbedPillar
+        title="Training"
+        subtitle="Education delivery & mentor coordination"
+        tabs={tabs}
+        userRole={user.role}
+        defaultTab="curriculum"
+      />
+      {user.role === "admin" && (
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          <Link
+            href="/admin/game-test"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors"
+          >
+            <Gamepad2 className="w-4 h-4" />
+            Game Engine Test
+          </Link>
+        </div>
+      )}
+    </div>
   );
 }
