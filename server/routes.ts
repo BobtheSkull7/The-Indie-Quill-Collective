@@ -1626,10 +1626,17 @@ export async function registerRoutes(app: Express) {
     }
 
     const characterId = req.params.id;
-    const endpoint = `${GAME_ENGINE_URL}/character/status/${characterId}`;
+    const timestamp = Date.now();
+    const endpoint = `${GAME_ENGINE_URL}/character/status/${characterId}?_t=${timestamp}`;
 
     try {
-      const response = await fetch(endpoint);
+      const response = await fetch(endpoint, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+        },
+      });
       if (!response.ok) {
         const errorText = await response.text();
         return res.status(response.status).json({ 
