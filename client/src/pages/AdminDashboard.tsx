@@ -4,7 +4,7 @@ import { useAuth } from "../App";
 import { 
   Users, FileText, CheckCircle, Clock, TrendingUp, 
   Eye, Check, X, RefreshCw, AlertTriangle, Zap, Calendar, Mail, User, BookOpen, Shield,
-  Plus, Trash2, MapPin, BarChart3, Download, Activity, ChevronLeft, ChevronRight
+  Plus, Trash2, MapPin, BarChart3, Download, Activity, ChevronLeft, ChevronRight, UserPlus
 } from "lucide-react";
 import OperationsPanel from "../components/OperationsPanel";
 
@@ -169,6 +169,9 @@ export default function AdminDashboard() {
   const [deletingUserId, setDeletingUserId] = useState<number | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<number | null>(null);
   const [inlineActionId, setInlineActionId] = useState<number | null>(null);
+  const [assignCohortApp, setAssignCohortApp] = useState<any>(null);
+  const [assignCohortId, setAssignCohortId] = useState<number | null>(null);
+  const [assigningCohort, setAssigningCohort] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -297,6 +300,32 @@ export default function AdminDashboard() {
       console.error("Quick update failed:", error);
     } finally {
       setInlineActionId(null);
+    }
+  };
+
+  const handleAssignCohort = async () => {
+    if (!assignCohortApp || !assignCohortId) return;
+    setAssigningCohort(true);
+    try {
+      const res = await fetch(`/api/admin/applications/${assignCohortApp.id}/assign-cohort`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ cohortId: assignCohortId }),
+      });
+      if (res.ok) {
+        setAssignCohortApp(null);
+        setAssignCohortId(null);
+        await loadData();
+      } else {
+        const data = await res.json();
+        alert(data.message || "Failed to assign cohort");
+      }
+    } catch (error) {
+      console.error("Failed to assign cohort:", error);
+      alert("Failed to assign cohort");
+    } finally {
+      setAssigningCohort(false);
     }
   };
 
@@ -1015,6 +1044,19 @@ export default function AdminDashboard() {
                                 <FileText className="w-4 h-4" />
                               </button>
                             )}
+                            {app && !app.cohortId && (
+                              <button
+                                onClick={() => {
+                                  setAssignCohortApp(app);
+                                  setAssignCohortId(null);
+                                  fetchAvailableCohorts();
+                                }}
+                                className="text-teal-600 hover:text-teal-800 transition-colors p-1.5 rounded hover:bg-teal-50"
+                                title="Assign to Cohort"
+                              >
+                                <UserPlus className="w-4 h-4" />
+                              </button>
+                            )}
                             {syncRecord?.syncStatus === "failed" && (
                               <button
                                 onClick={() => retrySync(syncRecord.id)}
@@ -1413,6 +1455,73 @@ export default function AdminDashboard() {
                   </table>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {assignCohortApp && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
+              <div className="p-6 border-b border-gray-200">
+                <div className="flex items-center justify-between">
+                  <h2 className="font-display text-xl font-bold text-slate-800">
+                    Assign to Cohort
+                  </h2>
+                  <button
+                    onClick={() => {
+                      setAssignCohortApp(null);
+                      setAssignCohortId(null);
+                    }}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-6 space-y-4">
+                <div>
+                  <p className="text-sm text-gray-500">Author</p>
+                  <p className="font-medium text-slate-800">{assignCohortApp.pseudonym || `Application #${assignCohortApp.id}`}</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Select Cohort
+                  </label>
+                  <select
+                    value={assignCohortId || ""}
+                    onChange={(e) => setAssignCohortId(e.target.value ? parseInt(e.target.value) : null)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                  >
+                    <option value="">Choose a cohort...</option>
+                    {availableCohorts.map((cohort) => (
+                      <option key={cohort.id} value={cohort.id}>
+                        {cohort.label} ({cohort.currentCount}/{cohort.capacity} slots){(cohort as any).status === "closed" ? " - CLOSED" : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="p-6 border-t border-gray-200 flex justify-end space-x-3">
+                <button
+                  onClick={() => {
+                    setAssignCohortApp(null);
+                    setAssignCohortId(null);
+                  }}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAssignCohort}
+                  disabled={assigningCohort || !assignCohortId}
+                  className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50 transition-colors"
+                >
+                  {assigningCohort ? "Assigning..." : "Assign to Cohort"}
+                </button>
+              </div>
             </div>
           </div>
         )}
