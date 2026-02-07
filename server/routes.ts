@@ -2175,34 +2175,35 @@ export async function registerRoutes(app: Express) {
         console.error("Failed to sync role update to LLC:", syncError);
       }
 
-      // If approving as student, initialize Game Engine character and send welcome email
-      if (role === "student") {
-        // Get user's vibeScribeId for the welcome email
+      // If approving as student or writer, handle onboarding
+      if (role === "student" || role === "writer") {
         const userVibeScribeId = updated?.vibeScribeId || shortId || "N/A";
         
-        // Call Game Engine to create character (NO PII - only user_id and vibeScribeId)
-        const GAME_ENGINE_URL = process.env.GAME_ENGINE_URL;
-        if (GAME_ENGINE_URL) {
-          try {
-            const gameEngineRes = await fetch(`${GAME_ENGINE_URL}/character/create`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                user_id: userId,
-                username: userVibeScribeId, // Use VibeScribe ID as username (no PII)
-              }),
-            });
-            if (gameEngineRes.ok) {
-              console.log(`Game Engine character created for user ${userId}`);
-            } else {
-              console.error(`Game Engine character creation failed: ${gameEngineRes.status}`);
+        // Game Engine character creation - ONLY for students, writers skip this
+        if (role === "student") {
+          const GAME_ENGINE_URL = process.env.GAME_ENGINE_URL;
+          if (GAME_ENGINE_URL) {
+            try {
+              const gameEngineRes = await fetch(`${GAME_ENGINE_URL}/character/create`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  user_id: userId,
+                  username: userVibeScribeId,
+                }),
+              });
+              if (gameEngineRes.ok) {
+                console.log(`Game Engine character created for user ${userId}`);
+              } else {
+                console.error(`Game Engine character creation failed: ${gameEngineRes.status}`);
+              }
+            } catch (gameError) {
+              console.error("Failed to create Game Engine character:", gameError);
             }
-          } catch (gameError) {
-            console.error("Failed to create Game Engine character:", gameError);
           }
         }
         
-        // Send welcome email with Student Dashboard link
+        // Send welcome email with VibeScribe ID for both students and writers
         try {
           await sendWelcomeToCollectiveEmail(
             existingUser.email,
