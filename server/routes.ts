@@ -2083,7 +2083,7 @@ export async function registerRoutes(app: Express) {
         return res.status(400).json({ message: "Invalid user ID" });
       }
 
-      if (!["applicant", "admin", "board_member", "auditor", "student", "mentor"].includes(role)) {
+      if (!["applicant", "admin", "board_member", "auditor", "student", "mentor", "writer"].includes(role)) {
         return res.status(400).json({ message: "Invalid role" });
       }
 
@@ -2100,8 +2100,8 @@ export async function registerRoutes(app: Express) {
       let grantLabel: string | null = null;
       let familyName: string | null = null;
 
-      if (role === "student") {
-        if (!cohortId) {
+      if (role === "student" || role === "writer") {
+        if (role === "student" && !cohortId) {
           return res.status(400).json({ message: "Cohort assignment required for student role" });
         }
 
@@ -2113,17 +2113,19 @@ export async function registerRoutes(app: Express) {
           });
         }
 
-        // Always assign author ID for students
+        // Always assign author ID for students and writers
         shortId = await assignAuthorId(userId);
 
-        const [cohort] = await db.select().from(cohorts).where(eq(cohorts.id, cohortId));
-        if (cohort && cohort.grantId) {
-          const [grant] = await db.select().from(foundationGrants).where(eq(foundationGrants.id, cohort.grantId));
-          if (grant) {
-            const [foundation] = await db.select().from(foundations).where(eq(foundations.id, grant.foundationId));
-            if (foundation) {
-              const year = new Date(grant.grantDate).getFullYear();
-              grantLabel = `${foundation.name.split(' ')[0].toUpperCase()}-${year}`;
+        if (cohortId) {
+          const [cohort] = await db.select().from(cohorts).where(eq(cohorts.id, cohortId));
+          if (cohort && cohort.grantId) {
+            const [grant] = await db.select().from(foundationGrants).where(eq(foundationGrants.id, cohort.grantId));
+            if (grant) {
+              const [foundation] = await db.select().from(foundations).where(eq(foundations.id, grant.foundationId));
+              if (foundation) {
+                const year = new Date(grant.grantDate).getFullYear();
+                grantLabel = `${foundation.name.split(' ')[0].toUpperCase()}-${year}`;
+              }
             }
           }
         }
@@ -2135,7 +2137,7 @@ export async function registerRoutes(app: Express) {
           }
         }
 
-        if (userApps.length > 0) {
+        if (cohortId && userApps.length > 0) {
           await db.update(applications)
             .set({ cohortId, updatedAt: new Date() })
             .where(eq(applications.userId, userId));

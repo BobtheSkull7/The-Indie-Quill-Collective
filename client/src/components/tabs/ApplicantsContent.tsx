@@ -80,6 +80,7 @@ const STATUS_OPTIONS = [
 
 const ROLE_OPTIONS = [
   { value: "applicant", label: "Applicant" },
+  { value: "writer", label: "Writer" },
   { value: "student", label: "Student" },
   { value: "mentor", label: "Mentor" },
   { value: "admin", label: "Admin" },
@@ -252,7 +253,7 @@ export default function ApplicantsContent() {
         credentials: "include",
         body: JSON.stringify({ 
           role: newRole,
-          cohortId: newRole === "student" ? selectedCohortId : null,
+          cohortId: (newRole === "student" || newRole === "writer") ? selectedCohortId : null,
         }),
       });
 
@@ -583,7 +584,7 @@ export default function ApplicantsContent() {
                   value={newRole}
                   onChange={(e) => {
                     setNewRole(e.target.value);
-                    if (e.target.value !== "student") {
+                    if (e.target.value !== "student" && e.target.value !== "writer") {
                       setSelectedCohortId(null);
                     }
                   }}
@@ -597,7 +598,7 @@ export default function ApplicantsContent() {
                 </select>
               </div>
 
-              {newRole === "student" && (
+              {(newRole === "student" || newRole === "writer") && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     <Tag className="w-4 h-4 inline mr-1" />
@@ -618,6 +619,11 @@ export default function ApplicantsContent() {
                   {newRole === "student" && !selectedCohortId && (
                     <p className="mt-2 text-sm text-amber-600">
                       A cohort with grant tag is required for student enrollment
+                    </p>
+                  )}
+                  {newRole === "writer" && (
+                    <p className="mt-2 text-sm text-blue-600">
+                      Writers skip training and sync directly to The Indie Quill LLC
                     </p>
                   )}
                 </div>
