@@ -126,7 +126,7 @@ export default function CohortsContent() {
 
   const getCapacityColor = (percentage: number) => {
     if (percentage >= 80) return "bg-amber-500";
-    if (percentage >= 50) return "bg-collective-teal";
+    if (percentage >= 50) return "bg-teal-500";
     return "bg-green-500";
   };
 
@@ -152,7 +152,7 @@ export default function CohortsContent() {
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-collective-teal text-white rounded-lg hover:bg-teal-700 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors shadow-sm"
         >
           <Plus className="w-4 h-4" />
           New Cohort
@@ -168,7 +168,7 @@ export default function CohortsContent() {
           </p>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-collective-teal text-white rounded-lg hover:bg-teal-700 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors shadow-sm"
           >
             <Plus className="w-4 h-4" />
             Create First Cohort
@@ -351,7 +351,7 @@ export default function CohortsContent() {
               <button
                 onClick={handleCreateCohort}
                 disabled={creating || !newCohortLabel.trim()}
-                className="px-4 py-2 bg-collective-teal text-white rounded-lg hover:bg-teal-700 disabled:opacity-50"
+                className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50"
               >
                 {creating ? "Creating..." : "Create Cohort"}
               </button>
