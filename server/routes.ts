@@ -5628,23 +5628,30 @@ export async function registerDonationRoutes(app: Express) {
     try {
       const GAME_ENGINE_URL = process.env.GAME_ENGINE_URL;
       if (!GAME_ENGINE_URL) {
-        return res.status(503).json({ message: "Game Engine not configured" });
+        console.error("GAME_ENGINE_URL env var is not set");
+        return res.status(503).json({ message: "Game Engine URL not configured. Set GAME_ENGINE_URL environment variable." });
       }
 
       const gameCharacterId = 1;
       const timestamp = Date.now();
       const endpoint = `${GAME_ENGINE_URL}/character/status/${gameCharacterId}?_t=${timestamp}`;
+      console.log(`[Game Engine] Fetching: ${endpoint}`);
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
 
       const response = await fetch(endpoint, {
         headers: {
           "Cache-Control": "no-cache, no-store, must-revalidate",
           "Pragma": "no-cache",
         },
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error("Game Engine error:", errorText);
+        console.error(`[Game Engine] Error ${response.status}: ${errorText}`);
         return res.status(response.status).json({ 
           message: `Game Engine returned ${response.status}`,
           details: errorText
@@ -5652,13 +5659,17 @@ export async function registerDonationRoutes(app: Express) {
       }
 
       const data = await response.json();
+      console.log(`[Game Engine] Success - got character data for user ${data.user_id}`);
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.set('Pragma', 'no-cache');
       res.set('Expires', '0');
       return res.json(data);
-    } catch (error) {
-      console.error("Error fetching game character:", error);
-      res.status(502).json({ message: "Failed to connect to Game Engine" });
+    } catch (error: any) {
+      console.error("[Game Engine] Connection error:", error.message || error);
+      if (error.name === 'AbortError') {
+        return res.status(504).json({ message: "Game Engine request timed out (15s). The server may be starting up - try again in a moment." });
+      }
+      res.status(502).json({ message: `Failed to connect to Game Engine: ${error.message || 'Unknown error'}` });
     }
   });
 
