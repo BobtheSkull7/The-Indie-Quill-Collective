@@ -4,10 +4,9 @@ import { useAuth } from "../App";
 import TabbedPillar from "../components/TabbedPillar";
 import LedgerContent from "../components/tabs/LedgerContent";
 import GrantsContent from "../components/tabs/GrantsContent";
-import GrantCohortsContent from "../components/tabs/GrantCohortsContent";
 import DonationsContent from "../components/tabs/DonationsContent";
 import AuditorContent from "../components/tabs/AuditorContent";
-import { DollarSign, Building2, Rocket, Heart, BarChart3 } from "lucide-react";
+import { DollarSign, Building2, Heart, BarChart3 } from "lucide-react";
 
 export default function Outcomes() {
   const { user } = useAuth();
@@ -42,13 +41,6 @@ export default function Outcomes() {
       icon: <Building2 className="w-4 h-4" />,
       component: <GrantsContent />,
       allowedRoles: ["admin", "board_member"],
-    },
-    {
-      id: "grant-cohorts",
-      label: "Grant Cohorts",
-      icon: <Rocket className="w-4 h-4" />,
-      component: <GrantCohortsContent />,
-      allowedRoles: ["admin"],
     },
     {
       id: "donations",
