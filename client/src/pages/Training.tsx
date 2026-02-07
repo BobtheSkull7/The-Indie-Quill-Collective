@@ -7,8 +7,8 @@ import StudentsContent from "../components/tabs/StudentsContent";
 import MentorsContent from "../components/tabs/MentorsContent";
 import FamiliesContent from "../components/tabs/FamiliesContent";
 import WikiContent from "../components/tabs/WikiContent";
-import GrantCohortsContent from "../components/tabs/GrantCohortsContent";
-import { BookOpen, Users, UserCheck, Heart, FileText, Rocket, Gamepad2 } from "lucide-react";
+import QuizContent from "../components/tabs/QuizContent";
+import { BookOpen, Users, UserCheck, Heart, FileText, Zap, Gamepad2 } from "lucide-react";
 import { Link } from "wouter";
 
 export default function Training() {
@@ -67,10 +67,10 @@ export default function Training() {
       allowedRoles: ["admin", "board_member"],
     },
     {
-      id: "cohorts",
-      label: "Grant Cohorts",
-      icon: <Rocket className="w-4 h-4" />,
-      component: <GrantCohortsContent />,
+      id: "quiz",
+      label: "Quiz",
+      icon: <Zap className="w-4 h-4" />,
+      component: <QuizContent />,
       allowedRoles: ["admin"],
     },
     {
