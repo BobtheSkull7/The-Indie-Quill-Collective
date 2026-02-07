@@ -526,7 +526,7 @@ export default function ApplicantsContent() {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => handleViewApplication(u)}
-                      className="p-2 text-gray-600 hover:text-collective-teal hover:bg-collective-teal/10 rounded-lg transition-colors"
+                      className="p-2 text-gray-600 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
                       title="View Application"
                     >
                       <Eye className="w-5 h-5" />
@@ -646,7 +646,7 @@ export default function ApplicantsContent() {
               <button
                 onClick={updateUserRole}
                 disabled={updating || (newRole === "student" && !selectedCohortId)}
-                className="px-4 py-2 bg-collective-teal text-white rounded-lg hover:bg-collective-teal/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 {updating && <Loader2 className="w-4 h-4 animate-spin" />}
                 Save Changes
