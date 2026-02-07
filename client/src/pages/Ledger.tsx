@@ -146,7 +146,7 @@ export default function Ledger() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-collective-teal"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
       </div>
     );
   }
@@ -163,7 +163,7 @@ export default function Ledger() {
           </div>
           <button
             onClick={() => setShowAddEntry(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-collective-teal text-white rounded-lg hover:bg-collective-teal/90 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
           >
             <Plus className="w-4 h-4" />
             Add Transaction
@@ -324,7 +324,7 @@ export default function Ledger() {
                           </p>
                           <div className="w-24 h-2 bg-gray-200 rounded-full mt-1">
                             <div
-                              className="h-2 bg-collective-teal rounded-full"
+                              className="h-2 bg-teal-600 rounded-full"
                               style={{
                                 width: `${Math.min(100, (author.totalSpent / author.sponsorshipReceived) * 100)}%`,
                               }}
@@ -374,7 +374,7 @@ export default function Ledger() {
                   <select
                     value={newEntry.type}
                     onChange={(e) => setNewEntry({ ...newEntry, type: e.target.value as "income" | "expense" })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-collective-teal focus:border-collective-teal"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                   >
                     <option value="income">Income (Sponsorship)</option>
                     <option value="expense">Expense (ISBN, Copyright, etc.)</option>
@@ -391,7 +391,7 @@ export default function Ledger() {
                     value={newEntry.amount}
                     onChange={(e) => setNewEntry({ ...newEntry, amount: e.target.value })}
                     placeholder="777.00"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-collective-teal focus:border-collective-teal"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                     required
                   />
                 </div>
@@ -405,7 +405,7 @@ export default function Ledger() {
                     value={newEntry.description}
                     onChange={(e) => setNewEntry({ ...newEntry, description: e.target.value })}
                     placeholder="Per Capita Sponsorship - Author Name"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-collective-teal focus:border-collective-teal"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                     required
                   />
                 </div>
@@ -417,7 +417,7 @@ export default function Ledger() {
                   <select
                     value={newEntry.category}
                     onChange={(e) => setNewEntry({ ...newEntry, category: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-collective-teal focus:border-collective-teal"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                   >
                     <option value="">Select category...</option>
                     <option value="sponsorship">Sponsorship ($777)</option>
@@ -437,7 +437,7 @@ export default function Ledger() {
                   <select
                     value={newEntry.linkedAuthorId}
                     onChange={(e) => setNewEntry({ ...newEntry, linkedAuthorId: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-collective-teal focus:border-collective-teal"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                   >
                     <option value="">No linked author</option>
                     {authors.map((author) => (
@@ -456,7 +456,7 @@ export default function Ledger() {
                     type="date"
                     value={newEntry.transactionDate}
                     onChange={(e) => setNewEntry({ ...newEntry, transactionDate: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-collective-teal focus:border-collective-teal"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                     required
                   />
                 </div>
@@ -471,7 +471,7 @@ export default function Ledger() {
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 px-4 py-2 bg-collective-teal text-white rounded-lg hover:bg-collective-teal/90 transition-colors"
+                    className="flex-1 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
                   >
                     Add Transaction
                   </button>

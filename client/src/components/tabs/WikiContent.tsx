@@ -202,7 +202,7 @@ export default function WikiContent() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-collective-teal"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div>
       </div>
     );
   }
@@ -226,13 +226,13 @@ export default function WikiContent() {
               placeholder="Search wiki..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-collective-teal/20 focus:border-collective-teal"
+              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"
             />
           </div>
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            className="px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-collective-teal/20 focus:border-collective-teal"
+            className="px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"
           >
             <option value="all">All Categories</option>
             {CATEGORIES.map((cat) => (
@@ -248,7 +248,7 @@ export default function WikiContent() {
             resetForm();
             setShowCreateModal(true);
           }}
-          className="flex items-center gap-2 px-4 py-2 bg-collective-teal text-white rounded-lg hover:bg-collective-teal/90 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
         >
           <Plus className="w-4 h-4" />
           Add Entry
@@ -264,7 +264,7 @@ export default function WikiContent() {
               resetForm();
               setShowCreateModal(true);
             }}
-            className="mt-3 text-collective-teal hover:underline"
+            className="mt-3 text-teal-600 hover:underline"
           >
             Create the first entry
           </button>
@@ -382,7 +382,7 @@ export default function WikiContent() {
                   value={formTitle}
                   onChange={(e) => setFormTitle(e.target.value)}
                   placeholder="Enter title..."
-                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-collective-teal/20 focus:border-collective-teal"
+                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"
                 />
               </div>
 
@@ -394,7 +394,7 @@ export default function WikiContent() {
                   <select
                     value={formCategory}
                     onChange={(e) => setFormCategory(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-collective-teal/20 focus:border-collective-teal"
+                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"
                   >
                     {CATEGORIES.map((cat) => (
                       <option key={cat.value} value={cat.value}>
@@ -409,7 +409,7 @@ export default function WikiContent() {
                       type="checkbox"
                       checked={formIsPinned}
                       onChange={(e) => setFormIsPinned(e.target.checked)}
-                      className="rounded border-gray-300 text-collective-teal focus:ring-collective-teal"
+                      className="rounded border-gray-300 text-teal-600 focus:ring-teal-500"
                     />
                     <Pin className="w-4 h-4 text-yellow-500" />
                     <span className="text-sm">Pin to top</span>
@@ -426,7 +426,7 @@ export default function WikiContent() {
                   onChange={(e) => setFormContent(e.target.value)}
                   placeholder="Write your wiki content here..."
                   rows={12}
-                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-collective-teal/20 focus:border-collective-teal font-mono text-sm"
+                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 font-mono text-sm"
                 />
               </div>
             </div>
@@ -444,7 +444,7 @@ export default function WikiContent() {
               <button
                 onClick={editingEntry ? handleUpdate : handleCreate}
                 disabled={saving || !formTitle.trim() || !formContent.trim()}
-                className="flex items-center gap-2 px-4 py-2 bg-collective-teal text-white rounded-lg hover:bg-collective-teal/90 transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50"
               >
                 <Save className="w-4 h-4" />
                 {saving ? "Saving..." : editingEntry ? "Update" : "Create"}

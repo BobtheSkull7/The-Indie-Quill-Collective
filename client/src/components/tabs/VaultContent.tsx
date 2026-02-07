@@ -302,7 +302,7 @@ export default function VaultContent() {
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-start gap-4">
-                  <div className="p-3 bg-collective-teal/10 rounded-lg text-collective-teal">
+                  <div className="p-3 bg-teal-50 rounded-lg text-teal-600">
                     {doc.icon}
                   </div>
                   <div>
@@ -317,7 +317,7 @@ export default function VaultContent() {
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}
-                      className="p-2 text-gray-400 hover:text-collective-teal hover:bg-collective-teal/10 rounded-lg transition-colors"
+                      className="p-2 text-gray-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
                       title="Open external link"
                     >
                       <ExternalLink className="w-5 h-5" />
@@ -331,7 +331,7 @@ export default function VaultContent() {
                     className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
                       copiedId === doc.id
                         ? "bg-green-100 text-green-700"
-                        : "bg-collective-teal/10 text-collective-teal hover:bg-collective-teal/20"
+                        : "bg-teal-50 text-teal-600 hover:bg-teal-100"
                     }`}
                   >
                     {copiedId === doc.id ? (

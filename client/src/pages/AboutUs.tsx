@@ -5,7 +5,7 @@ export default function AboutUs() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto px-4 py-8">
-        <Link href="/" className="inline-flex items-center text-slate-600 hover:text-collective-teal mb-8 transition-colors">
+        <Link href="/" className="inline-flex items-center text-slate-600 hover:text-teal-600 mb-8 transition-colors">
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Home
         </Link>
@@ -198,7 +198,7 @@ export default function AboutUs() {
           </div>
         </section>
 
-        <section className="bg-gradient-to-br from-collective-teal to-collective-blue rounded-2xl shadow-lg p-8 mb-8 text-white">
+        <section className="bg-gradient-to-br from-teal-600 to-collective-blue rounded-2xl shadow-lg p-8 mb-8 text-white">
           <h2 className="font-display text-2xl font-bold mb-4">
             A Sustainable Movement
           </h2>
@@ -209,7 +209,7 @@ export default function AboutUs() {
 
         <div className="text-center py-8">
           <Link href="/apply">
-            <button className="bg-collective-teal hover:bg-teal-700 text-white font-semibold px-8 py-3 rounded-lg transition-colors shadow-lg">
+            <button className="bg-teal-600 hover:bg-teal-700 text-white font-semibold px-8 py-3 rounded-lg transition-colors shadow-lg">
               Apply to Join the Collective
             </button>
           </Link>

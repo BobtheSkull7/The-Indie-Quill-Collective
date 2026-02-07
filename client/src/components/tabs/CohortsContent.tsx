@@ -133,7 +133,7 @@ export default function CohortsContent() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-collective-teal"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div>
       </div>
     );
   }
@@ -143,7 +143,7 @@ export default function CohortsContent() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <div className="flex items-center space-x-3 mb-2">
-            <Users className="w-6 h-6 text-collective-teal" />
+            <Users className="w-6 h-6 text-teal-600" />
             <h2 className="text-xl font-semibold text-slate-800">Author Cohorts</h2>
           </div>
           <p className="text-gray-600 text-sm">
@@ -324,7 +324,7 @@ export default function CohortsContent() {
                   value={newCohortLabel}
                   onChange={(e) => setNewCohortLabel(e.target.value)}
                   placeholder="e.g., DGLF Cohort 2026"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-collective-teal focus:border-collective-teal"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                 />
               </div>
               <div>
@@ -337,7 +337,7 @@ export default function CohortsContent() {
                   onChange={(e) => setNewCohortCapacity(parseInt(e.target.value) || 10)}
                   min={1}
                   max={50}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-collective-teal focus:border-collective-teal"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                 />
               </div>
             </div>

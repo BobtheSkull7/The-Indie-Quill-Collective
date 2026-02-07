@@ -97,7 +97,7 @@ export default function PipelineContent() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <div className="flex items-center space-x-3 mb-2">
-            <BookOpen className="w-6 h-6 text-collective-teal" />
+            <BookOpen className="w-6 h-6 text-teal-600" />
             <h2 className="text-xl font-semibold text-slate-800">Publishing Pipeline</h2>
           </div>
           <p className="text-gray-600 text-sm">Track manuscripts through the publishing stages</p>

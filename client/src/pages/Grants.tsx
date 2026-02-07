@@ -303,7 +303,7 @@ export default function Grants() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-collective-teal"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
       </div>
     );
   }
@@ -313,7 +313,7 @@ export default function Grants() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
           <div className="flex items-center space-x-3 mb-2">
-            <Building2 className="w-8 h-8 text-collective-teal" />
+            <Building2 className="w-8 h-8 text-teal-600" />
             <h1 className="font-display text-3xl font-bold text-slate-800">
               Grant & Donor Logistics
             </h1>
@@ -362,7 +362,7 @@ export default function Grants() {
                 onClick={() => setActiveTab("foundations")}
                 className={`flex-1 px-6 py-4 text-sm font-medium ${
                   activeTab === "foundations"
-                    ? "text-collective-teal border-b-2 border-collective-teal bg-teal-50/50"
+                    ? "text-teal-600 border-b-2 border-teal-600 bg-teal-50/50"
                     : "text-gray-500 hover:text-gray-700"
                 }`}
               >
@@ -373,7 +373,7 @@ export default function Grants() {
                 onClick={() => setActiveTab("grants")}
                 className={`flex-1 px-6 py-4 text-sm font-medium ${
                   activeTab === "grants"
-                    ? "text-collective-teal border-b-2 border-collective-teal bg-teal-50/50"
+                    ? "text-teal-600 border-b-2 border-teal-600 bg-teal-50/50"
                     : "text-gray-500 hover:text-gray-700"
                 }`}
               >
@@ -384,7 +384,7 @@ export default function Grants() {
                 onClick={() => setActiveTab("programs")}
                 className={`flex-1 px-6 py-4 text-sm font-medium ${
                   activeTab === "programs"
-                    ? "text-collective-teal border-b-2 border-collective-teal bg-teal-50/50"
+                    ? "text-teal-600 border-b-2 border-teal-600 bg-teal-50/50"
                     : "text-gray-500 hover:text-gray-700"
                 }`}
               >
@@ -401,7 +401,7 @@ export default function Grants() {
                   <h2 className="text-lg font-semibold text-slate-800">Foundation Profiles</h2>
                   <button
                     onClick={() => setShowAddFoundation(true)}
-                    className="flex items-center space-x-2 px-4 py-2 bg-collective-teal text-white rounded-lg hover:bg-teal-600 transition-colors"
+                    className="flex items-center space-x-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-600 transition-colors"
                   >
                     <Plus className="w-4 h-4" />
                     <span>Add Foundation</span>
@@ -416,7 +416,7 @@ export default function Grants() {
                         placeholder="Foundation Name *"
                         value={newFoundation.name}
                         onChange={(e) => setNewFoundation({ ...newFoundation, name: e.target.value })}
-                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-collective-teal focus:border-transparent"
+                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                         required
                       />
                       <input
@@ -424,46 +424,46 @@ export default function Grants() {
                         placeholder="Contact Person"
                         value={newFoundation.contactPerson}
                         onChange={(e) => setNewFoundation({ ...newFoundation, contactPerson: e.target.value })}
-                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-collective-teal focus:border-transparent"
+                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                       />
                       <input
                         type="email"
                         placeholder="Contact Email"
                         value={newFoundation.contactEmail}
                         onChange={(e) => setNewFoundation({ ...newFoundation, contactEmail: e.target.value })}
-                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-collective-teal focus:border-transparent"
+                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                       />
                       <input
                         type="tel"
                         placeholder="Contact Phone"
                         value={newFoundation.contactPhone}
                         onChange={(e) => setNewFoundation({ ...newFoundation, contactPhone: e.target.value })}
-                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-collective-teal focus:border-transparent"
+                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                       />
                       <input
                         type="url"
                         placeholder="Website"
                         value={newFoundation.website}
                         onChange={(e) => setNewFoundation({ ...newFoundation, website: e.target.value })}
-                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-collective-teal focus:border-transparent"
+                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                       />
                       <input
                         type="text"
                         placeholder="Mission/Focus Area"
                         value={newFoundation.mission}
                         onChange={(e) => setNewFoundation({ ...newFoundation, mission: e.target.value })}
-                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-collective-teal focus:border-transparent"
+                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                       />
                     </div>
                     <textarea
                       placeholder="Notes"
                       value={newFoundation.notes}
                       onChange={(e) => setNewFoundation({ ...newFoundation, notes: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-collective-teal focus:border-transparent mb-4"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent mb-4"
                       rows={2}
                     />
                     <div className="flex space-x-2">
-                      <button type="submit" className="px-4 py-2 bg-collective-teal text-white rounded-lg hover:bg-teal-600">
+                      <button type="submit" className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-600">
                         Save Foundation
                       </button>
                       <button type="button" onClick={() => setShowAddFoundation(false)} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
@@ -546,7 +546,7 @@ export default function Grants() {
                               <h4 className="font-medium text-slate-700">Contact Log</h4>
                               <button
                                 onClick={() => setShowAddLog(showAddLog === foundation.id ? null : foundation.id)}
-                                className="text-sm text-collective-teal hover:underline flex items-center space-x-1"
+                                className="text-sm text-teal-600 hover:underline flex items-center space-x-1"
                               >
                                 <MessageSquare className="w-4 h-4" />
                                 <span>Log Contact</span>
@@ -595,7 +595,7 @@ export default function Grants() {
                                 <div className="flex space-x-2">
                                   <button
                                     onClick={() => handleAddLog(foundation.id)}
-                                    className="px-3 py-1.5 bg-collective-teal text-white rounded text-sm hover:bg-teal-600"
+                                    className="px-3 py-1.5 bg-teal-600 text-white rounded text-sm hover:bg-teal-600"
                                   >
                                     Save Log
                                   </button>
@@ -635,7 +635,7 @@ export default function Grants() {
                   <h2 className="text-lg font-semibold text-slate-800">Grant Allocations</h2>
                   <button
                     onClick={() => setShowAddGrant(true)}
-                    className="flex items-center space-x-2 px-4 py-2 bg-collective-teal text-white rounded-lg hover:bg-teal-600 transition-colors"
+                    className="flex items-center space-x-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-600 transition-colors"
                   >
                     <Plus className="w-4 h-4" />
                     <span>Record Grant</span>
@@ -648,7 +648,7 @@ export default function Grants() {
                       <select
                         value={newGrant.foundationId}
                         onChange={(e) => setNewGrant({ ...newGrant, foundationId: e.target.value })}
-                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-collective-teal focus:border-transparent"
+                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                         required
                       >
                         <option value="">Select Foundation *</option>
@@ -662,7 +662,7 @@ export default function Grants() {
                         placeholder="Amount ($) *"
                         value={newGrant.amount}
                         onChange={(e) => setNewGrant({ ...newGrant, amount: e.target.value })}
-                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-collective-teal focus:border-transparent"
+                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                         required
                       />
                       <input
@@ -670,14 +670,14 @@ export default function Grants() {
                         placeholder="Target Author Count *"
                         value={newGrant.targetAuthorCount}
                         onChange={(e) => setNewGrant({ ...newGrant, targetAuthorCount: e.target.value })}
-                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-collective-teal focus:border-transparent"
+                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                         required
                       />
                       <input
                         type="date"
                         value={newGrant.grantDate}
                         onChange={(e) => setNewGrant({ ...newGrant, grantDate: e.target.value })}
-                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-collective-teal focus:border-transparent"
+                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                         required
                       />
                     </div>
@@ -686,10 +686,10 @@ export default function Grants() {
                       placeholder="Grant Purpose / Notes"
                       value={newGrant.grantPurpose}
                       onChange={(e) => setNewGrant({ ...newGrant, grantPurpose: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-collective-teal focus:border-transparent mb-4"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent mb-4"
                     />
                     <div className="flex space-x-2">
-                      <button type="submit" className="px-4 py-2 bg-collective-teal text-white rounded-lg hover:bg-teal-600">
+                      <button type="submit" className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-600">
                         Record Grant
                       </button>
                       <button type="button" onClick={() => setShowAddGrant(false)} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
@@ -731,7 +731,7 @@ export default function Grants() {
                             ) : grant.cohort ? (
                               <button
                                 onClick={() => handleLockGrant(grant.id)}
-                                className="flex items-center space-x-1 text-sm text-collective-teal hover:underline"
+                                className="flex items-center space-x-1 text-sm text-teal-600 hover:underline"
                               >
                                 <Lock className="w-4 h-4" />
                                 <span>Lock for Donor Report</span>

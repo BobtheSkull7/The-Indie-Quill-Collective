@@ -69,7 +69,7 @@ export default function StudentsContent() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <div className="flex items-center space-x-3 mb-2">
-            <Users className="w-6 h-6 text-collective-teal" />
+            <Users className="w-6 h-6 text-teal-600" />
             <h2 className="text-xl font-semibold text-slate-800">Student Roster</h2>
           </div>
           <p className="text-gray-600 text-sm">

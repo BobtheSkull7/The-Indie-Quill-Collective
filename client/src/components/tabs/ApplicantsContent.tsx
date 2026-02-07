@@ -379,7 +379,7 @@ export default function ApplicantsContent() {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-8 h-8 text-collective-teal animate-spin" />
+          <Loader2 className="w-8 h-8 text-teal-600 animate-spin" />
           <p className="text-gray-600">Loading applicants...</p>
         </div>
       </div>
@@ -391,7 +391,7 @@ export default function ApplicantsContent() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <div className="flex items-center space-x-3 mb-2">
-            <Users className="w-6 h-6 text-collective-teal" />
+            <Users className="w-6 h-6 text-teal-600" />
             <h2 className="text-xl font-semibold text-slate-800">Applicants</h2>
           </div>
           <p className="text-gray-600 text-sm">
@@ -423,7 +423,7 @@ export default function ApplicantsContent() {
                 placeholder="Search by name, email, or pseudonym..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-collective-teal focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
               />
             </div>
             <div className="flex items-center gap-2">
@@ -431,7 +431,7 @@ export default function ApplicantsContent() {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-collective-teal focus:border-transparent"
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
               >
                 {STATUS_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>
@@ -588,7 +588,7 @@ export default function ApplicantsContent() {
                       setSelectedCohortId(null);
                     }
                   }}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-collective-teal focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                 >
                   {ROLE_OPTIONS.map((opt) => (
                     <option key={opt.value} value={opt.value}>
@@ -607,7 +607,7 @@ export default function ApplicantsContent() {
                   <select
                     value={selectedCohortId || ""}
                     onChange={(e) => setSelectedCohortId(e.target.value ? Number(e.target.value) : null)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-collective-teal focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                   >
                     <option value="">Select a cohort...</option>
                     {cohorts.map((c) => (
@@ -694,7 +694,7 @@ export default function ApplicantsContent() {
                 <select
                   value={selectedCohortId || ""}
                   onChange={(e) => setSelectedCohortId(e.target.value ? Number(e.target.value) : null)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-collective-teal focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                 >
                   <option value="">Select a cohort...</option>
                   {cohorts.map((c) => (
@@ -730,7 +730,7 @@ export default function ApplicantsContent() {
                         setSelectedFamilyUnitId(e.target.value ? Number(e.target.value) : null);
                       }
                     }}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-collective-teal focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                   >
                     <option value="">No family unit</option>
                     {familyUnits.map((f) => (
@@ -747,7 +747,7 @@ export default function ApplicantsContent() {
                       value={newFamilyName}
                       onChange={(e) => setNewFamilyName(e.target.value)}
                       placeholder="Enter family name (e.g., 'The Johnsons')"
-                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-collective-teal focus:border-transparent"
+                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                     />
                     <button
                       type="button"

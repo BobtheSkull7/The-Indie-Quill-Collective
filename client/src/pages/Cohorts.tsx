@@ -79,7 +79,7 @@ export default function Cohorts() {
 
   const getCapacityColor = (percentage: number) => {
     if (percentage >= 80) return "bg-amber-500";
-    if (percentage >= 50) return "bg-collective-teal";
+    if (percentage >= 50) return "bg-teal-600";
     return "bg-green-500";
   };
 
@@ -90,7 +90,7 @@ export default function Cohorts() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-collective-teal"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
       </div>
     );
   }
@@ -100,7 +100,7 @@ export default function Cohorts() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
           <div className="flex items-center space-x-3 mb-2">
-            <Users className="w-8 h-8 text-collective-teal" />
+            <Users className="w-8 h-8 text-teal-600" />
             <h1 className="font-display text-3xl font-bold text-slate-800">
               Author Cohorts
             </h1>
