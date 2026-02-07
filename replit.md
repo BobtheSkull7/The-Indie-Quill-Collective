@@ -48,7 +48,7 @@ The project utilizes a client-server architecture with a React 19, Vite, and Tai
 - **Secure Identity Vault:** Admin-only view at /admin/vault linking Pseudonym ↔ Legal Name with LLC Sync Status and audit logging of all access.
 
 **Core Database Schema Highlights:**
-- **users:** User accounts with roles (applicant, admin, board_member, auditor, student, mentor).
+- **users:** User accounts with roles (applicant, writer, admin, board_member, auditor, student, mentor). Writers bypass training/Game Engine and sync directly to The Indie Quill LLC.
 - **cohorts:** Manages author cohorts (10 authors per cohort).
 - **applications:** Stores author application details, COPPA compliance fields, `public_identity_enabled` toggle, status includes 'rescinded' for soft-deleted applications.
 - **contracts:** Publishing agreements with signature tracking.
