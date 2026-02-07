@@ -38,12 +38,15 @@ app.get("/api/status", (_req, res) => {
     hasSupabaseUrl: !!process.env.SUPABASE_PROD_URL,
     hasSessionSecret: !!process.env.SESSION_SECRET,
     hasOpenAIKey: !!(process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY),
+    hasGameEngineUrl: !!process.env.GAME_ENGINE_URL,
+    gameEngineUrlLength: process.env.GAME_ENGINE_URL?.length || 0,
   });
 });
 
 // Start server IMMEDIATELY with health check routes only
 server.listen(PORT, "0.0.0.0", () => {
   console.log(`Server listening on port ${PORT}`);
+  console.log(`[ENV CHECK] GAME_ENGINE_URL: ${process.env.GAME_ENGINE_URL ? `SET (${process.env.GAME_ENGINE_URL.length} chars, starts with "${process.env.GAME_ENGINE_URL.substring(0, 10)}...")` : "NOT SET"}`);
   // Now run bootstrap in background after server is listening
   bootstrapFast()
     .then(() => {
