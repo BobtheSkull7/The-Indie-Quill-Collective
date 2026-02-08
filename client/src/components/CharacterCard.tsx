@@ -194,13 +194,15 @@ export default function CharacterCard({ userId = 1, className = "", apiEndpoint 
       } else {
         setApiLog(`Submit Proof Success (${elapsed}ms): Quest #${proofModalQuestId} - ${JSON.stringify(data).slice(0, 120)}`);
         checkForDing(data);
-        setProofModalQuestId(null);
-        setProofText("");
         fetchCharacter();
       }
+      setProofModalQuestId(null);
+      setProofText("");
     } catch (err) {
       const elapsed = Date.now() - startTime;
       setApiLog(`Submit Proof Error (${elapsed}ms): ${err instanceof Error ? err.message : "Network error"}`);
+      setProofModalQuestId(null);
+      setProofText("");
     } finally {
       setSubmitting(false);
     }
