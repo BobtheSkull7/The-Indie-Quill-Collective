@@ -318,7 +318,7 @@ export default function GrantsContent() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
               <input
-                type="email"
+                type="text"
                 value={newFoundation.contactEmail}
                 onChange={(e) => setNewFoundation({ ...newFoundation, contactEmail: e.target.value })}
                 className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-teal-400 focus:border-transparent"
@@ -338,7 +338,7 @@ export default function GrantsContent() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
               <input
-                type="url"
+                type="text"
                 value={newFoundation.website}
                 onChange={(e) => setNewFoundation({ ...newFoundation, website: e.target.value })}
                 className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-teal-400 focus:border-transparent"
