@@ -3890,6 +3890,7 @@ export function registerGrantRoutes(app: Express) {
 
     try {
       const allFoundations = await db.select().from(foundations).orderBy(desc(foundations.createdAt));
+      console.log(`[Foundations] GET: Found ${allFoundations.length} foundations for user=${req.session.userId}`);
       
       // Get last contact for each foundation
       const foundationsWithLastContact = await Promise.all(

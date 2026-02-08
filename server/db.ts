@@ -18,6 +18,10 @@ if (!supabaseUrl) {
   );
 }
 
+const dbHost = supabaseUrl.match(/@([^:/]+)/)?.[1] || "unknown";
+const maskedHost = dbHost.length > 10 ? dbHost.slice(0, 6) + "..." + dbHost.slice(-8) : dbHost;
+console.log(`[DB] Mode: ${isProd ? "PRODUCTION (SUPABASE_PROD_URL)" : "DEVELOPMENT (SUPABASE_DEV_URL)"}, Host: ${maskedHost}`);
+
 export const pool = new Pool({ 
   connectionString: supabaseUrl,
   ssl: { rejectUnauthorized: false },
