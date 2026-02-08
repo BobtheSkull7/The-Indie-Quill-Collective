@@ -152,9 +152,18 @@ export default function GrantsContent() {
       });
 
       if (res.ok) {
+        const created = await res.json();
         setMessage({ type: "success", text: "Foundation added successfully!" });
         setShowFoundationForm(false);
         setNewFoundation({ name: "", contactPerson: "", contactEmail: "", contactPhone: "", contactRole: "", mission: "", website: "", category: "", geographyScope: "", notes: "" });
+        if (created && created.id) {
+          setFoundations(prev => [{
+            ...created,
+            totalGranted: 0,
+            grantCount: 0,
+            lastContact: null,
+          }, ...prev]);
+        }
         fetchData();
       } else {
         const data = await res.json();
