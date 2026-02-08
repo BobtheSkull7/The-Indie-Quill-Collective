@@ -49,6 +49,7 @@ export default function GrantsContent() {
   const [grants, setGrants] = useState<GrantData[]>([]);
   const [loading, setLoading] = useState(true);
   const [authenticated, setAuthenticated] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [showFoundationForm, setShowFoundationForm] = useState(false);
   const [addingGrantForFoundation, setAddingGrantForFoundation] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
@@ -119,6 +120,11 @@ export default function GrantsContent() {
       if (foundationsRes.ok) {
         const data = await foundationsRes.json();
         setFoundations(Array.isArray(data) ? data : []);
+        setFetchError(null);
+      } else {
+        const errData = await foundationsRes.json().catch(() => ({}));
+        console.error(`[Foundations] Fetch failed: status=${foundationsRes.status}`, errData);
+        setFetchError(`Failed to load foundations (${foundationsRes.status}): ${errData?.detail || errData?.message || "Unknown error"}`);
       }
 
       if (grantsRes.ok) {
@@ -598,7 +604,20 @@ export default function GrantsContent() {
         </form>
       )}
 
-      {foundations.length === 0 && !showFoundationForm ? (
+      {fetchError && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-4">
+          <p className="text-red-700 text-sm font-medium">Error loading foundations</p>
+          <p className="text-red-600 text-xs mt-1">{fetchError}</p>
+          <button
+            onClick={fetchData}
+            className="mt-2 text-xs bg-red-100 hover:bg-red-200 text-red-700 px-3 py-1 rounded transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
+      {foundations.length === 0 && !showFoundationForm && !fetchError ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
           <Building2 className="w-14 h-14 text-gray-300 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-700 mb-2">No Foundations Yet</h3>

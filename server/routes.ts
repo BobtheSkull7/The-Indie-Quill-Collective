@@ -3892,34 +3892,48 @@ export function registerGrantRoutes(app: Express) {
       const allFoundations = await db.select().from(foundations).orderBy(desc(foundations.createdAt));
       console.log(`[Foundations] GET: Found ${allFoundations.length} foundations for user=${req.session.userId}`);
       
-      // Get last contact for each foundation
-      const foundationsWithLastContact = await Promise.all(
-        allFoundations.map(async (foundation) => {
-          const lastLog = await db.select()
-            .from(solicitationLogs)
-            .where(eq(solicitationLogs.foundationId, foundation.id))
-            .orderBy(desc(solicitationLogs.contactDate))
-            .limit(1);
-          
-          const grants = await db.select()
-            .from(foundationGrants)
-            .where(eq(foundationGrants.foundationId, foundation.id));
-          
-          const totalGranted = grants.reduce((sum, g) => sum + g.amount, 0);
-          
-          return {
-            ...foundation,
-            lastContact: lastLog[0] || null,
-            totalGranted,
-            grantCount: grants.length,
-          };
-        })
-      );
-      
-      return res.json(foundationsWithLastContact);
+      try {
+        const foundationsWithLastContact = await Promise.all(
+          allFoundations.map(async (foundation) => {
+            try {
+              const lastLog = await db.select()
+                .from(solicitationLogs)
+                .where(eq(solicitationLogs.foundationId, foundation.id))
+                .orderBy(desc(solicitationLogs.contactDate))
+                .limit(1);
+              
+              const grants = await db.select()
+                .from(foundationGrants)
+                .where(eq(foundationGrants.foundationId, foundation.id));
+              
+              const totalGranted = grants.reduce((sum, g) => sum + g.amount, 0);
+              
+              return {
+                ...foundation,
+                lastContact: lastLog[0] || null,
+                totalGranted,
+                grantCount: grants.length,
+              };
+            } catch (enrichError) {
+              console.error(`[Foundations] Failed to enrich foundation id=${foundation.id}:`, enrichError);
+              return {
+                ...foundation,
+                lastContact: null,
+                totalGranted: 0,
+                grantCount: 0,
+              };
+            }
+          })
+        );
+        
+        return res.json(foundationsWithLastContact);
+      } catch (enrichAllError) {
+        console.error("[Foundations] Enrichment failed globally, returning raw foundations:", enrichAllError);
+        return res.json(allFoundations.map(f => ({ ...f, lastContact: null, totalGranted: 0, grantCount: 0 })));
+      }
     } catch (error) {
-      console.error("Failed to fetch foundations:", error);
-      return res.status(500).json({ message: "Failed to fetch foundations" });
+      console.error("[Foundations] GET failed:", error);
+      return res.status(500).json({ message: "Failed to fetch foundations", detail: String(error) });
     }
   });
 
