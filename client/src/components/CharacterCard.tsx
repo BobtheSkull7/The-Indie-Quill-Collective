@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { RefreshCw, Gift } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { RefreshCw, Gift, X, Loader2 } from "lucide-react";
 
 interface EquippedItems {
   main_hand: string | null;
@@ -56,6 +56,12 @@ interface SlotConfig {
   unlockLevel: number;
 }
 
+interface DingData {
+  message: string;
+  unlocked_item?: string | null;
+  new_titles?: string[] | null;
+}
+
 const PAPER_DOLL_SLOTS: SlotConfig[] = [
   { key: "head", label: "Graduation Cap", icon: "🎓", unlockLevel: 1 },
   { key: "off_hand", label: "Briefcase", icon: "💼", unlockLevel: 2 },
@@ -79,6 +85,24 @@ export default function CharacterCard({ userId = 1, className = "", apiEndpoint 
   const [character, setCharacter] = useState<CharacterData | null>(null);
   const [selectedTitle, setSelectedTitle] = useState<string>("");
   const [apiLog, setApiLog] = useState<string>("");
+
+  const [proofModalQuestId, setProofModalQuestId] = useState<number | null>(null);
+  const [proofText, setProofText] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [completingQuestId, setCompletingQuestId] = useState<number | null>(null);
+  const [claimingQuestId, setClaimingQuestId] = useState<number | null>(null);
+  const [dingData, setDingData] = useState<DingData | null>(null);
+
+  const isAdmin = apiEndpoint.includes("admin");
+
+  const getQuestEndpointBase = useCallback(() => {
+    if (isAdmin) {
+      const match = apiEndpoint.match(/\/character\/(\d+)/);
+      const charId = match ? match[1] : "1";
+      return { base: "/api/admin/game-engine/quest", query: `?userId=${charId}` };
+    }
+    return { base: "/api/student/game-engine/quest", query: "" };
+  }, [apiEndpoint, isAdmin]);
 
   const fetchCharacter = async () => {
     setLoading(true);
@@ -128,6 +152,124 @@ export default function CharacterCard({ userId = 1, className = "", apiEndpoint 
     fetchCharacter();
   }, [userId]);
 
+  useEffect(() => {
+    if (!dingData) return;
+    const timer = setTimeout(() => setDingData(null), 4000);
+    return () => clearTimeout(timer);
+  }, [dingData]);
+
+  const checkForDing = (data: any) => {
+    if (data.ding || data.unlocked_item || data.new_titles) {
+      setDingData({
+        message: data.ding || data.message || "Quest completed!",
+        unlocked_item: data.unlocked_item,
+        new_titles: data.new_titles,
+      });
+    }
+  };
+
+  const handleSubmitProof = (questId: number) => {
+    setProofModalQuestId(questId);
+    setProofText("");
+  };
+
+  const handleProofSubmit = async () => {
+    if (!proofModalQuestId || !proofText.trim()) return;
+    setSubmitting(true);
+    const startTime = Date.now();
+    const { base, query } = getQuestEndpointBase();
+
+    try {
+      const res = await fetch(`${base}/submit/${proofModalQuestId}${query}`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ proof: proofText.trim() }),
+      });
+      const elapsed = Date.now() - startTime;
+      const data = await res.json();
+
+      if (!res.ok) {
+        setApiLog(`Submit Proof Error (${elapsed}ms): ${data.message || "Failed"}`);
+      } else {
+        setApiLog(`Submit Proof Success (${elapsed}ms): Quest #${proofModalQuestId} - ${JSON.stringify(data).slice(0, 120)}`);
+        checkForDing(data);
+        setProofModalQuestId(null);
+        setProofText("");
+        fetchCharacter();
+      }
+    } catch (err) {
+      const elapsed = Date.now() - startTime;
+      setApiLog(`Submit Proof Error (${elapsed}ms): ${err instanceof Error ? err.message : "Network error"}`);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleQuickComplete = async (questId: number) => {
+    setCompletingQuestId(questId);
+    const startTime = Date.now();
+    const { base, query } = getQuestEndpointBase();
+
+    try {
+      const res = await fetch(`${base}/complete/${questId}${query}`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+      });
+      const elapsed = Date.now() - startTime;
+      const data = await res.json();
+
+      if (!res.ok) {
+        setApiLog(`Quick Complete Error (${elapsed}ms): ${data.message || "Failed"}`);
+      } else {
+        setApiLog(`Quick Complete Success (${elapsed}ms): Quest #${questId} - ${JSON.stringify(data).slice(0, 120)}`);
+        checkForDing(data);
+        fetchCharacter();
+      }
+    } catch (err) {
+      const elapsed = Date.now() - startTime;
+      setApiLog(`Quick Complete Error (${elapsed}ms): ${err instanceof Error ? err.message : "Network error"}`);
+    } finally {
+      setCompletingQuestId(null);
+    }
+  };
+
+  const handleClaimReward = async (questId: number) => {
+    setClaimingQuestId(questId);
+    const startTime = Date.now();
+    const { base, query } = getQuestEndpointBase();
+
+    try {
+      const res = await fetch(`${base}/claim/${questId}${query}`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+      });
+      const elapsed = Date.now() - startTime;
+      const data = await res.json();
+
+      if (!res.ok) {
+        setApiLog(`Claim Reward Error (${elapsed}ms): ${data.message || "Failed"}`);
+      } else {
+        setApiLog(`Claim Reward Success (${elapsed}ms): Quest #${questId} - ${JSON.stringify(data).slice(0, 120)}`);
+        checkForDing(data);
+        fetchCharacter();
+      }
+    } catch (err) {
+      const elapsed = Date.now() - startTime;
+      setApiLog(`Claim Reward Error (${elapsed}ms): ${err instanceof Error ? err.message : "Network error"}`);
+    } finally {
+      setClaimingQuestId(null);
+    }
+  };
+
+  const handleResetProgress = () => {
+    if (confirm("Are you sure you want to reset all progress? This cannot be undone.")) {
+      alert("Reset Progress - Coming soon!");
+    }
+  };
+
   const xpIntoLevel = Number(character?.xp_into_current_level) || 0;
   const xpNeededForNext = Number(character?.xp_needed_for_next_level) || 500;
   const totalXp = Number(character?.total_xp) || 0;
@@ -153,20 +295,6 @@ export default function CharacterCard({ userId = 1, className = "", apiEndpoint 
     { id: 3, title: "The Big Fix-Up", description: "Delete or rewrite one paragraph to make it more exciting.", phase: 3, chapter: 11, xp_reward: 250, proxy_hours_reward: 1.5, is_claimable: false, is_completed: false },
     { id: 4, title: "Polish Your Prose", description: "Read your story aloud and fix any awkward sentences.", phase: 3, chapter: 12, xp_reward: 250, proxy_hours_reward: 1.5, is_claimable: false, is_completed: false },
   ];
-
-  const handleSubmitProof = (questId: number) => {
-    alert(`Submit Proof for Quest #${questId} - Coming soon!`);
-  };
-
-  const handleQuickComplete = (questId: number) => {
-    alert(`Quick Complete for Quest #${questId} - Coming soon!`);
-  };
-
-  const handleResetProgress = () => {
-    if (confirm("Are you sure you want to reset all progress? This cannot be undone.")) {
-      alert("Reset Progress - Coming soon!");
-    }
-  };
 
   if (loading && !character) {
     return (
@@ -198,7 +326,121 @@ export default function CharacterCard({ userId = 1, className = "", apiEndpoint 
   if (!character) return null;
 
   return (
-    <div className={`bg-[#1a1a2e] rounded-xl text-white ${className}`}>
+    <div className={`bg-[#1a1a2e] rounded-xl text-white relative ${className}`}>
+      {/* Ding/Level-Up Overlay */}
+      {dingData && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+          onClick={() => setDingData(null)}
+        >
+          <div
+            className="relative p-8 rounded-2xl border-2 border-yellow-400 bg-gradient-to-b from-[#2a2a4e] to-[#1a1a2e] shadow-2xl max-w-md w-full mx-4"
+            style={{
+              animation: "ding-glow 1.5s ease-in-out infinite alternate",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setDingData(null)}
+              className="absolute top-3 right-3 text-gray-400 hover:text-white transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="text-center">
+              <div
+                className="text-6xl font-bold text-yellow-400 mb-4"
+                style={{
+                  animation: "ding-pulse 0.6s ease-in-out infinite alternate",
+                  textShadow: "0 0 20px rgba(250, 204, 21, 0.5), 0 0 40px rgba(250, 204, 21, 0.3)",
+                }}
+              >
+                DING!
+              </div>
+              <p className="text-xl text-white font-semibold mb-4">
+                {dingData.message}
+              </p>
+              {dingData.unlocked_item && (
+                <div className="bg-[#252542] rounded-lg p-3 mb-3 border border-yellow-400/30">
+                  <span className="text-2xl mr-2">🎁</span>
+                  <span className="text-yellow-300 font-medium">New Item: {dingData.unlocked_item}</span>
+                </div>
+              )}
+              {dingData.new_titles && dingData.new_titles.length > 0 && (
+                <div className="bg-[#252542] rounded-lg p-3 mb-3 border border-purple-400/30">
+                  <span className="text-2xl mr-2">📜</span>
+                  <span className="text-purple-300 font-medium">New Titles: {dingData.new_titles.join(", ")}</span>
+                </div>
+              )}
+              <p className="text-gray-500 text-xs mt-4">Click anywhere to dismiss</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Proof Submission Modal */}
+      {proofModalQuestId !== null && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={() => { if (!submitting) { setProofModalQuestId(null); setProofText(""); } }}
+        >
+          <div
+            className="bg-[#252542] rounded-xl p-6 border border-[#3a3a5e] shadow-2xl max-w-lg w-full mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-['Playfair_Display'] text-xl text-white">Submit Proof</h3>
+              <button
+                onClick={() => { if (!submitting) { setProofModalQuestId(null); setProofText(""); } }}
+                className="text-gray-400 hover:text-white transition-colors"
+                disabled={submitting}
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-gray-400 text-sm mb-4">
+              Quest #{proofModalQuestId} — Describe what you did to complete this quest:
+            </p>
+            <textarea
+              value={proofText}
+              onChange={(e) => setProofText(e.target.value)}
+              placeholder="Enter your proof here..."
+              className="w-full bg-[#1a1a2e] border border-[#3a3a5e] rounded-lg px-4 py-3 text-white text-sm focus:outline-none focus:border-blue-500 resize-none h-32 mb-4"
+              disabled={submitting}
+              autoFocus
+            />
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => { setProofModalQuestId(null); setProofText(""); }}
+                className="px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white text-sm rounded-lg transition-colors"
+                disabled={submitting}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleProofSubmit}
+                disabled={submitting || !proofText.trim()}
+                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
+              >
+                {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
+                {submitting ? "Submitting..." : "Submit Proof"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes ding-pulse {
+          0% { transform: scale(1); }
+          100% { transform: scale(1.15); }
+        }
+        @keyframes ding-glow {
+          0% { box-shadow: 0 0 20px rgba(250, 204, 21, 0.2), 0 0 40px rgba(250, 204, 21, 0.1); }
+          100% { box-shadow: 0 0 40px rgba(250, 204, 21, 0.4), 0 0 80px rgba(250, 204, 21, 0.2); }
+        }
+      `}</style>
+
       <div className="flex flex-col lg:flex-row gap-6 p-6">
         
         {/* Left Panel - Character Sheet */}
@@ -447,16 +689,30 @@ export default function CharacterCard({ userId = 1, className = "", apiEndpoint 
                     <div className="flex lg:flex-col gap-2 shrink-0">
                       <button
                         onClick={() => handleSubmitProof(quest.id)}
-                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors whitespace-nowrap"
+                        disabled={submitting}
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors whitespace-nowrap"
                       >
                         Submit Proof
                       </button>
                       <button
                         onClick={() => handleQuickComplete(quest.id)}
-                        className="px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white text-sm font-medium rounded-lg transition-colors whitespace-nowrap"
+                        disabled={completingQuestId !== null}
+                        className="px-4 py-2 bg-gray-600 hover:bg-gray-500 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors whitespace-nowrap flex items-center gap-2 justify-center"
                       >
+                        {completingQuestId === quest.id && <Loader2 className="w-3 h-3 animate-spin" />}
                         Quick Complete
                       </button>
+                      {quest.is_claimable && (
+                        <button
+                          onClick={() => handleClaimReward(quest.id)}
+                          disabled={claimingQuestId !== null}
+                          className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors whitespace-nowrap flex items-center gap-2 justify-center animate-pulse"
+                        >
+                          {claimingQuestId === quest.id && <Loader2 className="w-3 h-3 animate-spin" />}
+                          <Gift className="w-3 h-3" />
+                          Claim Reward
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>

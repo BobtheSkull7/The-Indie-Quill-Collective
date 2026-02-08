@@ -1658,6 +1658,218 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  // Game Engine Quest Actions - works for both student and admin
+  // Helper to resolve gameCharacterId
+  async function resolveGameCharacterId(req: Request, res: Response): Promise<number | null> {
+    const isAdmin = req.session.userRole === "admin";
+    const userIdParam = req.query.userId as string | undefined;
+
+    if (isAdmin && userIdParam) {
+      return parseInt(userIdParam);
+    }
+
+    // For students (or admin without userId param), use hardcoded ID matching existing pattern
+    // TODO: In production, map via application.gameCharacterId
+    return 1;
+  }
+
+  app.post("/api/student/game-engine/quest/submit/:questId", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    const GAME_ENGINE_URL = process.env.GAME_ENGINE_URL;
+    if (!GAME_ENGINE_URL) {
+      return res.status(500).json({ message: "Game Engine URL not configured" });
+    }
+
+    const gameCharacterId = await resolveGameCharacterId(req, res);
+    if (!gameCharacterId) {
+      return res.status(404).json({ message: "Game character not found" });
+    }
+
+    const questId = req.params.questId;
+    const { proof } = req.body;
+    const endpoint = `${GAME_ENGINE_URL}/quest/submit/${gameCharacterId}/${questId}`;
+
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ proof: proof || "" }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        return res.status(response.status).json(data);
+      }
+      return res.json(data);
+    } catch (error) {
+      console.error("Game Engine quest submit error:", error);
+      return res.status(502).json({ message: "Failed to connect to Game Engine", error: String(error) });
+    }
+  });
+
+  app.post("/api/student/game-engine/quest/complete/:questId", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    const GAME_ENGINE_URL = process.env.GAME_ENGINE_URL;
+    if (!GAME_ENGINE_URL) {
+      return res.status(500).json({ message: "Game Engine URL not configured" });
+    }
+
+    const gameCharacterId = await resolveGameCharacterId(req, res);
+    if (!gameCharacterId) {
+      return res.status(404).json({ message: "Game character not found" });
+    }
+
+    const questId = req.params.questId;
+    const endpoint = `${GAME_ENGINE_URL}/quest/complete?user_id=${gameCharacterId}&quest_id=${questId}`;
+
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        return res.status(response.status).json(data);
+      }
+      return res.json(data);
+    } catch (error) {
+      console.error("Game Engine quest complete error:", error);
+      return res.status(502).json({ message: "Failed to connect to Game Engine", error: String(error) });
+    }
+  });
+
+  app.post("/api/student/game-engine/quest/claim/:questId", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    const GAME_ENGINE_URL = process.env.GAME_ENGINE_URL;
+    if (!GAME_ENGINE_URL) {
+      return res.status(500).json({ message: "Game Engine URL not configured" });
+    }
+
+    const gameCharacterId = await resolveGameCharacterId(req, res);
+    if (!gameCharacterId) {
+      return res.status(404).json({ message: "Game character not found" });
+    }
+
+    const questId = req.params.questId;
+    const endpoint = `${GAME_ENGINE_URL}/quest/claim/${gameCharacterId}/${questId}`;
+
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        return res.status(response.status).json(data);
+      }
+      return res.json(data);
+    } catch (error) {
+      console.error("Game Engine quest claim error:", error);
+      return res.status(502).json({ message: "Failed to connect to Game Engine", error: String(error) });
+    }
+  });
+
+  // Admin quest action endpoints (mirror student ones but require admin role)
+  app.post("/api/admin/game-engine/quest/submit/:questId", async (req: Request, res: Response) => {
+    if (!req.session.userId || req.session.userRole !== "admin") {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    const GAME_ENGINE_URL = process.env.GAME_ENGINE_URL;
+    if (!GAME_ENGINE_URL) {
+      return res.status(500).json({ message: "Game Engine URL not configured" });
+    }
+
+    const characterId = req.query.userId as string || "1";
+    const questId = req.params.questId;
+    const { proof } = req.body;
+    const endpoint = `${GAME_ENGINE_URL}/quest/submit/${characterId}/${questId}`;
+
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ proof: proof || "" }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        return res.status(response.status).json(data);
+      }
+      return res.json(data);
+    } catch (error) {
+      console.error("Game Engine quest submit error:", error);
+      return res.status(502).json({ message: "Failed to connect to Game Engine", error: String(error) });
+    }
+  });
+
+  app.post("/api/admin/game-engine/quest/complete/:questId", async (req: Request, res: Response) => {
+    if (!req.session.userId || req.session.userRole !== "admin") {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    const GAME_ENGINE_URL = process.env.GAME_ENGINE_URL;
+    if (!GAME_ENGINE_URL) {
+      return res.status(500).json({ message: "Game Engine URL not configured" });
+    }
+
+    const characterId = req.query.userId as string || "1";
+    const questId = req.params.questId;
+    const endpoint = `${GAME_ENGINE_URL}/quest/complete?user_id=${characterId}&quest_id=${questId}`;
+
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        return res.status(response.status).json(data);
+      }
+      return res.json(data);
+    } catch (error) {
+      console.error("Game Engine quest complete error:", error);
+      return res.status(502).json({ message: "Failed to connect to Game Engine", error: String(error) });
+    }
+  });
+
+  app.post("/api/admin/game-engine/quest/claim/:questId", async (req: Request, res: Response) => {
+    if (!req.session.userId || req.session.userRole !== "admin") {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    const GAME_ENGINE_URL = process.env.GAME_ENGINE_URL;
+    if (!GAME_ENGINE_URL) {
+      return res.status(500).json({ message: "Game Engine URL not configured" });
+    }
+
+    const characterId = req.query.userId as string || "1";
+    const questId = req.params.questId;
+    const endpoint = `${GAME_ENGINE_URL}/quest/claim/${characterId}/${questId}`;
+
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        return res.status(response.status).json(data);
+      }
+      return res.json(data);
+    } catch (error) {
+      console.error("Game Engine quest claim error:", error);
+      return res.status(502).json({ message: "Failed to connect to Game Engine", error: String(error) });
+    }
+  });
+
   app.post("/api/admin/force-sync-all-migrated", async (req: Request, res: Response) => {
     if (!req.session.userId || req.session.userRole !== "admin") {
       return res.status(403).json({ message: "Not authorized" });
@@ -3804,6 +4016,155 @@ export function registerGrantRoutes(app: Express) {
     } catch (error) {
       console.error("Failed to update foundation:", error);
       return res.status(500).json({ message: "Failed to update foundation" });
+    }
+  });
+
+  // Delete foundation and associated grants/logs
+  app.delete("/api/admin/grants/foundations/:id", async (req: Request, res: Response) => {
+    if (!req.session?.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    const currentUser = await getUserById(req.session.userId);
+    if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "board_member")) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    const foundationId = parseInt(req.params.id);
+
+    try {
+      const lockedGrants = await db.select()
+        .from(foundationGrants)
+        .where(and(
+          eq(foundationGrants.foundationId, foundationId),
+          sql`${foundationGrants.donorLockedAt} IS NOT NULL`
+        ));
+
+      if (lockedGrants.length > 0) {
+        return res.status(400).json({ message: "Cannot delete foundation with locked grants. Unlock grants first." });
+      }
+
+      await db.delete(foundationGrants).where(eq(foundationGrants.foundationId, foundationId));
+      await db.delete(solicitationLogs).where(eq(solicitationLogs.foundationId, foundationId));
+
+      const [deleted] = await db.delete(foundations)
+        .where(eq(foundations.id, foundationId))
+        .returning();
+
+      if (!deleted) {
+        return res.status(404).json({ message: "Foundation not found" });
+      }
+
+      await logAuditEvent(
+        req.session.userId,
+        "delete_foundation",
+        "foundations",
+        foundationId.toString(),
+        `Deleted foundation: ${deleted.name}`,
+        getClientIp(req),
+      );
+
+      return res.json({ message: "Foundation deleted successfully" });
+    } catch (error) {
+      console.error("Failed to delete foundation:", error);
+      return res.status(500).json({ message: "Failed to delete foundation" });
+    }
+  });
+
+  // Update a grant
+  app.put("/api/admin/grants/:id", async (req: Request, res: Response) => {
+    if (!req.session?.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    const currentUser = await getUserById(req.session.userId);
+    if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "board_member")) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    const grantId = parseInt(req.params.id);
+    const { amount, targetAuthorCount, grantDate, grantPurpose } = req.body;
+
+    try {
+      const [existing] = await db.select()
+        .from(foundationGrants)
+        .where(eq(foundationGrants.id, grantId));
+
+      if (!existing) {
+        return res.status(404).json({ message: "Grant not found" });
+      }
+
+      if (existing.donorLockedAt) {
+        return res.status(400).json({ message: "Cannot edit a locked grant" });
+      }
+
+      const [updated] = await db.update(foundationGrants)
+        .set({
+          amount,
+          targetAuthorCount,
+          grantDate: new Date(grantDate),
+          grantPurpose,
+        })
+        .where(eq(foundationGrants.id, grantId))
+        .returning();
+
+      await logAuditEvent(
+        req.session.userId,
+        "update_grant",
+        "foundation_grants",
+        grantId.toString(),
+        `Updated grant: amount=$${(amount / 100).toFixed(2)}, target=${targetAuthorCount}`,
+        getClientIp(req),
+      );
+
+      return res.json(updated);
+    } catch (error) {
+      console.error("Failed to update grant:", error);
+      return res.status(500).json({ message: "Failed to update grant" });
+    }
+  });
+
+  // Delete a grant
+  app.delete("/api/admin/grants/:id", async (req: Request, res: Response) => {
+    if (!req.session?.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    const currentUser = await getUserById(req.session.userId);
+    if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "board_member")) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    const grantId = parseInt(req.params.id);
+
+    try {
+      const [existing] = await db.select()
+        .from(foundationGrants)
+        .where(eq(foundationGrants.id, grantId));
+
+      if (!existing) {
+        return res.status(404).json({ message: "Grant not found" });
+      }
+
+      if (existing.donorLockedAt) {
+        return res.status(400).json({ message: "Cannot delete a locked grant" });
+      }
+
+      await db.delete(foundationGrants).where(eq(foundationGrants.id, grantId));
+
+      await logAuditEvent(
+        req.session.userId,
+        "delete_grant",
+        "foundation_grants",
+        grantId.toString(),
+        `Deleted grant of $${(existing.amount / 100).toFixed(2)} from foundation ${existing.foundationId}`,
+        getClientIp(req),
+      );
+
+      return res.json({ message: "Grant deleted successfully" });
+    } catch (error) {
+      console.error("Failed to delete grant:", error);
+      return res.status(500).json({ message: "Failed to delete grant" });
     }
   });
 
