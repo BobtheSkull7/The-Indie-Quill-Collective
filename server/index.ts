@@ -142,7 +142,7 @@ async function bootstrapFast() {
       cookie: {
         secure: isProd,
         httpOnly: true,
-        sameSite: "strict",
+        sameSite: "lax",
         maxAge: 24 * 60 * 60 * 1000, // 1 day
       },
     }),

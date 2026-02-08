@@ -48,6 +48,7 @@ export default function GrantsContent() {
   const [foundations, setFoundations] = useState<FoundationData[]>([]);
   const [grants, setGrants] = useState<GrantData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [authenticated, setAuthenticated] = useState(true);
   const [expandedFoundations, setExpandedFoundations] = useState<Set<number>>(new Set());
   const [showFoundationForm, setShowFoundationForm] = useState(false);
   const [addingGrantForFoundation, setAddingGrantForFoundation] = useState<number | null>(null);
@@ -84,6 +85,14 @@ export default function GrantsContent() {
         fetch("/api/admin/grants/foundations", { credentials: "include" }),
         fetch("/api/admin/grants", { credentials: "include" }),
       ]);
+
+      if (foundationsRes.status === 401 || grantsRes.status === 401) {
+        setAuthenticated(false);
+        setLoading(false);
+        return;
+      }
+
+      setAuthenticated(true);
 
       if (foundationsRes.ok) {
         const data = await foundationsRes.json();
@@ -230,12 +239,19 @@ export default function GrantsContent() {
         </div>
         <button
           onClick={() => { setShowFoundationForm(!showFoundationForm); setMessage(null); }}
-          className="bg-teal-500 text-white px-4 py-2 rounded-lg hover:bg-teal-600 transition-colors flex items-center gap-2 text-sm font-medium"
+          disabled={!authenticated}
+          className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium ${authenticated ? "bg-teal-500 text-white hover:bg-teal-600" : "bg-gray-300 text-gray-500 cursor-not-allowed"}`}
         >
           <Plus className="w-4 h-4" />
           Add Foundation
         </button>
       </div>
+
+      {!authenticated && (
+        <div className="mb-4 p-4 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 text-sm">
+          <strong>Session expired.</strong> Please log out and log back in, then return to this page.
+        </div>
+      )}
 
       {message && (
         <div className={`mb-4 p-3 rounded-lg text-sm ${message.type === "success" ? "bg-green-50 text-green-800 border border-green-200" : "bg-red-50 text-red-800 border border-red-200"}`}>
