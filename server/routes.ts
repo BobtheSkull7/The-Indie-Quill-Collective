@@ -3957,6 +3957,8 @@ export function registerGrantRoutes(app: Express) {
         createdBy: req.session.userId,
       }).returning();
 
+      console.log(`[Foundations] Created foundation id=${newFoundation.id} name="${name}" by user=${req.session.userId}`);
+
       await logAuditEvent(
         req.session.userId,
         "create_foundation",
@@ -3968,7 +3970,7 @@ export function registerGrantRoutes(app: Express) {
 
       return res.status(201).json(newFoundation);
     } catch (error) {
-      console.error("Failed to create foundation:", error);
+      console.error("[Foundations] Failed to create foundation:", error);
       return res.status(500).json({ message: "Failed to create foundation" });
     }
   });
