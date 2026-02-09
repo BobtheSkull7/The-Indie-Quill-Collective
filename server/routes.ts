@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import rateLimit from "express-rate-limit";
 import multer from "multer";
-import { db } from "./db";
+import { db, pool } from "./db";
 import { users, applications, contracts, publishingUpdates, calendarEvents, fundraisingCampaigns, donations, auditLogs, cohorts, familyUnits, operatingCosts, foundations, solicitationLogs, foundationGrants, pilotLedger, emailLogs, grantPrograms, organizationCredentials, grantCalendarAlerts, wikiEntries, studentWork } from "@shared/schema";
 import { eq, desc, gte, sql, inArray, lt, and } from "drizzle-orm";
 
@@ -4050,19 +4050,41 @@ export function registerGrantRoutes(app: Express) {
     const foundationId = parseInt(req.params.id);
 
     try {
-      const lockedGrants = await db.select()
-        .from(foundationGrants)
-        .where(and(
-          eq(foundationGrants.foundationId, foundationId),
-          sql`${foundationGrants.donorLockedAt} IS NOT NULL`
-        ));
+      let hasLockedGrants = false;
+      try {
+        const lockedGrants = await db.select()
+          .from(foundationGrants)
+          .where(and(
+            eq(foundationGrants.foundationId, foundationId),
+            sql`${foundationGrants.donorLockedAt} IS NOT NULL`
+          ));
+        hasLockedGrants = lockedGrants.length > 0;
+      } catch (lockCheckErr) {
+        console.error(`[Foundations] Lock check failed for foundation id=${foundationId}, using raw SQL fallback:`, lockCheckErr);
+        const rawResult = await pool.query(
+          `SELECT COUNT(*) as cnt FROM foundation_grants WHERE foundation_id = $1 AND donor_locked_at IS NOT NULL`,
+          [foundationId]
+        );
+        hasLockedGrants = parseInt(rawResult.rows[0]?.cnt || "0") > 0;
+      }
 
-      if (lockedGrants.length > 0) {
+      if (hasLockedGrants) {
         return res.status(400).json({ message: "Cannot delete foundation with locked grants. Unlock grants first." });
       }
 
-      await db.delete(foundationGrants).where(eq(foundationGrants.foundationId, foundationId));
-      await db.delete(solicitationLogs).where(eq(solicitationLogs.foundationId, foundationId));
+      try {
+        await db.delete(foundationGrants).where(eq(foundationGrants.foundationId, foundationId));
+      } catch (grantDeleteErr) {
+        console.error(`[Foundations] ORM grant delete failed for foundation id=${foundationId}, using raw SQL:`, grantDeleteErr);
+        await pool.query(`DELETE FROM foundation_grants WHERE foundation_id = $1`, [foundationId]);
+      }
+
+      try {
+        await db.delete(solicitationLogs).where(eq(solicitationLogs.foundationId, foundationId));
+      } catch (logDeleteErr) {
+        console.error(`[Foundations] ORM solicitation log delete failed for foundation id=${foundationId}, using raw SQL:`, logDeleteErr);
+        await pool.query(`DELETE FROM solicitation_logs WHERE foundation_id = $1`, [foundationId]);
+      }
 
       const [deleted] = await db.delete(foundations)
         .where(eq(foundations.id, foundationId))
@@ -4071,6 +4093,8 @@ export function registerGrantRoutes(app: Express) {
       if (!deleted) {
         return res.status(404).json({ message: "Foundation not found" });
       }
+
+      console.log(`[Foundations] Deleted foundation id=${foundationId} name="${deleted.name}" by user=${req.session.userId}`);
 
       await logAuditEvent(
         req.session.userId,
@@ -4083,8 +4107,8 @@ export function registerGrantRoutes(app: Express) {
 
       return res.json({ message: "Foundation deleted successfully" });
     } catch (error) {
-      console.error("Failed to delete foundation:", error);
-      return res.status(500).json({ message: "Failed to delete foundation" });
+      console.error(`[Foundations] DELETE failed for id=${foundationId}:`, error);
+      return res.status(500).json({ message: "Failed to delete foundation", detail: String(error) });
     }
   });
 
