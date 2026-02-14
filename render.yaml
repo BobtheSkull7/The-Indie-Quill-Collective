@@ -77,14 +77,14 @@ services:
         sync: false
       
       # ============================================
-      # GOOGLE CALENDAR (OAuth)
-      # Note: In development, this uses Replit Connectors.
-      # For production, set up Google OAuth credentials and
-      # configure these in Render dashboard.
+      # GOOGLE CALENDAR (Custom OAuth with permanent refresh tokens)
+      # Set up Google OAuth credentials in Google Cloud Console
+      # and configure these in Render dashboard.
+      # Refresh tokens are stored in the system_settings DB table.
       # ============================================
       - key: GOOGLE_CLIENT_ID
         sync: false
       - key: GOOGLE_CLIENT_SECRET
         sync: false
-      - key: GOOGLE_REFRESH_TOKEN
+      - key: GOOGLE_REDIRECT_URI
         sync: false

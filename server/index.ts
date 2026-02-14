@@ -47,6 +47,9 @@ app.get("/api/status", (_req, res) => {
 server.listen(PORT, "0.0.0.0", () => {
   console.log(`Server listening on port ${PORT}`);
   console.log(`[ENV CHECK] GAME_ENGINE_URL: ${process.env.GAME_ENGINE_URL ? `SET (${process.env.GAME_ENGINE_URL.length} chars, starts with "${process.env.GAME_ENGINE_URL.substring(0, 10)}...")` : "NOT SET"}`);
+  console.log(`[ENV CHECK] GOOGLE_CLIENT_ID: ${process.env.GOOGLE_CLIENT_ID ? "SET" : "NOT SET"}`);
+  console.log(`[ENV CHECK] GOOGLE_CLIENT_SECRET: ${process.env.GOOGLE_CLIENT_SECRET ? "SET" : "NOT SET"}`);
+  console.log(`[ENV CHECK] GOOGLE_REDIRECT_URI: ${process.env.GOOGLE_REDIRECT_URI ? `SET (${process.env.GOOGLE_REDIRECT_URI})` : "NOT SET"}`);
   // Now run bootstrap in background after server is listening
   bootstrapFast()
     .then(() => {

@@ -1,0 +1,478 @@
+                            className: "flex items-center space-x-3 border-l pl-6 border-gray-200",
+                            children: [e.jsxs("div", {
+                                className: "flex items-center space-x-2",
+                                children: [e.jsx("div", {
+                                    className: "w-8 h-8 bg-red-100 rounded-full flex items-center justify-center",
+                                    children: e.jsx(Tt, {
+                                        className: "w-4 h-4 text-red-600"
+                                    })
+                                }), e.jsx("span", {
+                                    className: "text-sm font-medium text-gray-700",
+                                    children: i.firstName
+                                })]
+                            }), e.jsx("button", {
+                                onClick: j,
+                                className: "text-gray-500 hover:text-red-500 transition-colors",
+                                children: e.jsx(Xl, {
+                                    className: "w-5 h-5"
+                                })
+                            })]
+                        })]
+                    }) : i.role === "auditor" ? e.jsxs(e.Fragment, {
+                        children: [e.jsx(he, {
+                            href: "/admin/outcomes",
+                            className: `text-sm font-medium transition-colors ${d === "/admin/outcomes" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`,
+                            children: "Outcomes"
+                        }), e.jsxs("div", {
+                            className: "flex items-center space-x-3 border-l pl-6 border-gray-200",
+                            children: [e.jsxs("div", {
+                                className: "flex items-center space-x-2",
+                                children: [e.jsx("div", {
+                                    className: "w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center",
+                                    children: e.jsx(Tt, {
+                                        className: "w-4 h-4 text-teal-600"
+                                    })
+                                }), e.jsx("span", {
+                                    className: "text-sm font-medium text-gray-700",
+                                    children: i.firstName
+                                })]
+                            }), e.jsx("button", {
+                                onClick: j,
+                                className: "text-gray-500 hover:text-red-500 transition-colors",
+                                children: e.jsx(Xl, {
+                                    className: "w-5 h-5"
+                                })
+                            })]
+                        })]
+                    }) : i.role === "student" ? e.jsxs(e.Fragment, {
+                        children: [e.jsx(he, {
+                            href: "/student",
+                            className: `text-sm font-medium transition-colors ${d === "/student" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`,
+                            children: "My Learning"
+                        }), e.jsx(he, {
+                            href: "/family",
+                            className: `text-sm font-medium transition-colors ${d === "/family" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`,
+                            children: "My Family"
+                        }), e.jsxs("div", {
+                            className: "flex items-center space-x-3 border-l pl-6 border-gray-200",
+                            children: [e.jsxs("div", {
+                                className: "flex items-center space-x-2",
+                                children: [e.jsx("div", {
+                                    className: "w-8 h-8 bg-green-100 rounded-full flex items-center justify-center",
+                                    children: e.jsx(Tt, {
+                                        className: "w-4 h-4 text-green-600"
+                                    })
+                                }), e.jsx("span", {
+                                    className: "text-sm font-medium text-gray-700",
+                                    children: i.firstName
+                                })]
+                            }), e.jsx("button", {
+                                onClick: j,
+                                className: "text-gray-500 hover:text-red-500 transition-colors",
+                                children: e.jsx(Xl, {
+                                    className: "w-5 h-5"
+                                })
+                            })]
+                        })]
+                    }) : i.role === "mentor" ? e.jsxs(e.Fragment, {
+                        children: [e.jsx(he, {
+                            href: "/mentor",
+                            className: `text-sm font-medium transition-colors ${d === "/mentor" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`,
+                            children: "My Students"
+                        }), e.jsxs("div", {
+                            className: "flex items-center space-x-3 border-l pl-6 border-gray-200",
+                            children: [e.jsxs("div", {
+                                className: "flex items-center space-x-2",
+                                children: [e.jsx("div", {
+                                    className: "w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center",
+                                    children: e.jsx(Tt, {
+                                        className: "w-4 h-4 text-orange-600"
+                                    })
+                                }), e.jsx("span", {
+                                    className: "text-sm font-medium text-gray-700",
+                                    children: i.firstName
+                                })]
+                            }), e.jsx("button", {
+                                onClick: j,
+                                className: "text-gray-500 hover:text-red-500 transition-colors",
+                                children: e.jsx(Xl, {
+                                    className: "w-5 h-5"
+                                })
+                            })]
+                        })]
+                    }) : i.role === "admin" ? e.jsxs(e.Fragment, {
+                        children: [e.jsx(he, {
+                            href: "/admin",
+                            className: `text-sm font-medium transition-colors ${d === "/admin" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`,
+                            children: "Dashboard"
+                        }), e.jsx(he, {
+                            href: "/admin/intake",
+                            className: `text-sm font-medium transition-colors ${d === "/admin/intake" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`,
+                            children: "Intake"
+                        }), e.jsx(he, {
+                            href: "/admin/training",
+                            className: `text-sm font-medium transition-colors ${d === "/admin/training" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`,
+                            children: "Training"
+                        }), e.jsx(he, {
+                            href: "/admin/publishing",
+                            className: `text-sm font-medium transition-colors ${d === "/admin/publishing" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`,
+                            children: "Publishing"
+                        }), e.jsx(he, {
+                            href: "/admin/outcomes",
+                            className: `text-sm font-medium transition-colors ${d === "/admin/outcomes" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`,
+                            children: "Outcomes"
+                        }), e.jsxs("div", {
+                            className: "flex items-center space-x-3 border-l pl-6 border-gray-200",
+                            children: [e.jsxs("div", {
+                                className: "flex items-center space-x-2",
+                                children: [e.jsx("div", {
+                                    className: "w-8 h-8 bg-red-100 rounded-full flex items-center justify-center",
+                                    children: e.jsx(Tt, {
+                                        className: "w-4 h-4 text-red-600"
+                                    })
+                                }), e.jsx("span", {
+                                    className: "text-sm font-medium text-gray-700",
+                                    children: i.firstName
+                                })]
+                            }), e.jsx("button", {
+                                onClick: j,
+                                className: "text-gray-500 hover:text-red-500 transition-colors",
+                                children: e.jsx(Xl, {
+                                    className: "w-5 h-5"
+                                })
+                            })]
+                        })]
+                    }) : e.jsxs(e.Fragment, {
+                        children: [e.jsx(he, {
+                            href: "/dashboard",
+                            className: `text-sm font-medium transition-colors ${d === "/dashboard" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`,
+                            children: "Dashboard"
+                        }), e.jsx(he, {
+                            href: "/contracts",
+                            className: `text-sm font-medium transition-colors ${d === "/contracts" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`,
+                            children: "Contracts"
+                        }), e.jsx(he, {
+                            href: "/publishing-status",
+                            className: `text-sm font-medium transition-colors ${d === "/publishing-status" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`,
+                            children: "Publishing Status"
+                        }), e.jsxs("div", {
+                            className: "flex items-center space-x-3 border-l pl-6 border-gray-200",
+                            children: [e.jsxs("div", {
+                                className: "flex items-center space-x-2",
+                                children: [e.jsx("div", {
+                                    className: "w-8 h-8 bg-red-100 rounded-full flex items-center justify-center",
+                                    children: e.jsx(Tt, {
+                                        className: "w-4 h-4 text-red-600"
+                                    })
+                                }), e.jsx("span", {
+                                    className: "text-sm font-medium text-gray-700",
+                                    children: i.firstName
+                                })]
+                            }), e.jsx("button", {
+                                onClick: j,
+                                className: "text-gray-500 hover:text-red-500 transition-colors",
+                                children: e.jsx(Xl, {
+                                    className: "w-5 h-5"
+                                })
+                            })]
+                        })]
+                    }) : e.jsxs(e.Fragment, {
+                        children: [e.jsx(he, {
+                            href: "/login",
+                            className: "btn-secondary text-sm py-2 px-4",
+                            children: "Sign In"
+                        }), e.jsx(he, {
+                            href: "/register",
+                            className: "btn-primary text-sm py-2 px-4",
+                            children: "Join Us"
+                        })]
+                    })]
+                }), e.jsx("div", {
+                    className: "md:hidden flex items-center",
+                    children: e.jsx("button", {
+                        onClick: () => f(!c),
+                        className: "text-gray-600",
+                        children: c ? e.jsx(Ct, {
+                            className: "w-6 h-6"
+                        }) : e.jsx(fy, {
+                            className: "w-6 h-6"
+                        })
+                    })
+                })]
+            })
+        }), c && e.jsxs("div", {
+            className: "md:hidden bg-white border-t border-gray-100 py-4 px-4 space-y-3",
+            children: [e.jsx(he, {
+                href: "/",
+                className: "block text-gray-600 hover:text-slate-800 py-2",
+                children: "Home"
+            }), e.jsx(he, {
+                href: "/about",
+                className: "block text-gray-600 hover:text-slate-800 py-2",
+                children: "About"
+            }), !i && e.jsx(he, {
+                href: "/board",
+                className: "block text-gray-600 hover:text-slate-800 py-2",
+                children: "Board"
+            }), i ? i.role === "board_member" ? e.jsxs(e.Fragment, {
+                children: [e.jsx(he, {
+                    href: "/admin/intake",
+                    className: "block text-gray-600 hover:text-slate-800 py-2",
+                    children: "Intake"
+                }), e.jsx(he, {
+                    href: "/admin/training",
+                    className: "block text-gray-600 hover:text-slate-800 py-2",
+                    children: "Training"
+                }), e.jsx(he, {
+                    href: "/admin/publishing",
+                    className: "block text-gray-600 hover:text-slate-800 py-2",
+                    children: "Publishing"
+                }), e.jsx(he, {
+                    href: "/admin/outcomes",
+                    className: "block text-gray-600 hover:text-slate-800 py-2",
+                    children: "Outcomes"
+                }), e.jsx("button", {
+                    onClick: j,
+                    className: "block w-full text-left text-red-500 py-2",
+                    children: "Logout"
+                })]
+            }) : i.role === "auditor" ? e.jsxs(e.Fragment, {
+                children: [e.jsx(he, {
+                    href: "/admin/outcomes",
+                    className: "block text-gray-600 hover:text-slate-800 py-2",
+                    children: "Outcomes"
+                }), e.jsx("button", {
+                    onClick: j,
+                    className: "block w-full text-left text-red-500 py-2",
+                    children: "Logout"
+                })]
+            }) : i.role === "student" ? e.jsxs(e.Fragment, {
+                children: [e.jsx(he, {
+                    href: "/student",
+                    className: "block text-gray-600 hover:text-slate-800 py-2",
+                    children: "My Learning"
+                }), e.jsx(he, {
+                    href: "/family",
+                    className: "block text-gray-600 hover:text-slate-800 py-2",
+                    children: "My Family"
+                }), e.jsx("button", {
+                    onClick: j,
+                    className: "block w-full text-left text-red-500 py-2",
+                    children: "Logout"
+                })]
+            }) : i.role === "mentor" ? e.jsxs(e.Fragment, {
+                children: [e.jsx(he, {
+                    href: "/mentor",
+                    className: "block text-gray-600 hover:text-slate-800 py-2",
+                    children: "My Students"
+                }), e.jsx("button", {
+                    onClick: j,
+                    className: "block w-full text-left text-red-500 py-2",
+                    children: "Logout"
+                })]
+            }) : i.role === "admin" ? e.jsxs(e.Fragment, {
+                children: [e.jsx(he, {
+                    href: "/admin",
+                    className: "block text-gray-600 hover:text-slate-800 py-2",
+                    children: "Dashboard"
+                }), e.jsx(he, {
+                    href: "/admin/intake",
+                    className: "block text-gray-600 hover:text-slate-800 py-2",
+                    children: "Intake"
+                }), e.jsx(he, {
+                    href: "/admin/training",
+                    className: "block text-gray-600 hover:text-slate-800 py-2",
+                    children: "Training"
+                }), e.jsx(he, {
+                    href: "/admin/publishing",
+                    className: "block text-gray-600 hover:text-slate-800 py-2",
+                    children: "Publishing"
+                }), e.jsx(he, {
+                    href: "/admin/outcomes",
+                    className: "block text-gray-600 hover:text-slate-800 py-2",
+                    children: "Outcomes"
+                }), e.jsx("button", {
+                    onClick: j,
+                    className: "block w-full text-left text-red-500 py-2",
+                    children: "Logout"
+                })]
+            }) : e.jsxs(e.Fragment, {
+                children: [e.jsx(he, {
+                    href: "/dashboard",
+                    className: "block text-gray-600 hover:text-slate-800 py-2",
+                    children: "Dashboard"
+                }), e.jsx(he, {
+                    href: "/contracts",
+                    className: "block text-gray-600 hover:text-slate-800 py-2",
+                    children: "Contracts"
+                }), e.jsx(he, {
+                    href: "/publishing-status",
+                    className: "block text-gray-600 hover:text-slate-800 py-2",
+                    children: "Publishing Status"
+                }), e.jsx("button", {
+                    onClick: j,
+                    className: "block w-full text-left text-red-500 py-2",
+                    children: "Logout"
+                })]
+            }) : e.jsxs(e.Fragment, {
+                children: [e.jsx(he, {
+                    href: "/login",
+                    className: "block text-gray-600 hover:text-slate-800 py-2",
+                    children: "Sign In"
+                }), e.jsx(he, {
+                    href: "/register",
+                    className: "block btn-primary text-center",
+                    children: "Join Us"
+                })]
+            })]
+        })]
+    })
+}
+const f0 = x.createContext({
+    user: null,
+    setUser: () => {}
+    ,
+    loading: !0
+})
+  , vt = () => x.useContext(f0);
+function SN() {
+    const [i,o] = x.useState(null)
+      , [d,c] = x.useState(!0)
+      , [f] = ct()
+      , j = f.startsWith("/vibe");
+    return x.useEffect( () => {
+        fetch("/api/auth/me").then(b => {
+            if (b.ok)
+                return b.json();
+            throw new Error("Not authenticated")
+        }
+        ).then(b => o(b.user)).catch( () => o(null)).finally( () => c(!1))
+    }
+    , []),
+    d ? e.jsx("div", {
+        className: "min-h-screen flex items-center justify-center bg-gray-50",
+        children: e.jsx("div", {
+            className: "animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"
+        })
+    }) : e.jsx(f0.Provider, {
+        value: {
+            user: i,
+            setUser: o,
+            loading: d
+        },
+        children: e.jsxs("div", {
+            className: `min-h-screen ${j ? "" : "bg-gray-50"}`,
+            children: [!j && e.jsx(wN, {}), e.jsxs(lp, {
+                children: [e.jsx(Pe, {
+                    path: "/",
+                    component: hb
+                }), e.jsx(Pe, {
+                    path: "/about",
+                    component: Qj
+                }), e.jsx(Pe, {
+                    path: "/donations",
+                    component: Fj
+                }), e.jsx(Pe, {
+                    path: "/donations/success",
+                    component: Yj
+                }), e.jsx(Pe, {
+                    path: "/apply",
+                    component: fb
+                }), e.jsx(Pe, {
+                    path: "/login",
+                    component: pb
+                }), e.jsx(Pe, {
+                    path: "/register",
+                    component: yb
+                }), e.jsx(Pe, {
+                    path: "/dashboard",
+                    component: gb
+                }), e.jsx(Pe, {
+                    path: "/student",
+                    component: Uj
+                }), e.jsx(Pe, {
+                    path: "/student/module/:id",
+                    component: Hj
+                }), e.jsx(Pe, {
+                    path: "/student/drafts",
+                    component: qj
+                }), e.jsx(Pe, {
+                    path: "/mentor",
+                    component: Bj
+                }), e.jsx(Pe, {
+                    path: "/family",
+                    component: Gj
+                }), e.jsx(Pe, {
+                    path: "/vibe",
+                    component: NN
+                }), e.jsx(Pe, {
+                    path: "/admin",
+                    component: Nb
+                }), e.jsx(Pe, {
+                    path: "/admin/intake",
+                    component: eN
+                }), e.jsx(Pe, {
+                    path: "/admin/training",
+                    component: iN
+                }), e.jsx(Pe, {
+                    path: "/admin/publishing",
+                    component: uN
+                }), e.jsx(Pe, {
+                    path: "/admin/outcomes",
+                    component: gN
+                }), e.jsx(Pe, {
+                    path: "/admin/game-test",
+                    component: vN
+                }), e.jsx(Pe, {
+                    path: "/admin/cohorts",
+                    children: e.jsx(er, {
+                        to: "/admin/intake"
+                    })
+                }), e.jsx(Pe, {
+                    path: "/admin/vault",
+                    children: e.jsx(er, {
+                        to: "/admin/intake"
+                    })
+                }), e.jsx(Pe, {
+                    path: "/admin/grants",
+                    children: e.jsx(er, {
+                        to: "/admin/outcomes"
+                    })
+                }), e.jsx(Pe, {
+                    path: "/admin/ledger",
+                    children: e.jsx(er, {
+                        to: "/admin/outcomes"
+                    })
+                }), e.jsx(Pe, {
+                    path: "/auditor",
+                    children: e.jsx(er, {
+                        to: "/admin/outcomes"
+                    })
+                }), e.jsx(Pe, {
+                    path: "/board",
+                    component: Oj
+                }), e.jsx(Pe, {
+                    path: "/contracts",
+                    component: zj
+                }), e.jsx(Pe, {
+                    path: "/contracts/:id",
+                    component: Rj
+                }), e.jsx(Pe, {
+                    path: "/publishing-status",
+                    component: Lj
+                }), e.jsx(Pe, {
+                    children: e.jsx("div", {
+                        className: "min-h-screen flex items-center justify-center",
+                        children: e.jsx("h1", {
+                            className: "text-2xl font-display text-gray-600",
+                            children: "Page Not Found"
+                        })
+                    })
+                })]
+            })]
+        })
+    })
+}
+zg.createRoot(document.getElementById("root")).render(e.jsx(Bh.StrictMode, {
+    children: e.jsx(SN, {})
+}));
