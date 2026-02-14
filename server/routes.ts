@@ -2880,15 +2880,20 @@ export async function registerRoutes(app: Express) {
 
   app.get("/api/admin/google/auth", async (req: Request, res: Response) => {
     if (!req.session.userId || (req.session.userRole !== "admin" && req.session.userRole !== "board_member")) {
+      console.log(`[Google Auth] Rejected: userId=${req.session.userId}, role=${req.session.userRole}`);
       return res.status(403).json({ message: "Not authorized" });
     }
 
     try {
+      console.log(`[Google Auth] Generating auth URL for user=${req.session.userId}`);
+      console.log(`[Google Auth] GOOGLE_CLIENT_ID set: ${!!process.env.GOOGLE_CLIENT_ID}, GOOGLE_CLIENT_SECRET set: ${!!process.env.GOOGLE_CLIENT_SECRET}, GOOGLE_REDIRECT_URI set: ${!!process.env.GOOGLE_REDIRECT_URI}`);
+      console.log(`[Google Auth] REDIRECT_URI value: ${process.env.GOOGLE_REDIRECT_URI}`);
       const authUrl = getAuthUrl(req.session);
+      console.log(`[Google Auth] Auth URL generated successfully`);
       return res.json({ url: authUrl });
     } catch (error) {
-      console.error("Google auth URL generation error:", error);
-      return res.status(500).json({ message: "Failed to generate auth URL" });
+      console.error("[Google Auth] Auth URL generation FAILED:", error);
+      return res.status(500).json({ message: "Failed to generate auth URL", detail: String(error) });
     }
   });
 
