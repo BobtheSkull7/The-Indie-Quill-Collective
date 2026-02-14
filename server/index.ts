@@ -26,6 +26,19 @@ app.get("/api/health", (_req, res) => {
   res.status(200).send("OK");
 });
 
+// Google OAuth diagnostic endpoint (no auth required, temporary)
+app.get("/api/google-check", (_req, res) => {
+  res.set("Cache-Control", "no-cache, no-store, must-revalidate");
+  res.json({
+    clientIdSet: !!process.env.GOOGLE_CLIENT_ID,
+    clientSecretSet: !!process.env.GOOGLE_CLIENT_SECRET,
+    redirectUriSet: !!process.env.GOOGLE_REDIRECT_URI,
+    redirectUri: process.env.GOOGLE_REDIRECT_URI || "NOT SET",
+    nodeEnv: process.env.NODE_ENV,
+    timestamp: new Date().toISOString(),
+  });
+});
+
 // Diagnostic endpoint to check initialization status
 app.get("/api/status", (_req, res) => {
   res.set("Cache-Control", "no-cache, no-store, must-revalidate");
