@@ -553,6 +553,31 @@ export default function AdminDashboard() {
     }
   };
 
+  const connectGoogleCalendar = async () => {
+    try {
+      const res = await fetch("/api/admin/google/auth");
+      if (res.ok) {
+        const { url } = await res.json();
+        window.location.href = url;
+      }
+    } catch (error) {
+      console.error("Failed to start Google auth:", error);
+    }
+  };
+
+  const disconnectGoogleCalendar = async () => {
+    if (!confirm("Are you sure you want to disconnect Google Calendar?")) return;
+    try {
+      const res = await fetch("/api/admin/google/disconnect", { method: "POST" });
+      if (res.ok) {
+        setGoogleCalendarStatus({ connected: false });
+        setSyncResult(null);
+      }
+    } catch (error) {
+      console.error("Failed to disconnect Google Calendar:", error);
+    }
+  };
+
   const syncWithGoogleCalendar = async () => {
     setSyncing(true);
     setSyncResult(null);
@@ -1130,14 +1155,34 @@ export default function AdminDashboard() {
                   </div>
                 </div>
                 
-                <button
-                  onClick={syncWithGoogleCalendar}
-                  disabled={!googleCalendarStatus?.connected || syncing}
-                  className="bg-blue-500 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
-                >
-                  <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
-                  <span>{syncing ? 'Syncing...' : 'Sync Now'}</span>
-                </button>
+                <div className="flex items-center space-x-2">
+                  {googleCalendarStatus?.connected ? (
+                    <>
+                      <button
+                        onClick={syncWithGoogleCalendar}
+                        disabled={syncing}
+                        className="bg-blue-500 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                      >
+                        <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
+                        <span>{syncing ? 'Syncing...' : 'Sync Now'}</span>
+                      </button>
+                      <button
+                        onClick={disconnectGoogleCalendar}
+                        className="bg-red-100 text-red-700 py-2 px-4 rounded-lg font-medium hover:bg-red-200 transition-colors text-sm"
+                      >
+                        Disconnect
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={connectGoogleCalendar}
+                      className="bg-teal-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-teal-700 transition-colors flex items-center space-x-2"
+                    >
+                      <Calendar className="w-4 h-4" />
+                      <span>Connect Indie Quill Collective Calendar</span>
+                    </button>
+                  )}
+                </div>
               </div>
               
               {syncResult && (
@@ -1160,7 +1205,7 @@ export default function AdminDashboard() {
               
               {!googleCalendarStatus?.connected && (
                 <p className="mt-3 text-sm text-gray-500">
-                  Google Calendar is not connected. The admin needs to configure the Google Calendar integration in the Replit dashboard.
+                  Click the button above to connect your Google Calendar. This creates a permanent link using your own credentials.
                 </p>
               )}
             </div>

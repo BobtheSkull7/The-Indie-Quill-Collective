@@ -29,6 +29,7 @@ import { migrateAuthorToIndieQuill, retryFailedMigrations, sendApplicationToLLC,
 import { sendApplicationReceivedEmail, sendApplicationAcceptedEmail, sendApplicationRejectedEmail, sendTestEmailSamples, sendWelcomeToCollectiveEmail } from "./email";
 import { logAuditEvent, logMinorDataAccess, getClientIp } from "./utils/auditLogger";
 import { syncCalendarEvents, getGoogleCalendarConnectionStatus, deleteGoogleCalendarEvent } from "./google-calendar-sync";
+import { getAuthUrl, handleAuthCallback, disconnectGoogleCalendar, validateOAuthState } from "./google-calendar-client";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { ContractPDF } from "./pdf-templates/ContractTemplate";
 import { ensureCompatibleFormat, speechToText } from "./replit_integrations/audio";
@@ -2874,6 +2875,59 @@ export async function registerRoutes(app: Express) {
     } catch (error) {
       console.error("Calendar sync error:", error);
       return res.status(500).json({ message: "Failed to sync calendar" });
+    }
+  });
+
+  app.get("/api/admin/google/auth", async (req: Request, res: Response) => {
+    if (!req.session.userId || (req.session.userRole !== "admin" && req.session.userRole !== "board_member")) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    try {
+      const authUrl = getAuthUrl(req.session);
+      return res.json({ url: authUrl });
+    } catch (error) {
+      console.error("Google auth URL generation error:", error);
+      return res.status(500).json({ message: "Failed to generate auth URL" });
+    }
+  });
+
+  app.get("/api/admin/google/callback", async (req: Request, res: Response) => {
+    const code = req.query.code as string;
+    const state = req.query.state as string;
+
+    if (!code || !state) {
+      return res.redirect("/admin?tab=calendar&error=missing_params");
+    }
+
+    if (!req.session.userId || (req.session.userRole !== "admin" && req.session.userRole !== "board_member")) {
+      return res.redirect("/admin?tab=calendar&error=not_authorized");
+    }
+
+    if (!validateOAuthState(req.session, state)) {
+      return res.redirect("/admin?tab=calendar&error=invalid_state");
+    }
+
+    try {
+      await handleAuthCallback(code);
+      return res.redirect("/admin?tab=calendar&connected=true");
+    } catch (error) {
+      console.error("Google OAuth callback error:", error);
+      return res.redirect("/admin?tab=calendar&error=auth_failed");
+    }
+  });
+
+  app.post("/api/admin/google/disconnect", async (req: Request, res: Response) => {
+    if (!req.session.userId || (req.session.userRole !== "admin" && req.session.userRole !== "board_member")) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    try {
+      await disconnectGoogleCalendar();
+      return res.json({ message: "Google Calendar disconnected" });
+    } catch (error) {
+      console.error("Google disconnect error:", error);
+      return res.status(500).json({ message: "Failed to disconnect" });
     }
   });
 
