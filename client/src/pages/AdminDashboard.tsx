@@ -7,6 +7,7 @@ import {
   Plus, Trash2, MapPin, BarChart3, Download, Activity, ChevronLeft, ChevronRight, UserPlus
 } from "lucide-react";
 import OperationsPanel from "../components/OperationsPanel";
+import WikiContent from "../components/tabs/WikiContent";
 
 interface Application {
   id: number;
@@ -130,7 +131,7 @@ export default function AdminDashboard() {
   const [reviewNotes, setReviewNotes] = useState("");
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
-  const [activeTab, setActiveTab] = useState<"applicants" | "calendar" | "operations">("applicants");
+  const [activeTab, setActiveTab] = useState<"applicants" | "calendar" | "operations" | "wiki">("applicants");
   const [retrying, setRetrying] = useState<number | null>(null);
   const [updatingStage, setUpdatingStage] = useState<number | null>(null);
   const [allUsers, setAllUsers] = useState<UserRecord[]>([]);
@@ -867,6 +868,17 @@ export default function AdminDashboard() {
           >
             <Calendar className="w-4 h-4" />
             <span>Calendar</span>
+          </button>
+          <button
+            onClick={() => setActiveTab("wiki")}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2 ${
+              activeTab === "wiki"
+                ? "bg-red-500 text-white"
+                : "bg-white text-gray-600 hover:bg-gray-100"
+            }`}
+          >
+            <BookOpen className="w-4 h-4" />
+            <span>Wiki</span>
           </button>
         </div>
 
@@ -1640,6 +1652,12 @@ export default function AdminDashboard() {
                 </button>
               </div>
             </div>
+          </div>
+        )}
+
+        {activeTab === "wiki" && (
+          <div className="card">
+            <WikiContent />
           </div>
         )}
 
