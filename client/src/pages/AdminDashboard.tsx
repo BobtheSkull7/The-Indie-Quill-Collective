@@ -556,10 +556,13 @@ export default function AdminDashboard() {
 
   const connectGoogleCalendar = async () => {
     try {
-      const res = await fetch("/api/admin/google/auth");
+      const res = await fetch("/api/admin/google/auth", { credentials: "include" });
       if (res.ok) {
         const { url } = await res.json();
         window.location.href = url;
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        console.error("Google auth failed:", res.status, errData);
       }
     } catch (error) {
       console.error("Failed to start Google auth:", error);
