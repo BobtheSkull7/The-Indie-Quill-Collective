@@ -559,13 +559,15 @@ export default function AdminDashboard() {
       const res = await fetch("/api/admin/google/auth", { credentials: "include" });
       if (res.ok) {
         const { url } = await res.json();
-        window.location.href = url;
+        window.top ? window.top.location.href = url : window.location.href = url;
       } else {
         const errData = await res.json().catch(() => ({}));
         console.error("Google auth failed:", res.status, errData);
+        alert("Failed to connect to Google Calendar. Please try again.");
       }
     } catch (error) {
       console.error("Failed to start Google auth:", error);
+      alert("Failed to connect to Google Calendar. Please try again.");
     }
   };
 
