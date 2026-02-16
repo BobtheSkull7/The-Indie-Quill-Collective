@@ -6,23 +6,38 @@ import crypto from 'crypto';
 
 const SCOPES = ['https://www.googleapis.com/auth/calendar'];
 
-function getOAuth2Client() {
+function getRedirectUri(overrideUri?: string): string {
+  if (overrideUri) return overrideUri;
+  
+  const envUri = process.env.GOOGLE_REDIRECT_URI;
+  if (envUri) return envUri;
+
+  const replitDomain = process.env.REPLIT_DEV_DOMAIN;
+  if (replitDomain) {
+    return `https://${replitDomain}/api/admin/google/callback`;
+  }
+
+  throw new Error('No Google redirect URI configured. Set GOOGLE_REDIRECT_URI or run in Replit.');
+}
+
+function getOAuth2Client(overrideRedirectUri?: string) {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  const redirectUri = process.env.GOOGLE_REDIRECT_URI;
+  const redirectUri = getRedirectUri(overrideRedirectUri);
 
-  if (!clientId || !clientSecret || !redirectUri) {
-    throw new Error('Google OAuth credentials not configured. Set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and GOOGLE_REDIRECT_URI.');
+  if (!clientId || !clientSecret) {
+    throw new Error('Google OAuth credentials not configured. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.');
   }
 
   return new google.auth.OAuth2(clientId, clientSecret, redirectUri);
 }
 
-export function getAuthUrl(session: any): string {
+export function getAuthUrl(session: any, redirectUri?: string): string {
   const state = crypto.randomBytes(32).toString('hex');
   session.googleOAuthState = state;
+  session.googleOAuthRedirectUri = redirectUri;
   
-  const oauth2Client = getOAuth2Client();
+  const oauth2Client = getOAuth2Client(redirectUri);
   return oauth2Client.generateAuthUrl({
     access_type: 'offline',
     prompt: 'consent',
@@ -37,8 +52,8 @@ export function validateOAuthState(session: any, state: string): boolean {
   return !!expected && expected === state;
 }
 
-export async function handleAuthCallback(code: string): Promise<void> {
-  const oauth2Client = getOAuth2Client();
+export async function handleAuthCallback(code: string, redirectUri?: string): Promise<void> {
+  const oauth2Client = getOAuth2Client(redirectUri);
   const { tokens } = await oauth2Client.getToken(code);
 
   const existingTokens = await getStoredTokens();

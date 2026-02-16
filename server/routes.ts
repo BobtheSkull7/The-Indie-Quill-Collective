@@ -2885,10 +2885,12 @@ export async function registerRoutes(app: Express) {
     }
 
     try {
+      const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+      const host = req.headers['x-forwarded-host'] || req.headers.host;
+      const dynamicRedirectUri = `${protocol}://${host}/api/admin/google/callback`;
       console.log(`[Google Auth] Generating auth URL for user=${req.session.userId}`);
-      console.log(`[Google Auth] GOOGLE_CLIENT_ID set: ${!!process.env.GOOGLE_CLIENT_ID}, GOOGLE_CLIENT_SECRET set: ${!!process.env.GOOGLE_CLIENT_SECRET}, GOOGLE_REDIRECT_URI set: ${!!process.env.GOOGLE_REDIRECT_URI}`);
-      console.log(`[Google Auth] REDIRECT_URI value: ${process.env.GOOGLE_REDIRECT_URI}`);
-      const authUrl = getAuthUrl(req.session);
+      console.log(`[Google Auth] Dynamic redirect URI: ${dynamicRedirectUri}`);
+      const authUrl = getAuthUrl(req.session, dynamicRedirectUri);
       console.log(`[Google Auth] Auth URL generated successfully`);
       return res.json({ url: authUrl });
     } catch (error) {
@@ -2914,7 +2916,9 @@ export async function registerRoutes(app: Express) {
     }
 
     try {
-      await handleAuthCallback(code);
+      const savedRedirectUri = req.session.googleOAuthRedirectUri;
+      delete req.session.googleOAuthRedirectUri;
+      await handleAuthCallback(code, savedRedirectUri);
       return res.redirect("/admin?tab=calendar&connected=true");
     } catch (error) {
       console.error("Google OAuth callback error:", error);
