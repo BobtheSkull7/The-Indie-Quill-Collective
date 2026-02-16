@@ -554,21 +554,8 @@ export default function AdminDashboard() {
     }
   };
 
-  const connectGoogleCalendar = async () => {
-    try {
-      const res = await fetch("/api/admin/google/auth", { credentials: "include" });
-      if (res.ok) {
-        const { url } = await res.json();
-        window.top ? window.top.location.href = url : window.location.href = url;
-      } else {
-        const errData = await res.json().catch(() => ({}));
-        console.error("Google auth failed:", res.status, errData);
-        alert("Failed to connect to Google Calendar. Please try again.");
-      }
-    } catch (error) {
-      console.error("Failed to start Google auth:", error);
-      alert("Failed to connect to Google Calendar. Please try again.");
-    }
+  const connectGoogleCalendar = () => {
+    window.location.href = "/api/admin/google/auth";
   };
 
   const disconnectGoogleCalendar = async () => {
@@ -1192,6 +1179,7 @@ export default function AdminDashboard() {
                     </>
                   ) : (
                     <button
+                      type="button"
                       onClick={connectGoogleCalendar}
                       className="bg-teal-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-teal-700 transition-colors flex items-center space-x-2"
                     >

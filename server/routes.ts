@@ -2891,11 +2891,11 @@ export async function registerRoutes(app: Express) {
       console.log(`[Google Auth] Generating auth URL for user=${req.session.userId}`);
       console.log(`[Google Auth] Dynamic redirect URI: ${dynamicRedirectUri}`);
       const authUrl = getAuthUrl(req.session, dynamicRedirectUri);
-      console.log(`[Google Auth] Auth URL generated successfully`);
-      return res.json({ url: authUrl });
+      console.log(`[Google Auth] Auth URL generated, redirecting browser...`);
+      return res.redirect(authUrl);
     } catch (error) {
       console.error("[Google Auth] Auth URL generation FAILED:", error);
-      return res.status(500).json({ message: "Failed to generate auth URL", detail: String(error) });
+      return res.redirect("/admin?tab=calendar&error=auth_init_failed");
     }
   });
 
