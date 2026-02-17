@@ -1253,10 +1253,23 @@ export default function AdminDashboard() {
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
                     />
                   </div>
+                  <div className="md:col-span-2 flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="allDay"
+                      checked={newEvent.allDay}
+                      onChange={(e) => {
+                        const allDay = e.target.checked;
+                        setNewEvent({ ...newEvent, allDay, startDate: "", endDate: "" });
+                      }}
+                      className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+                    />
+                    <label htmlFor="allDay" className="text-sm text-gray-700">All day event</label>
+                  </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Start Date *</label>
                     <input
-                      type="datetime-local"
+                      type={newEvent.allDay ? "date" : "datetime-local"}
                       value={newEvent.startDate}
                       onChange={(e) => setNewEvent({ ...newEvent, startDate: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
@@ -1265,7 +1278,7 @@ export default function AdminDashboard() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
                     <input
-                      type="datetime-local"
+                      type={newEvent.allDay ? "date" : "datetime-local"}
                       value={newEvent.endDate}
                       onChange={(e) => setNewEvent({ ...newEvent, endDate: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
@@ -1294,16 +1307,6 @@ export default function AdminDashboard() {
                       placeholder="Location (optional)"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
                     />
-                  </div>
-                  <div className="md:col-span-2 flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="allDay"
-                      checked={newEvent.allDay}
-                      onChange={(e) => setNewEvent({ ...newEvent, allDay: e.target.checked })}
-                      className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
-                    />
-                    <label htmlFor="allDay" className="text-sm text-gray-700">All day event</label>
                   </div>
                 </div>
                 <div className="mt-4 flex justify-end items-center space-x-3">
