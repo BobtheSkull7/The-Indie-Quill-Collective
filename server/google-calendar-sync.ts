@@ -46,6 +46,54 @@ export async function syncCalendarEvents(): Promise<SyncResult> {
   }
 }
 
+export async function pushSingleEventToGoogle(eventId: number): Promise<string | null> {
+  try {
+    const connected = await isGoogleCalendarConnected();
+    if (!connected) return null;
+
+    const [event] = await db.select().from(calendarEvents).where(eq(calendarEvents.id, eventId));
+    if (!event || event.googleCalendarEventId) return event?.googleCalendarEventId || null;
+
+    const calendar = await getUncachableGoogleCalendarClient();
+    const startDateStr = event.startDate.toISOString().split('T')[0];
+    const endDateStr = event.endDate 
+      ? (event.allDay ? getNextDay(event.endDate) : event.endDate.toISOString())
+      : (event.allDay ? getNextDay(event.startDate) : new Date(event.startDate.getTime() + 60 * 60 * 1000).toISOString());
+
+    const googleEvent = {
+      summary: event.title,
+      description: event.description || undefined,
+      location: event.location || undefined,
+      start: event.allDay 
+        ? { date: startDateStr }
+        : { dateTime: event.startDate.toISOString() },
+      end: event.allDay 
+        ? { date: endDateStr }
+        : { dateTime: endDateStr },
+    };
+
+    const response = await calendar.events.insert({
+      calendarId: PRIMARY_CALENDAR_ID,
+      requestBody: googleEvent,
+    });
+
+    if (response.data.id) {
+      await db.update(calendarEvents)
+        .set({
+          googleCalendarEventId: response.data.id,
+          lastSyncedAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(calendarEvents.id, eventId));
+      return response.data.id;
+    }
+    return null;
+  } catch (error) {
+    console.error(`Failed to push event ${eventId} to Google:`, error);
+    return null;
+  }
+}
+
 function getNextDay(date: Date): string {
   const nextDay = new Date(date);
   nextDay.setDate(nextDay.getDate() + 1);

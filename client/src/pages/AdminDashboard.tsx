@@ -8,6 +8,8 @@ import {
 } from "lucide-react";
 import OperationsPanel from "../components/OperationsPanel";
 import WikiContent from "../components/tabs/WikiContent";
+import CalendarView from "../components/CalendarView";
+import EventModal, { type EventFormData } from "../components/EventModal";
 
 interface Application {
   id: number;
@@ -106,6 +108,9 @@ interface CalendarEvent {
   location: string | null;
   createdBy: number;
   createdAt: string;
+  googleCalendarEventId: string | null;
+  isFromGoogle: boolean;
+  lastSyncedAt: string | null;
 }
 
 interface EmailLog {
@@ -139,18 +144,11 @@ export default function AdminDashboard() {
   const [newRole, setNewRole] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
-  const [showEventForm, setShowEventForm] = useState(false);
-  const [newEvent, setNewEvent] = useState({
-    title: "",
-    description: "",
-    startDate: "",
-    endDate: "",
-    allDay: false,
-    eventType: "meeting",
-    location: "",
-  });
-  const [creatingEvent, setCreatingEvent] = useState(false);
-  const [deletingEventId, setDeletingEventId] = useState<number | null>(null);
+  const [eventModalOpen, setEventModalOpen] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
+  const [eventModalDate, setEventModalDate] = useState<Date | undefined>(undefined);
+  const [eventModalAllDay, setEventModalAllDay] = useState(false);
+  const [savingEvent, setSavingEvent] = useState(false);
   const [googleCalendarStatus, setGoogleCalendarStatus] = useState<{ connected: boolean; email?: string } | null>(null);
   const [emailLogs, setEmailLogs] = useState<EmailLog[]>([]);
   const [syncing, setSyncing] = useState(false);
@@ -491,67 +489,80 @@ export default function AdminDashboard() {
     }
   };
 
-  const createCalendarEvent = async () => {
-    if (!newEvent.title || !newEvent.startDate) return;
-    setCreatingEvent(true);
-
+  const handleSaveEvent = async (data: EventFormData) => {
+    setSavingEvent(true);
     try {
-      const startDateISO = new Date(newEvent.startDate).toISOString();
-      let endDateISO = newEvent.endDate ? new Date(newEvent.endDate).toISOString() : null;
-      
-      if (newEvent.allDay && !endDateISO) {
-        endDateISO = startDateISO;
-      }
+      const startDateISO = new Date(data.startDate).toISOString();
+      let endDateISO = data.endDate ? new Date(data.endDate).toISOString() : null;
+      if (data.allDay && !endDateISO) endDateISO = startDateISO;
 
-      const res = await fetch("/api/board/calendar", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: newEvent.title,
-          description: newEvent.description || null,
-          startDate: startDateISO,
-          endDate: endDateISO,
-          allDay: newEvent.allDay,
-          eventType: newEvent.eventType,
-          location: newEvent.location || null,
-        }),
-      });
+      const body = {
+        title: data.title,
+        description: data.description || null,
+        startDate: startDateISO,
+        endDate: endDateISO,
+        allDay: data.allDay,
+        eventType: data.eventType,
+        location: data.location || null,
+      };
 
-      if (res.ok) {
-        const created = await res.json();
-        setCalendarEvents((prev) => [...prev, created].sort(
-          (a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
-        ));
-        setNewEvent({
-          title: "",
-          description: "",
-          startDate: "",
-          endDate: "",
-          allDay: false,
-          eventType: "meeting",
-          location: "",
+      if (editingEvent) {
+        const res = await fetch(`/api/board/calendar/${editingEvent.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
         });
-        setShowEventForm(false);
+        if (res.ok) {
+          const updated = await res.json();
+          setCalendarEvents((prev) => prev.map(e => e.id === updated.id ? updated : e));
+        }
+      } else {
+        const res = await fetch("/api/board/calendar", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        if (res.ok) {
+          const created = await res.json();
+          setCalendarEvents((prev) => [...prev, created].sort(
+            (a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+          ));
+        }
       }
+      setEventModalOpen(false);
+      setEditingEvent(null);
     } catch (error) {
-      console.error("Create calendar event failed:", error);
+      console.error("Save calendar event failed:", error);
     } finally {
-      setCreatingEvent(false);
+      setSavingEvent(false);
     }
   };
 
-  const deleteCalendarEvent = async (id: number) => {
-    setDeletingEventId(id);
+  const handleDeleteEvent = async (id: number) => {
     try {
       const res = await fetch(`/api/board/calendar/${id}`, { method: "DELETE" });
       if (res.ok) {
         setCalendarEvents((prev) => prev.filter((e) => e.id !== id));
+        setEventModalOpen(false);
+        setEditingEvent(null);
       }
     } catch (error) {
       console.error("Delete calendar event failed:", error);
-    } finally {
-      setDeletingEventId(null);
     }
+  };
+
+  const openCreateModal = (date: Date, allDay: boolean) => {
+    setEditingEvent(null);
+    setEventModalDate(date);
+    setEventModalAllDay(allDay);
+    setEventModalOpen(true);
+  };
+
+  const openEditModal = (event: CalendarEvent) => {
+    setEditingEvent(event);
+    setEventModalDate(undefined);
+    setEventModalAllDay(false);
+    setEventModalOpen(true);
   };
 
   const connectGoogleCalendar = () => {
@@ -591,28 +602,6 @@ export default function AdminDashboard() {
     } finally {
       setSyncing(false);
     }
-  };
-
-  const getEventTypeColor = (type: string) => {
-    const colors: Record<string, string> = {
-      meeting: "bg-blue-100 text-blue-700",
-      board_meeting: "bg-purple-100 text-purple-700",
-      deadline: "bg-red-100 text-red-700",
-      event: "bg-green-100 text-green-700",
-      other: "bg-gray-100 text-gray-700",
-    };
-    return colors[type] || colors.other;
-  };
-
-  const formatEventType = (type: string) => {
-    const labels: Record<string, string> = {
-      meeting: "Meeting",
-      board_meeting: "Board Meeting",
-      deadline: "Deadline",
-      event: "Event",
-      other: "Other",
-    };
-    return labels[type] || type;
   };
 
   const initCoppaState = (app: Application) => {
@@ -1137,269 +1126,104 @@ export default function AdminDashboard() {
         )}
 
         {activeTab === "calendar" && (
-          <div className="space-y-6">
-            <div className="card">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="font-display text-xl font-semibold text-slate-800 flex items-center space-x-2">
-                  <Calendar className="w-5 h-5 text-red-500" />
-                  <span>Google Calendar Sync</span>
-                </h2>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div className="flex items-center space-x-3">
+                <div className={`w-3 h-3 rounded-full ${googleCalendarStatus?.connected ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                <span className="text-sm text-slate-600">
+                  {googleCalendarStatus?.connected 
+                    ? `Connected${googleCalendarStatus.email ? ` · ${googleCalendarStatus.email}` : ''}`
+                    : 'Google Calendar not connected'}
+                </span>
               </div>
-              
-              <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-200">
-                <div className="flex items-center space-x-3">
-                  <div className={`w-3 h-3 rounded-full ${googleCalendarStatus?.connected ? 'bg-green-500' : 'bg-gray-400'}`}></div>
-                  <div>
-                    <p className="font-medium text-slate-800">
-                      {googleCalendarStatus?.connected ? 'Connected' : 'Not Connected'}
-                    </p>
-                    {googleCalendarStatus?.email && (
-                      <p className="text-sm text-gray-500">{googleCalendarStatus.email}</p>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  {googleCalendarStatus?.connected ? (
-                    <>
-                      <button
-                        onClick={syncWithGoogleCalendar}
-                        disabled={syncing}
-                        className="bg-blue-500 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
-                      >
-                        <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
-                        <span>{syncing ? 'Syncing...' : 'Sync Now'}</span>
-                      </button>
-                      <button
-                        onClick={disconnectGoogleCalendar}
-                        className="bg-red-100 text-red-700 py-2 px-4 rounded-lg font-medium hover:bg-red-200 transition-colors text-sm"
-                      >
-                        Disconnect
-                      </button>
-                    </>
-                  ) : (
+              <div className="flex items-center space-x-2">
+                {googleCalendarStatus?.connected ? (
+                  <>
                     <button
-                      type="button"
-                      onClick={connectGoogleCalendar}
-                      className="bg-teal-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-teal-700 transition-colors flex items-center space-x-2"
+                      onClick={syncWithGoogleCalendar}
+                      disabled={syncing}
+                      className="bg-blue-500 text-white py-1.5 px-3 rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors disabled:opacity-50 flex items-center space-x-1"
                     >
-                      <Calendar className="w-4 h-4" />
-                      <span>Connect Indie Quill Collective Calendar</span>
+                      <RefreshCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`} />
+                      <span>{syncing ? 'Syncing...' : 'Sync'}</span>
                     </button>
-                  )}
-                </div>
-              </div>
-              
-              {syncResult && (
-                <div className={`mt-4 p-3 rounded-lg ${syncResult.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
-                  {syncResult.success ? (
-                    <div className="flex items-center space-x-2 text-green-700">
-                      <CheckCircle className="w-4 h-4" />
-                      <span>
-                        Sync complete: {syncResult.pushedToGoogle} events pushed to Google, {syncResult.pulledFromGoogle} events pulled from Google
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center space-x-2 text-red-700">
-                      <AlertTriangle className="w-4 h-4" />
-                      <span>{syncResult.error || 'Sync failed'}</span>
-                    </div>
-                  )}
-                </div>
-              )}
-              
-              {!googleCalendarStatus?.connected && (
-                <p className="mt-3 text-sm text-gray-500">
-                  Click the button above to connect your Google Calendar. This creates a permanent link using your own credentials.
-                </p>
-              )}
-            </div>
-
-            <div className="card">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="font-display text-xl font-semibold text-slate-800">
-                  Calendar Events
-                </h2>
+                    <button
+                      onClick={disconnectGoogleCalendar}
+                      className="text-red-600 hover:text-red-800 text-sm font-medium transition-colors"
+                    >
+                      Disconnect
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={connectGoogleCalendar}
+                    className="bg-teal-600 text-white py-1.5 px-3 rounded-lg text-sm font-medium hover:bg-teal-700 transition-colors flex items-center space-x-1"
+                  >
+                    <Calendar className="w-3.5 h-3.5" />
+                    <span>Connect Calendar</span>
+                  </button>
+                )}
                 <button
-                  onClick={() => setShowEventForm(!showEventForm)}
-                  className="btn-primary text-sm py-2 px-4 flex items-center space-x-2"
+                  onClick={() => openCreateModal(new Date(), false)}
+                  className="bg-teal-600 text-white py-1.5 px-3 rounded-lg text-sm font-medium hover:bg-teal-700 transition-colors flex items-center space-x-1"
                 >
-                  <Plus className="w-4 h-4" />
-                  <span>{showEventForm ? "Cancel" : "Add Event"}</span>
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>New Event</span>
                 </button>
               </div>
-
-            {showEventForm && (
-              <div className="bg-slate-50 rounded-lg p-4 mb-6 border border-slate-200">
-                <h3 className="font-semibold text-slate-800 mb-4">Create New Event</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
-                    <input
-                      type="text"
-                      value={newEvent.title}
-                      onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
-                      placeholder="Event title"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                    />
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                    <textarea
-                      value={newEvent.description}
-                      onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
-                      placeholder="Event description (optional)"
-                      rows={2}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                    />
-                  </div>
-                  <div className="md:col-span-2 flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="allDay"
-                      checked={newEvent.allDay}
-                      onChange={(e) => {
-                        const allDay = e.target.checked;
-                        setNewEvent({ ...newEvent, allDay, startDate: "", endDate: "" });
-                      }}
-                      className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
-                    />
-                    <label htmlFor="allDay" className="text-sm text-gray-700">All day event</label>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Start Date *</label>
-                    <input
-                      type={newEvent.allDay ? "date" : "datetime-local"}
-                      value={newEvent.startDate}
-                      onChange={(e) => setNewEvent({ ...newEvent, startDate: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
-                    <input
-                      type={newEvent.allDay ? "date" : "datetime-local"}
-                      value={newEvent.endDate}
-                      onChange={(e) => setNewEvent({ ...newEvent, endDate: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Event Type</label>
-                    <select
-                      value={newEvent.eventType}
-                      onChange={(e) => setNewEvent({ ...newEvent, eventType: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                    >
-                      <option value="meeting">Meeting</option>
-                      <option value="board_meeting">Board Meeting</option>
-                      <option value="deadline">Deadline</option>
-                      <option value="event">Event</option>
-                      <option value="other">Other</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
-                    <input
-                      type="text"
-                      value={newEvent.location}
-                      onChange={(e) => setNewEvent({ ...newEvent, location: e.target.value })}
-                      placeholder="Location (optional)"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                    />
-                  </div>
-                </div>
-                <div className="mt-4 flex justify-end items-center space-x-3">
-                  {(!newEvent.title || !newEvent.startDate) && (
-                    <span className="text-sm text-amber-600">Please fill in title and start date</span>
-                  )}
-                  <button
-                    onClick={createCalendarEvent}
-                    disabled={creatingEvent || !newEvent.title || !newEvent.startDate}
-                    className="bg-red-500 text-white py-2 px-4 rounded-lg font-medium hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {creatingEvent ? "Creating..." : "Create Event"}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {calendarEvents.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">
-                No calendar events yet. Click "Add Event" to create one.
-              </p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Event</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Date & Time</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Type</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Location</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(calendarEvents || []).map((event) => (
-                      <tr key={event.id} className="border-b border-gray-100 hover:bg-gray-50">
-                        <td className="py-3 px-4">
-                          <p className="font-medium text-slate-800">{event.title}</p>
-                          {event.description && (
-                            <p className="text-xs text-gray-500 truncate max-w-xs">{event.description}</p>
-                          )}
-                        </td>
-                        <td className="py-3 px-4 text-gray-600 text-sm">
-                          <div className="flex items-center space-x-1">
-                            <Calendar className="w-3 h-3" />
-                            <span>
-                              {event.allDay 
-                                ? new Date(event.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-                                : formatDateTime(event.startDate)
-                              }
-                            </span>
-                          </div>
-                          {event.endDate && (
-                            <div className="text-xs text-gray-400 mt-1">
-                              to {event.allDay 
-                                ? new Date(event.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-                                : formatDateTime(event.endDate)
-                              }
-                            </div>
-                          )}
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className={`text-xs px-2 py-1 rounded ${getEventTypeColor(event.eventType)}`}>
-                            {formatEventType(event.eventType)}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-gray-600 text-sm">
-                          {event.location ? (
-                            <div className="flex items-center space-x-1">
-                              <MapPin className="w-3 h-3" />
-                              <span>{event.location}</span>
-                            </div>
-                          ) : (
-                            <span className="text-gray-400">-</span>
-                          )}
-                        </td>
-                        <td className="py-3 px-4">
-                          <button
-                            onClick={() => deleteCalendarEvent(event.id)}
-                            disabled={deletingEventId === event.id}
-                            className="text-red-600 hover:text-red-800 transition-colors"
-                            title="Delete Event"
-                          >
-                            <Trash2 className={`w-5 h-5 ${deletingEventId === event.id ? "animate-pulse" : ""}`} />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
             </div>
+
+            {syncResult && (
+              <div className={`p-3 rounded-lg text-sm ${syncResult.success ? 'bg-green-50 border border-green-200 text-green-700' : 'bg-red-50 border border-red-200 text-red-700'}`}>
+                {syncResult.success 
+                  ? `Sync complete: ${syncResult.pushedToGoogle} pushed, ${syncResult.pulledFromGoogle} pulled`
+                  : syncResult.error || 'Sync failed'}
+              </div>
+            )}
+
+            <CalendarView
+              events={calendarEvents.map(e => ({
+                id: e.id,
+                title: e.title,
+                description: e.description,
+                startDate: e.startDate,
+                endDate: e.endDate,
+                allDay: e.allDay,
+                eventType: e.eventType,
+                location: e.location,
+                googleCalendarEventId: e.googleCalendarEventId,
+                isFromGoogle: e.isFromGoogle,
+              }))}
+              onCreateEvent={openCreateModal}
+              onEventClick={(event) => {
+                const found = calendarEvents.find(e => e.id === event.id);
+                if (found) openEditModal(found);
+              }}
+            />
+
+            {eventModalOpen && (
+              <EventModal
+                event={editingEvent ? {
+                  id: editingEvent.id,
+                  title: editingEvent.title,
+                  description: editingEvent.description,
+                  startDate: editingEvent.startDate,
+                  endDate: editingEvent.endDate,
+                  allDay: editingEvent.allDay,
+                  eventType: editingEvent.eventType,
+                  location: editingEvent.location,
+                  googleCalendarEventId: editingEvent.googleCalendarEventId,
+                  isFromGoogle: editingEvent.isFromGoogle,
+                } : undefined}
+                initialDate={eventModalDate}
+                initialAllDay={eventModalAllDay}
+                onSave={handleSaveEvent}
+                onDelete={handleDeleteEvent}
+                onClose={() => { setEventModalOpen(false); setEditingEvent(null); }}
+                saving={savingEvent}
+              />
+            )}
           </div>
         )}
 

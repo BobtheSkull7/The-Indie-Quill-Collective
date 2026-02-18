@@ -28,7 +28,7 @@ import { hash, compare } from "./auth";
 import { migrateAuthorToIndieQuill, retryFailedMigrations, sendApplicationToLLC, sendStatusUpdateToLLC, sendContractSignatureToLLC, sendUserRoleUpdateToLLC } from "./indie-quill-integration";
 import { sendApplicationReceivedEmail, sendApplicationAcceptedEmail, sendApplicationRejectedEmail, sendTestEmailSamples, sendWelcomeToCollectiveEmail } from "./email";
 import { logAuditEvent, logMinorDataAccess, getClientIp } from "./utils/auditLogger";
-import { syncCalendarEvents, getGoogleCalendarConnectionStatus, deleteGoogleCalendarEvent } from "./google-calendar-sync";
+import { syncCalendarEvents, getGoogleCalendarConnectionStatus, deleteGoogleCalendarEvent, updateGoogleCalendarEvent, pushSingleEventToGoogle } from "./google-calendar-sync";
 import { getAuthUrl, handleAuthCallback, disconnectGoogleCalendar, validateOAuthState } from "./google-calendar-client";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { ContractPDF } from "./pdf-templates/ContractTemplate";
@@ -2797,7 +2797,7 @@ export async function registerRoutes(app: Express) {
 
     try {
       const events = await db.select().from(calendarEvents)
-        .where(gte(calendarEvents.startDate, new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)))
+        .where(gte(calendarEvents.startDate, new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)))
         .orderBy(calendarEvents.startDate);
       return res.json(events);
     } catch (error) {
@@ -2823,10 +2823,70 @@ export async function registerRoutes(app: Express) {
         location,
         createdBy: req.session.userId,
       }).returning();
+
+      pushSingleEventToGoogle(newEvent.id).then(googleId => {
+        if (googleId) {
+          console.log(`[Calendar] Event ${newEvent.id} pushed to Google Calendar: ${googleId}`);
+        }
+      }).catch(err => {
+        console.error(`[Calendar] Failed to push event ${newEvent.id} to Google:`, err);
+      });
+
       return res.json(newEvent);
     } catch (error) {
       console.error("Create calendar event error:", error);
       return res.status(500).json({ message: "Failed to create event" });
+    }
+  });
+
+  app.put("/api/board/calendar/:id", async (req: Request, res: Response) => {
+    if (!req.session.userId || (req.session.userRole !== "board_member" && req.session.userRole !== "admin")) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    try {
+      const eventId = parseInt(req.params.id);
+      const { title, description, startDate, endDate, allDay, eventType, location } = req.body;
+
+      const [updated] = await db.update(calendarEvents)
+        .set({
+          title,
+          description,
+          startDate: new Date(startDate),
+          endDate: endDate ? new Date(endDate) : null,
+          allDay,
+          eventType,
+          location,
+          updatedAt: new Date(),
+        })
+        .where(eq(calendarEvents.id, eventId))
+        .returning();
+
+      if (!updated) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+
+      if (updated.googleCalendarEventId) {
+        updateGoogleCalendarEvent(updated.googleCalendarEventId, {
+          title: updated.title,
+          description: updated.description,
+          startDate: updated.startDate,
+          endDate: updated.endDate,
+          allDay: updated.allDay,
+          location: updated.location,
+        }).then(success => {
+          if (success) {
+            console.log(`[Calendar] Event ${eventId} updated in Google Calendar`);
+          }
+        }).catch(err => {
+          console.error(`[Calendar] Failed to update event ${eventId} in Google:`, err);
+        });
+      }
+
+      return res.json(updated);
+    } catch (error) {
+      console.error("Update calendar event error:", error);
+      return res.status(500).json({ message: "Failed to update event" });
     }
   });
 
