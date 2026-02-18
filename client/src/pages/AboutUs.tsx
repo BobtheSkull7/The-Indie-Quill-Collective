@@ -31,10 +31,10 @@ export default function AboutUs() {
 
         <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mb-8">
           <h2 className="font-display text-2xl font-bold text-slate-800 mb-4">
-            Our Mission
+            Breaking the Silence. Building the Author.
           </h2>
           <p className="text-gray-700 text-lg leading-relaxed">
-            To dismantle the systemic architectures of forced silence. We provide a radical, frictionless path to authorship for disadvantaged youth and adults whose voices have been muted by racism, misogyny, bigotry, and age discrimination. By providing the specific systems, tools, and direct human assistance required to bypass traditional gatekeepers, we ensure that those historically ignored are finally empowered as published authorities of their own narratives.
+            To dismantle the systemic architectures of forced silence. We provide a radical, frictionless path to authorship for disadvantaged youth and adults whose voices have been muted by systemic bias. By providing the specific education, tools, and human assistance required to bypass traditional gatekeepers, we ensure that those historically ignored are finally empowered as published authorities of their own narratives.
           </p>
         </section>
 
@@ -176,23 +176,23 @@ export default function AboutUs() {
           
           <div className="grid md:grid-cols-3 gap-6">
             <div className="bg-gradient-to-br from-teal-50 to-teal-100 rounded-xl p-6 border border-teal-200">
-              <h3 className="font-display font-semibold text-slate-800 mb-2">Systemic Removal of Barriers</h3>
+              <h3 className="font-display font-semibold text-slate-800 mb-2">Remove the Barriers</h3>
               <p className="text-gray-600 text-sm">
-                We identify and neutralize the hurdles that prevent a story from reaching the page.
+                We handle the technical, social, and financial hurdles so you can focus entirely on your story.
               </p>
             </div>
             
             <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 border border-blue-200">
-              <h3 className="font-display font-semibold text-slate-800 mb-2">Integrated Support</h3>
+              <h3 className="font-display font-semibold text-slate-800 mb-2">Mentorship & Education</h3>
               <p className="text-gray-600 text-sm">
-                We provide the direct human assistance and infrastructure necessary to turn the act of speaking into the act of publishing.
+                We provide the direct human assistance and specialized curriculum necessary to turn the act of speaking into the craft of publishing.
               </p>
             </div>
             
             <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-6 border border-red-200">
-              <h3 className="font-display font-semibold text-slate-800 mb-2">Ownership and Legacy</h3>
+              <h3 className="font-display font-semibold text-slate-800 mb-2">Total Ownership</h3>
               <p className="text-gray-600 text-sm">
-                We move beyond mere representation toward true ownership, where marginalized voices finally control their own data and their own legacies.
+                We move beyond mere representation toward true ownership. Marginalized voices finally control their own data, their own stories, and their own legacies.
               </p>
             </div>
           </div>

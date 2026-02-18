@@ -81,7 +81,7 @@ export default function Home() {
               Identity Bridge
             </h2>
             <p className="text-gray-600 text-sm">
-              Your privacy is our priority. We separate what's private from what's public.
+              Privacy by Design: For our younger authors, real identities stay private. We use professional pseudonyms to ensure safety while building a public legacy.
             </p>
           </div>
           
@@ -134,7 +134,7 @@ export default function Home() {
           </div>
           
           <p className="text-center text-xs text-gray-500 mt-4">
-            Zero-PII Architecture: For minor authors, legal names never leave the NPO. Only pseudonyms are shared publicly.
+            Zero-PII Architecture: Identity protection is built into our core. Legal names never leave the NPO; only your voice reaches the world.
           </p>
         </div>
       </section>
@@ -162,10 +162,10 @@ export default function Home() {
               </div>
               
               <div className="text-center md:text-left">
-                <h3 className="font-display text-lg font-semibold text-slate-800 mb-3">The Literacy Point</h3>
+                <h3 className="font-display text-lg font-semibold text-slate-800 mb-3">The Education Point</h3>
                 <p className="text-gray-600 leading-relaxed">
                   We teach the active craft of writing as a foundational key to literacy. By learning to author 
-                  their own stories, our participants gain the tools to decode and understand the world around them more fluently.
+                  their own stories, our participants gain the educational tools to decode and understand the world around them more fluently.
                 </p>
               </div>
               
@@ -295,41 +295,32 @@ export default function Home() {
               <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-teal-400"></div>
             </div>
           ) : metrics ? (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 text-center border border-green-100">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-5 text-center border border-green-100">
                 <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-2">
                   <Shield className="w-5 h-5 text-green-600" />
                 </div>
-                <p className="text-2xl font-bold text-slate-800 mb-0.5">{metrics.identityProtectionRate}%</p>
+                <p className="text-2xl font-bold text-slate-800 mb-0.5">100%</p>
                 <p className="text-gray-600 font-medium text-xs">Identity Protection</p>
                 <p className="text-[10px] text-gray-500 mt-0.5">COPPA Compliant</p>
               </div>
 
-              <div className="bg-gradient-to-br from-teal-50 to-blue-50 rounded-xl p-4 text-center border border-teal-100">
+              <div className="bg-gradient-to-br from-teal-50 to-blue-50 rounded-xl p-5 text-center border border-teal-100">
                 <div className="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center mx-auto mb-2">
                   <Users className="w-5 h-5 text-teal-600" />
                 </div>
-                <p className="text-2xl font-bold text-slate-800 mb-0.5">{metrics.youthAuthorsSupported}/{metrics.totalAuthorsSupported}</p>
-                <p className="text-gray-600 font-medium text-xs">Authors Supported</p>
-                <p className="text-[10px] text-gray-500 mt-0.5">Youth / Total</p>
+                <p className="text-2xl font-bold text-slate-800 mb-0.5">14</p>
+                <p className="text-gray-600 font-medium text-xs">Active Authors</p>
+                <p className="text-[10px] text-gray-500 mt-0.5">Growing Community</p>
               </div>
 
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 text-center border border-blue-100">
-                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-2">
-                  <TrendingUp className="w-5 h-5 text-blue-600" />
-                </div>
-                <p className="text-2xl font-bold text-slate-800 mb-0.5">{metrics.activeCohortSize}/10</p>
-                <p className="text-gray-600 font-medium text-xs">Active Cohort</p>
-                <p className="text-[10px] text-gray-500 mt-0.5">Current Progress</p>
-              </div>
-
-              <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-4 text-center border border-purple-100">
+              <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-5 text-center border border-purple-100">
                 <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-2">
                   <BookOpen className="w-5 h-5 text-purple-600" />
                 </div>
-                <p className="text-2xl font-bold text-slate-800 mb-0.5">{metrics.publishedBooks}</p>
+                <p className="text-2xl font-bold text-slate-800 mb-0.5">Launching Soon</p>
                 <p className="text-gray-600 font-medium text-xs">Books Published</p>
-                <p className="text-[10px] text-gray-500 mt-0.5">Available Now</p>
+                <p className="text-[10px] text-gray-500 mt-0.5">Coming This Year</p>
               </div>
             </div>
           ) : (
