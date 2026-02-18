@@ -1,0 +1,42 @@
+o get these changes live in Replit, you can provide these specific content blocks to your agent. This updates the site to be more "human-centric" while keeping your educational mission at the forefront, distinct from the grant language.
+
+Page: Home — Identity Bridge Section
+Replace the current descriptive text and footer with:
+
+Headline: Your privacy is our priority. We separate what's private from what's public.
+
+Sub-headline: Privacy by Design: For our younger authors, real identities stay private. We use professional pseudonyms to ensure safety while building a public legacy.
+
+Technical Caption: Zero-PII Architecture: Identity protection is built into our core. Legal names never leave the NPO; only your voice reaches the world.
+
+Page: About — Mission & Vision
+Update the "Our Mission" block to lead with a stronger hook:
+
+Headline: Breaking the Silence. Building the Author.
+
+Body Text: To dismantle the systemic architectures of forced silence. We provide a radical, frictionless path to authorship for disadvantaged youth and adults whose voices have been muted by systemic bias. By providing the specific education, tools, and human assistance required to bypass traditional gatekeepers, we ensure that those historically ignored are finally empowered as published authorities of their own narratives.
+
+Page: About — Our Path to Authorship
+Replace the three-column text with these punchier, education-focused pillars:
+
+Column 1: Remove the Barriers. We handle the technical, social, and financial hurdles so you can focus entirely on your story.
+
+Column 2: Mentorship & Education. We provide the direct human assistance and specialized curriculum necessary to turn the act of speaking into the craft of publishing.
+
+Column 3: Total Ownership. We move beyond mere representation toward true ownership. Marginalized voices finally control their own data, their own stories, and their own legacies.
+
+Page: Home/Outcomes — Impact Analytics
+Update the labels to focus on "Momentum" and clarity:
+
+Tile 1: 100% Identity Protection (Keep "COPPA Compliant" subtext).
+
+Tile 2: 14 Active Authors (Combines your "Supported" and "Cohort" metrics for a clearer growth number).
+
+Tile 3: Launching Soon (Use this for the "Books Published" section to frame the "0" as upcoming excitement).
+
+Page: Home — Our Current Work
+Update "The Literacy Point" to emphasize the educational shift:
+
+Headline: The Education Point
+
+Body Text: We teach the active craft of writing as a foundational key to literacy. By learning to author their own stories, our participants gain the educational tools to decode and understand the world around them more fluently.
