@@ -483,6 +483,20 @@ CREATE TABLE IF NOT EXISTS npo_applications (
 );
 
 -- ============================================================================
+-- PHASE 10: WIKI ATTACHMENTS TABLE
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS wiki_attachments (
+  id SERIAL PRIMARY KEY,
+  wiki_entry_id INTEGER NOT NULL REFERENCES wiki_entries(id) ON DELETE CASCADE,
+  filename TEXT NOT NULL,
+  original_name TEXT NOT NULL,
+  mime_type TEXT NOT NULL,
+  file_size INTEGER NOT NULL,
+  uploaded_at TIMESTAMP DEFAULT NOW()
+);
+
+-- ============================================================================
 -- DONE! Your production schema is now aligned with development.
 -- Please clear your browser cache and test the Intake page.
 -- ============================================================================
