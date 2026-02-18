@@ -1061,7 +1061,19 @@ export type StudentActivityLog = typeof studentActivityLogs.$inferSelect;
 export type InsertStudentActivityLog = typeof studentActivityLogs.$inferInsert;
 export type DraftingDocument = typeof draftingDocuments.$inferSelect;
 export type InsertDraftingDocument = typeof draftingDocuments.$inferInsert;
+export const wikiAttachments = pgTable("wiki_attachments", {
+  id: serial("id").primaryKey(),
+  wikiEntryId: integer("wiki_entry_id").references(() => wikiEntries.id, { onDelete: "cascade" }).notNull(),
+  filename: text("filename").notNull(),
+  originalName: text("original_name").notNull(),
+  mimeType: text("mime_type").notNull(),
+  fileSize: integer("file_size").notNull(),
+  uploadedAt: timestamp("uploaded_at").defaultNow(),
+});
+
 export type WikiEntry = typeof wikiEntries.$inferSelect;
 export type InsertWikiEntry = typeof wikiEntries.$inferInsert;
+export type WikiAttachment = typeof wikiAttachments.$inferSelect;
+export type InsertWikiAttachment = typeof wikiAttachments.$inferInsert;
 
 export * from "./models/chat";

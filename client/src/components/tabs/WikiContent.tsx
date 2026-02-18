@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   BookOpen,
   Plus,
@@ -12,7 +12,21 @@ import {
   Save,
   ChevronDown,
   ChevronRight,
+  Paperclip,
+  Download,
+  FileText,
+  Upload,
+  Loader2,
 } from "lucide-react";
+
+interface WikiAttachment {
+  id: number;
+  filename: string;
+  originalName: string;
+  mimeType: string;
+  fileSize: number;
+  uploadedAt: string;
+}
 
 interface WikiEntry {
   id: number;
@@ -24,6 +38,7 @@ interface WikiEntry {
   isPinned: boolean;
   createdAt: string;
   updatedAt: string;
+  attachments: WikiAttachment[];
 }
 
 const CATEGORIES = [
@@ -34,6 +49,12 @@ const CATEGORIES = [
   { value: "training", label: "Training Materials" },
   { value: "contacts", label: "Key Contacts" },
 ];
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return bytes + " B";
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+  return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+}
 
 export default function WikiContent() {
   const [entries, setEntries] = useState<WikiEntry[]>([]);
@@ -50,6 +71,9 @@ export default function WikiContent() {
   const [formCategory, setFormCategory] = useState("general");
   const [formIsPinned, setFormIsPinned] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadTargetEntryId, setUploadTargetEntryId] = useState<number | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchEntries = async () => {
     try {
@@ -136,7 +160,7 @@ export default function WikiContent() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this wiki entry?")) return;
+    if (!confirm("Are you sure you want to delete this wiki entry? All attachments will also be deleted.")) return;
 
     try {
       const res = await fetch(`/api/wiki/${id}`, { method: "DELETE" });
@@ -158,6 +182,42 @@ export default function WikiContent() {
       await fetchEntries();
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed to toggle pin");
+    }
+  };
+
+  const handleUploadAttachment = async (entryId: number, file: File) => {
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch(`/api/wiki/${entryId}/attachments`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to upload file");
+      }
+
+      await fetchEntries();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to upload file");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDeleteAttachment = async (attachmentId: number) => {
+    if (!confirm("Are you sure you want to delete this attachment?")) return;
+
+    try {
+      const res = await fetch(`/api/wiki/attachments/${attachmentId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete attachment");
+      await fetchEntries();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to delete attachment");
     }
   };
 
@@ -217,6 +277,19 @@ export default function WikiContent() {
 
   return (
     <div className="space-y-6">
+      <input
+        type="file"
+        ref={fileInputRef}
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file && uploadTargetEntryId !== null) {
+            handleUploadAttachment(uploadTargetEntryId, file);
+          }
+          e.target.value = "";
+        }}
+        accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.jpg,.jpeg,.png,.gif,.webp"
+      />
       <div className="flex flex-col sm:flex-row gap-4 justify-between">
         <div className="flex gap-3 flex-1">
           <div className="relative flex-1 max-w-md">
@@ -292,7 +365,15 @@ export default function WikiContent() {
                     <Pin className="w-4 h-4 text-yellow-500" />
                   )}
                   <div>
-                    <h3 className="font-medium text-gray-900">{entry.title}</h3>
+                    <h3 className="font-medium text-gray-900">
+                      {entry.title}
+                      {entry.attachments && entry.attachments.length > 0 && (
+                        <span className="inline-flex items-center gap-1 ml-2 text-xs text-gray-500 font-normal">
+                          <Paperclip className="w-3 h-3" />
+                          {entry.attachments.length}
+                        </span>
+                      )}
+                    </h3>
                     <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 rounded">
                         {getCategoryLabel(entry.category)}
@@ -346,6 +427,63 @@ export default function WikiContent() {
                     <div className="whitespace-pre-wrap text-gray-700 mt-3">
                       {entry.content}
                     </div>
+                  </div>
+
+                  {entry.attachments && entry.attachments.length > 0 && (
+                    <div className="pl-8 mt-4">
+                      <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
+                        <Paperclip className="w-4 h-4" />
+                        Attachments ({entry.attachments.length})
+                      </h4>
+                      <div className="space-y-2">
+                        {entry.attachments.map((att) => (
+                          <div
+                            key={att.id}
+                            className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-3 py-2"
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <FileText className="w-4 h-4 text-teal-600 flex-shrink-0" />
+                              <span className="text-sm text-gray-700 truncate">{att.originalName}</span>
+                              <span className="text-xs text-gray-400 flex-shrink-0">{formatFileSize(att.fileSize)}</span>
+                            </div>
+                            <div className="flex items-center gap-1 flex-shrink-0">
+                              <a
+                                href={`/api/wiki/attachments/${att.id}/download`}
+                                className="p-1.5 text-teal-600 hover:bg-teal-50 rounded transition-colors"
+                                title="Download"
+                              >
+                                <Download className="w-4 h-4" />
+                              </a>
+                              <button
+                                onClick={() => handleDeleteAttachment(att.id)}
+                                className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                                title="Delete"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="pl-8 mt-3">
+                    <button
+                      onClick={() => {
+                        setUploadTargetEntryId(entry.id);
+                        setTimeout(() => fileInputRef.current?.click(), 0);
+                      }}
+                      disabled={uploading}
+                      className="flex items-center gap-2 text-sm text-teal-600 hover:text-teal-700 hover:bg-teal-50 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+                    >
+                      {uploading && uploadTargetEntryId === entry.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Upload className="w-4 h-4" />
+                      )}
+                      {uploading && uploadTargetEntryId === entry.id ? "Uploading..." : "Add Attachment"}
+                    </button>
                   </div>
                 </div>
               )}
@@ -429,6 +567,15 @@ export default function WikiContent() {
                   className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 font-mono text-sm"
                 />
               </div>
+
+              {editingEntry && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <p className="text-sm text-blue-700 flex items-center gap-1">
+                    <Paperclip className="w-4 h-4" />
+                    To add or manage attachments, save your changes first, then expand the entry and use the "Add Attachment" button.
+                  </p>
+                </div>
+              )}
             </div>
 
             <div className="flex justify-end gap-3 p-4 border-t bg-gray-50">

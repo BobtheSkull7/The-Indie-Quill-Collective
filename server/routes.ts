@@ -2,7 +2,9 @@ import type { Express, Request, Response } from "express";
 import rateLimit from "express-rate-limit";
 import multer from "multer";
 import { db, pool } from "./db";
-import { users, applications, contracts, publishingUpdates, calendarEvents, fundraisingCampaigns, donations, auditLogs, cohorts, familyUnits, operatingCosts, foundations, solicitationLogs, foundationGrants, pilotLedger, emailLogs, grantPrograms, organizationCredentials, grantCalendarAlerts, wikiEntries, studentWork } from "@shared/schema";
+import { users, applications, contracts, publishingUpdates, calendarEvents, fundraisingCampaigns, donations, auditLogs, cohorts, familyUnits, operatingCosts, foundations, solicitationLogs, foundationGrants, pilotLedger, emailLogs, grantPrograms, organizationCredentials, grantCalendarAlerts, wikiEntries, wikiAttachments, studentWork } from "@shared/schema";
+import path from "path";
+import fs from "fs";
 import { eq, desc, gte, sql, inArray, lt, and } from "drizzle-orm";
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
@@ -6413,7 +6415,18 @@ export async function registerDonationRoutes(app: Express) {
         SELECT 
           w.id, w.title, w.content, w.category, w.author_id as "authorId",
           w.is_pinned as "isPinned", w.created_at as "createdAt", w.updated_at as "updatedAt",
-          COALESCE(u.first_name || ' ' || u.last_name, 'Unknown') as "authorName"
+          COALESCE(u.first_name || ' ' || u.last_name, 'Unknown') as "authorName",
+          COALESCE(
+            (SELECT json_agg(json_build_object(
+              'id', wa.id,
+              'filename', wa.filename,
+              'originalName', wa.original_name,
+              'mimeType', wa.mime_type,
+              'fileSize', wa.file_size,
+              'uploadedAt', wa.uploaded_at
+            )) FROM wiki_attachments wa WHERE wa.wiki_entry_id = w.id),
+            '[]'::json
+          ) as "attachments"
         FROM wiki_entries w
         LEFT JOIN public.users u ON u.id = w.author_id
         ORDER BY w.is_pinned DESC, w.updated_at DESC
@@ -6507,6 +6520,10 @@ export async function registerDonationRoutes(app: Express) {
     try {
       const id = parseInt(req.params.id);
 
+      const WIKI_DIR = path.join(process.cwd(), "uploads", "wiki");
+      const attachmentsToClean = await db.select().from(wikiAttachments)
+        .where(eq(wikiAttachments.wikiEntryId, id));
+
       const [deleted] = await db.delete(wikiEntries)
         .where(eq(wikiEntries.id, id))
         .returning();
@@ -6515,10 +6532,144 @@ export async function registerDonationRoutes(app: Express) {
         return res.status(404).json({ error: "Wiki entry not found" });
       }
 
+      for (const att of attachmentsToClean) {
+        const filePath = path.join(WIKI_DIR, att.filename);
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      }
+
       res.json({ success: true });
     } catch (error) {
       console.error("Error deleting wiki entry:", error);
       res.status(500).json({ error: "Failed to delete wiki entry" });
+    }
+  });
+
+  // =============== Wiki Attachments API ===============
+
+  const WIKI_UPLOADS_DIR = path.join(process.cwd(), "uploads", "wiki");
+  if (!fs.existsSync(WIKI_UPLOADS_DIR)) {
+    fs.mkdirSync(WIKI_UPLOADS_DIR, { recursive: true });
+  }
+
+  const wikiUpload = multer({
+    storage: multer.diskStorage({
+      destination: (_req, _file, cb) => cb(null, WIKI_UPLOADS_DIR),
+      filename: (_req, file, cb) => {
+        const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+        const ext = path.extname(file.originalname);
+        cb(null, `wiki-${uniqueSuffix}${ext}`);
+      },
+    }),
+    limits: { fileSize: 20 * 1024 * 1024 },
+    fileFilter: (_req, file, cb) => {
+      const allowed = [
+        "application/pdf",
+        "image/jpeg", "image/png", "image/gif", "image/webp",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/vnd.ms-excel",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "text/plain", "text/csv",
+      ];
+      cb(null, allowed.includes(file.mimetype));
+    },
+  });
+
+  app.get("/api/wiki/:id/attachments", async (req: Request, res: Response) => {
+    if (!req.session.userId) return res.status(401).json({ message: "Not authenticated" });
+    if (req.session.userRole !== "admin" && req.session.userRole !== "board_member") {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    try {
+      const entryId = parseInt(req.params.id);
+      const attachments = await db.select().from(wikiAttachments)
+        .where(eq(wikiAttachments.wikiEntryId, entryId));
+      res.json(attachments);
+    } catch (error) {
+      console.error("Error fetching wiki attachments:", error);
+      res.status(500).json({ error: "Failed to fetch attachments" });
+    }
+  });
+
+  app.post("/api/wiki/:id/attachments", wikiUpload.single("file"), async (req: Request, res: Response) => {
+    if (!req.session.userId) return res.status(401).json({ message: "Not authenticated" });
+    if (req.session.userRole !== "admin" && req.session.userRole !== "board_member") {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    try {
+      const entryId = parseInt(req.params.id);
+      const file = req.file;
+      if (!file) return res.status(400).json({ error: "No file uploaded" });
+
+      const [entry] = await db.select().from(wikiEntries).where(eq(wikiEntries.id, entryId));
+      if (!entry) {
+        fs.unlinkSync(file.path);
+        return res.status(404).json({ error: "Wiki entry not found" });
+      }
+
+      const [attachment] = await db.insert(wikiAttachments).values({
+        wikiEntryId: entryId,
+        filename: file.filename,
+        originalName: file.originalname,
+        mimeType: file.mimetype,
+        fileSize: file.size,
+      }).returning();
+
+      res.json(attachment);
+    } catch (error) {
+      console.error("Error uploading wiki attachment:", error);
+      res.status(500).json({ error: "Failed to upload attachment" });
+    }
+  });
+
+  app.get("/api/wiki/attachments/:attachmentId/download", async (req: Request, res: Response) => {
+    if (!req.session.userId) return res.status(401).json({ message: "Not authenticated" });
+    if (req.session.userRole !== "admin" && req.session.userRole !== "board_member") {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    try {
+      const attachmentId = parseInt(req.params.attachmentId);
+      const [attachment] = await db.select().from(wikiAttachments)
+        .where(eq(wikiAttachments.id, attachmentId));
+
+      if (!attachment) return res.status(404).json({ error: "Attachment not found" });
+
+      const filePath = path.join(WIKI_UPLOADS_DIR, attachment.filename);
+      if (!fs.existsSync(filePath)) return res.status(404).json({ error: "File not found on disk" });
+
+      res.setHeader("Content-Disposition", `attachment; filename="${attachment.originalName}"`);
+      res.setHeader("Content-Type", attachment.mimeType);
+      res.sendFile(filePath);
+    } catch (error) {
+      console.error("Error downloading wiki attachment:", error);
+      res.status(500).json({ error: "Failed to download attachment" });
+    }
+  });
+
+  app.delete("/api/wiki/attachments/:attachmentId", async (req: Request, res: Response) => {
+    if (!req.session.userId) return res.status(401).json({ message: "Not authenticated" });
+    if (req.session.userRole !== "admin" && req.session.userRole !== "board_member") {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    try {
+      const attachmentId = parseInt(req.params.attachmentId);
+      const [attachment] = await db.delete(wikiAttachments)
+        .where(eq(wikiAttachments.id, attachmentId))
+        .returning();
+
+      if (!attachment) return res.status(404).json({ error: "Attachment not found" });
+
+      const filePath = path.join(WIKI_UPLOADS_DIR, attachment.filename);
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting wiki attachment:", error);
+      res.status(500).json({ error: "Failed to delete attachment" });
     }
   });
 
