@@ -1,6 +1,6 @@
 import { db } from "./db";
 import { calendarEvents } from "@shared/schema";
-import { eq, isNull, and } from "drizzle-orm";
+import { eq, isNull, isNotNull, and } from "drizzle-orm";
 import { getUncachableGoogleCalendarClient, isGoogleCalendarConnected } from "./google-calendar-client";
 
 const PRIMARY_CALENDAR_ID = 'primary';
@@ -10,6 +10,7 @@ export interface SyncResult {
   error?: string;
   pushedToGoogle: number;
   pulledFromGoogle: number;
+  removedCancelled: number;
 }
 
 export async function syncCalendarEvents(): Promise<SyncResult> {
@@ -17,6 +18,7 @@ export async function syncCalendarEvents(): Promise<SyncResult> {
     success: false,
     pushedToGoogle: 0,
     pulledFromGoogle: 0,
+    removedCancelled: 0,
   };
 
   try {
@@ -32,6 +34,7 @@ export async function syncCalendarEvents(): Promise<SyncResult> {
 
     const pullResult = await pullEventsFromGoogle(calendar);
     result.pulledFromGoogle = pullResult.count;
+    result.removedCancelled = pullResult.removed;
 
     if (pushResult.errors.length > 0) {
       result.success = false;
@@ -153,8 +156,9 @@ async function pushEventsToGoogle(calendar: any): Promise<{ count: number; error
   return { count, errors };
 }
 
-async function pullEventsFromGoogle(calendar: any): Promise<{ count: number }> {
+async function pullEventsFromGoogle(calendar: any): Promise<{ count: number; removed: number }> {
   let count = 0;
+  let removed = 0;
 
   try {
     const now = new Date();
@@ -168,19 +172,58 @@ async function pullEventsFromGoogle(calendar: any): Promise<{ count: number }> {
       singleEvents: true,
       orderBy: 'startTime',
       maxResults: 250,
+      showDeleted: true,
     });
 
     const googleEvents = response.data.items || [];
+    const activeGoogleIds = new Set<string>();
 
     const existingEvents = await db.select().from(calendarEvents);
-    const existingGoogleIds = new Set(
+    const existingByGoogleId = new Map(
       existingEvents
         .filter(e => e.googleCalendarEventId)
-        .map(e => e.googleCalendarEventId)
+        .map(e => [e.googleCalendarEventId, e])
     );
 
     for (const gEvent of googleEvents) {
-      if (!gEvent.id || existingGoogleIds.has(gEvent.id)) {
+      if (!gEvent.id) continue;
+
+      if (gEvent.status === 'cancelled') {
+        const existing = existingByGoogleId.get(gEvent.id);
+        if (existing) {
+          await db.delete(calendarEvents).where(eq(calendarEvents.id, existing.id));
+          console.log(`[Calendar Sync] Removed cancelled Google event: ${existing.title} (${gEvent.id})`);
+          removed++;
+        }
+        continue;
+      }
+
+      activeGoogleIds.add(gEvent.id);
+
+      const existing = existingByGoogleId.get(gEvent.id);
+      if (existing) {
+        const isAllDay = !gEvent.start?.dateTime;
+        const startDate = isAllDay
+          ? new Date(gEvent.start?.date + 'T00:00:00')
+          : new Date(gEvent.start?.dateTime || gEvent.start?.date);
+        const endDate = gEvent.end
+          ? (isAllDay
+              ? new Date(gEvent.end?.date + 'T00:00:00')
+              : new Date(gEvent.end?.dateTime || gEvent.end?.date))
+          : null;
+
+        await db.update(calendarEvents)
+          .set({
+            title: gEvent.summary || 'Untitled Event',
+            description: gEvent.description || null,
+            startDate,
+            endDate,
+            allDay: isAllDay,
+            location: gEvent.location || null,
+            lastSyncedAt: new Date(),
+            updatedAt: new Date(),
+          })
+          .where(eq(calendarEvents.id, existing.id));
         continue;
       }
 
@@ -218,7 +261,7 @@ async function pullEventsFromGoogle(calendar: any): Promise<{ count: number }> {
     console.error('Failed to pull events from Google:', error);
   }
 
-  return { count };
+  return { count, removed };
 }
 
 export async function deleteGoogleCalendarEvent(googleEventId: string): Promise<boolean> {
