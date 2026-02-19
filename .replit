@@ -53,4 +53,3 @@ externalPort = 80
 AI_INTEGRATIONS_OPENAI_BASE_URL = "http://localhost:1106/modelfarm/openai"
 AI_INTEGRATIONS_OPENAI_API_KEY = "_DUMMY_API_KEY_"
 GAME_ENGINE_URL = "https://curriculum-import-tool.replit.app"
-RESEND_FROM_EMAIL = "The Indie Quill Collective <noreply@theindiequillcollective.com>"
