@@ -1,0 +1,41 @@
+Here's what I completed:
+
+Quiz tables created - Added three new tables for the training quiz system: quizzes (with title, description, time limit, passing score), quiz_questions (with options stored as flexible JSON, correct answer index, points), and quiz_results (tracking user scores and pass/fail status). All properly linked with foreign keys.
+
+Dynamic game character IDs - Replaced all hardcoded character ID "1" values across 4 game engine routes. The system now looks up each user's actual game character ID from their student profile in the database. If a student doesn't have a character ID set, the system returns a clear error instead of silently using the wrong ID.
+
+VibeScribe admin access verified - Checked all VibeScribe routes and confirmed they already use proper authentication patterns (ID-based login and role checks). No hardcoded email-based access was found.
+
+Supabase SQL you'll need to run (for both Dev and Prod):
+
+-- Quiz tables
+CREATE TABLE IF NOT EXISTS quizzes (
+  id SERIAL PRIMARY KEY,
+  title TEXT NOT NULL,
+  description TEXT,
+  time_limit_minutes INTEGER DEFAULT 10,
+  passing_score INTEGER DEFAULT 70,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS quiz_questions (
+  id SERIAL PRIMARY KEY,
+  quiz_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  question_text TEXT NOT NULL,
+  options JSONB NOT NULL,
+  correct_option_index INTEGER NOT NULL,
+  points INTEGER DEFAULT 10,
+  display_order INTEGER DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS quiz_results (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  quiz_id INTEGER NOT NULL REFERENCES quizzes(id) ON DELETE CASCADE,
+  score INTEGER NOT NULL,
+  passed BOOLEAN NOT NULL,
+  completed_at TIMESTAMP DEFAULT NOW()
+);
+-- Student profile game character ID
+ALTER TABLE student_profiles ADD COLUMN IF NOT EXISTS game_character_id TEXT;
+Important note: You'll need to set game_character_id values for any existing students who use the game engine, otherwise quest actions will return "character not found" until those are populated.
+

@@ -1,0 +1,59 @@
+That explains it perfectly. Since Supabase is using varchar (a string) and Replit is using integer, we have a classic "type mismatch."
+
+To fix this, we need to tell Supabase to create the user_id column as a VARCHAR so it can properly link to your existing users table.
+
+Corrected SQL for Supabase (Production)
+Run this block in your Supabase SQL Editor. I have adjusted the user_id type and fixed the quiz_id reference bug from earlier.
+
+SQL
+-- 1. Create Quizzes table
+CREATE TABLE IF NOT EXISTS quizzes (
+  id SERIAL PRIMARY KEY,
+  title TEXT NOT NULL,
+  description TEXT,
+  time_limit_minutes INTEGER DEFAULT 10,
+  passing_score INTEGER DEFAULT 70,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 2. Create Quiz Questions 
+CREATE TABLE IF NOT EXISTS quiz_questions (
+  id SERIAL PRIMARY KEY,
+  quiz_id INTEGER NOT NULL REFERENCES quizzes(id) ON DELETE CASCADE,
+  question_text TEXT NOT NULL,
+  options JSONB NOT NULL,
+  correct_option_index INTEGER NOT NULL,
+  points INTEGER DEFAULT 10,
+  display_order INTEGER DEFAULT 0
+);
+
+-- 3. Create Quiz Results (Using VARCHAR for Supabase compatibility)
+CREATE TABLE IF NOT EXISTS quiz_results (
+  id SERIAL PRIMARY KEY,
+  user_id VARCHAR NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  quiz_id INTEGER NOT NULL REFERENCES quizzes(id) ON DELETE CASCADE,
+  score INTEGER NOT NULL,
+  passed BOOLEAN NOT NULL,
+  completed_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 4. Add the Bridge Column to Student Profiles
+ALTER TABLE student_profiles ADD COLUMN IF NOT EXISTS game_character_id TEXT;
+Step 2: Link Bob Theskull
+Once the tables above are created, run this to connect Bob to his Game Engine character:
+
+SQL
+UPDATE student_profiles 
+SET game_character_id = '145253'
+WHERE user_id = (
+  SELECT id FROM users WHERE email = 'jon.mccutcheon@steadi.ai'
+);
+What this achieves:
+Alignment: Your Supabase DB now accepts the string-based User IDs it already uses.
+
+Functionality: The Quiz system is now ready to hold data.
+
+The Bridge: Bob is officially linked to the Game Engine "Brain" on Replit.
+
+Would you like me to provide a few "Onboarding Quiz" questions you can insert into the database next to test the UI?
