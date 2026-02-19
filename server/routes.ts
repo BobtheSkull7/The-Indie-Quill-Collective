@@ -5768,12 +5768,15 @@ export async function registerDonationRoutes(app: Express) {
         audienceTypes = ['adult'];
       }
 
+      const pathTypesArray = `{${pathTypes.join(",")}}`;
+      const audienceTypesArray = `{${audienceTypes.join(",")}}`;
+
       const modules = await db.execute(sql`
         SELECT id, title, description, order_index, duration_hours, content_type, is_published, path_type, audience_type
         FROM curriculum_modules
         WHERE is_published = true 
-          AND path_type = ANY(${pathTypes})
-          AND audience_type = ANY(${audienceTypes})
+          AND path_type = ANY(${pathTypesArray}::text[])
+          AND audience_type = ANY(${audienceTypesArray}::text[])
         ORDER BY order_index ASC
       `);
 

@@ -1,0 +1,229 @@
+front end logs from render ==> Docs on specifying a port: https://render.com/docs/web-services#port-binding
+
+Menu
+
+
+
+
+
+==> Detected service running on port 10000
+
+
+
+[Sync Worker] Running scheduled sync at 2026-02-19T20:05:00.012Z
+
+
+
+GET /api/admin/users 304 in 22ms
+
+
+
+[AUDIT] Minor data access: User f24f344e-eba2-4ad2-9436-2a2bfb018935 performed view on users:bulk
+
+
+
+GET /api/student/curriculum 500 in 20ms
+
+
+
+}
+
+
+
+routine: 'array_in'
+
+
+
+line: '262',
+
+
+
+file: 'arrayfuncs.c',
+
+
+
+constraint: undefined,
+
+
+
+dataType: undefined,
+
+
+
+column: undefined,
+
+
+
+table: undefined,
+
+
+
+schema: undefined,
+
+
+
+where: "unnamed portal parameter $1 = '...'",
+
+
+
+internalQuery: undefined,
+
+
+
+internalPosition: undefined,
+
+
+
+position: undefined,
+
+
+
+hint: undefined,
+
+
+
+detail: 'Array value must start with "{" or dimension information.',
+
+
+
+code: '22P02',
+
+
+
+severity: 'ERROR',
+
+
+
+length: 187,
+
+
+
+at async <anonymous> (/opt/render/project/src/server/routes.ts:5771:23) {
+
+
+
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+
+
+
+at /opt/render/project/src/node_modules/pg-pool/index.js:45:11
+
+
+
+Error fetching curriculum: error: malformed array literal: "general"
+
+
+
+[GET]
+
+theindiequillcollective.com/api/admin/users clientIP="143.103.10.5" requestID="49c8417c-2d02-475e" responseTimeMS=31 responseBytes=975 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+
+
+
+[GET]
+
+theindiequillcollective.com/generated-icon.png clientIP="143.103.10.5" requestID="eba74344-ba09-4725" responseTimeMS=9 responseBytes=1060 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+
+
+
+[GET]
+
+theindiequillcollective.com/api/student/curriculum clientIP="143.103.10.5" requestID="e48116c7-313b-4e57" responseTimeMS=26 responseBytes=1109 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+
+
+
+GET /api/board/calendar/sync-status 304 in 451ms
+
+
+
+GET /api/applications 304 in 295ms
+
+
+
+[AUDIT] Minor data access: User f24f344e-eba2-4ad2-9436-2a2bfb018935 performed view on applications:bulk
+
+
+
+GET /api/admin/sync-status 304 in 103ms
+
+
+
+GET /api/board/calendar 304 in 93ms
+
+
+
+GET /api/admin/users 304 in 73ms
+
+
+
+GET /api/admin/email-logs 304 in 53ms
+
+
+
+GET /api/admin/stats 304 in 22ms
+
+
+
+[AUDIT] Minor data access: User f24f344e-eba2-4ad2-9436-2a2bfb018935 performed view on users:bulk
+
+
+
+POST /api/auth/login 200 in 197ms
+
+
+
+[GET]
+
+theindiequillcollective.com/api/admin/email-logs clientIP="143.103.10.5" requestID="de260c98-8c72-4ce3" responseTimeMS=61 responseBytes=972 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+
+
+
+[GET]
+
+theindiequillcollective.com/api/applications clientIP="143.103.10.5" requestID="2774d197-1bb6-4afa" responseTimeMS=334 responseBytes=975 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+
+
+
+[GET]
+
+theindiequillcollective.com/api/board/calendar/sync-status clientIP="143.103.10.5" requestID="51b41024-85fa-4aa1" responseTimeMS=463 responseBytes=973 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+
+
+
+[GET]
+
+theindiequillcollective.com/generated-icon.png clientIP="143.103.10.5" requestID="426dd2cf-a7a7-4ce0" responseTimeMS=110 responseBytes=1731 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+
+
+
+[POST]
+
+theindiequillcollective.com/api/auth/login clientIP="143.103.10.5" requestID="bd762127-d8fd-4432" responseTimeMS=294 responseBytes=1481 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+
+
+
+[GET]
+
+theindiequillcollective.com/api/admin/users clientIP="143.103.10.5" requestID="76cfd9df-4205-4f34" responseTimeMS=78 responseBytes=975 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+
+
+
+[GET]
+
+theindiequillcollective.com/api/admin/stats clientIP="143.103.10.5" requestID="563a1697-583d-4328" responseTimeMS=30 responseBytes=973 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+
+
+
+[GET]
+
+theindiequillcollective.com/api/admin/sync-status clientIP="143.103.10.5" requestID="24b0366a-f84b-4203" responseTimeMS=125 responseBytes=974 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+
+
+
+[GET]
+
+theindiequillcollective.com/api/board/calendar clientIP="143.103.10.5" requestID="eec1d7fa-f9c6-4b28" responseTimeMS=109 responseBytes=975 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+
+
+
+App initialized
