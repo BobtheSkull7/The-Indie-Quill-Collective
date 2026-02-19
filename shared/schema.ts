@@ -1125,11 +1125,21 @@ export const quizResults = pgTable("quiz_results", {
   completedAt: timestamp("completed_at").defaultNow(),
 });
 
+export const passwordResetTokens = pgTable("password_reset_tokens", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  token: text("token").notNull().unique(),
+  expiresAt: timestamp("expires_at").notNull(),
+  usedAt: timestamp("used_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export type Quiz = typeof quizzes.$inferSelect;
 export type InsertQuiz = typeof quizzes.$inferInsert;
 export type QuizQuestion = typeof quizQuestions.$inferSelect;
 export type InsertQuizQuestion = typeof quizQuestions.$inferInsert;
 export type QuizResult = typeof quizResults.$inferSelect;
 export type InsertQuizResult = typeof quizResults.$inferInsert;
+export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
 
 export * from "./models/chat";

@@ -2,7 +2,7 @@ import type { Express, Request, Response } from "express";
 import rateLimit from "express-rate-limit";
 import multer from "multer";
 import { db, pool } from "./db";
-import { users, applications, contracts, publishingUpdates, calendarEvents, fundraisingCampaigns, donations, auditLogs, cohorts, familyUnits, operatingCosts, foundations, solicitationLogs, foundationGrants, pilotLedger, emailLogs, grantPrograms, organizationCredentials, grantCalendarAlerts, wikiEntries, wikiAttachments, boardMembers, studentWork, studentProfiles } from "@shared/schema";
+import { users, applications, contracts, publishingUpdates, calendarEvents, fundraisingCampaigns, donations, auditLogs, cohorts, familyUnits, operatingCosts, foundations, solicitationLogs, foundationGrants, pilotLedger, emailLogs, grantPrograms, organizationCredentials, grantCalendarAlerts, wikiEntries, wikiAttachments, boardMembers, studentWork, studentProfiles, passwordResetTokens } from "@shared/schema";
 import path from "path";
 import fs from "fs";
 import { eq, desc, gte, sql, inArray, lt, and } from "drizzle-orm";
@@ -32,7 +32,7 @@ async function getUserByEmail(email: string): Promise<any | null> {
 }
 import { hash, compare } from "./auth";
 import { migrateAuthorToIndieQuill, retryFailedMigrations, sendApplicationToLLC, sendStatusUpdateToLLC, sendContractSignatureToLLC, sendUserRoleUpdateToLLC } from "./indie-quill-integration";
-import { sendApplicationReceivedEmail, sendApplicationAcceptedEmail, sendApplicationRejectedEmail, sendTestEmailSamples, sendWelcomeToCollectiveEmail } from "./email";
+import { sendApplicationReceivedEmail, sendApplicationAcceptedEmail, sendApplicationRejectedEmail, sendTestEmailSamples, sendWelcomeToCollectiveEmail, sendPasswordResetEmail } from "./email";
 import { logAuditEvent, logMinorDataAccess, getClientIp } from "./utils/auditLogger";
 import { syncCalendarEvents, getGoogleCalendarConnectionStatus, deleteGoogleCalendarEvent, updateGoogleCalendarEvent, pushSingleEventToGoogle } from "./google-calendar-sync";
 import { getAuthUrl, handleAuthCallback, disconnectGoogleCalendar, validateOAuthState } from "./google-calendar-client";
@@ -228,6 +228,96 @@ export async function registerRoutes(app: Express) {
       }
       return res.json({ message: "Logged out successfully" });
     });
+  });
+
+  app.post("/api/auth/forgot-password", authRateLimiter, async (req: Request, res: Response) => {
+    try {
+      const { email } = req.body;
+      if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+      }
+
+      const result = await db.execute(sql`
+        SELECT id, email, first_name as "firstName" FROM public.users WHERE lower(email) = lower(${email})
+      `);
+      const user = result.rows[0] as any;
+
+      if (!user) {
+        return res.json({ message: "If an account with that email exists, a reset link has been sent." });
+      }
+
+      const crypto = await import("crypto");
+      const token = crypto.randomBytes(32).toString("hex");
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+
+      await db.execute(sql`
+        DELETE FROM password_reset_tokens WHERE user_id = ${user.id}
+      `);
+
+      await db.insert(passwordResetTokens).values({
+        userId: user.id,
+        token,
+        expiresAt,
+      });
+
+      const hostname = process.env.REPLIT_DOMAINS?.split(",")[0] 
+        || process.env.REPLIT_DEV_DOMAIN 
+        || "theindiequillcollective.com";
+      const protocol = hostname.includes("localhost") ? "http" : "https";
+      const resetLink = `${protocol}://${hostname}/reset-password?token=${token}`;
+
+      await sendPasswordResetEmail(user.email, user.firstName, resetLink);
+
+      return res.json({ message: "If an account with that email exists, a reset link has been sent." });
+    } catch (error) {
+      console.error("Forgot password error:", error);
+      return res.status(500).json({ message: "Something went wrong. Please try again." });
+    }
+  });
+
+  app.post("/api/auth/reset-password", authRateLimiter, async (req: Request, res: Response) => {
+    try {
+      const { token, password } = req.body;
+      if (!token || !password) {
+        return res.status(400).json({ message: "Token and new password are required" });
+      }
+
+      if (password.length < 6) {
+        return res.status(400).json({ message: "Password must be at least 6 characters" });
+      }
+
+      const [resetToken] = await db.select()
+        .from(passwordResetTokens)
+        .where(eq(passwordResetTokens.token, token))
+        .limit(1);
+
+      if (!resetToken) {
+        return res.status(400).json({ message: "Invalid or expired reset link" });
+      }
+
+      if (resetToken.usedAt) {
+        return res.status(400).json({ message: "This reset link has already been used" });
+      }
+
+      if (new Date() > resetToken.expiresAt) {
+        return res.status(400).json({ message: "This reset link has expired. Please request a new one." });
+      }
+
+      const hashedPassword = await hash(password);
+
+      await db.execute(sql`
+        UPDATE public.users SET password = ${hashedPassword} WHERE id = ${resetToken.userId}
+      `);
+
+      await db.update(passwordResetTokens)
+        .set({ usedAt: new Date() })
+        .where(eq(passwordResetTokens.id, resetToken.id));
+
+      return res.json({ message: "Password has been reset successfully. You can now sign in." });
+    } catch (error) {
+      console.error("Reset password error:", error);
+      return res.status(500).json({ message: "Something went wrong. Please try again." });
+    }
   });
 
   app.get("/api/auth/me", async (req: Request, res: Response) => {

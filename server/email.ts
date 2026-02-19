@@ -477,6 +477,56 @@ export async function sendActiveAuthorEmail(
   }
 }
 
+export async function sendPasswordResetEmail(
+  recipientEmail: string,
+  recipientName: string | null,
+  resetLink: string
+): Promise<boolean> {
+  try {
+    const { client, fromEmail } = await getResendClient();
+
+    await client.emails.send({
+      from: fromEmail || 'The Indie Quill Collective <noreply@resend.dev>',
+      to: recipientEmail,
+      subject: 'Reset Your Password - The Indie Quill Collective',
+      html: `
+        <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background: linear-gradient(135deg, #0d9488 0%, #1e40af 100%); border-radius: 12px 12px 0 0; padding: 30px; text-align: center;">
+            <h1 style="color: white; margin: 0; font-size: 24px;">Password Reset Request</h1>
+          </div>
+          <div style="background: white; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px; padding: 30px;">
+            <p style="color: #334155; font-size: 16px; line-height: 1.6;">
+              Hi ${recipientName || 'there'},
+            </p>
+            <p style="color: #334155; font-size: 16px; line-height: 1.6;">
+              We received a request to reset your password. Click the button below to create a new password:
+            </p>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${resetLink}" style="display: inline-block; background: linear-gradient(135deg, #0d9488, #1e40af); color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">
+                Reset Password
+              </a>
+            </div>
+            <p style="color: #64748b; font-size: 14px; line-height: 1.6;">
+              This link will expire in 1 hour. If you didn't request a password reset, you can safely ignore this email.
+            </p>
+            <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
+            <p style="color: #94a3b8; font-size: 12px; text-align: center;">
+              The Indie Quill Collective &mdash; Nurturing New Literary Talent
+            </p>
+          </div>
+        </div>
+      `,
+    });
+
+    await logEmail(recipientEmail, recipientName, 'password_reset', null, 'sent');
+    return true;
+  } catch (error) {
+    console.error('Failed to send password reset email:', error);
+    await logEmail(recipientEmail, recipientName, 'password_reset', null, 'failed', String(error));
+    return false;
+  }
+}
+
 export async function sendTestEmailSamples(adminEmail: string): Promise<{ success: boolean; results: string[] }> {
   const results: string[] = [];
   

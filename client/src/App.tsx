@@ -23,6 +23,8 @@ import Publishing from "./pages/Publishing";
 import Outcomes from "./pages/Outcomes";
 import VibeScribe from "./pages/VibeScribe";
 import GameTest from "./pages/GameTest";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import Navbar from "./components/Navbar";
 
 interface User {
@@ -84,6 +86,8 @@ function App() {
           <Route path="/apply" component={Apply} />
           <Route path="/login" component={Login} />
           <Route path="/register" component={Register} />
+          <Route path="/forgot-password" component={ForgotPassword} />
+          <Route path="/reset-password" component={ResetPassword} />
           <Route path="/dashboard" component={Dashboard} />
           
           <Route path="/student" component={StudentDashboard} />
