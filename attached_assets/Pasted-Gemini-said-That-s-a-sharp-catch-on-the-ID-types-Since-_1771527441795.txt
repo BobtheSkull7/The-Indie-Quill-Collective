@@ -1,0 +1,77 @@
+Gemini said
+That’s a sharp catch on the ID types. Since you are using Drizzle ORM with serial IDs, sticking to the established integer PK/FK pattern is non-negotiable to maintain referential integrity with your existing users table. Mixing UUIDs and Serials in the same relationship is a recipe for a headache later.
+
+Let’s refine the plan to fit the Indie Quill Architecture perfectly.
+
+Phase 2: Structural Wiring (Drizzle-First Approach)
+1. Schema Alignment (shared/schema.ts)
+Instead of raw SQL first, we’ll define the quizzes, quizQuestions, and quizResults in your Drizzle schema. This ensures your TypeScript types stay in sync and your insert logic is type-safe.
+
+Proposed Drizzle Schema Update:
+
+quizzes: id: serial('id').primaryKey(), title, description, timeLimit, passingScore.
+
+quizQuestions: id: serial('id').primaryKey(), quizId: integer('quiz_id').references(() => quizzes.id), questionText, options: jsonb('options'), correctOptionIndex.
+
+quizResults: id: serial('id').primaryKey(), userId: integer('user_id').references(() => users.id), quizId: integer('quiz_id').references(() => quizzes.id), score, passed.
+
+2. Game Engine Mapping (The TODO hunt)
+In routes.ts, we need to swap the hardcoded IDs for a dynamic lookup.
+
+Current State: Likely const charId = "TEST_ID_123";
+
+Target State: ```typescript
+const profile = await db.select().from(studentProfiles).where(eq(studentProfiles.userId, req.user.id)).limit(1);
+const charId = profile[0]?.gameCharacterId;
+
+
+3. VibeScribe Admin Access (Task #7)
+We will replace the tiny@test.com string check with:
+
+TypeScript
+if (!req.user || !hasRole(req.user, 'admin')) { 
+  return res.status(403).send("Admin access required"); 
+}
+Step 1: The Drizzle Schema Update
+Let's lock in the schema first so you can push it to Supabase.
+
+Action: Update your shared/schema.ts with the code below.
+
+TypeScript
+// Add these to your shared/schema.ts
+
+export const quizzes = pgTable("quizzes", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description"),
+  timeLimitMinutes: integer("time_limit_minutes").default(10),
+  passingScore: integer("passing_score").default(70),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const quizQuestions = pgTable("quiz_questions", {
+  id: serial("id").primaryKey(),
+  quizId: integer("quiz_id").references(() => quizzes.id, { onDelete: 'cascade' }),
+  questionText: text("question_text").notNull(),
+  options: jsonb("options").notNull(), // Array of strings: ["Option A", "Option B"...]
+  correctOptionIndex: integer("correct_option_index").notNull(),
+  points: integer("points").default(10),
+  displayOrder: integer("display_order").default(0),
+});
+
+export const quizResults = pgTable("quiz_results", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id, { onDelete: 'cascade' }),
+  quizId: integer("quiz_id").references(() => quizzes.id, { onDelete: 'cascade' }),
+  score: integer("score").notNull(),
+  passed: boolean("passed").notNull(),
+  completedAt: timestamp("completed_at").defaultNow(),
+});
+Checkpoint: Once you've added these to shared/schema.ts and ran your generation script, let me know. I can then give you the exact SQL to run in the Supabase Editor to create these tables manually since we aren't using Replit-native migrations.
+
+Would you like the SQL for Supabase now, or shall we verify the schema types first?
+
+
+
+
+

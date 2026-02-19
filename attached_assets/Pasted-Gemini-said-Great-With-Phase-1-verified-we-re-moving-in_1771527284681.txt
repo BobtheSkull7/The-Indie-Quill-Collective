@@ -1,0 +1,57 @@
+Gemini said
+Great. With Phase 1 verified, we’re moving into the "Structural Wiring" of VibeScribe.
+
+Since the backend APIs and PWA shell for VibeScribe already exist, Phase 2 is about transforming it from a "test recorder" into a functional bridge between the real world (Student) and the digital world (Game Engine).
+
+Phase 2: VibeScribe & Game Engine Integration
+We will tackle this in three clean steps.
+
+1. Database Schema: The Quiz & Training Engine
+We need to move the Quiz System from "Built but Empty" to "Functional." This requires a relational structure that tracks which Student completed which Quiz for which Cohort.
+
+Action: Execute this SQL in your Supabase SQL Editor to establish the Quiz and Result relationship.
+
+SQL
+-- 1. Create the Quizzes table
+CREATE TABLE IF NOT EXISTS quizzes (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  title TEXT NOT NULL,
+  description TEXT,
+  time_limit_minutes INTEGER DEFAULT 10,
+  passing_score INTEGER DEFAULT 70,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 2. Create the Quiz Questions table
+CREATE TABLE IF NOT EXISTS quiz_questions (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  quiz_id UUID REFERENCES quizzes(id) ON DELETE CASCADE,
+  question_text TEXT NOT NULL,
+  options JSONB NOT NULL, -- Format: ["A", "B", "C", "D"]
+  correct_option_index INTEGER NOT NULL,
+  points INTEGER DEFAULT 10,
+  display_order INTEGER DEFAULT 0
+);
+
+-- 3. Create Quiz Results (The Link)
+CREATE TABLE IF NOT EXISTS quiz_results (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  quiz_id UUID REFERENCES quizzes(id) ON DELETE CASCADE,
+  score INTEGER NOT NULL,
+  passed BOOLEAN NOT NULL,
+  completed_at TIMESTAMPTZ DEFAULT NOW()
+);
+2. The Game Engine Mapping (Resolving TODOs)
+We need to stop using hardcoded IDs and start pulling the game_character_id from the student profile. This ensures that when a student uses VibeScribe, the Game Engine knows exactly whose quest is being updated.
+
+Action: Update the Logic in routes.ts (or your Game API controller):
+
+Locate the two TODOs regarding character ID mapping.
+
+Update the query to fetch the ID: SELECT game_character_id FROM student_profiles WHERE user_id = ?.
+
+3. VibeScribe Admin Access (The Security Fix)
+We need to swap the hardcoded tiny@test.com check for a proper role-based permission so you can actually manage the VibeScribe settings from your admin account.
+
