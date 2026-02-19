@@ -8,7 +8,15 @@ let connectionSettings: any;
 
 async function getCredentials() {
   if (process.env.RESEND_API_KEY) {
-    const fromEmail = process.env.RESEND_FROM_EMAIL || 'The Indie Quill Collective <noreply@resend.dev>';
+    const rawFromEmail = process.env.RESEND_FROM_EMAIL;
+    console.log(`[Email] RESEND_FROM_EMAIL raw value: "${rawFromEmail}" (type: ${typeof rawFromEmail}, length: ${rawFromEmail?.length || 0})`);
+    let fromEmail: string;
+    if (rawFromEmail && rawFromEmail.trim().length > 0) {
+      fromEmail = rawFromEmail.trim();
+    } else {
+      fromEmail = 'The Indie Quill Collective <noreply@theindiequillcollective.com>';
+      console.warn(`[Email] WARNING: RESEND_FROM_EMAIL is not set! Falling back to: ${fromEmail}`);
+    }
     console.log(`[Email] Using RESEND_API_KEY from environment, from: ${fromEmail}`);
     return {
       apiKey: process.env.RESEND_API_KEY,
