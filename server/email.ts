@@ -494,7 +494,7 @@ export async function sendPasswordResetEmail(
   try {
     const { client, fromEmail } = await getResendClient();
 
-    await client.emails.send({
+    const response = await client.emails.send({
       from: fromEmail || 'The Indie Quill Collective <noreply@resend.dev>',
       to: recipientEmail,
       subject: 'Reset Your Password - The Indie Quill Collective',
@@ -526,6 +526,14 @@ export async function sendPasswordResetEmail(
         </div>
       `,
     });
+
+    console.log('[Email] Resend API response:', JSON.stringify(response));
+
+    if (response.error) {
+      console.error('[Email] Resend returned error:', response.error);
+      await logEmail('password_reset', recipientEmail, recipientName, 'failed', undefined, undefined, JSON.stringify(response.error));
+      return false;
+    }
 
     await logEmail('password_reset', recipientEmail, recipientName, 'sent');
     return true;
