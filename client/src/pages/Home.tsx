@@ -300,7 +300,7 @@ export default function Home() {
                 <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-2">
                   <Shield className="w-5 h-5 text-green-600" />
                 </div>
-                <p className="text-2xl font-bold text-slate-800 mb-0.5">100%</p>
+                <p className="text-2xl font-bold text-slate-800 mb-0.5">{metrics.identityProtectionRate}%</p>
                 <p className="text-gray-600 font-medium text-xs">Identity Protection</p>
                 <p className="text-[10px] text-gray-500 mt-0.5">COPPA Compliant</p>
               </div>
@@ -309,8 +309,8 @@ export default function Home() {
                 <div className="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center mx-auto mb-2">
                   <Users className="w-5 h-5 text-teal-600" />
                 </div>
-                <p className="text-2xl font-bold text-slate-800 mb-0.5">14</p>
-                <p className="text-gray-600 font-medium text-xs">Active Authors</p>
+                <p className="text-2xl font-bold text-slate-800 mb-0.5">{metrics.totalAuthorsSupported}</p>
+                <p className="text-gray-600 font-medium text-xs">Authors Supported</p>
                 <p className="text-[10px] text-gray-500 mt-0.5">Growing Community</p>
               </div>
 
@@ -318,9 +318,9 @@ export default function Home() {
                 <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-2">
                   <BookOpen className="w-5 h-5 text-purple-600" />
                 </div>
-                <p className="text-2xl font-bold text-slate-800 mb-0.5">Launching Soon</p>
+                <p className="text-2xl font-bold text-slate-800 mb-0.5">{metrics.publishedBooks > 0 ? metrics.publishedBooks : "Launching Soon"}</p>
                 <p className="text-gray-600 font-medium text-xs">Books Published</p>
-                <p className="text-[10px] text-gray-500 mt-0.5">Coming This Year</p>
+                <p className="text-[10px] text-gray-500 mt-0.5">{metrics.publishedBooks > 0 ? "And Growing" : "Coming This Year"}</p>
               </div>
             </div>
           ) : (

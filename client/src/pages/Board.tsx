@@ -8,42 +8,17 @@ import {
 } from "lucide-react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from "date-fns";
 
-interface BoardMember {
+interface BoardMemberData {
+  id: number;
   name: string;
   title: string;
-  bio: string;
-  image: string | null;
-  email?: string;
-  linkedin?: string;
+  bio: string | null;
+  photoFilename: string | null;
+  email: string | null;
+  linkedin: string | null;
+  displayOrder: number;
+  isActive: boolean;
 }
-
-const BOARD_MEMBERS: BoardMember[] = [
-  {
-    name: "Executive Director",
-    title: "Executive Director & Founder",
-    bio: "The chief architect of The Indie Quill Collective's mission to empower emerging authors. Leads organizational strategy, community partnerships, and the development of our literacy-focused authorship programs. Passionate about creating pathways for marginalized voices to be heard through published works.",
-    image: null,
-    email: "director@indiequill.org",
-  },
-  {
-    name: "Board Member",
-    title: "Board of Directors",
-    bio: "Brings expertise in nonprofit governance and strategic planning. Supports the organization's mission through oversight, fundraising, and community engagement.",
-    image: null,
-  },
-  {
-    name: "Board Member",
-    title: "Board of Directors",
-    bio: "Contributes professional experience in education and literacy advocacy. Helps guide program development and partnerships with schools and community organizations.",
-    image: null,
-  },
-  {
-    name: "Board Member",
-    title: "Board of Directors",
-    bio: "Provides expertise in financial management and nonprofit compliance. Ensures responsible stewardship of donor contributions and grant funds.",
-    image: null,
-  },
-];
 
 interface Stats {
   totalApplications: number;
@@ -135,16 +110,31 @@ export default function Board() {
     notes: ""
   });
 
-  const isBoardMember = user && user.role === "board_member";
+  const [boardMembersData, setBoardMembersData] = useState<BoardMemberData[]>([]);
+
+  const isBoardMember = user && (user.role === "board_member" || (user as any).secondaryRole === "board_member");
   const isAuthenticated = !!user;
 
   useEffect(() => {
+    loadBoardMembers();
     if (isBoardMember) {
       loadData();
     } else {
       setLoading(false);
     }
   }, [user, isBoardMember]);
+
+  const loadBoardMembers = async () => {
+    try {
+      const res = await fetch("/api/public/board-members");
+      if (res.ok) {
+        const data = await res.json();
+        setBoardMembersData(Array.isArray(data) ? data : []);
+      }
+    } catch (error) {
+      console.error("Failed to load board members:", error);
+    }
+  };
 
   const loadData = async () => {
     try {
@@ -340,74 +330,71 @@ export default function Board() {
         {/* Board Members Grid */}
         <section className="py-16 px-4">
           <div className="max-w-5xl mx-auto">
-            <div className="grid md:grid-cols-2 gap-8">
-              {BOARD_MEMBERS.map((member, index) => (
-                <div 
-                  key={index}
-                  className={`bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden ${
-                    index === 0 ? "md:col-span-2" : ""
-                  }`}
-                >
-                  <div className={`p-8 ${index === 0 ? "md:flex md:gap-8" : ""}`}>
-                    {/* Photo Placeholder */}
-                    <div className={`${index === 0 ? "md:w-1/3" : ""} mb-6 md:mb-0`}>
-                      <div className={`${
-                        index === 0 ? "w-48 h-48 mx-auto md:mx-0" : "w-32 h-32 mx-auto"
-                      } bg-gradient-to-br from-teal-100 to-blue-100 rounded-full flex items-center justify-center border-4 border-white shadow-lg`}>
-                        {member.image ? (
-                          <img 
-                            src={member.image} 
-                            alt={member.name}
-                            className="w-full h-full rounded-full object-cover"
-                          />
-                        ) : (
-                          <User className={`${index === 0 ? "w-20 h-20" : "w-12 h-12"} text-teal-400`} />
+            {boardMembersData.length === 0 ? (
+              <div className="text-center py-12">
+                <User className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500 text-lg">Board member information coming soon.</p>
+              </div>
+            ) : (
+              <div className="grid md:grid-cols-2 gap-8">
+                {boardMembersData.map((member, index) => (
+                  <div 
+                    key={member.id}
+                    className={`bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden ${
+                      index === 0 ? "md:col-span-2" : ""
+                    }`}
+                  >
+                    <div className={`p-8 ${index === 0 ? "md:flex md:gap-8" : ""}`}>
+                      <div className={`${index === 0 ? "md:w-1/3" : ""} mb-6 md:mb-0`}>
+                        <div className={`${
+                          index === 0 ? "w-48 h-48 mx-auto md:mx-0" : "w-32 h-32 mx-auto"
+                        } bg-gradient-to-br from-teal-100 to-blue-100 rounded-full flex items-center justify-center border-4 border-white shadow-lg overflow-hidden`}>
+                          {member.photoFilename ? (
+                            <img 
+                              src={`/uploads/board/${member.photoFilename}`} 
+                              alt={member.name}
+                              className="w-full h-full rounded-full object-cover"
+                            />
+                          ) : (
+                            <User className={`${index === 0 ? "w-20 h-20" : "w-12 h-12"} text-teal-400`} />
+                          )}
+                        </div>
+                      </div>
+
+                      <div className={`${index === 0 ? "md:w-2/3" : ""} text-center ${index === 0 ? "md:text-left" : ""}`}>
+                        <h3 className="font-display text-xl font-bold text-slate-800 mb-1">
+                          {member.name}
+                        </h3>
+                        <p className="text-teal-600 font-medium text-sm mb-4">
+                          {member.title}
+                        </p>
+                        {member.bio && (
+                          <p className="text-gray-600 leading-relaxed mb-4">
+                            {member.bio}
+                          </p>
+                        )}
+                        {(member.email || member.linkedin) && (
+                          <div className="flex items-center justify-center md:justify-start space-x-4">
+                            {member.email && (
+                              <a href={`mailto:${member.email}`} className="flex items-center space-x-1 text-gray-500 hover:text-teal-600 transition-colors text-sm">
+                                <Mail className="w-4 h-4" />
+                                <span>Email</span>
+                              </a>
+                            )}
+                            {member.linkedin && (
+                              <a href={member.linkedin} target="_blank" rel="noopener noreferrer" className="flex items-center space-x-1 text-gray-500 hover:text-blue-600 transition-colors text-sm">
+                                <Linkedin className="w-4 h-4" />
+                                <span>LinkedIn</span>
+                              </a>
+                            )}
+                          </div>
                         )}
                       </div>
                     </div>
-
-                    {/* Content */}
-                    <div className={`${index === 0 ? "md:w-2/3" : ""} text-center ${index === 0 ? "md:text-left" : ""}`}>
-                      <h3 className="font-display text-xl font-bold text-slate-800 mb-1">
-                        {member.name}
-                      </h3>
-                      <p className="text-teal-600 font-medium text-sm mb-4">
-                        {member.title}
-                      </p>
-                      <p className="text-gray-600 leading-relaxed mb-4">
-                        {member.bio}
-                      </p>
-
-                      {/* Contact Links */}
-                      {(member.email || member.linkedin) && (
-                        <div className="flex items-center justify-center md:justify-start space-x-4">
-                          {member.email && (
-                            <a 
-                              href={`mailto:${member.email}`}
-                              className="flex items-center space-x-1 text-gray-500 hover:text-teal-600 transition-colors text-sm"
-                            >
-                              <Mail className="w-4 h-4" />
-                              <span>Email</span>
-                            </a>
-                          )}
-                          {member.linkedin && (
-                            <a 
-                              href={member.linkedin}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center space-x-1 text-gray-500 hover:text-blue-600 transition-colors text-sm"
-                            >
-                              <Linkedin className="w-4 h-4" />
-                              <span>LinkedIn</span>
-                            </a>
-                          )}
-                        </div>
-                      )}
-                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
 
             {/* Join the Board CTA */}
             <div className="mt-12 text-center">
@@ -428,11 +415,6 @@ export default function Board() {
                 </Link>
               </div>
             </div>
-
-            {/* Placeholder Notice */}
-            <p className="text-center text-sm text-gray-400 mt-8">
-              Board member photos and detailed bios will be added as positions are confirmed.
-            </p>
           </div>
         </section>
 

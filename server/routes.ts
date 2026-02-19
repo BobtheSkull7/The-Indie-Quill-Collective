@@ -2,17 +2,21 @@ import type { Express, Request, Response } from "express";
 import rateLimit from "express-rate-limit";
 import multer from "multer";
 import { db, pool } from "./db";
-import { users, applications, contracts, publishingUpdates, calendarEvents, fundraisingCampaigns, donations, auditLogs, cohorts, familyUnits, operatingCosts, foundations, solicitationLogs, foundationGrants, pilotLedger, emailLogs, grantPrograms, organizationCredentials, grantCalendarAlerts, wikiEntries, wikiAttachments, studentWork } from "@shared/schema";
+import { users, applications, contracts, publishingUpdates, calendarEvents, fundraisingCampaigns, donations, auditLogs, cohorts, familyUnits, operatingCosts, foundations, solicitationLogs, foundationGrants, pilotLedger, emailLogs, grantPrograms, organizationCredentials, grantCalendarAlerts, wikiEntries, wikiAttachments, boardMembers, studentWork } from "@shared/schema";
 import path from "path";
 import fs from "fs";
 import { eq, desc, gte, sql, inArray, lt, and } from "drizzle-orm";
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
 
+function hasRole(session: any, ...roles: string[]): boolean {
+  return roles.includes(session.userRole) || roles.includes(session.secondaryRole);
+}
+
 // Helper function to fetch user by ID using raw SQL to avoid Drizzle ORM column mismatch issues
 async function getUserById(userId: string | number): Promise<any | null> {
   const result = await db.execute(sql`
-    SELECT id, email, first_name as "firstName", last_name as "lastName", role
+    SELECT id, email, first_name as "firstName", last_name as "lastName", role, secondary_role as "secondaryRole"
     FROM public.users WHERE id = ${userId}
   `);
   return result.rows[0] || null;
@@ -21,7 +25,7 @@ async function getUserById(userId: string | number): Promise<any | null> {
 // Helper function to fetch user by email using raw SQL
 async function getUserByEmail(email: string): Promise<any | null> {
   const result = await db.execute(sql`
-    SELECT id, email, password, first_name as "firstName", last_name as "lastName", role
+    SELECT id, email, password, first_name as "firstName", last_name as "lastName", role, secondary_role as "secondaryRole"
     FROM public.users WHERE lower(email) = lower(${email})
   `);
   return result.rows[0] || null;
@@ -125,6 +129,7 @@ declare module "express-session" {
   interface SessionData {
     userId?: number;
     userRole?: string;
+    secondaryRole?: string | null;
   }
 }
 
@@ -175,7 +180,7 @@ export async function registerRoutes(app: Express) {
       
       // Use raw SQL to bypass Drizzle ORM column issue
       const result = await db.execute(sql`
-        SELECT id, email, password, first_name as "firstName", last_name as "lastName", role
+        SELECT id, email, password, first_name as "firstName", last_name as "lastName", role, secondary_role as "secondaryRole"
         FROM public.users 
         WHERE lower(email) = lower(${email})
       `);
@@ -191,6 +196,7 @@ export async function registerRoutes(app: Express) {
 
       req.session.userId = user.id;
       req.session.userRole = user.role;
+      req.session.secondaryRole = user.secondaryRole || null;
 
       return res.json({ 
         user: { 
@@ -198,7 +204,8 @@ export async function registerRoutes(app: Express) {
           email: user.email, 
           firstName: user.firstName,
           lastName: user.lastName,
-          role: user.role 
+          role: user.role,
+          secondaryRole: user.secondaryRole || null
         } 
       });
     } catch (error) {
@@ -223,7 +230,7 @@ export async function registerRoutes(app: Express) {
 
     // Use raw SQL to bypass Drizzle ORM column issue
     const result = await db.execute(sql`
-      SELECT id, email, first_name as "firstName", last_name as "lastName", role
+      SELECT id, email, first_name as "firstName", last_name as "lastName", role, secondary_role as "secondaryRole"
       FROM public.users WHERE id = ${req.session.userId}
     `);
     const user = result.rows[0] as any;
@@ -237,7 +244,8 @@ export async function registerRoutes(app: Express) {
         email: user.email, 
         firstName: user.firstName,
         lastName: user.lastName,
-        role: user.role 
+        role: user.role,
+        secondaryRole: user.secondaryRole || null
       } 
     });
   });
@@ -1964,9 +1972,8 @@ export async function registerRoutes(app: Express) {
   });
 
   // Register NPO author from Supabase npo_applications table with LLC Bookstore
-  // Currently hardcoded to only allow tiny@test.com for testing
   app.post("/api/admin/register-npo-author", async (req: Request, res: Response) => {
-    if (!req.session.userId || req.session.userRole !== "admin") {
+    if (!req.session.userId || !hasRole(req.session, "admin")) {
       return res.status(403).json({ message: "Not authorized" });
     }
 
@@ -2292,7 +2299,7 @@ export async function registerRoutes(app: Express) {
 
     try {
       const userId = req.params.id;
-      const { role, cohortId, familyUnitId } = req.body;
+      const { role, secondaryRole, cohortId, familyUnitId } = req.body;
 
       if (!userId) {
         return res.status(400).json({ message: "Invalid user ID" });
@@ -2300,6 +2307,10 @@ export async function registerRoutes(app: Express) {
 
       if (!["applicant", "admin", "board_member", "auditor", "student", "mentor", "writer"].includes(role)) {
         return res.status(400).json({ message: "Invalid role" });
+      }
+
+      if (secondaryRole !== undefined && secondaryRole !== null && !["board_member", "admin", "auditor", "mentor"].includes(secondaryRole)) {
+        return res.status(400).json({ message: "Invalid secondary role" });
       }
 
       const existingUser = await getUserById(userId);
@@ -2360,9 +2371,15 @@ export async function registerRoutes(app: Express) {
       }
 
       // Update user role using raw SQL to avoid column issues
-      await db.execute(sql`
-        UPDATE public.users SET role = ${role} WHERE id = ${userId}
-      `);
+      if (secondaryRole !== undefined) {
+        await db.execute(sql`
+          UPDATE public.users SET role = ${role}, secondary_role = ${secondaryRole} WHERE id = ${userId}
+        `);
+      } else {
+        await db.execute(sql`
+          UPDATE public.users SET role = ${role} WHERE id = ${userId}
+        `);
+      }
       
       // Fetch the updated user
       const updated = await getUserById(userId);
@@ -2539,7 +2556,7 @@ export async function registerRoutes(app: Express) {
     }
 
     // Only auditors and admins can access this endpoint
-    if (req.session.userRole !== "auditor" && req.session.userRole !== "admin") {
+    if (!hasRole(req.session, "auditor", "admin")) {
       return res.status(403).json({ message: "Not authorized - Auditor access required" });
     }
 
@@ -2652,7 +2669,7 @@ export async function registerRoutes(app: Express) {
       return res.status(401).json({ message: "Not authenticated" });
     }
 
-    if (req.session.userRole !== "auditor" && req.session.userRole !== "admin") {
+    if (!hasRole(req.session, "auditor", "admin")) {
       return res.status(403).json({ message: "Not authorized - Auditor access required" });
     }
 
@@ -2765,7 +2782,7 @@ export async function registerRoutes(app: Express) {
   });
 
   app.get("/api/board/stats", async (req: Request, res: Response) => {
-    if (!req.session.userId || req.session.userRole !== "board_member") {
+    if (!req.session.userId || !hasRole(req.session, "board_member", "admin")) {
       return res.status(403).json({ message: "Not authorized" });
     }
 
@@ -2793,7 +2810,7 @@ export async function registerRoutes(app: Express) {
   });
 
   app.get("/api/board/calendar", async (req: Request, res: Response) => {
-    if (!req.session.userId || (req.session.userRole !== "board_member" && req.session.userRole !== "admin")) {
+    if (!req.session.userId || !hasRole(req.session, "board_member", "admin")) {
       return res.status(403).json({ message: "Not authorized" });
     }
 
@@ -2809,7 +2826,7 @@ export async function registerRoutes(app: Express) {
   });
 
   app.post("/api/board/calendar", async (req: Request, res: Response) => {
-    if (!req.session.userId || (req.session.userRole !== "board_member" && req.session.userRole !== "admin")) {
+    if (!req.session.userId || !hasRole(req.session, "board_member", "admin")) {
       return res.status(403).json({ message: "Not authorized" });
     }
 
@@ -2842,7 +2859,7 @@ export async function registerRoutes(app: Express) {
   });
 
   app.put("/api/board/calendar/:id", async (req: Request, res: Response) => {
-    if (!req.session.userId || (req.session.userRole !== "board_member" && req.session.userRole !== "admin")) {
+    if (!req.session.userId || !hasRole(req.session, "board_member", "admin")) {
       return res.status(403).json({ message: "Not authorized" });
     }
 
@@ -2893,7 +2910,7 @@ export async function registerRoutes(app: Express) {
   });
 
   app.delete("/api/board/calendar/:id", async (req: Request, res: Response) => {
-    if (!req.session.userId || (req.session.userRole !== "board_member" && req.session.userRole !== "admin")) {
+    if (!req.session.userId || !hasRole(req.session, "board_member", "admin")) {
       return res.status(403).json({ message: "Not authorized" });
     }
 
@@ -2913,7 +2930,7 @@ export async function registerRoutes(app: Express) {
   });
 
   app.get("/api/board/calendar/sync-status", async (req: Request, res: Response) => {
-    if (!req.session.userId || (req.session.userRole !== "board_member" && req.session.userRole !== "admin")) {
+    if (!req.session.userId || !hasRole(req.session, "board_member", "admin")) {
       return res.status(403).json({ message: "Not authorized" });
     }
 
@@ -2927,7 +2944,7 @@ export async function registerRoutes(app: Express) {
   });
 
   app.post("/api/board/calendar/sync", async (req: Request, res: Response) => {
-    if (!req.session.userId || (req.session.userRole !== "board_member" && req.session.userRole !== "admin")) {
+    if (!req.session.userId || !hasRole(req.session, "board_member", "admin")) {
       return res.status(403).json({ message: "Not authorized" });
     }
 
@@ -2941,7 +2958,7 @@ export async function registerRoutes(app: Express) {
   });
 
   app.get("/api/admin/google/auth", async (req: Request, res: Response) => {
-    if (!req.session.userId || (req.session.userRole !== "admin" && req.session.userRole !== "board_member")) {
+    if (!req.session.userId || !hasRole(req.session, "admin", "board_member")) {
       console.log(`[Google Auth] Rejected: userId=${req.session.userId}, role=${req.session.userRole}`);
       return res.status(403).json({ message: "Not authorized" });
     }
@@ -2969,7 +2986,7 @@ export async function registerRoutes(app: Express) {
       return res.redirect("/admin?tab=calendar&error=missing_params");
     }
 
-    if (!req.session.userId || (req.session.userRole !== "admin" && req.session.userRole !== "board_member")) {
+    if (!req.session.userId || !hasRole(req.session, "admin", "board_member")) {
       return res.redirect("/admin?tab=calendar&error=not_authorized");
     }
 
@@ -2989,7 +3006,7 @@ export async function registerRoutes(app: Express) {
   });
 
   app.post("/api/admin/google/disconnect", async (req: Request, res: Response) => {
-    if (!req.session.userId || (req.session.userRole !== "admin" && req.session.userRole !== "board_member")) {
+    if (!req.session.userId || !hasRole(req.session, "admin", "board_member")) {
       return res.status(403).json({ message: "Not authorized" });
     }
 
@@ -3003,7 +3020,7 @@ export async function registerRoutes(app: Express) {
   });
 
   app.get("/api/board/campaigns", async (req: Request, res: Response) => {
-    if (!req.session.userId || req.session.userRole !== "board_member") {
+    if (!req.session.userId || !hasRole(req.session, "board_member", "admin")) {
       return res.status(403).json({ message: "Not authorized" });
     }
 
@@ -3018,7 +3035,7 @@ export async function registerRoutes(app: Express) {
   });
 
   app.post("/api/board/campaigns", async (req: Request, res: Response) => {
-    if (!req.session.userId || req.session.userRole !== "board_member") {
+    if (!req.session.userId || !hasRole(req.session, "board_member", "admin")) {
       return res.status(403).json({ message: "Not authorized" });
     }
 
@@ -3040,7 +3057,7 @@ export async function registerRoutes(app: Express) {
   });
 
   app.patch("/api/board/campaigns/:id", async (req: Request, res: Response) => {
-    if (!req.session.userId || req.session.userRole !== "board_member") {
+    if (!req.session.userId || !hasRole(req.session, "board_member", "admin")) {
       return res.status(403).json({ message: "Not authorized" });
     }
 
@@ -3058,7 +3075,7 @@ export async function registerRoutes(app: Express) {
   });
 
   app.get("/api/board/donations", async (req: Request, res: Response) => {
-    if (!req.session.userId || req.session.userRole !== "board_member") {
+    if (!req.session.userId || !hasRole(req.session, "board_member", "admin")) {
       return res.status(403).json({ message: "Not authorized" });
     }
 
@@ -3086,7 +3103,7 @@ export async function registerRoutes(app: Express) {
   });
 
   app.post("/api/board/donations", async (req: Request, res: Response) => {
-    if (!req.session.userId || req.session.userRole !== "board_member") {
+    if (!req.session.userId || !hasRole(req.session, "board_member", "admin")) {
       return res.status(403).json({ message: "Not authorized" });
     }
 
@@ -3207,6 +3224,126 @@ export async function registerRoutes(app: Express) {
     } catch (error) {
       console.error("Fetch impact metrics error:", error);
       return res.status(500).json({ message: "Failed to fetch impact metrics" });
+    }
+  });
+
+  // ===== Board Members CRUD =====
+
+  // Public: Get all board members (for Board page)
+  app.get("/api/public/board-members", async (req: Request, res: Response) => {
+    try {
+      const members = await db.select().from(boardMembers)
+        .where(eq(boardMembers.isActive, true))
+        .orderBy(boardMembers.displayOrder);
+      return res.json(members);
+    } catch (error) {
+      console.error("Fetch board members error:", error);
+      return res.status(500).json({ message: "Failed to fetch board members" });
+    }
+  });
+
+  // Admin: Create board member
+  app.post("/api/admin/board-members", upload.single("photo"), async (req: Request, res: Response) => {
+    if (!req.session.userId || !hasRole(req.session, "admin")) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+    try {
+      const { name, title, bio, displayOrder } = req.body;
+      if (!name || !title) {
+        return res.status(400).json({ message: "Name and title are required" });
+      }
+
+      let photoFilename: string | null = null;
+      if (req.file) {
+        const uploadsDir = path.join(process.cwd(), "uploads", "board");
+        if (!fs.existsSync(uploadsDir)) {
+          fs.mkdirSync(uploadsDir, { recursive: true });
+        }
+        const ext = path.extname(req.file.originalname) || ".jpg";
+        photoFilename = `board_${Date.now()}${ext}`;
+        fs.writeFileSync(path.join(uploadsDir, photoFilename), req.file.buffer);
+      }
+
+      const { email, linkedin } = req.body;
+      const [member] = await db.insert(boardMembers).values({
+        name,
+        title,
+        bio: bio || "",
+        photoFilename,
+        email: email || null,
+        linkedin: linkedin || null,
+        displayOrder: displayOrder ? parseInt(displayOrder) : 0,
+      }).returning();
+      return res.json(member);
+    } catch (error) {
+      console.error("Create board member error:", error);
+      return res.status(500).json({ message: "Failed to create board member" });
+    }
+  });
+
+  // Admin: Update board member
+  app.patch("/api/admin/board-members/:id", upload.single("photo"), async (req: Request, res: Response) => {
+    if (!req.session.userId || !hasRole(req.session, "admin")) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+    try {
+      const id = parseInt(req.params.id);
+      const { name, title, bio, displayOrder } = req.body;
+
+      const updateData: any = {};
+      if (name) updateData.name = name;
+      if (title) updateData.title = title;
+      if (bio !== undefined) updateData.bio = bio || null;
+      if (displayOrder !== undefined) updateData.displayOrder = parseInt(displayOrder);
+
+      const { email: emailVal, linkedin: linkedinVal } = req.body;
+      if (emailVal !== undefined) updateData.email = emailVal || null;
+      if (linkedinVal !== undefined) updateData.linkedin = linkedinVal || null;
+
+      if (req.file) {
+        const [existing] = await db.select().from(boardMembers).where(eq(boardMembers.id, id));
+        if (existing?.photoFilename) {
+          const oldPath = path.join(process.cwd(), "uploads", "board", existing.photoFilename);
+          if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+        }
+        const uploadsDir = path.join(process.cwd(), "uploads", "board");
+        if (!fs.existsSync(uploadsDir)) {
+          fs.mkdirSync(uploadsDir, { recursive: true });
+        }
+        const ext = path.extname(req.file.originalname) || ".jpg";
+        const filename = `board_${Date.now()}${ext}`;
+        fs.writeFileSync(path.join(uploadsDir, filename), req.file.buffer);
+        updateData.photoFilename = filename;
+      }
+
+      const [updated] = await db.update(boardMembers)
+        .set(updateData)
+        .where(eq(boardMembers.id, id))
+        .returning();
+      return res.json(updated);
+    } catch (error) {
+      console.error("Update board member error:", error);
+      return res.status(500).json({ message: "Failed to update board member" });
+    }
+  });
+
+  // Admin: Delete board member
+  app.delete("/api/admin/board-members/:id", async (req: Request, res: Response) => {
+    if (!req.session.userId || !hasRole(req.session, "admin")) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+    try {
+      const id = parseInt(req.params.id);
+      const [member] = await db.select().from(boardMembers).where(eq(boardMembers.id, id));
+      if (member?.photoFilename) {
+        const photoPath = path.join(process.cwd(), "uploads", "board", member.photoFilename);
+        if (fs.existsSync(photoPath)) fs.unlinkSync(photoPath);
+      }
+      await db.delete(boardMembers).where(eq(boardMembers.id, id));
+      return res.json({ success: true });
+    } catch (error) {
+      console.error("Delete board member error:", error);
+      return res.status(500).json({ message: "Failed to delete board member" });
     }
   });
 
@@ -6406,7 +6543,7 @@ export async function registerDonationRoutes(app: Express) {
     }
 
     // Only admin and board_member can access wiki
-    if (req.session.userRole !== "admin" && req.session.userRole !== "board_member") {
+    if (!hasRole(req.session, "admin", "board_member")) {
       return res.status(403).json({ message: "Not authorized" });
     }
 
@@ -6445,7 +6582,7 @@ export async function registerDonationRoutes(app: Express) {
       return res.status(401).json({ message: "Not authenticated" });
     }
 
-    if (req.session.userRole !== "admin" && req.session.userRole !== "board_member") {
+    if (!hasRole(req.session, "admin", "board_member")) {
       return res.status(403).json({ message: "Not authorized" });
     }
 
@@ -6477,7 +6614,7 @@ export async function registerDonationRoutes(app: Express) {
       return res.status(401).json({ message: "Not authenticated" });
     }
 
-    if (req.session.userRole !== "admin" && req.session.userRole !== "board_member") {
+    if (!hasRole(req.session, "admin", "board_member")) {
       return res.status(403).json({ message: "Not authorized" });
     }
 
@@ -6513,7 +6650,7 @@ export async function registerDonationRoutes(app: Express) {
       return res.status(401).json({ message: "Not authenticated" });
     }
 
-    if (req.session.userRole !== "admin" && req.session.userRole !== "board_member") {
+    if (!hasRole(req.session, "admin", "board_member")) {
       return res.status(403).json({ message: "Not authorized" });
     }
 
@@ -6577,7 +6714,7 @@ export async function registerDonationRoutes(app: Express) {
 
   app.get("/api/wiki/:id/attachments", async (req: Request, res: Response) => {
     if (!req.session.userId) return res.status(401).json({ message: "Not authenticated" });
-    if (req.session.userRole !== "admin" && req.session.userRole !== "board_member") {
+    if (!hasRole(req.session, "admin", "board_member")) {
       return res.status(403).json({ message: "Not authorized" });
     }
 
@@ -6594,7 +6731,7 @@ export async function registerDonationRoutes(app: Express) {
 
   app.post("/api/wiki/:id/attachments", wikiUpload.single("file"), async (req: Request, res: Response) => {
     if (!req.session.userId) return res.status(401).json({ message: "Not authenticated" });
-    if (req.session.userRole !== "admin" && req.session.userRole !== "board_member") {
+    if (!hasRole(req.session, "admin", "board_member")) {
       return res.status(403).json({ message: "Not authorized" });
     }
 
@@ -6626,7 +6763,7 @@ export async function registerDonationRoutes(app: Express) {
 
   app.get("/api/wiki/attachments/:attachmentId/download", async (req: Request, res: Response) => {
     if (!req.session.userId) return res.status(401).json({ message: "Not authenticated" });
-    if (req.session.userRole !== "admin" && req.session.userRole !== "board_member") {
+    if (!hasRole(req.session, "admin", "board_member")) {
       return res.status(403).json({ message: "Not authorized" });
     }
 
@@ -6651,7 +6788,7 @@ export async function registerDonationRoutes(app: Express) {
 
   app.delete("/api/wiki/attachments/:attachmentId", async (req: Request, res: Response) => {
     if (!req.session.userId) return res.status(401).json({ message: "Not authenticated" });
-    if (req.session.userRole !== "admin" && req.session.userRole !== "board_member") {
+    if (!hasRole(req.session, "admin", "board_member")) {
       return res.status(403).json({ message: "Not authorized" });
     }
 

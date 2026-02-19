@@ -116,6 +116,7 @@ export const users = pgTable("users", {
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
   role: text("role").notNull().default("applicant"),
+  secondaryRole: text("secondary_role"),
   indieQuillAuthorId: text("indie_quill_author_id"),
   vibeScribeId: text("vibe_scribe_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -1061,6 +1062,23 @@ export type StudentActivityLog = typeof studentActivityLogs.$inferSelect;
 export type InsertStudentActivityLog = typeof studentActivityLogs.$inferInsert;
 export type DraftingDocument = typeof draftingDocuments.$inferSelect;
 export type InsertDraftingDocument = typeof draftingDocuments.$inferInsert;
+export const boardMembers = pgTable("board_members", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  title: text("title").notNull(),
+  bio: text("bio").notNull(),
+  photoFilename: text("photo_filename"),
+  email: text("email"),
+  linkedin: text("linkedin"),
+  displayOrder: integer("display_order").default(0),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type BoardMember = typeof boardMembers.$inferSelect;
+export type InsertBoardMember = typeof boardMembers.$inferInsert;
+
 export const wikiAttachments = pgTable("wiki_attachments", {
   id: serial("id").primaryKey(),
   wikiEntryId: integer("wiki_entry_id").references(() => wikiEntries.id, { onDelete: "cascade" }).notNull(),
