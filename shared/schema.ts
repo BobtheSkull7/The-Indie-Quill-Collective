@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, pgEnum, varchar, uuid } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, pgEnum, varchar, uuid, jsonb } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
@@ -725,6 +725,7 @@ export const studentProfiles = pgTable("student_profiles", {
   familyRole: familyRoleEnum("family_role"),
   accessibilityMode: accessibilityModeEnum("accessibility_mode").default("standard").notNull(),
   preferredLanguage: text("preferred_language").default("en"),
+  gameCharacterId: text("game_character_id"),
   enrolledAt: timestamp("enrolled_at").defaultNow().notNull(),
   isActive: boolean("is_active").default(true).notNull(),
   notes: text("notes"),
@@ -1093,5 +1094,42 @@ export type WikiEntry = typeof wikiEntries.$inferSelect;
 export type InsertWikiEntry = typeof wikiEntries.$inferInsert;
 export type WikiAttachment = typeof wikiAttachments.$inferSelect;
 export type InsertWikiAttachment = typeof wikiAttachments.$inferInsert;
+
+// Training Quiz Engine - structured multi-question quizzes with scoring
+export const quizzes = pgTable("quizzes", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description"),
+  timeLimitMinutes: integer("time_limit_minutes").default(10),
+  passingScore: integer("passing_score").default(70),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const quizQuestions = pgTable("quiz_questions", {
+  id: serial("id").primaryKey(),
+  quizId: integer("quiz_id").references(() => quizzes.id, { onDelete: "cascade" }).notNull(),
+  questionText: text("question_text").notNull(),
+  options: jsonb("options").notNull(),
+  correctOptionIndex: integer("correct_option_index").notNull(),
+  points: integer("points").default(10),
+  displayOrder: integer("display_order").default(0),
+});
+
+export const quizResults = pgTable("quiz_results", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  quizId: integer("quiz_id").references(() => quizzes.id, { onDelete: "cascade" }).notNull(),
+  score: integer("score").notNull(),
+  passed: boolean("passed").notNull(),
+  completedAt: timestamp("completed_at").defaultNow(),
+});
+
+export type Quiz = typeof quizzes.$inferSelect;
+export type InsertQuiz = typeof quizzes.$inferInsert;
+export type QuizQuestion = typeof quizQuestions.$inferSelect;
+export type InsertQuizQuestion = typeof quizQuestions.$inferInsert;
+export type QuizResult = typeof quizResults.$inferSelect;
+export type InsertQuizResult = typeof quizResults.$inferInsert;
 
 export * from "./models/chat";

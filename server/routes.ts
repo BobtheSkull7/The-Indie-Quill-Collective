@@ -2,7 +2,7 @@ import type { Express, Request, Response } from "express";
 import rateLimit from "express-rate-limit";
 import multer from "multer";
 import { db, pool } from "./db";
-import { users, applications, contracts, publishingUpdates, calendarEvents, fundraisingCampaigns, donations, auditLogs, cohorts, familyUnits, operatingCosts, foundations, solicitationLogs, foundationGrants, pilotLedger, emailLogs, grantPrograms, organizationCredentials, grantCalendarAlerts, wikiEntries, wikiAttachments, boardMembers, studentWork } from "@shared/schema";
+import { users, applications, contracts, publishingUpdates, calendarEvents, fundraisingCampaigns, donations, auditLogs, cohorts, familyUnits, operatingCosts, foundations, solicitationLogs, foundationGrants, pilotLedger, emailLogs, grantPrograms, organizationCredentials, grantCalendarAlerts, wikiEntries, wikiAttachments, boardMembers, studentWork, studentProfiles } from "@shared/schema";
 import path from "path";
 import fs from "fs";
 import { eq, desc, gte, sql, inArray, lt, and } from "drizzle-orm";
@@ -1677,18 +1677,20 @@ export async function registerRoutes(app: Express) {
   });
 
   // Game Engine Quest Actions - works for both student and admin
-  // Helper to resolve gameCharacterId
-  async function resolveGameCharacterId(req: Request, res: Response): Promise<number | null> {
+  // Helper to resolve gameCharacterId from student profile
+  async function resolveGameCharacterId(req: Request, res: Response): Promise<string | null> {
     const isAdmin = req.session.userRole === "admin";
     const userIdParam = req.query.userId as string | undefined;
 
-    if (isAdmin && userIdParam) {
-      return parseInt(userIdParam);
-    }
+    const targetUserId = (isAdmin && userIdParam) ? parseInt(userIdParam) : req.session.userId;
+    if (!targetUserId) return null;
 
-    // For students (or admin without userId param), use hardcoded ID matching existing pattern
-    // TODO: In production, map via application.gameCharacterId
-    return 1;
+    const [profile] = await db.select({ gameCharacterId: studentProfiles.gameCharacterId })
+      .from(studentProfiles)
+      .where(eq(studentProfiles.userId, targetUserId))
+      .limit(1);
+
+    return profile?.gameCharacterId || null;
   }
 
   app.post("/api/student/game-engine/quest/submit/:questId", async (req: Request, res: Response) => {
@@ -1806,7 +1808,15 @@ export async function registerRoutes(app: Express) {
       return res.status(500).json({ message: "Game Engine URL not configured" });
     }
 
-    const characterId = req.query.userId as string || "1";
+    const targetUserId = req.query.userId ? parseInt(req.query.userId as string) : req.session.userId!;
+    const [profile] = await db.select({ gameCharacterId: studentProfiles.gameCharacterId })
+      .from(studentProfiles)
+      .where(eq(studentProfiles.userId, targetUserId))
+      .limit(1);
+    const characterId = profile?.gameCharacterId;
+    if (!characterId) {
+      return res.status(404).json({ message: "Game character not found for user" });
+    }
     const questId = req.params.questId;
     const { proof } = req.body;
     const endpoint = `${GAME_ENGINE_URL}/quest/submit/${characterId}/${questId}`;
@@ -1838,7 +1848,15 @@ export async function registerRoutes(app: Express) {
       return res.status(500).json({ message: "Game Engine URL not configured" });
     }
 
-    const characterId = req.query.userId as string || "1";
+    const targetUserId2 = req.query.userId ? parseInt(req.query.userId as string) : req.session.userId!;
+    const [profile2] = await db.select({ gameCharacterId: studentProfiles.gameCharacterId })
+      .from(studentProfiles)
+      .where(eq(studentProfiles.userId, targetUserId2))
+      .limit(1);
+    const characterId = profile2?.gameCharacterId;
+    if (!characterId) {
+      return res.status(404).json({ message: "Game character not found for user" });
+    }
     const questId = req.params.questId;
     const endpoint = `${GAME_ENGINE_URL}/quest/complete?user_id=${characterId}&quest_id=${questId}`;
 
@@ -1868,7 +1886,15 @@ export async function registerRoutes(app: Express) {
       return res.status(500).json({ message: "Game Engine URL not configured" });
     }
 
-    const characterId = req.query.userId as string || "1";
+    const targetUserId3 = req.query.userId ? parseInt(req.query.userId as string) : req.session.userId!;
+    const [profile3] = await db.select({ gameCharacterId: studentProfiles.gameCharacterId })
+      .from(studentProfiles)
+      .where(eq(studentProfiles.userId, targetUserId3))
+      .limit(1);
+    const characterId = profile3?.gameCharacterId;
+    if (!characterId) {
+      return res.status(404).json({ message: "Game character not found for user" });
+    }
     const questId = req.params.questId;
     const endpoint = `${GAME_ENGINE_URL}/quest/claim/${characterId}/${questId}`;
 
