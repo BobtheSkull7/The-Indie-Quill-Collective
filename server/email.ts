@@ -8,10 +8,11 @@ let connectionSettings: any;
 
 async function getCredentials() {
   if (process.env.RESEND_API_KEY) {
-    console.log('[Email] Using RESEND_API_KEY from environment');
+    const fromEmail = process.env.RESEND_FROM_EMAIL || 'The Indie Quill Collective <noreply@resend.dev>';
+    console.log(`[Email] Using RESEND_API_KEY from environment, from: ${fromEmail}`);
     return {
       apiKey: process.env.RESEND_API_KEY,
-      fromEmail: process.env.RESEND_FROM_EMAIL || 'The Indie Quill Collective <noreply@resend.dev>'
+      fromEmail
     };
   }
   console.log('[Email] RESEND_API_KEY not found, trying Replit connector...');
@@ -85,7 +86,7 @@ async function sendFailureNotification(
     const { client, fromEmail } = await getResendClient();
     
     await client.emails.send({
-      from: fromEmail || 'The Indie Quill Collective <noreply@resend.dev>',
+      from: fromEmail,
       to: ADMIN_CC_EMAIL,
       subject: `[EMAIL FAILURE ALERT] ${emailType} Email Failed`,
       html: `
@@ -143,7 +144,7 @@ export async function sendApplicationReceivedEmail(
     const { client, fromEmail } = await getResendClient();
     
     await client.emails.send({
-      from: fromEmail || 'The Indie Quill Collective <noreply@resend.dev>',
+      from: fromEmail,
       to: toEmail,
       cc: ADMIN_CC_EMAIL,
       subject: '[COLLECTIVE-LOG] Your Writing Journey Begins',
@@ -216,7 +217,7 @@ export async function sendApplicationAcceptedEmail(
       : 'Use a Pseudonym';
     
     await client.emails.send({
-      from: fromEmail || 'The Indie Quill Collective <noreply@resend.dev>',
+      from: fromEmail,
       to: toEmail,
       cc: ADMIN_CC_EMAIL,
       subject: '[COLLECTIVE-LOG] Congratulations - Agreement Ready',
@@ -282,7 +283,7 @@ export async function sendApplicationRejectedEmail(
     const { client, fromEmail } = await getResendClient();
     
     await client.emails.send({
-      from: fromEmail || 'The Indie Quill Collective <noreply@resend.dev>',
+      from: fromEmail,
       to: toEmail,
       cc: ADMIN_CC_EMAIL,
       subject: '[COLLECTIVE-LOG] Application Update',
@@ -349,7 +350,7 @@ export async function sendWelcomeToCollectiveEmail(
     const dashboardUrl = `${baseUrl}/student`;
     
     await client.emails.send({
-      from: fromEmail || 'The Indie Quill Collective <noreply@resend.dev>',
+      from: fromEmail,
       to: toEmail,
       cc: ADMIN_CC_EMAIL,
       subject: '[COLLECTIVE-LOG] Welcome to the Collective!',
@@ -432,7 +433,7 @@ export async function sendActiveAuthorEmail(
     ` : '';
     
     await client.emails.send({
-      from: fromEmail || 'The Indie Quill Collective <noreply@resend.dev>',
+      from: fromEmail,
       to: toEmail,
       cc: ADMIN_CC_EMAIL,
       subject: `[COLLECTIVE-LOG] Welcome to the Family, ${pseudonym}!`,
@@ -495,7 +496,7 @@ export async function sendPasswordResetEmail(
     const { client, fromEmail } = await getResendClient();
 
     const response = await client.emails.send({
-      from: fromEmail || 'The Indie Quill Collective <noreply@resend.dev>',
+      from: fromEmail,
       to: recipientEmail,
       subject: 'Reset Your Password - The Indie Quill Collective',
       html: `
