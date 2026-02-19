@@ -43,7 +43,7 @@ async function getResendClient() {
 }
 
 async function logEmail(
-  emailType: 'application_received' | 'application_accepted' | 'application_rejected' | 'active_author',
+  emailType: 'application_received' | 'application_accepted' | 'application_rejected' | 'active_author' | 'password_reset',
   recipientEmail: string,
   recipientName: string | null,
   status: 'sent' | 'failed',
@@ -518,11 +518,11 @@ export async function sendPasswordResetEmail(
       `,
     });
 
-    await logEmail(recipientEmail, recipientName, 'password_reset', null, 'sent');
+    await logEmail('password_reset', recipientEmail, recipientName, 'sent');
     return true;
   } catch (error) {
     console.error('Failed to send password reset email:', error);
-    await logEmail(recipientEmail, recipientName, 'password_reset', null, 'failed', String(error));
+    await logEmail('password_reset', recipientEmail, recipientName, 'failed', undefined, undefined, String(error));
     return false;
   }
 }
