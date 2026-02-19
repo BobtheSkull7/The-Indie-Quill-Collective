@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "wouter";
-import { ArrowLeft, Heart, Mail, Linkedin, User } from "lucide-react";
+import { ArrowLeft, Heart, Mail, Linkedin, User, Pencil, Plus, Trash2, X, Save, Upload } from "lucide-react";
+import { useAuth } from "../App";
 
 interface BoardMemberData {
   id: number;
@@ -15,14 +16,179 @@ interface BoardMemberData {
 }
 
 export default function AboutUs() {
+  const { user } = useAuth();
   const [boardMembers, setBoardMembers] = useState<BoardMemberData[]>([]);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [formData, setFormData] = useState({ name: "", title: "", bio: "", email: "", linkedin: "", displayOrder: "0" });
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const isAdmin = user && (user.role === "admin" || user.role === "board_member" || (user as any).secondaryRole === "board_member");
 
   useEffect(() => {
+    loadBoardMembers();
+  }, []);
+
+  const loadBoardMembers = () => {
     fetch("/api/public/board-members")
       .then(res => res.ok ? res.json() : [])
       .then(data => setBoardMembers(Array.isArray(data) ? data : []))
       .catch(() => {});
-  }, []);
+  };
+
+  const handleEdit = (member: BoardMemberData) => {
+    setEditingId(member.id);
+    setShowAddForm(false);
+    setFormData({
+      name: member.name,
+      title: member.title,
+      bio: member.bio || "",
+      email: member.email || "",
+      linkedin: member.linkedin || "",
+      displayOrder: String(member.displayOrder),
+    });
+    setPhotoFile(null);
+  };
+
+  const handleAdd = () => {
+    setShowAddForm(true);
+    setEditingId(null);
+    setFormData({ name: "", title: "", bio: "", email: "", linkedin: "", displayOrder: "0" });
+    setPhotoFile(null);
+  };
+
+  const handleCancel = () => {
+    setEditingId(null);
+    setShowAddForm(false);
+    setFormData({ name: "", title: "", bio: "", email: "", linkedin: "", displayOrder: "0" });
+    setPhotoFile(null);
+  };
+
+  const handleSave = async () => {
+    const fd = new FormData();
+    fd.append("name", formData.name);
+    fd.append("title", formData.title);
+    fd.append("bio", formData.bio);
+    fd.append("email", formData.email);
+    fd.append("linkedin", formData.linkedin);
+    fd.append("displayOrder", formData.displayOrder);
+    if (photoFile) fd.append("photo", photoFile);
+
+    const url = editingId ? `/api/admin/board-members/${editingId}` : "/api/admin/board-members";
+    const method = editingId ? "PATCH" : "POST";
+
+    const res = await fetch(url, { method, body: fd });
+    if (res.ok) {
+      loadBoardMembers();
+      handleCancel();
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm("Are you sure you want to remove this board member?")) return;
+    const res = await fetch(`/api/admin/board-members/${id}`, { method: "DELETE" });
+    if (res.ok) loadBoardMembers();
+  };
+
+  const renderForm = () => (
+    <div className="bg-white rounded-2xl shadow-sm border border-teal-200 p-6 mb-6">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-display text-lg font-bold text-slate-800">
+          {editingId ? "Edit Board Member" : "Add Board Member"}
+        </h3>
+        <button onClick={handleCancel} className="text-gray-400 hover:text-gray-600">
+          <X className="w-5 h-5" />
+        </button>
+      </div>
+      <div className="grid md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+          <input
+            type="text"
+            value={formData.name}
+            onChange={e => setFormData({ ...formData, name: e.target.value })}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+          <input
+            type="text"
+            value={formData.title}
+            onChange={e => setFormData({ ...formData, title: e.target.value })}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+          />
+        </div>
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
+          <textarea
+            value={formData.bio}
+            onChange={e => setFormData({ ...formData, bio: e.target.value })}
+            rows={3}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+          <input
+            type="email"
+            value={formData.email}
+            onChange={e => setFormData({ ...formData, email: e.target.value })}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">LinkedIn URL</label>
+          <input
+            type="url"
+            value={formData.linkedin}
+            onChange={e => setFormData({ ...formData, linkedin: e.target.value })}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Display Order</label>
+          <input
+            type="number"
+            value={formData.displayOrder}
+            onChange={e => setFormData({ ...formData, displayOrder: e.target.value })}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Photo</label>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={e => setPhotoFile(e.target.files?.[0] || null)}
+            className="hidden"
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="flex items-center space-x-2 border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-gray-50"
+          >
+            <Upload className="w-4 h-4" />
+            <span>{photoFile ? photoFile.name : "Choose photo..."}</span>
+          </button>
+        </div>
+      </div>
+      <div className="flex justify-end mt-4 space-x-3">
+        <button onClick={handleCancel} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">
+          Cancel
+        </button>
+        <button
+          onClick={handleSave}
+          disabled={!formData.name || !formData.title}
+          className="flex items-center space-x-2 bg-teal-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <Save className="w-4 h-4" />
+          <span>{editingId ? "Update" : "Add"}</span>
+        </button>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -189,17 +355,33 @@ export default function AboutUs() {
         </section>
 
         <section className="mb-8">
-          <div className="text-center mb-8">
-            <h2 className="font-display text-3xl font-bold text-slate-800 mb-2">
-              Our Leadership Team
-            </h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              Meet the dedicated individuals guiding The Indie Quill Collective's mission 
-              to empower emerging authors and advance literacy.
-            </p>
+          <div className="flex items-center justify-center mb-8">
+            <div className="text-center">
+              <h2 className="font-display text-3xl font-bold text-slate-800 mb-2">
+                Our Leadership Team
+              </h2>
+              <p className="text-gray-600 max-w-2xl mx-auto">
+                Meet the dedicated individuals guiding The Indie Quill Collective's mission 
+                to empower emerging authors and advance literacy.
+              </p>
+            </div>
           </div>
 
-          {boardMembers.length === 0 ? (
+          {isAdmin && !showAddForm && editingId === null && (
+            <div className="flex justify-end mb-4">
+              <button
+                onClick={handleAdd}
+                className="flex items-center space-x-2 bg-teal-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-teal-700 transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Add Member</span>
+              </button>
+            </div>
+          )}
+
+          {isAdmin && (showAddForm || editingId !== null) && renderForm()}
+
+          {boardMembers.length === 0 && !showAddForm ? (
             <div className="text-center py-12 bg-white rounded-2xl shadow-sm border border-gray-100">
               <User className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <p className="text-gray-500 text-lg">Board member information coming soon.</p>
@@ -209,10 +391,29 @@ export default function AboutUs() {
               {boardMembers.map((member, index) => (
                 <div 
                   key={member.id}
-                  className={`bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden ${
+                  className={`bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden relative group ${
                     index === 0 ? "md:col-span-2" : ""
                   }`}
                 >
+                  {isAdmin && editingId !== member.id && (
+                    <div className="absolute top-3 right-3 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                      <button
+                        onClick={() => handleEdit(member)}
+                        className="p-2 bg-white rounded-full shadow-md text-gray-500 hover:text-teal-600 transition-colors border border-gray-200"
+                        title="Edit"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(member.id)}
+                        className="p-2 bg-white rounded-full shadow-md text-gray-500 hover:text-red-600 transition-colors border border-gray-200"
+                        title="Remove"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+
                   <div className={`p-8 ${index === 0 ? "md:flex md:gap-8" : ""}`}>
                     <div className={`${index === 0 ? "md:w-1/3" : ""} mb-6 md:mb-0`}>
                       <div className={`${
