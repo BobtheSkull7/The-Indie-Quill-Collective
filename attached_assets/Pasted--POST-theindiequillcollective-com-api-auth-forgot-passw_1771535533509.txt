@@ -1,0 +1,75 @@
+[POST]
+theindiequillcollective.com/api/auth/forgot-password clientIP="143.103.10.5" requestID="f1818c60-4e3d-4e6f" responseTimeMS=319 responseBytes=1233 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+[GET]
+theindiequillcollective.com/generated-icon.png clientIP="143.103.10.5" requestID="5e290df3-543a-447e" responseTimeMS=5 responseBytes=1060 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+[GET]
+theindiequillcollective.com/logo.png clientIP="143.103.10.5" requestID="c386c1f5-d6d3-46a2" responseTimeMS=6 responseBytes=1062 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+[GET]
+theindiequillcollective.com/logo.png clientIP="143.103.10.5" requestID="76f69098-dabb-4699" responseTimeMS=6 responseBytes=1062 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+[GET]
+theindiequillcollective.com/manifest.json clientIP="143.103.10.5" requestID="0e81cc77-b068-41e1" responseTimeMS=6 responseBytes=1483 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+GET /api/auth/me 401 in 1ms
+[GET]
+theindiequillcollective.com/assets/index-BGFRldXC.css clientIP="143.103.10.5" requestID="4a26d1f0-1fdc-4b55" responseTimeMS=10 responseBytes=11454 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+[GET]
+theindiequillcollective.com/login clientIP="143.103.10.5" requestID="2a026d9a-382e-46d5" responseTimeMS=8 responseBytes=1731 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+[GET]
+theindiequillcollective.com/logo.png clientIP="143.103.10.5" requestID="5725a012-8797-45a1" responseTimeMS=70 responseBytes=557329 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+[GET]
+theindiequillcollective.com/generated-icon.png clientIP="143.103.10.5" requestID="0b9a534b-134d-4bc4" responseTimeMS=6 responseBytes=1731 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+[GET]
+theindiequillcollective.com/assets/index-Cj9wzgAJ.js clientIP="143.103.10.5" requestID="b4ab4cc8-e112-426d" responseTimeMS=123 responseBytes=157231 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+[GET]
+theindiequillcollective.com/api/auth/me clientIP="143.103.10.5" requestID="b37785ae-6a0a-4c14" responseTimeMS=6 responseBytes=1100 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+[GET]
+theindiequillcollective.com/generated-icon.png clientIP="143.103.10.5" requestID="1f726d61-5bca-4957" responseTimeMS=34 responseBytes=1060 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+[Sync Worker] Running scheduled sync at 2026-02-19T21:10:00.007Z
+POST /api/auth/forgot-password 200 in 261ms
+[POST]
+theindiequillcollective.com/api/auth/forgot-password clientIP="143.103.10.5" requestID="35573ffc-dd55-4663" responseTimeMS=296 responseBytes=1233 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+[GET]
+theindiequillcollective.com/generated-icon.png clientIP="143.103.10.5" requestID="027d82e2-ff89-426a" responseTimeMS=39 responseBytes=1060 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+GET /api/public/impact 200 in 42ms
+[GET]
+theindiequillcollective.com/api/public/impact clientIP="54.71.187.124" requestID="632696de-5962-41cc" responseTimeMS=47 responseBytes=1244 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
+[GET]
+theindiequillcollective.com/logo.png clientIP="54.71.187.124" requestID="bc1f1726-3324-4625" responseTimeMS=40 responseBytes=557329 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
+[GET]
+theindiequillcollective.com/images/technology-tool.jpg clientIP="54.71.187.124" requestID="507e2e45-969c-4ccd" responseTimeMS=25 responseBytes=195957 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
+[GET]
+theindiequillcollective.com/images/learning-path.jpg clientIP="54.71.187.124" requestID="f5c57a47-1dc8-46ba" responseTimeMS=57 responseBytes=207048 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
+GET /api/auth/me 401 in 1ms
+[GET]
+theindiequillcollective.com/api/auth/me clientIP="54.71.187.124" requestID="66f0b853-af09-4c62" responseTimeMS=1 responseBytes=1100 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
+[GET]
+theindiequillcollective.com/assets/index-BGFRldXC.css clientIP="54.71.187.124" requestID="d7a67eb5-ec13-416a" responseTimeMS=8 responseBytes=11454 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
+[GET]
+theindiequillcollective.com/assets/index-Cj9wzgAJ.js clientIP="54.71.187.124" requestID="4b579609-c52d-4997" responseTimeMS=42 responseBytes=157231 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
+[GET]
+theindiequillcollective.com/ clientIP="54.71.187.124" requestID="d34ef8dc-a525-4a6e" responseTimeMS=4 responseBytes=1731 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
+[Sync Worker] Running scheduled sync at 2026-02-19T21:05:00.005Z
+[Sync Worker] Running scheduled sync at 2026-02-19T21:00:00.007Z
+[Sync Worker] Running scheduled sync at 2026-02-19T20:55:00.011Z
+[GET]
+theindiequillcollective.com/generated-icon.png clientIP="35.87.88.145" requestID="162e8da5-0291-46b0" responseTimeMS=3 responseBytes=1731 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
+[GET]
+www.theindiequillcollective.com/generated-icon.png clientIP="35.87.88.145" requestID="" responseTimeMS=0 responseBytes=232 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
+[GET]
+theindiequillcollective.com/generated-icon.png clientIP="35.87.88.145" requestID="4a0f9a05-b572-49cf" responseTimeMS=3 responseBytes=1731 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
+GET /api/public/impact 200 in 44ms
+GET /api/auth/me 401 in 1ms
+Menu
+==> Docs on specifying a port: https://render.com/docs/web-services#port-binding
+==> Detected service running on port 10000
+[Sync Worker] Running scheduled sync at 2026-02-19T20:50:00.009Z
+POST /api/auth/forgot-password 200 in 350ms
+==> ///////////////////////////////////////////////////////////
+==> 
+==> Available at your primary URL https://theindiequillcollective.com + 2 more domains
+==> 
+==> ///////////////////////////////////////////////////////////
+==> 
+==> Your service is live 🎉
+App initialized
+[Sync Worker] Sync worker initialized - will run every 5 minutes
+[Sync Worker] Starting scheduled sync job (*/5 * * * *)

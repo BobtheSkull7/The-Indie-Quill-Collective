@@ -1,0 +1,48 @@
+2026-02-19T20:44:18.538385146Z ==> Downloading cache...
+2026-02-19T20:44:18.810010865Z ==> Cloning from https://github.com/BobtheSkull7/The-Indie-Quill-Collective
+2026-02-19T20:44:22.538187237Z ==> Checking out commit 3300f63d7c27fa01ee60888400cea2cac174fddd in branch main
+2026-02-19T20:44:30.501179213Z ==> Downloaded 250MB in 5s. Extraction took 7s.
+2026-02-19T20:44:35.063191421Z ==> Using Node.js version 22.16.0 (default)
+2026-02-19T20:44:35.113575308Z ==> Docs on specifying a Node.js version: https://render.com/docs/node-version
+2026-02-19T20:44:35.317025123Z ==> Running build command 'npm install'...
+2026-02-19T20:44:37.517322597Z 
+2026-02-19T20:44:37.517350788Z up to date, audited 497 packages in 2s
+2026-02-19T20:44:37.51737093Z 
+2026-02-19T20:44:37.51737444Z 80 packages are looking for funding
+2026-02-19T20:44:37.517381061Z   run `npm fund` for details
+2026-02-19T20:44:37.551615688Z 
+2026-02-19T20:44:37.55164844Z 10 vulnerabilities (1 low, 4 moderate, 5 high)
+2026-02-19T20:44:37.551651321Z 
+2026-02-19T20:44:37.551654621Z To address issues that do not require attention, run:
+2026-02-19T20:44:37.551657011Z   npm audit fix
+2026-02-19T20:44:37.551658891Z 
+2026-02-19T20:44:37.551660991Z To address all issues (including breaking changes), run:
+2026-02-19T20:44:37.551663702Z   npm audit fix --force
+2026-02-19T20:44:37.551665571Z 
+2026-02-19T20:44:37.551668132Z Run `npm audit` for details.
+2026-02-19T20:44:39.223652691Z ==> Uploading build...
+2026-02-19T20:45:12.213301008Z ==> Uploaded in 8.2s. Compression took 24.8s
+2026-02-19T20:45:12.266243507Z ==> Build successful 🎉
+2026-02-19T20:45:16.409503094Z ==> Deploying...
+2026-02-19T20:45:57.295438948Z ==> Running 'npm run start'
+2026-02-19T20:45:57.600884961Z 
+2026-02-19T20:45:57.600914171Z > indie-quill-collective@1.0.0 start
+2026-02-19T20:45:57.600918651Z > NODE_ENV=production tsx server/index.ts
+2026-02-19T20:45:57.600920721Z 
+2026-02-19T20:45:58.880641676Z Server listening on port 10000
+2026-02-19T20:45:58.880674376Z [ENV CHECK] GAME_ENGINE_URL: SET (41 chars, starts with "https://cu...")
+2026-02-19T20:45:58.880685107Z [ENV CHECK] GOOGLE_CLIENT_ID: SET
+2026-02-19T20:45:58.880690547Z [ENV CHECK] GOOGLE_CLIENT_SECRET: SET
+2026-02-19T20:45:58.880740608Z [ENV CHECK] GOOGLE_REDIRECT_URI: SET (https://theindiequillcollective.com/api/admin/google/callback
+2026-02-19T20:45:58.880746218Z )
+2026-02-19T20:46:04.976290343Z [DB] Mode: PRODUCTION (SUPABASE_PROD_URL), Host: aws-0-...base.com
+2026-02-19T20:46:09.569026328Z [Sync Worker] Starting scheduled sync job (*/5 * * * *)
+2026-02-19T20:46:09.611628579Z ==> Your service is live 🎉
+2026-02-19T20:46:09.665443575Z [Sync Worker] Sync worker initialized - will run every 5 minutes
+2026-02-19T20:46:09.665603728Z App initialized
+2026-02-19T20:46:09.728290283Z ==> 
+2026-02-19T20:46:09.733231809Z ==> ///////////////////////////////////////////////////////////
+2026-02-19T20:46:09.739718647Z ==> 
+2026-02-19T20:46:09.744477172Z ==> Available at your primary URL https://the-indie-quill-collective.onrender.com
+2026-02-19T20:46:09.749872058Z ==> 
+2026-02-19T20:46:09.756677207Z ==> ///////////////////////////////////////////////////////////
