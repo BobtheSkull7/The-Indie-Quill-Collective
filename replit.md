@@ -19,6 +19,19 @@ I prefer clear, concise explanations and a direct communication style. For codin
 **Current Supabase schema additions (already applied):**
 - `users` table: `secondary_role TEXT` column added
 - `board_members` table created (id SERIAL PK, name, title, bio, photo_filename, email, linkedin, display_order, is_active, created_at, updated_at)
+- `quizzes` table created (id SERIAL PK, title, description, time_limit_minutes, passing_score, created_at, updated_at)
+- `quiz_questions` table created (id SERIAL PK, quiz_id INT FK→quizzes, question_text, options JSONB, correct_option_index, points, display_order)
+- `quiz_results` table created (id SERIAL PK, user_id VARCHAR FK→users, quiz_id INT FK→quizzes, score, passed, completed_at)
+- `student_profiles` table: `game_character_id TEXT` column added
+
+**CRITICAL: Replit vs Supabase Type Mismatch Cheat Sheet**
+| Table & Column | Replit (Local) Type | Supabase (Prod) Type |
+|---|---|---|
+| `users.id` | INTEGER (serial) | VARCHAR (string) |
+| `quiz_results.user_id` | INTEGER | VARCHAR |
+| `student_profiles.user_id` | INTEGER | VARCHAR |
+
+**Rule:** When writing new code or SQL with User ID references, use VARCHAR for Supabase and INTEGER for local Replit. Always provide both versions when giving the user migration SQL.
 
 ## System Architecture
 The project employs a client-server architecture. The frontend is built with React 19, Vite, and TailwindCSS 3, while the backend uses Express.js with TypeScript. Data is managed in a PostgreSQL database via Supabase and Drizzle ORM. Client-side routing is handled by Wouter.
