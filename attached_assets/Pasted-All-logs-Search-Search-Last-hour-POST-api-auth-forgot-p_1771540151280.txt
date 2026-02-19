@@ -1,0 +1,38 @@
+All logs
+Search
+Search
+
+Last hour
+
+
+
+POST /api/auth/forgot-password 200 in 283ms
+[Password Reset] Email send result: SUCCESS
+[Email] Using RESEND_API_KEY from environment
+[Password Reset] Attempting to send reset email to jon.mccutcheon@steadi.ai
+Menu
+[POST]
+theindiequillcollective.com/api/auth/forgot-password clientIP="143.103.10.5" requestID="22d3f5ca-8e76-4d6c" responseTimeMS=309 responseBytes=1233 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+[GET]
+theindiequillcollective.com/generated-icon.png clientIP="143.103.10.5" requestID="d7425781-c6ce-4589" responseTimeMS=6 responseBytes=1060 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+[GET]
+theindiequillcollective.com/logo.png clientIP="143.103.10.5" requestID="130fa04d-7ca1-4997" responseTimeMS=6 responseBytes=1062 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+GET /api/auth/me 401 in 1ms
+[GET]
+theindiequillcollective.com/manifest.json clientIP="143.103.10.5" requestID="4f598d99-f7ee-436e" responseTimeMS=25 responseBytes=1060 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+[GET]
+theindiequillcollective.com/logo.png clientIP="143.103.10.5" requestID="d65de74e-8f20-40b5" responseTimeMS=5 responseBytes=1062 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+[GET]
+theindiequillcollective.com/api/auth/me clientIP="143.103.10.5" requestID="a76ad52b-cfc5-4568" responseTimeMS=5 responseBytes=1100 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+[GET]
+theindiequillcollective.com/generated-icon.png clientIP="143.103.10.5" requestID="325986dc-b06a-495e" responseTimeMS=5 responseBytes=1731 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+[GET]
+theindiequillcollective.com/logo.png clientIP="143.103.10.5" requestID="09fd5593-0f5e-466c" responseTimeMS=9 responseBytes=1062 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+[GET]
+theindiequillcollective.com/assets/index-BGFRldXC.css clientIP="143.103.10.5" requestID="4993f269-9722-44a1" responseTimeMS=10 responseBytes=11454 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+[GET]
+theindiequillcollective.com/assets/index-Cj9wzgAJ.js clientIP="143.103.10.5" requestID="609619b2-5df7-4cc3" responseTimeMS=176 responseBytes=157231 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+[GET]
+theindiequillcollective.com/login clientIP="143.103.10.5" requestID="b65dd41d-97dd-49d8" responseTimeMS=14 responseBytes=1731 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+[GET]
+theindiequillcollective.com/generated-icon.png clientIP="143.103.10.5" requestID="2ded02ae-39ab-404e" responseTimeMS=53 responseBytes=1060 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
