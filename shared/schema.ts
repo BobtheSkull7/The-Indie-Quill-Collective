@@ -589,7 +589,8 @@ export const emailTypeEnum = pgEnum('email_type', [
   'application_received',
   'application_accepted',
   'application_rejected',
-  'active_author'
+  'active_author',
+  'password_reset'
 ]);
 
 export const emailStatusEnum = pgEnum('email_status', [

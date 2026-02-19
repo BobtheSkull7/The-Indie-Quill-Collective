@@ -1,0 +1,51 @@
+All logs
+Search
+Search
+
+Live tail
+
+
+
+==> Deploying...
+[GET]
+theindiequillcollective.com/generated-icon.png clientIP="143.103.10.5" requestID="8cca10dc-867d-455e" responseTimeMS=6 responseBytes=1060 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+POST /api/auth/forgot-password 200 in 44ms
+}
+  routine: 'pg_strtoint32_safe'
+  line: '616',
+  file: 'numutils.c',
+  constraint: undefined,
+  dataType: undefined,
+  column: undefined,
+  table: undefined,
+  schema: undefined,
+Menu
+  where: "unnamed portal parameter $4 = '...'",
+  internalQuery: undefined,
+  internalPosition: undefined,
+  position: undefined,
+  hint: undefined,
+  detail: undefined,
+  code: '22P02',
+  severity: 'ERROR',
+  length: 149,
+    at async <anonymous> (/opt/render/project/src/server/routes.ts:269:7) {
+    at async sendPasswordResetEmail (/opt/render/project/src/server/email.ts:525:5)
+    at async logEmail (/opt/render/project/src/server/email.ts:55:5)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at /opt/render/project/src/node_modules/pg-pool/index.js:45:11
+Failed to log email: error: invalid input syntax for type integer: "failed"
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at <anonymous> (/opt/render/project/src/server/routes.ts:269:13)
+    at sendPasswordResetEmail (/opt/render/project/src/server/email.ts:486:41)
+    at getResendClient (/opt/render/project/src/server/email.ts:38:39)
+    at getCredentials (/opt/render/project/src/server/email.ts:18:11)
+Failed to send password reset email: Error: X_REPLIT_TOKEN not found for repl/depl
+[POST]
+theindiequillcollective.com/api/auth/forgot-password clientIP="143.103.10.5" requestID="ac9e4de9-af97-4815" responseTimeMS=61 responseBytes=1233 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+[GET]
+theindiequillcollective.com/generated-icon.png clientIP="143.103.10.5" requestID="62069394-d66d-4fb2" responseTimeMS=26 responseBytes=1060 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+[Sync Worker] Running scheduled sync at 2026-02-19T20:20:00.009Z
+[GET]
+theindiequillcollective.com/generated-icon.png clientIP="143.103.10.5" requestID="04e57d3f-4eaa-4cc7" responseTimeMS=25 responseBytes=1060 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+POST /api/auth/forgot-password 200 in 56ms

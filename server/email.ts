@@ -7,6 +7,13 @@ const ADMIN_CC_EMAIL = 'jon@theindiequill.com';
 let connectionSettings: any;
 
 async function getCredentials() {
+  if (process.env.RESEND_API_KEY) {
+    return {
+      apiKey: process.env.RESEND_API_KEY,
+      fromEmail: process.env.RESEND_FROM_EMAIL || 'The Indie Quill Collective <noreply@resend.dev>'
+    };
+  }
+
   const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
   const xReplitToken = process.env.REPL_IDENTITY 
     ? 'repl ' + process.env.REPL_IDENTITY 
@@ -15,7 +22,7 @@ async function getCredentials() {
     : null;
 
   if (!xReplitToken) {
-    throw new Error('X_REPLIT_TOKEN not found for repl/depl');
+    throw new Error('Resend not configured: Set RESEND_API_KEY environment variable for non-Replit deployments');
   }
 
   connectionSettings = await fetch(
