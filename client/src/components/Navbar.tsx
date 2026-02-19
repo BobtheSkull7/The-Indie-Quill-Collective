@@ -41,14 +41,12 @@ export default function Navbar() {
             >
               About
             </Link>
-            {!user && (
-              <Link 
-                href="/board" 
-                className={`text-sm font-medium transition-colors ${location === "/board" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`}
-              >
-                Board
-              </Link>
-            )}
+            <Link 
+              href="/board" 
+              className={`text-sm font-medium transition-colors ${location === "/board" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`}
+            >
+              Board
+            </Link>
             
             {!user ? (
               <>
@@ -275,9 +273,7 @@ export default function Navbar() {
         <div className="md:hidden bg-white border-t border-gray-100 py-4 px-4 space-y-3">
           <Link href="/" className="block text-gray-600 hover:text-slate-800 py-2">Home</Link>
           <Link href="/about" className="block text-gray-600 hover:text-slate-800 py-2">About</Link>
-          {!user && (
-            <Link href="/board" className="block text-gray-600 hover:text-slate-800 py-2">Board</Link>
-          )}
+          <Link href="/board" className="block text-gray-600 hover:text-slate-800 py-2">Board</Link>
           {!user ? (
             <>
               <Link href="/login" className="block text-gray-600 hover:text-slate-800 py-2">Sign In</Link>
