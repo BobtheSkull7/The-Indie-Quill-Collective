@@ -416,14 +416,19 @@ export default function AboutUs() {
 
                   <div className={`p-8 ${index === 0 ? "md:flex md:gap-8" : ""}`}>
                     <div className={`${index === 0 ? "md:w-1/3" : ""} mb-6 md:mb-0`}>
-                      <div className={`${
-                        index === 0 ? "w-48 h-48 mx-auto md:mx-0" : "w-32 h-32 mx-auto"
-                      } bg-gradient-to-br from-teal-100 to-blue-100 rounded-full flex items-center justify-center border-4 border-white shadow-lg overflow-hidden`}>
+                      <div
+                        className={`${
+                          index === 0 ? "w-48 h-48 mx-auto md:mx-0" : "w-32 h-32 mx-auto"
+                        } bg-gradient-to-br from-teal-100 to-blue-100 rounded-full flex items-center justify-center border-4 border-white shadow-lg`}
+                        style={{ overflow: "hidden" }}
+                      >
                         {member.photoFilename ? (
                           <img 
                             src={`/uploads/board/${member.photoFilename}`} 
                             alt={member.name}
-                            className="w-full h-full rounded-full object-cover"
+                            className="w-full h-full object-cover"
+                            style={{ display: "block", minWidth: "100%", minHeight: "100%" }}
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                           />
                         ) : (
                           <User className={`${index === 0 ? "w-20 h-20" : "w-12 h-12"} text-teal-400`} />

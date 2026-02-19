@@ -134,6 +134,13 @@ declare module "express-session" {
 }
 
 export async function registerRoutes(app: Express) {
+  const express = await import("express");
+  const uploadsPath = path.join(process.cwd(), "uploads");
+  if (!fs.existsSync(uploadsPath)) {
+    fs.mkdirSync(uploadsPath, { recursive: true });
+  }
+  app.use("/uploads", express.static(uploadsPath));
+
   app.post("/api/auth/register", authRateLimiter, async (req: Request, res: Response) => {
     try {
       const { email, password, firstName, lastName } = req.body;
