@@ -266,11 +266,13 @@ export async function registerRoutes(app: Express) {
       const protocol = hostname.includes("localhost") ? "http" : "https";
       const resetLink = `${protocol}://${hostname}/reset-password?token=${token}`;
 
-      await sendPasswordResetEmail(user.email, user.firstName, resetLink);
+      console.log(`[Password Reset] Attempting to send reset email to ${user.email}`);
+      const emailSent = await sendPasswordResetEmail(user.email, user.firstName, resetLink);
+      console.log(`[Password Reset] Email send result: ${emailSent ? 'SUCCESS' : 'FAILED'}`);
 
       return res.json({ message: "If an account with that email exists, a reset link has been sent." });
     } catch (error) {
-      console.error("Forgot password error:", error);
+      console.error("[Password Reset] Forgot password error:", error);
       return res.status(500).json({ message: "Something went wrong. Please try again." });
     }
   });

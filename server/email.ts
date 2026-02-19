@@ -8,11 +8,13 @@ let connectionSettings: any;
 
 async function getCredentials() {
   if (process.env.RESEND_API_KEY) {
+    console.log('[Email] Using RESEND_API_KEY from environment');
     return {
       apiKey: process.env.RESEND_API_KEY,
       fromEmail: process.env.RESEND_FROM_EMAIL || 'The Indie Quill Collective <noreply@resend.dev>'
     };
   }
+  console.log('[Email] RESEND_API_KEY not found, trying Replit connector...');
 
   const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
   const xReplitToken = process.env.REPL_IDENTITY 

@@ -63,6 +63,9 @@ server.listen(PORT, "0.0.0.0", () => {
   console.log(`[ENV CHECK] GOOGLE_CLIENT_ID: ${process.env.GOOGLE_CLIENT_ID ? "SET" : "NOT SET"}`);
   console.log(`[ENV CHECK] GOOGLE_CLIENT_SECRET: ${process.env.GOOGLE_CLIENT_SECRET ? "SET" : "NOT SET"}`);
   console.log(`[ENV CHECK] GOOGLE_REDIRECT_URI: ${process.env.GOOGLE_REDIRECT_URI ? `SET (${process.env.GOOGLE_REDIRECT_URI})` : "NOT SET"}`);
+  console.log(`[ENV CHECK] RESEND_API_KEY: ${process.env.RESEND_API_KEY ? `SET (${process.env.RESEND_API_KEY.length} chars)` : "NOT SET"}`);
+  console.log(`[ENV CHECK] RESEND_FROM_EMAIL: ${process.env.RESEND_FROM_EMAIL ? `SET (${process.env.RESEND_FROM_EMAIL})` : "NOT SET (will use default)"}`);
+
   // Now run bootstrap in background after server is listening
   bootstrapFast()
     .then(() => {
