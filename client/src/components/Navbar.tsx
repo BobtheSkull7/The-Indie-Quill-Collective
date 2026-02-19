@@ -41,13 +41,6 @@ export default function Navbar() {
             >
               About
             </Link>
-            <Link 
-              href="/board" 
-              className={`text-sm font-medium transition-colors ${location === "/board" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`}
-            >
-              Board
-            </Link>
-            
             {!user ? (
               <>
                 <Link href="/login" className="btn-secondary text-sm py-2 px-4">
@@ -57,7 +50,7 @@ export default function Navbar() {
                   Join Us
                 </Link>
               </>
-            ) : user.role === "board_member" ? (
+            ) : (user.role === "board_member" || (user as any).secondaryRole === "board_member") ? (
               <>
                 <Link 
                   href="/admin/intake" 
@@ -273,13 +266,12 @@ export default function Navbar() {
         <div className="md:hidden bg-white border-t border-gray-100 py-4 px-4 space-y-3">
           <Link href="/" className="block text-gray-600 hover:text-slate-800 py-2">Home</Link>
           <Link href="/about" className="block text-gray-600 hover:text-slate-800 py-2">About</Link>
-          <Link href="/board" className="block text-gray-600 hover:text-slate-800 py-2">Board</Link>
           {!user ? (
             <>
               <Link href="/login" className="block text-gray-600 hover:text-slate-800 py-2">Sign In</Link>
               <Link href="/register" className="block btn-primary text-center">Join Us</Link>
             </>
-          ) : user.role === "board_member" ? (
+          ) : (user.role === "board_member" || (user as any).secondaryRole === "board_member") ? (
             <>
               <Link href="/admin/intake" className="block text-gray-600 hover:text-slate-800 py-2">Intake</Link>
               <Link href="/admin/training" className="block text-gray-600 hover:text-slate-800 py-2">Training</Link>

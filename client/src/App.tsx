@@ -6,7 +6,6 @@ import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import AdminDashboard from "./pages/AdminDashboard";
-import Board from "./pages/Board";
 import Contracts from "./pages/Contracts";
 import ContractSign from "./pages/ContractSign";
 import PublishingStatus from "./pages/PublishingStatus";
@@ -118,7 +117,6 @@ function App() {
             <Redirect to="/admin/outcomes" />
           </Route>
           
-          <Route path="/board" component={Board} />
           <Route path="/contracts" component={Contracts} />
           <Route path="/contracts/:id" component={ContractSign} />
           <Route path="/publishing-status" component={PublishingStatus} />

@@ -1,7 +1,29 @@
+import { useState, useEffect } from "react";
 import { Link } from "wouter";
-import { ArrowLeft, Heart } from "lucide-react";
+import { ArrowLeft, Heart, Mail, Linkedin, User } from "lucide-react";
+
+interface BoardMemberData {
+  id: number;
+  name: string;
+  title: string;
+  bio: string | null;
+  photoFilename: string | null;
+  email: string | null;
+  linkedin: string | null;
+  displayOrder: number;
+  isActive: boolean;
+}
 
 export default function AboutUs() {
+  const [boardMembers, setBoardMembers] = useState<BoardMemberData[]>([]);
+
+  useEffect(() => {
+    fetch("/api/public/board-members")
+      .then(res => res.ok ? res.json() : [])
+      .then(data => setBoardMembers(Array.isArray(data) ? data : []))
+      .catch(() => {});
+  }, []);
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto px-4 py-8">
@@ -166,45 +188,82 @@ export default function AboutUs() {
           </p>
         </section>
 
-        <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mb-8">
-          <h2 className="font-display text-2xl font-bold text-slate-800 mb-6">
-            Our Path to Authorship
-          </h2>
-          <p className="text-gray-700 text-lg leading-relaxed mb-6">
-            The Indie Quill Collective was built to shatter this silence. We provide a path that removes the barriers—social, technical, and financial—that have been used to keep people quiet.
-          </p>
-          
-          <div className="grid md:grid-cols-3 gap-6">
-            <div className="bg-gradient-to-br from-teal-50 to-teal-100 rounded-xl p-6 border border-teal-200">
-              <h3 className="font-display font-semibold text-slate-800 mb-2">Remove the Barriers</h3>
-              <p className="text-gray-600 text-sm">
-                We handle the technical, social, and financial hurdles so you can focus entirely on your story.
-              </p>
-            </div>
-            
-            <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 border border-blue-200">
-              <h3 className="font-display font-semibold text-slate-800 mb-2">Mentorship & Education</h3>
-              <p className="text-gray-600 text-sm">
-                We provide the direct human assistance and specialized curriculum necessary to turn the act of speaking into the craft of publishing.
-              </p>
-            </div>
-            
-            <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-6 border border-red-200">
-              <h3 className="font-display font-semibold text-slate-800 mb-2">Total Ownership</h3>
-              <p className="text-gray-600 text-sm">
-                We move beyond mere representation toward true ownership. Marginalized voices finally control their own data, their own stories, and their own legacies.
-              </p>
-            </div>
+        <section className="mb-8">
+          <div className="text-center mb-8">
+            <h2 className="font-display text-3xl font-bold text-slate-800 mb-2">
+              Our Leadership Team
+            </h2>
+            <p className="text-gray-600 max-w-2xl mx-auto">
+              Meet the dedicated individuals guiding The Indie Quill Collective's mission 
+              to empower emerging authors and advance literacy.
+            </p>
           </div>
-        </section>
 
-        <section className="bg-gradient-to-br from-teal-600 to-collective-blue rounded-2xl shadow-lg p-8 mb-8 text-white">
-          <h2 className="font-display text-2xl font-bold mb-4">
-            A Sustainable Movement
-          </h2>
-          <p className="text-lg leading-relaxed opacity-90">
-            We believe in building for the long term. By syncing our mission-driven work with a robust commercial infrastructure, we ensure that every voice we amplify helps fund the next. Every successful author in our program creates the "seed money" and the momentum needed for the next marginalized voice to be heard.
-          </p>
+          {boardMembers.length === 0 ? (
+            <div className="text-center py-12 bg-white rounded-2xl shadow-sm border border-gray-100">
+              <User className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500 text-lg">Board member information coming soon.</p>
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-2 gap-8">
+              {boardMembers.map((member, index) => (
+                <div 
+                  key={member.id}
+                  className={`bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden ${
+                    index === 0 ? "md:col-span-2" : ""
+                  }`}
+                >
+                  <div className={`p-8 ${index === 0 ? "md:flex md:gap-8" : ""}`}>
+                    <div className={`${index === 0 ? "md:w-1/3" : ""} mb-6 md:mb-0`}>
+                      <div className={`${
+                        index === 0 ? "w-48 h-48 mx-auto md:mx-0" : "w-32 h-32 mx-auto"
+                      } bg-gradient-to-br from-teal-100 to-blue-100 rounded-full flex items-center justify-center border-4 border-white shadow-lg overflow-hidden`}>
+                        {member.photoFilename ? (
+                          <img 
+                            src={`/uploads/board/${member.photoFilename}`} 
+                            alt={member.name}
+                            className="w-full h-full rounded-full object-cover"
+                          />
+                        ) : (
+                          <User className={`${index === 0 ? "w-20 h-20" : "w-12 h-12"} text-teal-400`} />
+                        )}
+                      </div>
+                    </div>
+
+                    <div className={`${index === 0 ? "md:w-2/3" : ""} text-center ${index === 0 ? "md:text-left" : ""}`}>
+                      <h3 className="font-display text-xl font-bold text-slate-800 mb-1">
+                        {member.name}
+                      </h3>
+                      <p className="text-teal-600 font-medium text-sm mb-4">
+                        {member.title}
+                      </p>
+                      {member.bio && (
+                        <p className="text-gray-600 leading-relaxed mb-4">
+                          {member.bio}
+                        </p>
+                      )}
+                      {(member.email || member.linkedin) && (
+                        <div className="flex items-center justify-center md:justify-start space-x-4">
+                          {member.email && (
+                            <a href={`mailto:${member.email}`} className="flex items-center space-x-1 text-gray-500 hover:text-teal-600 transition-colors text-sm">
+                              <Mail className="w-4 h-4" />
+                              <span>Email</span>
+                            </a>
+                          )}
+                          {member.linkedin && (
+                            <a href={member.linkedin} target="_blank" rel="noopener noreferrer" className="flex items-center space-x-1 text-gray-500 hover:text-blue-600 transition-colors text-sm">
+                              <Linkedin className="w-4 h-4" />
+                              <span>LinkedIn</span>
+                            </a>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
 
         <div className="text-center py-8">
