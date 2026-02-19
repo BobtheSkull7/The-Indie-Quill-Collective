@@ -6,6 +6,20 @@ The Indie Quill Collective is a 501(c)(3) non-profit platform dedicated to suppo
 ## User Preferences
 I prefer clear, concise explanations and a direct communication style. For coding tasks, I value modularity and well-structured code. When making changes, please prioritize security, compliance, and maintainability. Always ask for confirmation before implementing major architectural changes or significant code refactoring. I prefer an iterative development approach, with regular updates and opportunities for feedback.
 
+## CRITICAL: Database Schema Drift Policy
+**Every time a database schema change is made (new table, new column, altered column, etc.), you MUST tell the user exactly what SQL to run in Supabase.** The Replit dev database and the Supabase databases (dev + prod) are separate and do NOT auto-sync. Schema drift between them has caused production outages.
+
+**Checklist for every schema change:**
+1. Make the change in `shared/schema.ts` (Drizzle ORM)
+2. Run `npm run db:push` to apply to the local Replit database
+3. **Immediately tell the user** the exact SQL statements needed for both Supabase Dev and Supabase Prod databases
+4. Format the SQL clearly so it can be copy-pasted into the Supabase SQL Editor
+5. Never assume a column or table exists in Supabase just because it exists locally
+
+**Current Supabase schema additions (already applied):**
+- `users` table: `secondary_role TEXT` column added
+- `board_members` table created (id SERIAL PK, name, title, bio, photo_filename, email, linkedin, display_order, is_active, created_at, updated_at)
+
 ## System Architecture
 The project employs a client-server architecture. The frontend is built with React 19, Vite, and TailwindCSS 3, while the backend uses Express.js with TypeScript. Data is managed in a PostgreSQL database via Supabase and Drizzle ORM. Client-side routing is handled by Wouter.
 
