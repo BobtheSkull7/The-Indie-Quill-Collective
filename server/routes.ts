@@ -648,9 +648,19 @@ export async function registerRoutes(app: Express) {
         
         return res.json(appsWithUserDetails);
       } else {
-        const userApplications = await db.select().from(applications)
-          .where(eq(applications.userId, req.session.userId))
-          .orderBy(desc(applications.createdAt));
+        const userAppsResult = await db.execute(sql`
+          SELECT id, user_id as "userId", first_name as "firstName", last_name as "lastName",
+                 email, phone, pseudonym, bio, genres, status, is_minor as "isMinor",
+                 guardian_name as "guardianName", guardian_email as "guardianEmail",
+                 guardian_phone as "guardianPhone", guardian_relationship as "guardianRelationship",
+                 date_of_birth as "dateOfBirth", reviewed_by as "reviewedBy",
+                 reviewed_at as "reviewedAt", cohort_id as "cohortId",
+                 indie_quill_author_id as "indieQuillAuthorId",
+                 internal_id as "internalId", persona_type as "personaType",
+                 created_at as "createdAt", updated_at as "updatedAt"
+          FROM applications WHERE user_id = ${req.session.userId} ORDER BY created_at DESC
+        `);
+        const userApplications = userAppsResult.rows as any[];
         
         const appsWithSyncStatus = await Promise.all(
           userApplications.map(async (app) => {
@@ -1019,10 +1029,17 @@ export async function registerRoutes(app: Express) {
     }
 
     try {
-      const userContracts = await db.select().from(contracts)
-        .where(eq(contracts.userId, req.session.userId))
-        .orderBy(desc(contracts.createdAt));
-      return res.json(userContracts);
+      const contractsResult = await db.execute(sql`
+        SELECT id, user_id as "userId", application_id as "applicationId",
+               contract_type as "contractType", status, pdf_url as "pdfUrl",
+               author_signature as "authorSignature", author_signed_at as "authorSignedAt",
+               author_signature_ip as "authorSignatureIp", author_signature_user_agent as "authorSignatureUserAgent",
+               guardian_signature as "guardianSignature", guardian_signed_at as "guardianSignedAt",
+               guardian_signature_ip as "guardianSignatureIp", guardian_signature_user_agent as "guardianSignatureUserAgent",
+               created_at as "createdAt", updated_at as "updatedAt"
+        FROM contracts WHERE user_id = ${req.session.userId} ORDER BY created_at DESC
+      `);
+      return res.json(contractsResult.rows || []);
     } catch (error) {
       console.error("Fetch contracts error:", error);
       return res.status(500).json({ message: "Failed to fetch contracts" });
@@ -1327,10 +1344,14 @@ export async function registerRoutes(app: Express) {
     }
 
     try {
-      const updates = await db.select().from(publishingUpdates)
-        .where(eq(publishingUpdates.userId, req.session.userId))
-        .orderBy(desc(publishingUpdates.updatedAt));
-      return res.json(updates);
+      const updatesResult = await db.execute(sql`
+        SELECT id, user_id as "userId", application_id as "applicationId",
+               sync_status as "syncStatus", indie_quill_author_id as "indieQuillAuthorId",
+               last_synced_at as "lastSyncedAt", sync_error as "syncError",
+               created_at as "createdAt", updated_at as "updatedAt"
+        FROM publishing_updates WHERE user_id = ${req.session.userId} ORDER BY updated_at DESC
+      `);
+      return res.json(updatesResult.rows || []);
     } catch (error) {
       console.error("Fetch publishing updates error:", error);
       return res.status(500).json({ message: "Failed to fetch updates" });
@@ -2489,9 +2510,28 @@ export async function registerRoutes(app: Express) {
         }
 
         if (cohortId && userApps.length > 0) {
-          await db.update(applications)
-            .set({ cohortId, updatedAt: new Date() })
-            .where(eq(applications.userId, userId));
+          await db.execute(sql`
+            UPDATE applications SET cohort_id = ${cohortId}, updated_at = NOW()
+            WHERE user_id = ${userId}
+          `);
+        }
+
+        if (cohortId) {
+          const existingProfile = await db.execute(sql`
+            SELECT id FROM student_profiles WHERE user_id = ${userId}
+          `);
+          if (existingProfile.rows.length > 0) {
+            await db.execute(sql`
+              UPDATE student_profiles SET cohort_id = ${cohortId}, updated_at = NOW()
+              WHERE user_id = ${userId}
+            `);
+          } else {
+            await db.execute(sql`
+              INSERT INTO student_profiles (user_id, cohort_id, enrolled_at, is_active, created_at, updated_at)
+              VALUES (${userId}, ${cohortId}, NOW(), true, NOW(), NOW())
+            `);
+          }
+          console.log(`[Admin] Synced cohort_id=${cohortId} to student_profiles for user ${userId}`);
         }
       }
 
@@ -6074,11 +6114,16 @@ export async function registerDonationRoutes(app: Express) {
     }
 
     try {
-      const work = await db.select().from(studentWork)
-        .where(eq(studentWork.userId, req.session.userId))
-        .orderBy(desc(studentWork.createdAt));
+      const work = await db.execute(sql`
+        SELECT id, user_id as "userId", quest_id as "questId", content_type as "contentType",
+               content_body as "contentBody", word_count as "wordCount", 
+               source_device as "sourceDevice", created_at as "createdAt"
+        FROM student_work
+        WHERE user_id = ${req.session.userId}
+        ORDER BY created_at DESC
+      `);
 
-      res.json(work);
+      res.json(work.rows || []);
     } catch (error) {
       console.error("Error fetching student work:", error);
       res.status(500).json({ error: "Failed to fetch student work" });
@@ -6361,8 +6406,10 @@ export async function registerDonationRoutes(app: Express) {
     }
 
     // Verify user is a student
-    const userResult = await db.select().from(users).where(eq(users.id, req.session.userId)).limit(1);
-    if (userResult.length === 0 || userResult[0].role !== "student") {
+    const userResult = await db.execute(sql`
+      SELECT id, role FROM users WHERE id = ${req.session.userId} LIMIT 1
+    `);
+    if (userResult.rows.length === 0 || (userResult.rows[0] as any).role !== "student") {
       return res.status(403).json({ message: "Student access required" });
     }
 
@@ -6412,8 +6459,10 @@ export async function registerDonationRoutes(app: Express) {
     }
 
     // Verify user is admin
-    const userResult = await db.select().from(users).where(eq(users.id, req.session.userId)).limit(1);
-    if (userResult.length === 0 || userResult[0].role !== "admin") {
+    const adminCheckResult = await db.execute(sql`
+      SELECT id, role FROM users WHERE id = ${req.session.userId} LIMIT 1
+    `);
+    if (adminCheckResult.rows.length === 0 || (adminCheckResult.rows[0] as any).role !== "admin") {
       return res.status(403).json({ message: "Admin access required" });
     }
 

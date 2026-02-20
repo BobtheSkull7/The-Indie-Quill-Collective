@@ -108,14 +108,28 @@ export default function StudentDashboard() {
   }, [user, setLocation]);
 
   const loadDashboardData = async () => {
+    const safeFetch = async (url: string) => {
+      try {
+        const res = await fetch(url);
+        if (!res.ok) {
+          console.warn(`[StudentDashboard] ${url} returned ${res.status}`);
+          return null;
+        }
+        return await res.json();
+      } catch (err) {
+        console.warn(`[StudentDashboard] Failed to fetch ${url}:`, err);
+        return null;
+      }
+    };
+
     try {
       const [modulesRes, progressRes, meetingsRes, tabeRes, statsRes, workRes] = await Promise.all([
-        fetch("/api/student/curriculum").then(r => r.json()),
-        fetch("/api/student/progress").then(r => r.json()),
-        fetch("/api/student/meetings").then(r => r.json()),
-        fetch("/api/student/tabe-scores").then(r => r.json()),
-        fetch("/api/student/stats").then(r => r.json()),
-        fetch("/api/student/work").then(r => r.json())
+        safeFetch("/api/student/curriculum"),
+        safeFetch("/api/student/progress"),
+        safeFetch("/api/student/meetings"),
+        safeFetch("/api/student/tabe-scores"),
+        safeFetch("/api/student/stats"),
+        safeFetch("/api/student/work")
       ]);
 
       setModules(Array.isArray(modulesRes) ? modulesRes : []);
@@ -123,7 +137,7 @@ export default function StudentDashboard() {
       setMeetings(Array.isArray(meetingsRes) ? meetingsRes : []);
       setTabeScores(Array.isArray(tabeRes) ? tabeRes : []);
       setStudentWork(Array.isArray(workRes) ? workRes : []);
-      if (statsRes && typeof statsRes === 'object') {
+      if (statsRes && typeof statsRes === 'object' && !Array.isArray(statsRes)) {
         setStats(statsRes);
       }
     } catch (error) {
