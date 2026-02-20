@@ -106,10 +106,10 @@ export default function MentorsContent() {
             <div key={mentor.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold">
-                  {mentor.firstName.charAt(0)}{mentor.lastName.charAt(0)}
+                  {(mentor.firstName || "?").charAt(0)}{(mentor.lastName || "?").charAt(0)}
                 </div>
                 <div>
-                  <h3 className="font-semibold text-slate-800">{mentor.firstName} {mentor.lastName}</h3>
+                  <h3 className="font-semibold text-slate-800">{mentor.firstName || "Unknown"} {mentor.lastName || ""}</h3>
                   <p className="text-sm text-gray-500 flex items-center gap-1">
                     <Mail className="w-3 h-3" />
                     {mentor.email}

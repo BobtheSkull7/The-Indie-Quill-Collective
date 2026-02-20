@@ -159,7 +159,7 @@ export default function FamiliesContent() {
                           key={member.id}
                           className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded"
                         >
-                          {member.firstName} {member.lastName.charAt(0)}.
+                          {member.firstName || "Unknown"} {(member.lastName || "?").charAt(0)}.
                         </span>
                       ))}
                       {family.members.length > 4 && (

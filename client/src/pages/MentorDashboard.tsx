@@ -235,11 +235,11 @@ export default function MentorDashboard() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center text-teal-600 font-bold">
-                            {student.firstName.charAt(0)}{student.lastName.charAt(0)}
+                            {(student.firstName || "?").charAt(0)}{(student.lastName || "?").charAt(0)}
                           </div>
                           <div>
                             <h3 className="font-medium text-slate-800">
-                              {student.firstName} {student.lastName}
+                              {student.firstName || "Unknown"} {student.lastName || ""}
                             </h3>
                             <p className="text-sm text-gray-500">{student.email}</p>
                           </div>
