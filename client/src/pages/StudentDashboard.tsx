@@ -125,13 +125,14 @@ export default function StudentDashboard() {
     };
 
     try {
-      const [modulesRes, progressRes, meetingsRes, tabeRes, statsRes, workRes] = await Promise.all([
+      const [modulesRes, progressRes, meetingsRes, tabeRes, statsRes, workRes, draftsRes] = await Promise.all([
         safeFetch("/api/student/curriculum"),
         safeFetch("/api/student/progress"),
         safeFetch("/api/student/meetings"),
         safeFetch("/api/student/tabe-scores"),
         safeFetch("/api/student/stats"),
-        safeFetch("/api/student/work")
+        safeFetch("/api/student/work"),
+        safeFetch("/api/student/drafts")
       ]);
 
       setModules(Array.isArray(modulesRes) ? modulesRes : []);
@@ -139,6 +140,7 @@ export default function StudentDashboard() {
       setMeetings(Array.isArray(meetingsRes) ? meetingsRes : []);
       setTabeScores(Array.isArray(tabeRes) ? tabeRes : []);
       setStudentWork(Array.isArray(workRes) ? workRes : []);
+      setDrafts(Array.isArray(draftsRes) ? draftsRes : []);
       if (statsRes && typeof statsRes === 'object' && !Array.isArray(statsRes)) {
         setStats(statsRes);
       }
@@ -149,8 +151,94 @@ export default function StudentDashboard() {
     }
   };
 
+  const [updatingModule, setUpdatingModule] = useState<number | null>(null);
+  const [creatingDraft, setCreatingDraft] = useState(false);
+  const [newDraftTitle, setNewDraftTitle] = useState("");
+  const [showNewDraftForm, setShowNewDraftForm] = useState(false);
+  const [drafts, setDrafts] = useState<any[]>([]);
+
   const getModuleProgress = (moduleId: number): ModuleProgress | undefined => {
     return progress.find(p => p.moduleId === moduleId);
+  };
+
+  const handleStartModule = async (moduleId: number) => {
+    setUpdatingModule(moduleId);
+    try {
+      const res = await fetch("/api/student/progress", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ moduleId, percentComplete: 1 }),
+      });
+      if (res.ok) {
+        const existing = progress.find(p => p.moduleId === moduleId);
+        if (existing) {
+          setProgress(progress.map(p => p.moduleId === moduleId ? { ...p, percentComplete: 1, startedAt: new Date().toISOString() } : p));
+        } else {
+          setProgress([...progress, { moduleId, percentComplete: 1, hoursSpent: 0, startedAt: new Date().toISOString(), completedAt: null }]);
+        }
+      }
+    } catch (err) {
+      console.error("Error starting module:", err);
+    } finally {
+      setUpdatingModule(null);
+    }
+  };
+
+  const handleCompleteModule = async (moduleId: number) => {
+    if (!confirm("Mark this module as complete?")) return;
+    setUpdatingModule(moduleId);
+    try {
+      const res = await fetch("/api/student/progress", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ moduleId, percentComplete: 100 }),
+      });
+      if (res.ok) {
+        const existing = progress.find(p => p.moduleId === moduleId);
+        if (existing) {
+          setProgress(progress.map(p => p.moduleId === moduleId
+            ? { ...p, percentComplete: 100, completedAt: new Date().toISOString() }
+            : p
+          ));
+        } else {
+          setProgress([...progress, { moduleId, percentComplete: 100, hoursSpent: 0, startedAt: new Date().toISOString(), completedAt: new Date().toISOString() }]);
+        }
+        setStats(prev => ({
+          ...prev,
+          modulesCompleted: prev.modulesCompleted + 1,
+          overallProgress: Math.round(((prev.modulesCompleted + 1) / Math.max(prev.totalModules, 1)) * 100)
+        }));
+      }
+    } catch (err) {
+      console.error("Error completing module:", err);
+    } finally {
+      setUpdatingModule(null);
+    }
+  };
+
+  const handleCreateDraft = async () => {
+    if (!newDraftTitle.trim()) return;
+    setCreatingDraft(true);
+    try {
+      const res = await fetch("/api/student/drafts", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: newDraftTitle.trim() }),
+      });
+      if (res.ok) {
+        const draft = await res.json();
+        setDrafts([draft, ...drafts]);
+        setNewDraftTitle("");
+        setShowNewDraftForm(false);
+      }
+    } catch (err) {
+      console.error("Error creating draft:", err);
+    } finally {
+      setCreatingDraft(false);
+    }
   };
 
   const formatEflLevel = (level: string) => {
@@ -273,17 +361,72 @@ export default function StudentDashboard() {
                 <Scroll className="w-5 h-5 text-purple-500" />
                 My Manuscript
               </h2>
-              <div className="text-sm text-gray-500">
-                {studentWork.reduce((sum, w) => sum + w.wordCount, 0).toLocaleString()} total words
+              <div className="flex items-center gap-3">
+                <div className="text-sm text-gray-500">
+                  {studentWork.reduce((sum, w) => sum + w.wordCount, 0).toLocaleString()} total words
+                </div>
+                <button
+                  onClick={() => setShowNewDraftForm(true)}
+                  className="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                >
+                  <Edit3 className="w-4 h-4" />
+                  New Draft
+                </button>
               </div>
             </div>
 
-            {studentWork.length === 0 ? (
+            {showNewDraftForm && (
+              <div className="mb-6 p-4 bg-purple-50 rounded-lg border border-purple-200">
+                <h3 className="text-sm font-medium text-slate-800 mb-2">Create a New Draft</h3>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newDraftTitle}
+                    onChange={(e) => setNewDraftTitle(e.target.value)}
+                    placeholder="Give your draft a title..."
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-purple-500"
+                    onKeyDown={(e) => e.key === 'Enter' && handleCreateDraft()}
+                    autoFocus
+                  />
+                  <button
+                    onClick={handleCreateDraft}
+                    disabled={creatingDraft || !newDraftTitle.trim()}
+                    className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors"
+                  >
+                    {creatingDraft ? "Creating..." : "Create"}
+                  </button>
+                  <button
+                    onClick={() => { setShowNewDraftForm(false); setNewDraftTitle(""); }}
+                    className="px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-sm transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {drafts.length > 0 && (
+              <div className="mb-6 space-y-3">
+                {drafts.map((draft) => (
+                  <div key={draft.id} className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-purple-600" />
+                        <span className="font-medium text-slate-800">{draft.title}</span>
+                      </div>
+                      <span className="text-xs text-gray-500">{draft.wordCount || 0} words</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {studentWork.length === 0 && drafts.length === 0 ? (
               <div className="text-center py-12 text-gray-500">
                 <Mic className="w-16 h-16 mx-auto mb-4 text-gray-300" />
                 <p className="text-lg font-medium mb-2">No entries yet</p>
-                <p className="text-sm">
-                  Use the VibeScribe app to record your voice and your snippets will appear here.
+                <p className="text-sm mb-4">
+                  Use the VibeScribe app to record your voice, or click "New Draft" to start writing.
                 </p>
               </div>
             ) : (
@@ -389,16 +532,28 @@ export default function StudentDashboard() {
                                 <p className="text-xs text-gray-500 text-right mt-1">{moduleProgress.percentComplete}%</p>
                               </div>
                             )}
-                            <Link 
-                              href={`/student/module/${module.id}`}
-                              className="p-2 rounded-lg hover:bg-white transition-colors"
-                            >
-                              {isCompleted ? (
-                                <CheckCircle className="w-5 h-5 text-green-500" />
-                              ) : (
-                                <Play className="w-5 h-5 text-teal-500" />
-                              )}
-                            </Link>
+                            {isCompleted ? (
+                              <span className="px-3 py-1.5 bg-green-100 text-green-700 rounded-lg text-xs font-medium flex items-center gap-1">
+                                <CheckCircle className="w-3.5 h-3.5" /> Done
+                              </span>
+                            ) : inProgress ? (
+                              <button
+                                onClick={() => handleCompleteModule(module.id)}
+                                disabled={updatingModule === module.id}
+                                className="px-3 py-1.5 bg-teal-500 hover:bg-teal-600 text-white rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
+                              >
+                                {updatingModule === module.id ? "..." : "Mark Complete"}
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleStartModule(module.id)}
+                                disabled={updatingModule === module.id}
+                                className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-xs font-medium transition-colors flex items-center gap-1 disabled:opacity-50"
+                              >
+                                <Play className="w-3 h-3" />
+                                {updatingModule === module.id ? "..." : "Start"}
+                              </button>
+                            )}
                           </div>
                         </div>
                       </div>

@@ -6291,6 +6291,27 @@ export async function registerDonationRoutes(app: Express) {
     }
   });
 
+  app.post("/api/student/reset-creative-profile", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      await db.update(vibeCards)
+        .set({ isActive: false, updatedAt: new Date() })
+        .where(eq(vibeCards.userId, req.session.userId));
+
+      await db.update(writerCharacterSheets)
+        .set({ isActive: false, updatedAt: new Date() })
+        .where(eq(writerCharacterSheets.userId, req.session.userId));
+
+      res.json({ success: true, message: "Creative profile reset successfully" });
+    } catch (error) {
+      console.error("Error resetting creative profile:", error);
+      res.status(500).json({ error: "Failed to reset creative profile" });
+    }
+  });
+
   app.get("/api/student/training-stats", async (req: Request, res: Response) => {
     if (!req.session.userId) {
       return res.status(401).json({ error: "Not authenticated" });
@@ -6405,6 +6426,32 @@ export async function registerDonationRoutes(app: Express) {
     } catch (error) {
       console.error("Error fetching admin training stats:", error);
       res.status(500).json({ error: "Failed to fetch training stats" });
+    }
+  });
+
+  app.post("/api/admin/curriculum", async (req: Request, res: Response) => {
+    if (!req.session.userId || !hasRole(req.session, "admin")) {
+      return res.status(403).json({ error: "Not authorized" });
+    }
+
+    const { title, description, orderIndex, durationHours, contentType, contentUrl, pathType, isPublished } = req.body;
+    if (!title?.trim()) {
+      return res.status(400).json({ error: "Title is required" });
+    }
+
+    try {
+      const nextOrder = orderIndex ?? ((await db.execute(sql`SELECT COALESCE(MAX(order_index), 0) + 1 as next_order FROM curriculum_modules`)).rows[0]?.next_order || 1);
+
+      const result = await db.execute(sql`
+        INSERT INTO curriculum_modules (title, description, order_index, duration_hours, content_type, content_url, path_type, is_published, created_at, updated_at)
+        VALUES (${title.trim()}, ${description || null}, ${nextOrder}, ${durationHours || 1}, ${contentType || 'lesson'}, ${contentUrl || null}, ${pathType || 'general'}, ${isPublished ?? false}, NOW(), NOW())
+        RETURNING *
+      `);
+
+      res.status(201).json(result.rows[0]);
+    } catch (error) {
+      console.error("Error creating curriculum module:", error);
+      res.status(500).json({ error: "Failed to create module" });
     }
   });
 
@@ -6770,9 +6817,11 @@ export async function registerDonationRoutes(app: Express) {
         return res.status(503).json({ message: "Game Engine not configured" });
       }
 
-      // TODO: In production, map user to game character ID via student_profiles.game_character_id
-      // For now, use a hardcoded ID until the mapping is established
-      const gameCharacterId = 1;
+      const [profile] = await db.select({ gameCharacterId: studentProfiles.gameCharacterId })
+        .from(studentProfiles)
+        .where(eq(studentProfiles.userId, req.session.userId))
+        .limit(1);
+      const gameCharacterId = profile?.gameCharacterId || req.session.userId;
       const timestamp = Date.now();
       const endpoint = `${GAME_ENGINE_URL}/character/status/${gameCharacterId}?_t=${timestamp}`;
 

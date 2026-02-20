@@ -56,6 +56,48 @@ export default function CurriculumContent() {
     writingToReadCount: 0,
     professionalAuthorCount: 0
   });
+  const [showAddModule, setShowAddModule] = useState(false);
+  const [addingModule, setAddingModule] = useState(false);
+  const [newModule, setNewModule] = useState({
+    title: "",
+    description: "",
+    durationHours: 1,
+    contentType: "lesson",
+    pathType: "general",
+    isPublished: false,
+  });
+
+  const handleAddModule = async () => {
+    if (!newModule.title.trim()) return;
+    setAddingModule(true);
+    try {
+      const res = await fetch("/api/admin/curriculum", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newModule),
+      });
+      if (res.ok) {
+        const created = await res.json();
+        const normalized: CurriculumModule = {
+          id: created.id,
+          title: created.title,
+          description: created.description ?? null,
+          orderIndex: created.orderIndex ?? created.order_index ?? modules.length + 1,
+          durationHours: created.durationHours ?? created.duration_hours ?? 1,
+          contentType: created.contentType ?? created.content_type ?? "lesson",
+          isPublished: created.isPublished ?? created.is_published ?? false,
+        };
+        setModules([...modules, normalized]);
+        setNewModule({ title: "", description: "", durationHours: 1, contentType: "lesson", pathType: "general", isPublished: false });
+        setShowAddModule(false);
+      }
+    } catch (err) {
+      console.error("Error adding module:", err);
+    } finally {
+      setAddingModule(false);
+    }
+  };
 
   useEffect(() => {
     loadTrainingData();
@@ -63,38 +105,30 @@ export default function CurriculumContent() {
 
   const loadTrainingData = async () => {
     try {
-      const [usersRes, curriculumRes] = await Promise.all([
-        fetch("/api/admin/users", { credentials: "include" }).then(r => r.json()),
+      const [trainingStatsRes, curriculumRes] = await Promise.all([
+        fetch("/api/admin/training-stats", { credentials: "include" }),
         fetch("/api/student/curriculum", { credentials: "include" }).then(r => r.json())
       ]);
 
-      const allUsers = Array.isArray(usersRes) ? usersRes : [];
-      const studentUsers = allUsers.filter((u: Student) => u.role === "student");
-      
-      let enrichedStudents = studentUsers;
-      try {
-        const statsRes = await fetch("/api/admin/training-stats", { credentials: "include" });
-        if (statsRes.ok) {
-          const statsData = await statsRes.json();
-          const statsMap = new Map((Array.isArray(statsData) ? statsData : []).map((s: any) => [s.id, s]));
-          enrichedStudents = studentUsers.map((student: Student) => {
-            const stat = statsMap.get(student.id) as any;
-            return {
-              ...student,
-              hoursActive: stat ? Number(stat.hoursActive) || 0 : 0,
-              courseProgress: stat ? Number(stat.courseProgress) || 0 : 0,
-              trainingPath: stat?.trainingPath === "family_student" ? "writing-to-read" : "professional-author",
-            };
-          });
-        } else {
-          enrichedStudents = studentUsers.map((s: Student) => ({
-            ...s, hoursActive: 0, courseProgress: 0, trainingPath: "professional-author"
-          }));
-        }
-      } catch {
-        enrichedStudents = studentUsers.map((s: Student) => ({
-          ...s, hoursActive: 0, courseProgress: 0, trainingPath: "professional-author"
+      let enrichedStudents: Student[] = [];
+      if (trainingStatsRes.ok) {
+        const statsData = await trainingStatsRes.json();
+        enrichedStudents = (Array.isArray(statsData) ? statsData : []).map((s: any) => ({
+          id: s.id,
+          firstName: s.firstName || "",
+          lastName: s.lastName || "",
+          email: s.email || "",
+          role: s.role || "student",
+          createdAt: s.enrolledAt || "",
+          hoursActive: Number(s.hoursActive) || 0,
+          courseProgress: Number(s.courseProgress) || 0,
+          trainingPath: s.trainingPath === "family_student" ? "writing-to-read" : "professional-author",
         }));
+      } else {
+        const usersRes = await fetch("/api/admin/users", { credentials: "include" }).then(r => r.json());
+        enrichedStudents = (Array.isArray(usersRes) ? usersRes : [])
+          .filter((u: Student) => u.role === "student" || u.role === "writer")
+          .map((s: Student) => ({ ...s, hoursActive: 0, courseProgress: 0, trainingPath: "professional-author" }));
       }
 
       setStudents(enrichedStudents);
@@ -318,15 +352,97 @@ export default function CurriculumContent() {
             <BookOpen className="w-5 h-5 text-teal-500" />
             Curriculum Modules
           </h2>
-          <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-            120 Hours Total
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+              {modules.reduce((sum, m) => sum + m.durationHours, 0)} Hours Total
+            </span>
+            <button
+              onClick={() => setShowAddModule(!showAddModule)}
+              className="px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-lg text-sm font-medium transition-colors"
+            >
+              + Add Module
+            </button>
+          </div>
         </div>
 
-        {modules.length === 0 ? (
+        {showAddModule && (
+          <div className="mb-6 p-4 bg-teal-50 rounded-lg border border-teal-200">
+            <h3 className="text-sm font-medium text-slate-800 mb-3">New Curriculum Module</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+              <input
+                type="text"
+                value={newModule.title}
+                onChange={(e) => setNewModule({ ...newModule, title: e.target.value })}
+                placeholder="Module title"
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-teal-500"
+              />
+              <input
+                type="number"
+                value={newModule.durationHours}
+                onChange={(e) => setNewModule({ ...newModule, durationHours: Number(e.target.value) || 1 })}
+                placeholder="Duration (hours)"
+                min={1}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-teal-500"
+              />
+              <select
+                value={newModule.contentType}
+                onChange={(e) => setNewModule({ ...newModule, contentType: e.target.value })}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-teal-500"
+              >
+                <option value="lesson">Lesson</option>
+                <option value="workshop">Workshop</option>
+                <option value="assignment">Assignment</option>
+                <option value="assessment">Assessment</option>
+              </select>
+              <select
+                value={newModule.pathType}
+                onChange={(e) => setNewModule({ ...newModule, pathType: e.target.value })}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-teal-500"
+              >
+                <option value="general">General</option>
+                <option value="writing_to_read">Writing to Read</option>
+                <option value="professional_author">Professional Author</option>
+              </select>
+            </div>
+            <textarea
+              value={newModule.description}
+              onChange={(e) => setNewModule({ ...newModule, description: e.target.value })}
+              placeholder="Module description (optional)"
+              rows={2}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-teal-500 mb-3"
+            />
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-2 text-sm text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={newModule.isPublished}
+                  onChange={(e) => setNewModule({ ...newModule, isPublished: e.target.checked })}
+                  className="rounded border-gray-300"
+                />
+                Publish immediately
+              </label>
+              <div className="flex-1" />
+              <button
+                onClick={() => { setShowAddModule(false); setNewModule({ title: "", description: "", durationHours: 1, contentType: "lesson", pathType: "general", isPublished: false }); }}
+                className="px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-sm transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddModule}
+                disabled={addingModule || !newModule.title.trim()}
+                className="px-4 py-2 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors"
+              >
+                {addingModule ? "Adding..." : "Add Module"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {modules.length === 0 && !showAddModule ? (
           <div className="text-center py-8 text-gray-500">
             <BookOpen className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-            <p>No curriculum modules configured yet.</p>
+            <p>No curriculum modules configured yet. Click "Add Module" to create one.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

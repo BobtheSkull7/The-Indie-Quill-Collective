@@ -266,9 +266,24 @@ export default function CharacterCard({ userId = 1, className = "", apiEndpoint 
     }
   };
 
-  const handleResetProgress = () => {
-    if (confirm("Are you sure you want to reset all progress? This cannot be undone.")) {
-      alert("Reset Progress - Coming soon!");
+  const handleResetProgress = async () => {
+    if (!confirm("Are you sure you want to reset your creative profile (Vibe Card & Character Sheet)? This cannot be undone.")) {
+      return;
+    }
+    try {
+      const res = await fetch("/api/student/reset-creative-profile", {
+        method: "POST",
+        credentials: "include",
+      });
+      if (res.ok) {
+        setApiLog("Creative profile reset successfully");
+        fetchCharacter();
+      } else {
+        const data = await res.json();
+        setApiLog(`Reset failed: ${data.error || "Unknown error"}`);
+      }
+    } catch (err) {
+      setApiLog(`Reset error: ${err instanceof Error ? err.message : "Network error"}`);
     }
   };
 
