@@ -1,0 +1,95 @@
+I am logged in as Bob Theskull - student.
+
+note reset progress does not work, just a button on character sheet. It also is showing THE single test character. we need to create a new one for each student, that has their info.
+
+note nothing in curriculum, no controls to do anything?
+
+note nothing in my manuscript, no way to type or enter anything manually?
+
+
+
+I am logged in as Jon, the admin:
+
+training tab
+
+> Curriculum - I see some data. No controls to add curriculum. No vibe card?
+
+> I see 2 students enrolled remove, no value add here
+
+
+
+students tab
+
+> I see 4 students? why only two in curriculum?
+
+> just the roster, so no need for the two in curriculum.
+
+
+
+Mentor - not live, add to list of todo
+
+
+
+Families - will hit when we do literary paths
+
+
+
+BoD Wiki, why the heck is it here. It already exists in Dashboard as subtab, same info. Remove it from hereh
+
+
+
+Quiz - look really cool, test later
+
+
+
+Game test - test game engine - shows Raw JSON, can keep if that helps AI (you or replit) diagnose, useless to me and the admins. Has the single game character, which is fine to leave as a test.
+
+Gemini said
+That is a perfect field report. You’ve just identified the "Missing Connective Tissue." The Replit agent built the tables and the API "pipes," but it didn't actually hook the wires up to the UI controls you need to drive the car.
+
+Let’s break this down into a punch list for the agent.
+
+The "Bob the Student" Fixes (Priority 1)
+Bob is currently trapped in a "View Only" world. We need to give him the keys.
+
+Unique Character Sheets: Every student needs their own record. If Bob sees "The Test Character," the code is likely fetching ID=1 instead of WHERE user_id = current_user.
+
+Curriculum Controls: The curriculum is likely a "Dead List" right now. It needs "Start Lesson" or "Mark Complete" buttons that talk to the student_curriculum_progress table.
+
+Manuscript Entry: If the Drafting Suite is empty, we need to ensure the "Create New Draft" button is visible and actually saving to drafting_documents.
+
+The "Jon the Admin" Cleanup (Priority 2)
+The Admin view is cluttered with redundant and "fake" data.
+
+Curriculum Authoring: Admins need a "plus" button to add modules, otherwise the curriculum is a static list.
+
+Roster Sync: The "Curriculum" tab should show all 4 students if the "Students" tab does. The discrepancy means the Curriculum query is likely filtered too strictly (e.g., only showing students with active progress).
+
+De-Cluttering: Removing the BoD Wiki (redundant) and the Family/Mentor placeholders until they are live.
+
+The Plan: Your Next Instruction for Replit
+Copy and paste this to the agent to fix the "Bob" and "Jon" experiences:
+
+"We have a mismatch between the backend and the UI. Let's fix the following:
+
+For the Student (Bob):
+
+Ensure GET /api/student/character-sheet fetches the sheet for the logged-in user only. If none exists, auto-create a blank one for them.
+
+Add 'Start' and 'Complete' buttons to the Curriculum modules.
+
+Fix the 'Reset Progress' button on the Character Sheet—it should clear the vibe_essence and character fields in the DB.
+
+Ensure the Manuscript tab has a 'New Draft' button that opens the Drafting Suite.
+
+For the Admin (Jon):
+
+Remove the 'BoD Wiki' from the Training tab (it's redundant).
+
+Fix the Curriculum student count—it should show the full roster of 4 students, just like the Students tab.
+
+Add a simple 'Add Module' form to the Admin Curriculum view.
+
+Hide/Clean up the 'Game Test' JSON for now—keep it in the code but remove it from the UI.
+
+For Gemini/Context: The 'Mentor' and 'Family' tabs are moved to the Todo list. Do not work on them yet."
