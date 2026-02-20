@@ -1,0 +1,31 @@
+No literacy yet. Just writer training. This should include the character sheet, vibe card, and vibe scribe.
+
+Gemini said
+Got it. We are focusing strictly on the Writer Training ecosystem—specifically the creative "Discovery" and "Drafting" phases for all writers, regardless of their eventual path.
+
+If we're making this real, the Character Sheet, Vibe Card, and VibeScribe shouldn't just be static forms. They need to be the "fuel" for the writer's journey.
+
+The Logic Map
+VibeScribe: This is the Input. It captures raw voice/text thoughts (stored in messages or a dedicated vibe_captures table).
+
+Vibe Card: This is the Essence. It aggregates the "vibe" (thematic elements) from those captures.
+
+Character Sheet: This is the Output. It’s where the "Vibe" gets structured into a persona for their manuscript.
+
+Step 1: The "Vibe" Database Check
+Before we can build the UI, we need to ensure the database can actually hold these "Vibe" elements. The Replit agent mentioned vibe_quizzes, but for a Writer, we need a place for their creative voice captures.
+
+Tell the Replit agent this:
+
+"We are prioritizing the Writer Training flow. Before we touch the UI, I need you to ensure the backend supports the Vibe-to-Character pipeline.
+
+Does the student_profiles or a related table have a JSONB field for the Vibe Card data?
+
+Is there a table to store VibeScribe entries (voice-to-text transcripts)?
+
+Verify that the character_sheets table is linked to the user_id so we can save and load real character data."
+
+Why this is the right first move:
+If the agent tries to build a "VibeScribe" feature without a place to save the text, it will just use Math.random() or local storage, and your data will vanish when you refresh. We want that VibeScribe text to be saved in Supabase so it can eventually be used to "auto-fill" their Character Sheet.
+
+Should we have the agent show us the current "Character Sheet" schema to see if it's missing any vital fields (like Backstory, Archetype, or Vibe)?
