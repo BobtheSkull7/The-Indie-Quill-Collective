@@ -520,10 +520,21 @@ export async function sendPasswordResetEmail(
               We received a request to reset your password. Click the button below to create a new password:
             </p>
             <div style="text-align: center; margin: 30px 0;">
-              <a href="${resetLink}" style="display: inline-block; background: linear-gradient(135deg, #0d9488, #1e40af); color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">
+              <!--[if mso]>
+              <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${resetLink}" style="height:48px;v-text-anchor:middle;width:220px;" arcsize="17%" stroke="f" fillcolor="#0d9488">
+                <w:anchorlock/>
+                <center style="color:#ffffff;font-family:Arial,sans-serif;font-size:16px;font-weight:bold;">Reset Password</center>
+              </v:roundrect>
+              <![endif]-->
+              <!--[if !mso]><!-->
+              <a href="${resetLink}" style="display: inline-block; background-color: #0d9488; color: #ffffff; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px; mso-padding-alt: 0; text-underline-color: #0d9488;">
                 Reset Password
               </a>
+              <!--<![endif]-->
             </div>
+            <p style="color: #94a3b8; font-size: 12px; line-height: 1.6; word-break: break-all;">
+              If the button doesn't work, copy and paste this link into your browser: ${resetLink}
+            </p>
             <p style="color: #64748b; font-size: 14px; line-height: 1.6;">
               This link will expire in 1 hour. If you didn't request a password reset, you can safely ignore this email.
             </p>
