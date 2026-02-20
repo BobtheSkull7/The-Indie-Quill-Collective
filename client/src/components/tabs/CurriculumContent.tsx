@@ -71,12 +71,31 @@ export default function CurriculumContent() {
       const allUsers = Array.isArray(usersRes) ? usersRes : [];
       const studentUsers = allUsers.filter((u: Student) => u.role === "student");
       
-      const enrichedStudents = studentUsers.map((student: Student, index: number) => ({
-        ...student,
-        hoursActive: Math.floor(Math.random() * 80) + 10,
-        courseProgress: Math.floor(Math.random() * 100),
-        trainingPath: index % 3 === 0 ? "writing-to-read" : "professional-author"
-      }));
+      let enrichedStudents = studentUsers;
+      try {
+        const statsRes = await fetch("/api/admin/training-stats", { credentials: "include" });
+        if (statsRes.ok) {
+          const statsData = await statsRes.json();
+          const statsMap = new Map((Array.isArray(statsData) ? statsData : []).map((s: any) => [s.id, s]));
+          enrichedStudents = studentUsers.map((student: Student) => {
+            const stat = statsMap.get(student.id) as any;
+            return {
+              ...student,
+              hoursActive: stat ? Number(stat.hoursActive) || 0 : 0,
+              courseProgress: stat ? Number(stat.courseProgress) || 0 : 0,
+              trainingPath: stat?.trainingPath === "family_student" ? "writing-to-read" : "professional-author",
+            };
+          });
+        } else {
+          enrichedStudents = studentUsers.map((s: Student) => ({
+            ...s, hoursActive: 0, courseProgress: 0, trainingPath: "professional-author"
+          }));
+        }
+      } catch {
+        enrichedStudents = studentUsers.map((s: Student) => ({
+          ...s, hoursActive: 0, courseProgress: 0, trainingPath: "professional-author"
+        }));
+      }
 
       setStudents(enrichedStudents);
       setModules(Array.isArray(curriculumRes) ? curriculumRes : []);

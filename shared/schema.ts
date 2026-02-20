@@ -724,6 +724,7 @@ export const studentProfiles = pgTable("student_profiles", {
   cohortId: integer("cohort_id").references(() => cohorts.id),
   familyUnitId: integer("family_unit_id").references(() => familyUnits.id),
   familyRole: familyRoleEnum("family_role"),
+  trainingPath: personaTypeEnum("training_path"),
   accessibilityMode: accessibilityModeEnum("accessibility_mode").default("standard").notNull(),
   preferredLanguage: text("preferred_language").default("en"),
   gameCharacterId: text("game_character_id"),
@@ -1142,5 +1143,42 @@ export type InsertQuizQuestion = typeof quizQuestions.$inferInsert;
 export type QuizResult = typeof quizResults.$inferSelect;
 export type InsertQuizResult = typeof quizResults.$inferInsert;
 export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
+
+// Vibe Cards - the "essence" distilled from VibeScribe captures
+export const vibeCards = pgTable("vibe_cards", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  archetype: text("archetype"),
+  themes: jsonb("themes"),
+  tone: text("tone"),
+  backstory: text("backstory"),
+  rawVibeData: jsonb("raw_vibe_data"),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type VibeCard = typeof vibeCards.$inferSelect;
+export type InsertVibeCard = typeof vibeCards.$inferInsert;
+
+// Writer Character Sheets - structured persona derived from the Vibe Card
+export const writerCharacterSheets = pgTable("writer_character_sheets", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  vibeCardId: integer("vibe_card_id").references(() => vibeCards.id),
+  name: text("name"),
+  archetype: text("archetype"),
+  backstory: text("backstory"),
+  motivations: jsonb("motivations"),
+  strengths: jsonb("strengths"),
+  flaws: jsonb("flaws"),
+  goals: text("goals"),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type WriterCharacterSheet = typeof writerCharacterSheets.$inferSelect;
+export type InsertWriterCharacterSheet = typeof writerCharacterSheets.$inferInsert;
 
 export * from "./models/chat";

@@ -26,14 +26,29 @@ export default function FamiliesContent() {
 
   const loadFamilies = async () => {
     try {
-      const res = await fetch("/api/admin/family-units", { credentials: "include" });
-      const data = await res.json();
-      const enrichedFamilies = (Array.isArray(data) ? data : []).map((f: FamilyUnit) => ({
-        ...f,
-        totalPactMinutes: Math.floor(Math.random() * 600) + 60,
-        totalWords: Math.floor(Math.random() * 20000) + 1000,
-      }));
-      setFamilies(enrichedFamilies);
+      const res = await fetch("/api/admin/family-stats", { credentials: "include" });
+      if (res.ok) {
+        const data = await res.json();
+        const enrichedFamilies = (Array.isArray(data) ? data : []).map((f: any) => ({
+          id: f.id,
+          name: f.name || "Unnamed Family",
+          cohortId: f.cohortId,
+          memberCount: Number(f.memberCount) || 0,
+          members: Array.isArray(f.members) ? f.members : [],
+          totalPactMinutes: Number(f.totalPactMinutes) || 0,
+          totalWords: Number(f.totalWords) || 0,
+        }));
+        setFamilies(enrichedFamilies);
+      } else {
+        const fallbackRes = await fetch("/api/admin/family-units", { credentials: "include" });
+        const data = await fallbackRes.json();
+        const enrichedFamilies = (Array.isArray(data) ? data : []).map((f: FamilyUnit) => ({
+          ...f,
+          totalPactMinutes: 0,
+          totalWords: 0,
+        }));
+        setFamilies(enrichedFamilies);
+      }
     } catch (error) {
       console.error("Error loading families:", error);
     } finally {

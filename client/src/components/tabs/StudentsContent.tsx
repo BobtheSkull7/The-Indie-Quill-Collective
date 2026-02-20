@@ -25,17 +25,29 @@ export default function StudentsContent() {
 
   const loadStudents = async () => {
     try {
-      const res = await fetch("/api/admin/users", { credentials: "include" });
-      const allUsers = await res.json();
-      const studentUsers = (Array.isArray(allUsers) ? allUsers : [])
-        .filter((u: Student) => u.role === "student")
-        .map((s: Student) => ({
-          ...s,
-          hoursActive: Math.floor(Math.random() * 80) + 10,
-          wordCount: Math.floor(Math.random() * 15000) + 500,
-          courseProgress: Math.floor(Math.random() * 100),
+      const res = await fetch("/api/admin/training-stats", { credentials: "include" });
+      if (res.ok) {
+        const data = await res.json();
+        const studentUsers = (Array.isArray(data) ? data : []).map((s: any) => ({
+          id: s.id,
+          firstName: s.firstName || "",
+          lastName: s.lastName || "",
+          email: s.email || "",
+          role: s.role || "student",
+          hoursActive: Number(s.hoursActive) || 0,
+          wordCount: Number(s.wordCount) || 0,
+          courseProgress: Number(s.courseProgress) || 0,
+          createdAt: s.enrolledAt || "",
         }));
-      setStudents(studentUsers);
+        setStudents(studentUsers);
+      } else {
+        const fallbackRes = await fetch("/api/admin/users", { credentials: "include" });
+        const allUsers = await fallbackRes.json();
+        const studentUsers = (Array.isArray(allUsers) ? allUsers : [])
+          .filter((u: Student) => u.role === "student")
+          .map((s: Student) => ({ ...s, hoursActive: 0, wordCount: 0, courseProgress: 0 }));
+        setStudents(studentUsers);
+      }
     } catch (error) {
       console.error("Error loading students:", error);
     } finally {

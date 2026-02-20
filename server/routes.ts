@@ -2,7 +2,7 @@ import type { Express, Request, Response } from "express";
 import rateLimit from "express-rate-limit";
 import multer from "multer";
 import { db, pool } from "./db";
-import { users, applications, contracts, publishingUpdates, calendarEvents, fundraisingCampaigns, donations, auditLogs, cohorts, familyUnits, operatingCosts, foundations, solicitationLogs, foundationGrants, pilotLedger, emailLogs, grantPrograms, organizationCredentials, grantCalendarAlerts, wikiEntries, wikiAttachments, boardMembers, studentWork, studentProfiles, passwordResetTokens } from "@shared/schema";
+import { users, applications, contracts, publishingUpdates, calendarEvents, fundraisingCampaigns, donations, auditLogs, cohorts, familyUnits, operatingCosts, foundations, solicitationLogs, foundationGrants, pilotLedger, emailLogs, grantPrograms, organizationCredentials, grantCalendarAlerts, wikiEntries, wikiAttachments, boardMembers, studentWork, studentProfiles, passwordResetTokens, vibeCards, writerCharacterSheets } from "@shared/schema";
 import path from "path";
 import fs from "fs";
 import { eq, desc, gte, sql, inArray, lt, and } from "drizzle-orm";
@@ -6154,6 +6154,354 @@ export async function registerDonationRoutes(app: Express) {
     } catch (error) {
       console.error("Error fetching student work summary:", error);
       res.status(500).json({ error: "Failed to fetch work summary" });
+    }
+  });
+
+  // ============ VIBE CARD & CHARACTER SHEET ENDPOINTS ============
+
+  app.get("/api/student/vibe-card", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const [card] = await db.select().from(vibeCards)
+        .where(and(eq(vibeCards.userId, req.session.userId), eq(vibeCards.isActive, true)))
+        .limit(1);
+
+      if (!card) {
+        return res.json(null);
+      }
+      res.json(card);
+    } catch (error) {
+      console.error("Error fetching vibe card:", error);
+      res.status(500).json({ error: "Failed to fetch vibe card" });
+    }
+  });
+
+  app.put("/api/student/vibe-card", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const { archetype, themes, tone, backstory, rawVibeData } = req.body;
+
+      const [existing] = await db.select().from(vibeCards)
+        .where(and(eq(vibeCards.userId, req.session.userId), eq(vibeCards.isActive, true)))
+        .limit(1);
+
+      if (existing) {
+        const [updated] = await db.update(vibeCards)
+          .set({
+            archetype: archetype ?? existing.archetype,
+            themes: themes ?? existing.themes,
+            tone: tone ?? existing.tone,
+            backstory: backstory ?? existing.backstory,
+            rawVibeData: rawVibeData ?? existing.rawVibeData,
+            updatedAt: new Date(),
+          })
+          .where(eq(vibeCards.id, existing.id))
+          .returning();
+        return res.json(updated);
+      }
+
+      const [created] = await db.insert(vibeCards).values({
+        userId: req.session.userId,
+        archetype,
+        themes,
+        tone,
+        backstory,
+        rawVibeData,
+      }).returning();
+
+      res.status(201).json(created);
+    } catch (error) {
+      console.error("Error saving vibe card:", error);
+      res.status(500).json({ error: "Failed to save vibe card" });
+    }
+  });
+
+  app.get("/api/student/character-sheet", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const [sheet] = await db.select().from(writerCharacterSheets)
+        .where(and(eq(writerCharacterSheets.userId, req.session.userId), eq(writerCharacterSheets.isActive, true)))
+        .limit(1);
+
+      if (!sheet) {
+        return res.json(null);
+      }
+      res.json(sheet);
+    } catch (error) {
+      console.error("Error fetching character sheet:", error);
+      res.status(500).json({ error: "Failed to fetch character sheet" });
+    }
+  });
+
+  app.put("/api/student/character-sheet", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const { name, archetype, backstory, motivations, strengths, flaws, goals, vibeCardId } = req.body;
+
+      const [existing] = await db.select().from(writerCharacterSheets)
+        .where(and(eq(writerCharacterSheets.userId, req.session.userId), eq(writerCharacterSheets.isActive, true)))
+        .limit(1);
+
+      if (existing) {
+        const [updated] = await db.update(writerCharacterSheets)
+          .set({
+            name: name ?? existing.name,
+            archetype: archetype ?? existing.archetype,
+            backstory: backstory ?? existing.backstory,
+            motivations: motivations ?? existing.motivations,
+            strengths: strengths ?? existing.strengths,
+            flaws: flaws ?? existing.flaws,
+            goals: goals ?? existing.goals,
+            vibeCardId: vibeCardId ?? existing.vibeCardId,
+            updatedAt: new Date(),
+          })
+          .where(eq(writerCharacterSheets.id, existing.id))
+          .returning();
+        return res.json(updated);
+      }
+
+      const [created] = await db.insert(writerCharacterSheets).values({
+        userId: req.session.userId,
+        name,
+        archetype,
+        backstory,
+        motivations,
+        strengths,
+        flaws,
+        goals,
+        vibeCardId,
+      }).returning();
+
+      res.status(201).json(created);
+    } catch (error) {
+      console.error("Error saving character sheet:", error);
+      res.status(500).json({ error: "Failed to save character sheet" });
+    }
+  });
+
+  app.get("/api/student/training-stats", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const userId = req.session.userId;
+
+      const result = await db.execute(sql`
+        SELECT
+          COALESCE(dd.total_words, 0) as "totalWords",
+          COALESCE(dd.draft_count, 0) as "draftCount",
+          COALESCE(sw.snippet_count, 0) as "vibeSnippetCount",
+          COALESCE(sw.snippet_words, 0) as "vibeSnippetWords",
+          COALESCE(sal.total_hours, 0) as "hoursActive",
+          COALESCE(scp.modules_completed, 0) as "modulesCompleted",
+          COALESCE(scp.total_modules, 0) as "totalModules",
+          COALESCE(scp.avg_progress, 0) as "avgProgress",
+          COALESCE(mtg.upcoming_count, 0) as "upcomingMeetings",
+          COALESCE(mtg.total_count, 0) as "totalMeetings",
+          sp.training_path as "trainingPath"
+        FROM (SELECT 1) dummy
+        LEFT JOIN (
+          SELECT SUM(word_count) as total_words, COUNT(*) as draft_count
+          FROM drafting_documents WHERE user_id = ${userId}
+        ) dd ON true
+        LEFT JOIN (
+          SELECT COUNT(*) as snippet_count, SUM(word_count) as snippet_words
+          FROM student_work WHERE user_id = ${userId} AND content_type = 'vibescribe_snippet'
+        ) sw ON true
+        LEFT JOIN (
+          SELECT ROUND(SUM(minutes_active) / 60.0, 1) as total_hours
+          FROM student_activity_logs WHERE user_id = ${userId}
+        ) sal ON true
+        LEFT JOIN (
+          SELECT 
+            COUNT(CASE WHEN percent_complete >= 100 THEN 1 END) as modules_completed,
+            COUNT(*) as total_modules,
+            ROUND(AVG(percent_complete), 0) as avg_progress
+          FROM student_curriculum_progress WHERE user_id = ${userId}
+        ) scp ON true
+        LEFT JOIN (
+          SELECT 
+            COUNT(CASE WHEN m.start_time > NOW() THEN 1 END) as upcoming_count,
+            COUNT(*) as total_count
+          FROM meeting_attendees ma
+          JOIN meetings m ON m.id = ma.meeting_id
+          WHERE ma.user_id = ${userId}
+        ) mtg ON true
+        LEFT JOIN student_profiles sp ON sp.user_id = ${userId}
+      `);
+
+      res.json(result.rows[0] || {
+        totalWords: 0, draftCount: 0, vibeSnippetCount: 0, vibeSnippetWords: 0,
+        hoursActive: 0, modulesCompleted: 0, totalModules: 0, avgProgress: 0,
+        upcomingMeetings: 0, totalMeetings: 0, trainingPath: null,
+      });
+    } catch (error) {
+      console.error("Error fetching training stats:", error);
+      res.status(500).json({ error: "Failed to fetch training stats" });
+    }
+  });
+
+  // Admin endpoint: get all students' real training stats
+  app.get("/api/admin/training-stats", async (req: Request, res: Response) => {
+    if (!req.session.userId || !hasRole(req.session, "admin", "board_member")) {
+      return res.status(403).json({ error: "Not authorized" });
+    }
+
+    try {
+      const result = await db.execute(sql`
+        SELECT
+          u.id,
+          u.first_name as "firstName",
+          u.last_name as "lastName",
+          u.email,
+          u.role,
+          sp.training_path as "trainingPath",
+          sp.enrolled_at as "enrolledAt",
+          COALESCE(dd.total_words, 0) as "wordCount",
+          COALESCE(sal.total_hours, 0) as "hoursActive",
+          COALESCE(scp.avg_progress, 0) as "courseProgress",
+          COALESCE(scp.modules_completed, 0) as "modulesCompleted",
+          COALESCE(sw.snippet_count, 0) as "vibeSnippetCount",
+          vc.archetype as "vibeArchetype",
+          CASE WHEN wcs.id IS NOT NULL THEN true ELSE false END as "hasCharacterSheet"
+        FROM users u
+        LEFT JOIN student_profiles sp ON sp.user_id = u.id
+        LEFT JOIN (
+          SELECT user_id, SUM(word_count) as total_words FROM drafting_documents GROUP BY user_id
+        ) dd ON dd.user_id = u.id
+        LEFT JOIN (
+          SELECT user_id, ROUND(SUM(minutes_active) / 60.0, 1) as total_hours
+          FROM student_activity_logs GROUP BY user_id
+        ) sal ON sal.user_id = u.id
+        LEFT JOIN (
+          SELECT user_id, ROUND(AVG(percent_complete), 0) as avg_progress,
+            COUNT(CASE WHEN percent_complete >= 100 THEN 1 END) as modules_completed
+          FROM student_curriculum_progress GROUP BY user_id
+        ) scp ON scp.user_id = u.id
+        LEFT JOIN (
+          SELECT user_id, COUNT(*) as snippet_count
+          FROM student_work WHERE content_type = 'vibescribe_snippet' GROUP BY user_id
+        ) sw ON sw.user_id = u.id
+        LEFT JOIN vibe_cards vc ON vc.user_id = u.id AND vc.is_active = true
+        LEFT JOIN writer_character_sheets wcs ON wcs.user_id = u.id AND wcs.is_active = true
+        WHERE u.role IN ('student', 'writer')
+        ORDER BY u.created_at DESC
+      `);
+
+      res.json(result.rows || []);
+    } catch (error) {
+      console.error("Error fetching admin training stats:", error);
+      res.status(500).json({ error: "Failed to fetch training stats" });
+    }
+  });
+
+  app.get("/api/admin/mentor-stats", async (req: Request, res: Response) => {
+    if (!req.session.userId || !hasRole(req.session, "admin", "board_member")) {
+      return res.status(403).json({ error: "Not authorized" });
+    }
+
+    try {
+      const result = await db.execute(sql`
+        SELECT
+          u.id,
+          u.first_name as "firstName",
+          u.last_name as "lastName",
+          u.email,
+          COALESCE(msa.student_count, 0) as "studentCount",
+          COALESCE(msa.avg_progress, 0) as "avgStudentProgress",
+          COALESCE(mtg.upcoming_count, 0) as "upcomingMeetings"
+        FROM users u
+        LEFT JOIN (
+          SELECT mentor_id,
+            COUNT(DISTINCT student_id) as student_count,
+            COALESCE(AVG(scp.avg_p), 0) as avg_progress
+          FROM mentor_student_assignments msa2
+          LEFT JOIN (
+            SELECT user_id, AVG(percent_complete) as avg_p
+            FROM student_curriculum_progress GROUP BY user_id
+          ) scp ON scp.user_id = msa2.student_id
+          GROUP BY mentor_id
+        ) msa ON msa.mentor_id = u.id
+        LEFT JOIN (
+          SELECT mentor_id, COUNT(*) as upcoming_count
+          FROM meetings WHERE start_time > NOW()
+          GROUP BY mentor_id
+        ) mtg ON mtg.mentor_id = u.id
+        WHERE u.role = 'mentor'
+        ORDER BY u.created_at DESC
+      `);
+
+      res.json(result.rows || []);
+    } catch (error) {
+      console.error("Error fetching mentor stats:", error);
+      res.status(500).json({ error: "Failed to fetch mentor stats" });
+    }
+  });
+
+  app.get("/api/admin/family-stats", async (req: Request, res: Response) => {
+    if (!req.session.userId || !hasRole(req.session, "admin", "board_member")) {
+      return res.status(403).json({ error: "Not authorized" });
+    }
+
+    try {
+      const result = await db.execute(sql`
+        SELECT
+          fu.id,
+          fu.name,
+          fu.cohort_id as "cohortId",
+          COALESCE(mc.member_count, 0) as "memberCount",
+          COALESCE(ps.total_pact_minutes, 0) as "totalPactMinutes",
+          COALESCE(sw.total_words, 0) as "totalWords",
+          COALESCE(mc.members, '[]'::jsonb) as "members"
+        FROM family_units fu
+        LEFT JOIN (
+          SELECT family_unit_id,
+            COUNT(*) as member_count,
+            jsonb_agg(jsonb_build_object(
+              'id', u.id,
+              'firstName', u.first_name,
+              'lastName', u.last_name,
+              'role', u.role
+            )) as members
+          FROM student_profiles sp
+          JOIN users u ON u.id = sp.user_id
+          WHERE sp.family_unit_id IS NOT NULL
+          GROUP BY family_unit_id
+        ) mc ON mc.family_unit_id = fu.id
+        LEFT JOIN (
+          SELECT sp.family_unit_id, SUM(sal.minutes_active) as total_pact_minutes
+          FROM student_profiles sp
+          JOIN student_activity_logs sal ON sal.user_id = sp.user_id
+          WHERE sp.family_unit_id IS NOT NULL
+          GROUP BY sp.family_unit_id
+        ) ps ON ps.family_unit_id = fu.id
+        LEFT JOIN (
+          SELECT sp.family_unit_id, SUM(sw2.word_count) as total_words
+          FROM student_profiles sp
+          JOIN student_work sw2 ON sw2.user_id = sp.user_id
+          WHERE sp.family_unit_id IS NOT NULL
+          GROUP BY sp.family_unit_id
+        ) sw ON sw.family_unit_id = fu.id
+        ORDER BY fu.name
+      `);
+
+      res.json(result.rows || []);
+    } catch (error) {
+      console.error("Error fetching family stats:", error);
+      res.status(500).json({ error: "Failed to fetch family stats" });
     }
   });
 

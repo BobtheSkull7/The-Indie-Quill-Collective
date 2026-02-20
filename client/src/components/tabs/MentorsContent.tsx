@@ -23,17 +23,29 @@ export default function MentorsContent() {
 
   const loadMentors = async () => {
     try {
-      const res = await fetch("/api/admin/users", { credentials: "include" });
-      const allUsers = await res.json();
-      const mentorUsers = (Array.isArray(allUsers) ? allUsers : [])
-        .filter((u: Mentor) => u.role === "mentor")
-        .map((m: Mentor) => ({
-          ...m,
-          studentCount: Math.floor(Math.random() * 5) + 1,
-          avgStudentProgress: Math.floor(Math.random() * 60) + 30,
-          upcomingMeetings: Math.floor(Math.random() * 4),
+      const res = await fetch("/api/admin/mentor-stats", { credentials: "include" });
+      if (res.ok) {
+        const data = await res.json();
+        const mentorUsers = (Array.isArray(data) ? data : []).map((m: any) => ({
+          id: m.id,
+          firstName: m.firstName || "",
+          lastName: m.lastName || "",
+          email: m.email || "",
+          role: "mentor",
+          createdAt: "",
+          studentCount: Number(m.studentCount) || 0,
+          avgStudentProgress: Math.round(Number(m.avgStudentProgress) || 0),
+          upcomingMeetings: Number(m.upcomingMeetings) || 0,
         }));
-      setMentors(mentorUsers);
+        setMentors(mentorUsers);
+      } else {
+        const fallbackRes = await fetch("/api/admin/users", { credentials: "include" });
+        const allUsers = await fallbackRes.json();
+        const mentorUsers = (Array.isArray(allUsers) ? allUsers : [])
+          .filter((u: Mentor) => u.role === "mentor")
+          .map((m: Mentor) => ({ ...m, studentCount: 0, avgStudentProgress: 0, upcomingMeetings: 0 }));
+        setMentors(mentorUsers);
+      }
     } catch (error) {
       console.error("Error loading mentors:", error);
     } finally {

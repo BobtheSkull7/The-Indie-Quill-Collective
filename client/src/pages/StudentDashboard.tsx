@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useLocation, Link } from "wouter";
 import { useAuth } from "../App";
 import CharacterCard from "../components/CharacterCard";
+import VibeCard from "../components/VibeCard";
+import WriterCharacterSheet from "../components/WriterCharacterSheet";
 import { 
   BookOpen, 
   Clock, 
@@ -455,6 +457,9 @@ export default function StudentDashboard() {
 
           <div className="space-y-6">
             <CharacterCard className="w-full" />
+
+            <VibeCard className="w-full" />
+            <WriterCharacterSheet className="w-full" />
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
               <h2 className="font-display text-xl font-bold text-slate-800 flex items-center gap-2 mb-4">
