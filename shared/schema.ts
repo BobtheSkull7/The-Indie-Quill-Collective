@@ -492,7 +492,7 @@ export const organizationCredentials = pgTable("organization_credentials", {
   verifiedAt: timestamp("verified_at"),
   expiresAt: timestamp("expires_at"),
   notes: text("notes"),
-  createdBy: integer("created_by").references(() => users.id).notNull(),
+  createdBy: varchar("created_by").references(() => users.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -570,7 +570,7 @@ export const pilotLedger = pgTable("pilot_ledger", {
   description: text("description").notNull(),
   linkedAuthorId: integer("linked_author_id").references(() => applications.id),
   category: text("category"), // e.g., "sponsorship", "isbn", "copyright"
-  recordedBy: integer("recorded_by").notNull(),
+  recordedBy: varchar("recorded_by").references(() => users.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -603,7 +603,7 @@ export const emailLogs = pgTable("email_logs", {
   emailType: emailTypeEnum("email_type").notNull(),
   recipientEmail: text("recipient_email").notNull(),
   recipientName: text("recipient_name"),
-  userId: integer("user_id"),
+  userId: varchar("user_id").references(() => users.id),
   applicationId: integer("application_id").references(() => applications.id),
   status: emailStatusEnum("status").notNull(),
   errorMessage: text("error_message"),
@@ -713,14 +713,14 @@ export const pactSessions = pgTable("pact_sessions", {
   activityDescription: text("activity_description"),
   wordsWritten: integer("words_written").default(0),
   notes: text("notes"),
-  createdBy: integer("created_by").references(() => users.id),
+  createdBy: varchar("created_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // Student Profiles - extends users for student-specific data
 export const studentProfiles = pgTable("student_profiles", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull().unique(),
+  userId: varchar("user_id").references(() => users.id).notNull().unique(),
   cohortId: integer("cohort_id").references(() => cohorts.id),
   familyUnitId: integer("family_unit_id").references(() => familyUnits.id),
   familyRole: familyRoleEnum("family_role"),
@@ -737,7 +737,7 @@ export const studentProfiles = pgTable("student_profiles", {
 // Mentor Profiles - extends users for mentor-specific data
 export const mentorProfiles = pgTable("mentor_profiles", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull().unique(),
+  userId: varchar("user_id").references(() => users.id).notNull().unique(),
   specialties: text("specialties"), // JSON array of specialties
   bio: text("bio"),
   maxStudents: integer("max_students").default(10).notNull(),
@@ -749,8 +749,8 @@ export const mentorProfiles = pgTable("mentor_profiles", {
 // Mentor-Student assignments (many-to-many)
 export const mentorStudentAssignments = pgTable("mentor_student_assignments", {
   id: serial("id").primaryKey(),
-  mentorId: integer("mentor_id").references(() => users.id).notNull(),
-  studentId: integer("student_id").references(() => users.id).notNull(),
+  mentorId: varchar("mentor_id").references(() => users.id).notNull(),
+  studentId: varchar("student_id").references(() => users.id).notNull(),
   assignedAt: timestamp("assigned_at").defaultNow().notNull(),
   isActive: boolean("is_active").default(true).notNull(),
 });
@@ -774,7 +774,7 @@ export const curriculumModules = pgTable("curriculum_modules", {
 // Student Curriculum Progress - tracks completion per module
 export const studentCurriculumProgress = pgTable("student_curriculum_progress", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
   moduleId: integer("module_id").references(() => curriculumModules.id).notNull(),
   percentComplete: integer("percent_complete").default(0).notNull(),
   hoursSpent: integer("hours_spent").default(0).notNull(), // In minutes for precision
@@ -788,14 +788,14 @@ export const studentCurriculumProgress = pgTable("student_curriculum_progress", 
 // TABE Assessments - for EFL tracking and grant reporting
 export const tabeAssessments = pgTable("tabe_assessments", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
   testType: text("test_type").notNull(), // reading, math, language
   scaleScore: integer("scale_score").notNull(),
   gradeEquivalent: text("grade_equivalent").notNull(), // e.g., "4.5"
   eflLevel: eflLevelEnum("efl_level").notNull(),
   isBaseline: boolean("is_baseline").default(false).notNull(),
   testDate: timestamp("test_date").notNull(),
-  administeredBy: integer("administered_by").references(() => users.id),
+  administeredBy: varchar("administered_by").references(() => users.id),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -805,7 +805,7 @@ export const meetings = pgTable("meetings", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
   description: text("description"),
-  mentorId: integer("mentor_id").references(() => users.id),
+  mentorId: varchar("mentor_id").references(() => users.id),
   startTime: timestamp("start_time").notNull(),
   endTime: timestamp("end_time").notNull(),
   provider: meetingProviderEnum("provider").default("google_meet").notNull(),
@@ -814,7 +814,7 @@ export const meetings = pgTable("meetings", {
   isRecurring: boolean("is_recurring").default(false).notNull(),
   recurringPattern: text("recurring_pattern"), // weekly, biweekly
   googleEventId: text("google_event_id"),
-  createdBy: integer("created_by").references(() => users.id),
+  createdBy: varchar("created_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -823,7 +823,7 @@ export const meetings = pgTable("meetings", {
 export const meetingAttendees = pgTable("meeting_attendees", {
   id: serial("id").primaryKey(),
   meetingId: integer("meeting_id").references(() => meetings.id).notNull(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
   attended: boolean("attended"),
   attendedMinutes: integer("attended_minutes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -832,7 +832,7 @@ export const meetingAttendees = pgTable("meeting_attendees", {
 // Activity Logs - tracks hours active and word count for grant metrics
 export const studentActivityLogs = pgTable("student_activity_logs", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
   sessionDate: timestamp("session_date").notNull(),
   minutesActive: integer("minutes_active").notNull().default(0),
   wordCountStart: integer("word_count_start").default(0),
@@ -844,7 +844,7 @@ export const studentActivityLogs = pgTable("student_activity_logs", {
 // Drafting Documents - "Legacy Work" manuscripts
 export const draftingDocuments = pgTable("drafting_documents", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
   title: text("title").notNull(),
   content: text("content"), // Markdown content
   wordCount: integer("word_count").default(0).notNull(),
@@ -858,7 +858,7 @@ export const draftingDocuments = pgTable("drafting_documents", {
 // Student Work Vault - VibeScribe snippets and manuscript drafts from Game Engine
 export const studentWork = pgTable("student_work", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
   questId: integer("quest_id"), // Links to curriculum chapter/quest
   contentType: text("content_type").notNull(), // 'vibescribe_snippet' | 'manuscript_draft'
   contentBody: text("content_body").notNull(),
@@ -879,14 +879,14 @@ export const vibeQuizzes = pgTable("vibe_quizzes", {
   timeLimit: integer("time_limit").default(60).notNull(),
   isActive: boolean("is_active").default(false).notNull(),
   startedAt: timestamp("started_at"),
-  createdBy: integer("created_by"),
+  createdBy: varchar("created_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const vibeQuizAnswers = pgTable("vibe_quiz_answers", {
   id: serial("id").primaryKey(),
   quizId: integer("quiz_id").references(() => vibeQuizzes.id).notNull(),
-  userId: integer("user_id").notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
   answer: text("answer").notNull(),
   answeredAt: timestamp("answered_at").defaultNow().notNull(),
 });
@@ -1119,7 +1119,7 @@ export const quizQuestions = pgTable("quiz_questions", {
 
 export const quizResults = pgTable("quiz_results", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
   quizId: integer("quiz_id").references(() => quizzes.id, { onDelete: "cascade" }).notNull(),
   score: integer("score").notNull(),
   passed: boolean("passed").notNull(),
@@ -1128,7 +1128,7 @@ export const quizResults = pgTable("quiz_results", {
 
 export const passwordResetTokens = pgTable("password_reset_tokens", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
   token: text("token").notNull().unique(),
   expiresAt: timestamp("expires_at").notNull(),
   usedAt: timestamp("used_at"),
