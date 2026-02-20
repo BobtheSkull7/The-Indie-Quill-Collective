@@ -1,0 +1,29 @@
+All logs
+Search
+Search
+
+Last hour
+
+
+
+[Sync Worker] Running scheduled sync at 2026-02-20T13:45:00.010Z
+POST /api/auth/login 401 in 83ms
+[POST]
+theindiequillcollective.com/api/auth/login clientIP="143.103.10.5" requestID="f391f90a-fc17-4a68" responseTimeMS=134 responseBytes=1195 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+POST /api/auth/login 401 in 50ms
+[POST]
+theindiequillcollective.com/api/auth/login clientIP="143.103.10.5" requestID="ea2504ea-170d-4f50" responseTimeMS=55 responseBytes=1195 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+Menu
+POST /api/auth/login 401 in 49ms
+[POST]
+theindiequillcollective.com/api/auth/login clientIP="143.103.10.5" requestID="ed73395f-f0fe-4818" responseTimeMS=55 responseBytes=1195 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+POST /api/auth/login 401 in 44ms
+[POST]
+theindiequillcollective.com/api/auth/login clientIP="143.103.10.5" requestID="f34b9f48-73c1-43ff" responseTimeMS=71 responseBytes=1195 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+[GET]
+theindiequillcollective.com/logo.png clientIP="143.103.10.5" requestID="a6e90e7f-bbbb-44c8" responseTimeMS=5 responseBytes=1062 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+[GET]
+theindiequillcollective.com/generated-icon.png clientIP="143.103.10.5" requestID="aa1467b2-bcd7-4dcf" responseTimeMS=6 responseBytes=1060 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+[GET]
+theindiequillcollective.com/logo.png clientIP="143.103.10.5" requestID="8d8fa00b-12dd-46c6" responseTimeMS=5 responseBytes=1062 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+GET /api/public/impact 304 in 0ms
