@@ -205,6 +205,23 @@ export async function registerRoutes(app: Express) {
       req.session.userRole = user.role;
       req.session.secondaryRole = user.secondaryRole || null;
 
+      if (user.role === "student" || user.role === "writer" || user.secondaryRole === "student" || user.secondaryRole === "writer") {
+        try {
+          const profileCheck = await db.execute(sql`
+            SELECT id FROM student_profiles WHERE user_id = ${user.id} LIMIT 1
+          `);
+          if (profileCheck.rows.length === 0) {
+            await db.execute(sql`
+              INSERT INTO student_profiles (user_id, accessibility_mode, preferred_language, is_active, enrolled_at, created_at, updated_at)
+              VALUES (${user.id}, 'standard', 'en', true, NOW(), NOW(), NOW())
+            `);
+            console.log(`[Auto-Profile] Created student_profile for user ${user.id} (${user.email})`);
+          }
+        } catch (profileErr) {
+          console.error(`[Auto-Profile] Failed to create student_profile for user ${user.id}:`, profileErr);
+        }
+      }
+
       return res.json({ 
         user: { 
           id: user.id, 
@@ -6165,14 +6182,19 @@ export async function registerDonationRoutes(app: Express) {
     }
 
     try {
-      const [card] = await db.select().from(vibeCards)
-        .where(and(eq(vibeCards.userId, req.session.userId), eq(vibeCards.isActive, true)))
-        .limit(1);
+      const result = await db.execute(sql`
+        SELECT id, user_id as "userId", archetype, themes, tone, backstory, 
+               raw_vibe_data as "rawVibeData", is_active as "isActive",
+               created_at as "createdAt", updated_at as "updatedAt"
+        FROM vibe_cards 
+        WHERE user_id = ${req.session.userId} AND is_active = true 
+        LIMIT 1
+      `);
 
-      if (!card) {
+      if (result.rows.length === 0) {
         return res.json(null);
       }
-      res.json(card);
+      res.json(result.rows[0]);
     } catch (error) {
       console.error("Error fetching vibe card:", error);
       res.status(500).json({ error: "Failed to fetch vibe card" });
@@ -6187,35 +6209,45 @@ export async function registerDonationRoutes(app: Express) {
     try {
       const { archetype, themes, tone, backstory, rawVibeData } = req.body;
 
-      const [existing] = await db.select().from(vibeCards)
-        .where(and(eq(vibeCards.userId, req.session.userId), eq(vibeCards.isActive, true)))
-        .limit(1);
+      const existingResult = await db.execute(sql`
+        SELECT id, archetype, themes, tone, backstory, raw_vibe_data as "rawVibeData"
+        FROM vibe_cards 
+        WHERE user_id = ${req.session.userId} AND is_active = true 
+        LIMIT 1
+      `);
+      const existing = existingResult.rows[0] as any;
 
       if (existing) {
-        const [updated] = await db.update(vibeCards)
-          .set({
-            archetype: archetype ?? existing.archetype,
-            themes: themes ?? existing.themes,
-            tone: tone ?? existing.tone,
-            backstory: backstory ?? existing.backstory,
-            rawVibeData: rawVibeData ?? existing.rawVibeData,
-            updatedAt: new Date(),
-          })
-          .where(eq(vibeCards.id, existing.id))
-          .returning();
-        return res.json(updated);
+        const safeJsonify = (val: any) => val == null ? null : (typeof val === 'string' ? val : JSON.stringify(val));
+        const themesVal = safeJsonify(themes ?? existing.themes);
+        const vibeDataVal = safeJsonify(rawVibeData ?? existing.rawVibeData);
+        const updateResult = await db.execute(sql`
+          UPDATE vibe_cards SET
+            archetype = ${archetype ?? existing.archetype},
+            themes = ${themesVal}::jsonb,
+            tone = ${tone ?? existing.tone},
+            backstory = ${backstory ?? existing.backstory},
+            raw_vibe_data = ${vibeDataVal}::jsonb,
+            updated_at = NOW()
+          WHERE id = ${existing.id}
+          RETURNING id, user_id as "userId", archetype, themes, tone, backstory,
+                    raw_vibe_data as "rawVibeData", is_active as "isActive",
+                    created_at as "createdAt", updated_at as "updatedAt"
+        `);
+        return res.json(updateResult.rows[0]);
       }
 
-      const [created] = await db.insert(vibeCards).values({
-        userId: req.session.userId,
-        archetype,
-        themes,
-        tone,
-        backstory,
-        rawVibeData,
-      }).returning();
+      const themesJson = themes ? JSON.stringify(themes) : null;
+      const vibeDataJson = rawVibeData ? JSON.stringify(rawVibeData) : null;
+      const createResult = await db.execute(sql`
+        INSERT INTO vibe_cards (user_id, archetype, themes, tone, backstory, raw_vibe_data, is_active, created_at, updated_at)
+        VALUES (${req.session.userId}, ${archetype || null}, ${themesJson}::jsonb, ${tone || null}, ${backstory || null}, ${vibeDataJson}::jsonb, true, NOW(), NOW())
+        RETURNING id, user_id as "userId", archetype, themes, tone, backstory,
+                  raw_vibe_data as "rawVibeData", is_active as "isActive",
+                  created_at as "createdAt", updated_at as "updatedAt"
+      `);
 
-      res.status(201).json(created);
+      res.status(201).json(createResult.rows[0]);
     } catch (error) {
       console.error("Error saving vibe card:", error);
       res.status(500).json({ error: "Failed to save vibe card" });
@@ -6228,14 +6260,19 @@ export async function registerDonationRoutes(app: Express) {
     }
 
     try {
-      const [sheet] = await db.select().from(writerCharacterSheets)
-        .where(and(eq(writerCharacterSheets.userId, req.session.userId), eq(writerCharacterSheets.isActive, true)))
-        .limit(1);
+      const result = await db.execute(sql`
+        SELECT id, user_id as "userId", vibe_card_id as "vibeCardId", name, archetype, backstory,
+               motivations, strengths, flaws, goals, is_active as "isActive",
+               created_at as "createdAt", updated_at as "updatedAt"
+        FROM writer_character_sheets
+        WHERE user_id = ${req.session.userId} AND is_active = true
+        LIMIT 1
+      `);
 
-      if (!sheet) {
+      if (result.rows.length === 0) {
         return res.json(null);
       }
-      res.json(sheet);
+      res.json(result.rows[0]);
     } catch (error) {
       console.error("Error fetching character sheet:", error);
       res.status(500).json({ error: "Failed to fetch character sheet" });
@@ -6250,41 +6287,50 @@ export async function registerDonationRoutes(app: Express) {
     try {
       const { name, archetype, backstory, motivations, strengths, flaws, goals, vibeCardId } = req.body;
 
-      const [existing] = await db.select().from(writerCharacterSheets)
-        .where(and(eq(writerCharacterSheets.userId, req.session.userId), eq(writerCharacterSheets.isActive, true)))
-        .limit(1);
+      const existingResult = await db.execute(sql`
+        SELECT id, name, archetype, backstory, motivations, strengths, flaws, goals, vibe_card_id
+        FROM writer_character_sheets
+        WHERE user_id = ${req.session.userId} AND is_active = true
+        LIMIT 1
+      `);
+      const existing = existingResult.rows[0] as any;
 
       if (existing) {
-        const [updated] = await db.update(writerCharacterSheets)
-          .set({
-            name: name ?? existing.name,
-            archetype: archetype ?? existing.archetype,
-            backstory: backstory ?? existing.backstory,
-            motivations: motivations ?? existing.motivations,
-            strengths: strengths ?? existing.strengths,
-            flaws: flaws ?? existing.flaws,
-            goals: goals ?? existing.goals,
-            vibeCardId: vibeCardId ?? existing.vibeCardId,
-            updatedAt: new Date(),
-          })
-          .where(eq(writerCharacterSheets.id, existing.id))
-          .returning();
-        return res.json(updated);
+        const safeJsonify = (val: any) => val == null ? null : (typeof val === 'string' ? val : JSON.stringify(val));
+        const motivationsJson = safeJsonify(motivations ?? existing.motivations);
+        const strengthsJson = safeJsonify(strengths ?? existing.strengths);
+        const flawsJson = safeJsonify(flaws ?? existing.flaws);
+        const updateResult = await db.execute(sql`
+          UPDATE writer_character_sheets SET
+            name = ${name ?? existing.name},
+            archetype = ${archetype ?? existing.archetype},
+            backstory = ${backstory ?? existing.backstory},
+            motivations = ${motivationsJson}::jsonb,
+            strengths = ${strengthsJson}::jsonb,
+            flaws = ${flawsJson}::jsonb,
+            goals = ${goals ?? existing.goals},
+            vibe_card_id = ${vibeCardId ?? existing.vibe_card_id},
+            updated_at = NOW()
+          WHERE id = ${existing.id}
+          RETURNING id, user_id as "userId", vibe_card_id as "vibeCardId", name, archetype, backstory,
+                    motivations, strengths, flaws, goals, is_active as "isActive",
+                    created_at as "createdAt", updated_at as "updatedAt"
+        `);
+        return res.json(updateResult.rows[0]);
       }
 
-      const [created] = await db.insert(writerCharacterSheets).values({
-        userId: req.session.userId,
-        name,
-        archetype,
-        backstory,
-        motivations,
-        strengths,
-        flaws,
-        goals,
-        vibeCardId,
-      }).returning();
+      const motivationsJson = motivations ? JSON.stringify(motivations) : null;
+      const strengthsJson = strengths ? JSON.stringify(strengths) : null;
+      const flawsJson = flaws ? JSON.stringify(flaws) : null;
+      const createResult = await db.execute(sql`
+        INSERT INTO writer_character_sheets (user_id, name, archetype, backstory, motivations, strengths, flaws, goals, vibe_card_id, is_active, created_at, updated_at)
+        VALUES (${req.session.userId}, ${name || null}, ${archetype || null}, ${backstory || null}, ${motivationsJson}::jsonb, ${strengthsJson}::jsonb, ${flawsJson}::jsonb, ${goals || null}, ${vibeCardId || null}, true, NOW(), NOW())
+        RETURNING id, user_id as "userId", vibe_card_id as "vibeCardId", name, archetype, backstory,
+                  motivations, strengths, flaws, goals, is_active as "isActive",
+                  created_at as "createdAt", updated_at as "updatedAt"
+      `);
 
-      res.status(201).json(created);
+      res.status(201).json(createResult.rows[0]);
     } catch (error) {
       console.error("Error saving character sheet:", error);
       res.status(500).json({ error: "Failed to save character sheet" });
@@ -6297,13 +6343,15 @@ export async function registerDonationRoutes(app: Express) {
     }
 
     try {
-      await db.update(vibeCards)
-        .set({ isActive: false, updatedAt: new Date() })
-        .where(eq(vibeCards.userId, req.session.userId));
+      await db.execute(sql`
+        UPDATE vibe_cards SET is_active = false, updated_at = NOW()
+        WHERE user_id = ${req.session.userId}
+      `);
 
-      await db.update(writerCharacterSheets)
-        .set({ isActive: false, updatedAt: new Date() })
-        .where(eq(writerCharacterSheets.userId, req.session.userId));
+      await db.execute(sql`
+        UPDATE writer_character_sheets SET is_active = false, updated_at = NOW()
+        WHERE user_id = ${req.session.userId}
+      `);
 
       res.json({ success: true, message: "Creative profile reset successfully" });
     } catch (error) {
@@ -6817,11 +6865,17 @@ export async function registerDonationRoutes(app: Express) {
         return res.status(503).json({ message: "Game Engine not configured" });
       }
 
-      const [profile] = await db.select({ gameCharacterId: studentProfiles.gameCharacterId })
-        .from(studentProfiles)
-        .where(eq(studentProfiles.userId, req.session.userId))
-        .limit(1);
-      const gameCharacterId = profile?.gameCharacterId || req.session.userId;
+      const profileResult = await db.execute(sql`
+        SELECT game_character_id FROM student_profiles WHERE user_id = ${req.session.userId} LIMIT 1
+      `);
+      const profile = profileResult.rows[0] as any;
+      const gameCharacterId = profile?.game_character_id;
+      if (!gameCharacterId) {
+        return res.status(404).json({ 
+          message: "No game character assigned yet. Your character will be set up by an admin.",
+          noCharacter: true
+        });
+      }
       const timestamp = Date.now();
       const endpoint = `${GAME_ENGINE_URL}/character/status/${gameCharacterId}?_t=${timestamp}`;
 

@@ -135,7 +135,16 @@ export default function StudentDashboard() {
         safeFetch("/api/student/drafts")
       ]);
 
-      setModules(Array.isArray(modulesRes) ? modulesRes : []);
+      const rawModules = Array.isArray(modulesRes) ? modulesRes : [];
+      setModules(rawModules.map((m: any) => ({
+        id: m.id,
+        title: m.title,
+        description: m.description ?? null,
+        orderIndex: m.orderIndex ?? m.order_index ?? 0,
+        durationHours: m.durationHours ?? m.duration_hours ?? 1,
+        contentType: m.contentType ?? m.content_type ?? "lesson",
+        isPublished: m.isPublished ?? m.is_published ?? false,
+      })));
       setProgress(Array.isArray(progressRes) ? progressRes : []);
       setMeetings(Array.isArray(meetingsRes) ? meetingsRes : []);
       setTabeScores(Array.isArray(tabeRes) ? tabeRes : []);

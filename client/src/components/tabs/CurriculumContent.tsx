@@ -132,7 +132,16 @@ export default function CurriculumContent() {
       }
 
       setStudents(enrichedStudents);
-      setModules(Array.isArray(curriculumRes) ? curriculumRes : []);
+      const rawModules = Array.isArray(curriculumRes) ? curriculumRes : [];
+      setModules(rawModules.map((m: any) => ({
+        id: m.id,
+        title: m.title,
+        description: m.description ?? null,
+        orderIndex: m.orderIndex ?? m.order_index ?? 0,
+        durationHours: m.durationHours ?? m.duration_hours ?? 1,
+        contentType: m.contentType ?? m.content_type ?? "lesson",
+        isPublished: m.isPublished ?? m.is_published ?? false,
+      })));
 
       const writingToReadCount = enrichedStudents.filter((s: Student) => s.trainingPath === "writing-to-read").length;
       const professionalAuthorCount = enrichedStudents.filter((s: Student) => s.trainingPath === "professional-author").length;

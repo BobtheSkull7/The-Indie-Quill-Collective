@@ -18,7 +18,7 @@ interface CharacterStatus {
   equipped_items: EquippedItem[];
 }
 
-export default function GameTest() {
+export default function GameTest({ embedded = false }: { embedded?: boolean } = {}) {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
   const [loading, setLoading] = useState(true);
@@ -26,6 +26,7 @@ export default function GameTest() {
   const [character, setCharacter] = useState<CharacterStatus | null>(null);
 
   useEffect(() => {
+    if (embedded) return;
     if (!user) {
       setLocation("/login");
       return;
@@ -34,7 +35,7 @@ export default function GameTest() {
       setLocation("/dashboard");
       return;
     }
-  }, [user, setLocation]);
+  }, [user, setLocation, embedded]);
 
   const fetchCharacterStatus = async () => {
     setLoading(true);

@@ -128,6 +128,12 @@ export default function CharacterCard({ userId = 1, className = "", apiEndpoint 
         let errorMessage = "Failed to fetch character";
         try {
           const data = await res.json();
+          if (data.noCharacter) {
+            setApiLog(`Info (${elapsed}ms): No character assigned yet`);
+            setError(data.message || "No game character assigned yet.");
+            setLoading(false);
+            return;
+          }
           errorMessage = data.message || errorMessage;
         } catch {
           const text = await res.text();
