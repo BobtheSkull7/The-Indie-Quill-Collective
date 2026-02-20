@@ -4,6 +4,11 @@ import * as schema from "@shared/schema";
 
 const isProd = process.env.NODE_ENV === "production";
 
+if (process.env.DATABASE_URL && !process.env.SUPABASE_DEV_URL && !process.env.SUPABASE_PROD_URL) {
+  console.error(`FATAL: DATABASE_URL is set but no SUPABASE_*_URL found. This project uses Supabase EXCLUSIVELY. Replit's internal database is NOT allowed.`);
+  throw new Error("This project requires Supabase. Set SUPABASE_DEV_URL or SUPABASE_PROD_URL. Replit internal database is not permitted.");
+}
+
 const rawUrl = isProd 
   ? process.env.SUPABASE_PROD_URL 
   : process.env.SUPABASE_DEV_URL;
@@ -11,10 +16,9 @@ const rawUrl = isProd
 if (!rawUrl) {
   const expectedVar = isProd ? 'SUPABASE_PROD_URL' : 'SUPABASE_DEV_URL';
   console.error(`FATAL: Supabase URL must be set. Expected ${expectedVar} to be configured.`);
-  console.error(`Current NODE_ENV: ${process.env.NODE_ENV}`);
-  console.error(`Available env vars: ${Object.keys(process.env).filter(k => k.includes('SUPA') || k.includes('DATA')).join(', ') || 'none matching SUPA/DATA'}`);
+  console.error(`This project uses Supabase EXCLUSIVELY -- no internal database fallback.`);
   throw new Error(
-    `Supabase URL must be set. Expected ${expectedVar} to be configured.`,
+    `Supabase URL must be set. Expected ${expectedVar} to be configured. No fallback to internal database.`,
   );
 }
 

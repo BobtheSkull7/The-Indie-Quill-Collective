@@ -6,32 +6,23 @@ The Indie Quill Collective is a 501(c)(3) non-profit platform dedicated to suppo
 ## User Preferences
 I prefer clear, concise explanations and a direct communication style. For coding tasks, I value modularity and well-structured code. When making changes, please prioritize security, compliance, and maintainability. Always ask for confirmation before implementing major architectural changes or significant code refactoring. I prefer an iterative development approach, with regular updates and opportunities for feedback.
 
-## CRITICAL: Database Schema Drift Policy
-**Every time a database schema change is made (new table, new column, altered column, etc.), you MUST tell the user exactly what SQL to run in Supabase.** The Replit dev database and the Supabase databases (dev + prod) are separate and do NOT auto-sync. Schema drift between them has caused production outages.
+## ABSOLUTE RULE: Database Policy
+**NEVER use Replit's internal/built-in PostgreSQL database. This project uses Supabase EXCLUSIVELY for both Dev and Prod. Do NOT create, reference, or fall back to Replit's internal database under ANY circumstances unless the user EXPLICITLY asks for it. This is NON-NEGOTIABLE.**
+
+- **Supabase Dev project:** `ceooiewapczkiglwzbja` (IndieQuill-Dev, fresh as of 2026-02-20)
+- **Supabase Prod project:** Managed separately by user
+- Connection string is stored in `SUPABASE_DEV_URL` (dev) and `SUPABASE_PROD_URL` (prod) secrets
+- `db.ts` will hard-fail if no Supabase URL is set -- there is NO fallback
+
+## Database Schema Drift Policy
+**Every time a database schema change is made (new table, new column, altered column, etc.), you MUST tell the user exactly what SQL to run in Supabase.** The Supabase Dev and Prod databases do NOT auto-sync. Schema drift between them has caused production outages.
 
 **Checklist for every schema change:**
 1. Make the change in `shared/schema.ts` (Drizzle ORM)
-2. Run `npm run db:push` to apply to the local Replit database
-3. **Immediately tell the user** the exact SQL statements needed for both Supabase Dev and Supabase Prod databases
+2. Run `npm run db:push` to apply to Supabase Dev (connected via `SUPABASE_DEV_URL`)
+3. **Immediately tell the user** the exact SQL statements needed for Supabase Prod
 4. Format the SQL clearly so it can be copy-pasted into the Supabase SQL Editor
-5. Never assume a column or table exists in Supabase just because it exists locally
-
-**Current Supabase schema additions (already applied):**
-- `users` table: `secondary_role TEXT` column added
-- `board_members` table created (id SERIAL PK, name, title, bio, photo_filename, email, linkedin, display_order, is_active, created_at, updated_at)
-- `quizzes` table created (id SERIAL PK, title, description, time_limit_minutes, passing_score, created_at, updated_at)
-- `quiz_questions` table created (id SERIAL PK, quiz_id INT FK→quizzes, question_text, options JSONB, correct_option_index, points, display_order)
-- `quiz_results` table created (id SERIAL PK, user_id VARCHAR FK→users, quiz_id INT FK→quizzes, score, passed, completed_at)
-- `student_profiles` table: `game_character_id TEXT` column added
-
-**CRITICAL: Replit vs Supabase Type Mismatch Cheat Sheet**
-| Table & Column | Replit (Local) Type | Supabase (Prod) Type |
-|---|---|---|
-| `users.id` | INTEGER (serial) | VARCHAR (string) |
-| `quiz_results.user_id` | INTEGER | VARCHAR |
-| `student_profiles.user_id` | INTEGER | VARCHAR |
-
-**Rule:** When writing new code or SQL with User ID references, use VARCHAR for Supabase and INTEGER for local Replit. Always provide both versions when giving the user migration SQL.
+5. Never assume a column or table exists in Supabase Prod just because it exists in Dev
 
 ## System Architecture
 The project employs a client-server architecture. The frontend is built with React 19, Vite, and TailwindCSS 3, while the backend uses Express.js with TypeScript. Data is managed in a PostgreSQL database via Supabase and Drizzle ORM. Client-side routing is handled by Wouter.
