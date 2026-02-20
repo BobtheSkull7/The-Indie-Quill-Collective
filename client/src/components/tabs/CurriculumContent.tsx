@@ -12,6 +12,7 @@ import {
   BookMarked,
   Pencil
 } from "lucide-react";
+import VibeDeckCurriculum from "../VibeDeckCurriculum";
 
 interface CurriculumModule {
   id: number;
@@ -486,6 +487,10 @@ export default function CurriculumContent() {
             ))}
           </div>
         )}
+      </div>
+
+      <div className="mb-8">
+        <VibeDeckCurriculum />
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">

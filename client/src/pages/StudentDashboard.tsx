@@ -19,6 +19,7 @@ import {
   Mic,
   Scroll
 } from "lucide-react";
+import VibeDeckContainer from "../components/VibeDeckContainer";
 
 interface CurriculumModule {
   id: number;
@@ -575,6 +576,10 @@ export default function StudentDashboard() {
                   )}
                 </div>
               )}
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+              <VibeDeckContainer />
             </div>
 
             {(baselineScore || currentScore) && (
