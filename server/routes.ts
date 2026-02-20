@@ -111,7 +111,7 @@ async function generateAndStorePDF(contractId: number): Promise<Buffer | null> {
 
 const authRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 attempts per window
+  max: process.env.NODE_ENV === "production" ? 5 : 100, // 5 in prod, relaxed in dev
   message: { message: "Too many attempts, please try again after 15 minutes" },
   standardHeaders: true,
   legacyHeaders: false,
@@ -649,16 +649,18 @@ export async function registerRoutes(app: Express) {
         return res.json(appsWithUserDetails);
       } else {
         const userAppsResult = await db.execute(sql`
-          SELECT id, user_id as "userId", first_name as "firstName", last_name as "lastName",
-                 email, phone, pseudonym, bio, genres, status, is_minor as "isMinor",
-                 guardian_name as "guardianName", guardian_email as "guardianEmail",
-                 guardian_phone as "guardianPhone", guardian_relationship as "guardianRelationship",
-                 date_of_birth as "dateOfBirth", reviewed_by as "reviewedBy",
-                 reviewed_at as "reviewedAt", cohort_id as "cohortId",
-                 indie_quill_author_id as "indieQuillAuthorId",
-                 internal_id as "internalId", persona_type as "personaType",
-                 created_at as "createdAt", updated_at as "updatedAt"
-          FROM applications WHERE user_id = ${req.session.userId} ORDER BY created_at DESC
+          SELECT a.id, a.user_id as "userId", u.first_name as "firstName", u.last_name as "lastName",
+                 u.email, a.pseudonym, a.status, a.is_minor as "isMinor",
+                 a.guardian_name as "guardianName", a.guardian_email as "guardianEmail",
+                 a.guardian_phone as "guardianPhone", a.guardian_relationship as "guardianRelationship",
+                 a.date_of_birth as "dateOfBirth", a.reviewed_by as "reviewedBy",
+                 a.reviewed_at as "reviewedAt", a.cohort_id as "cohortId",
+                 u.indie_quill_author_id as "indieQuillAuthorId",
+                 a.internal_id as "internalId", a.persona_type as "personaType",
+                 a.created_at as "createdAt", a.updated_at as "updatedAt"
+          FROM applications a
+          LEFT JOIN users u ON u.id = a.user_id
+          WHERE a.user_id = ${req.session.userId} ORDER BY a.created_at DESC
         `);
         const userApplications = userAppsResult.rows as any[];
         
@@ -770,13 +772,13 @@ export async function registerRoutes(app: Express) {
       await db.insert(auditLogs).values({
         userId: req.session.userId,
         action: "rescind",
-        resourceType: "applications",
-        resourceId: applicationId,
-        ipAddress: getClientIp(req),
-        metadata: { 
+        entityType: "applications",
+        entityId: String(applicationId),
+        details: JSON.stringify({ 
           reason: "author_initiated",
           pseudonymPreserved: application.pseudonym,
-        },
+          ipAddress: getClientIp(req),
+        }),
       });
 
       return res.json({ message: "Application rescinded successfully", application: updated });
@@ -1031,11 +1033,12 @@ export async function registerRoutes(app: Express) {
     try {
       const contractsResult = await db.execute(sql`
         SELECT id, user_id as "userId", application_id as "applicationId",
-               contract_type as "contractType", status, pdf_url as "pdfUrl",
+               contract_type as "contractType", status,
                author_signature as "authorSignature", author_signed_at as "authorSignedAt",
                author_signature_ip as "authorSignatureIp", author_signature_user_agent as "authorSignatureUserAgent",
                guardian_signature as "guardianSignature", guardian_signed_at as "guardianSignedAt",
                guardian_signature_ip as "guardianSignatureIp", guardian_signature_user_agent as "guardianSignatureUserAgent",
+               requires_guardian as "requiresGuardian",
                created_at as "createdAt", updated_at as "updatedAt"
         FROM contracts WHERE user_id = ${req.session.userId} ORDER BY created_at DESC
       `);
@@ -1616,14 +1619,14 @@ export async function registerRoutes(app: Express) {
       await db.insert(auditLogs).values({
         userId: req.session.userId,
         action: "reset_sync",
-        resourceType: "publishing_updates",
-        resourceId: updateId.toString(),
-        ipAddress: getClientIp(req),
-        metadata: {
+        entityType: "publishing_updates",
+        entityId: updateId.toString(),
+        details: JSON.stringify({
           previousSyncStatus: existingUpdate.syncStatus,
           previousAttempts: existingUpdate.syncAttempts,
           previousError: existingUpdate.syncError,
-        },
+          ipAddress: getClientIp(req),
+        }),
       });
 
       console.log(`Sync reset for publishing update ${updateId} by admin ${req.session.userId}`);
@@ -1670,14 +1673,14 @@ export async function registerRoutes(app: Express) {
       await db.insert(auditLogs).values({
         userId: req.session.userId,
         action: "update_publishing_stage",
-        resourceType: "publishing_updates",
-        resourceId: updateId.toString(),
-        ipAddress: getClientIp(req),
-        metadata: {
+        entityType: "publishing_updates",
+        entityId: updateId.toString(),
+        details: JSON.stringify({
           previousStatus,
           newStatus: status,
           applicationId: existingUpdate.applicationId,
-        },
+          ipAddress: getClientIp(req),
+        }),
       });
 
       return res.json({ message: "Status updated", status: updated.status });
@@ -2264,13 +2267,13 @@ export async function registerRoutes(app: Express) {
       await db.insert(auditLogs).values({
         userId: req.session.userId,
         action: "view",
-        resourceType: "pii_bridge",
-        resourceId: 0,
-        ipAddress: getClientIp(req),
-        metadata: { 
+        entityType: "pii_bridge",
+        entityId: "all",
+        details: JSON.stringify({ 
           entriesViewed: bridgeEntries.length,
-          viewedByRole: "admin"
-        },
+          viewedByRole: "admin",
+          ipAddress: getClientIp(req),
+        }),
       });
 
       return res.json(bridgeEntries);
@@ -5817,8 +5820,8 @@ export async function registerDonationRoutes(app: Express) {
         SELECT id, title, description, order_index, duration_hours, content_type, is_published, path_type, audience_type
         FROM curriculum_modules
         WHERE is_published = true 
-          AND path_type = ANY(${pathTypesArray}::text[])
-          AND audience_type = ANY(${audienceTypesArray}::text[])
+          AND path_type::text = ANY(${pathTypesArray}::text[])
+          AND audience_type::text = ANY(${audienceTypesArray}::text[])
         ORDER BY order_index ASC
       `);
 
@@ -6174,7 +6177,7 @@ export async function registerDonationRoutes(app: Express) {
         JOIN users u ON u.id = msa.student_id
         LEFT JOIN student_profiles sp ON sp.user_id = u.id
         LEFT JOIN (
-          SELECT user_id, SUM(hours_active) as total_hours, MAX(created_at) as last_activity
+          SELECT user_id, ROUND(SUM(minutes_active) / 60.0, 1) as total_hours, MAX(created_at) as last_activity
           FROM student_activity_logs GROUP BY user_id
         ) sal ON sal.user_id = u.id
         LEFT JOIN (
@@ -6208,7 +6211,7 @@ export async function registerDonationRoutes(app: Express) {
         FROM meetings m
         JOIN meeting_attendees ma ON ma.meeting_id = m.id
         JOIN users u ON u.id = ma.user_id
-        WHERE m.host_id = ${req.session.userId}
+        WHERE m.mentor_id = ${req.session.userId}
         ORDER BY m.start_time DESC
       `);
 
@@ -6241,7 +6244,7 @@ export async function registerDonationRoutes(app: Express) {
       }
 
       const meetingResult = await db.execute(sql`
-        INSERT INTO meetings (host_id, title, description, start_time, end_time, meeting_type, provider)
+        INSERT INTO meetings (mentor_id, title, description, start_time, end_time, meeting_type, provider)
         VALUES (${req.session.userId}, ${title}, ${description || null}, ${startTime}, ${endTime}, ${meetingType || 'one_on_one'}, 'google_meet')
         RETURNING id, title, description, start_time as "startTime", end_time as "endTime", meeting_type as "meetingType"
       `);
@@ -6281,14 +6284,14 @@ export async function registerDonationRoutes(app: Express) {
       const hoursResult = await db.execute(sql`
         SELECT AVG(sal.total_hours) as avg_hours
         FROM mentor_student_assignments msa
-        JOIN (SELECT user_id, SUM(hours_active) as total_hours FROM student_activity_logs GROUP BY user_id) sal
+        JOIN (SELECT user_id, ROUND(SUM(minutes_active) / 60.0, 1) as total_hours FROM student_activity_logs GROUP BY user_id) sal
           ON sal.user_id = msa.student_id
         WHERE msa.mentor_id = ${req.session.userId}
       `);
 
       const meetingsResult = await db.execute(sql`
         SELECT COUNT(*) as count FROM meetings 
-        WHERE host_id = ${req.session.userId} AND start_time > NOW()
+        WHERE mentor_id = ${req.session.userId} AND start_time > NOW()
       `);
 
       res.json({
