@@ -1,0 +1,204 @@
+Production
+
+The-Indie-Quill-Collective-frontend
+
+
+Search
+Ctrl+
+K
+
+New
+
+
+j
+Environment
+The-Indie-Quill-Collective-frontend
+Events
+Settings
+Monitor
+Logs
+Metrics
+Manage
+Environment
+Shell
+Scaling
+Previews
+Disk
+Jobs
+
+Changelog
+Invite a friend
+
+Contact support
+Render Status
+
+All logs
+Search
+Search
+
+Live tail
+
+
+
+[GET]
+theindiequillcollective.com/api/student/vibescribe-transcripts clientIP="143.103.10.5" requestID="72f3e78a-b559-4923" responseTimeMS=12 responseBytes=972 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+GET /api/student/vibescribe-transcripts 304 in 8ms
+[GET]
+theindiequillcollective.com/api/health clientIP="34.123.228.62" requestID="8ee24612-3019-4a1e" responseTimeMS=4 responseBytes=321 userAgent="curl/8.14.1"
+[GET]
+theindiequillcollective.com/health clientIP="34.123.228.62" requestID="f35e9c40-b064-44cf" responseTimeMS=20 responseBytes=321 userAgent="curl/8.14.1"
+GET /api/student/vibescribe-transcripts 304 in 8ms
+[GET]
+theindiequillcollective.com/api/student/vibescribe-transcripts clientIP="143.103.10.5" requestID="b21ad73f-4615-4fdf" responseTimeMS=11 responseBytes=972 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+GET /api/student/vibescribe-transcripts 304 in 7ms
+[GET]
+theindiequillcollective.com/api/student/vibescribe-transcripts clientIP="143.103.10.5" requestID="e1ef57bb-9f8b-4952" responseTimeMS=39 responseBytes=972 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+GET /api/student/vibescribe-transcripts 304 in 51ms
+[GET]
+theindiequillcollective.com/api/student/vibescribe-transcripts clientIP="143.103.10.5" requestID="538a2816-9115-46dd" responseTimeMS=106 responseBytes=972 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+POST /api/vibe/transcribe 500 in 2243ms
+}
+  type: 'insufficient_quota'
+  param: null,
+  code: 'insufficient_quota',
+  },
+    code: 'insufficient_quota'
+    param: null,
+    type: 'insufficient_quota',
+    message: 'You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.',
+  error: {
+  requestID: 'req_8094340e28204d13a2ddfa837a711438',
+  },
+    'alt-svc': 'h3=":443"; ma=86400'
+    'cf-ray': '9d18d7fdd978a509-PDX',
+    'x-content-type-options': 'nosniff',
+    'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
+    'set-cookie': '__cf_bm=iqZ67LbI9Uednze8bdooxhfHYnNMYG4Cx3Rko7zjmOA-1771704171.17111-1.0.1.1-1LP3cgeO7ypIVgyKjykRqAZOlYwM9A2TNXHP2MpqtDbC_QV6_bKP1umUushHOAFRY5uoyxKbWc7H2fhHFuYzK4QFnsJJrbOhc7yiWLrJa4zfg8UminHK4vQJQnr0_bsY; HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Sat, 21 Feb 2026 20:32:51 GMT, _cfuvid=6FLch26FT8lEfYz8AQN0BhL09V12FM_JzxRkov5D0CQ-1771704171.17111-1.0.1.1-wDB8PhlYqRAoaY.FnFpKK7_6caa4KqF2neRnUHa33fU; HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com',
+    'cf-cache-status': 'DYNAMIC',
+    server: 'cloudflare',
+    'x-openai-proxy-wasm': 'v0.1',
+    'x-request-id': 'req_8094340e28204d13a2ddfa837a711438',
+    vary: 'Origin',
+    connection: 'keep-alive',
+    'content-length': '337',
+    'content-type': 'application/json; charset=utf-8',
+    date: 'Sat, 21 Feb 2026 20:02:51 GMT',
+  headers: Headers {
+  status: 429,
+    at async <anonymous> (/opt/render/project/src/server/routes.ts:7773:26) {
+    at async speechToText (/opt/render/project/src/server/replit_integrations/audio/client.ts:248:20)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at OpenAI.makeRequest (/opt/render/project/src/node_modules/openai/src/client.ts:728:24)
+    at OpenAI.makeStatusError (/opt/render/project/src/node_modules/openai/src/client.ts:478:28)
+    at Function.generate (/opt/render/project/src/node_modules/openai/src/core/error.ts:96:14)
+[VibeScribe] Error transcribing audio: RateLimitError: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.
+[POST]
+theindiequillcollective.com/api/vibe/transcribe clientIP="143.103.10.5" requestID="8738e3d5-846c-4025" responseTimeMS=2247 responseBytes=1241 userAgent="VibeScribe/1 CFNetwork/3826.600.41 Darwin/24.6.0"
+[VibeScribe] Audio converted to format: mp4 size: 126099
+[VibeScribe] Using multipart file: audio/x-m4a 126099 bytes
+[VibeScribe] Body keys: []
+[VibeScribe] Has body.audio: false
+}
+  size: 126099
+  mimetype: 'audio/x-m4a',
+  originalname: 'recording.m4a',
+  fieldname: 'audio',
+[VibeScribe] req.file details: {
+[VibeScribe] Has req.file: true
+[VibeScribe] Content-Length: 126352
+[VibeScribe] Content-Type: multipart/form-data; boundary=z.NqghqrePvAyqc-IDGy2NnahY7.m6sdwwy84-h6HMcVv0O62Ss39z0voisk_7nex.FRCU
+[VibeScribe] ========== TRANSCRIBE REQUEST ==========
+POST /api/vibe/transcribe 500 in 2913ms
+}
+  type: 'insufficient_quota'
+  param: null,
+  code: 'insufficient_quota',
+  },
+    code: 'insufficient_quota'
+    param: null,
+    type: 'insufficient_quota',
+    message: 'You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.',
+  error: {
+  requestID: 'req_07502ea22d074423a52fc33a4bd48826',
+  },
+    'alt-svc': 'h3=":443"; ma=86400'
+    'cf-ray': '9d18d7b9c803dabf-PDX',
+    'x-content-type-options': 'nosniff',
+    'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
+    'set-cookie': '__cf_bm=u2HZTBC6FKdNb0ThGlT1neUXhOoexVl27An64aQZFE4-1771704160.2900717-1.0.1.1-IFfMVx9pxcZ0bJdwrY.HGOBWn9rHnMYoULZrwIR5GNEJODUts6icVxxIj7H_iDgTQPozLicm8i4m2UtGLoR4siqsFk_Q2v2xZ5INLj6jZbGnO4UU7Pm5juRKMGmW3Ag5; HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Sat, 21 Feb 2026 20:32:40 GMT, _cfuvid=r9SBsK7kiSrNrSaXXjiOywkTTbfVrtVB2ZstpBPJbxU-1771704160.2900717-1.0.1.1-T481ZYTiRDP2k_P9nkB32R0nNNS0pBQwD3jWGoC3mJY; HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com',
+    'cf-cache-status': 'DYNAMIC',
+    server: 'cloudflare',
+    'x-openai-proxy-wasm': 'v0.1',
+    'x-request-id': 'req_07502ea22d074423a52fc33a4bd48826',
+    vary: 'Origin',
+    connection: 'keep-alive',
+    'content-length': '337',
+    'content-type': 'application/json; charset=utf-8',
+    date: 'Sat, 21 Feb 2026 20:02:40 GMT',
+  headers: Headers {
+  status: 429,
+    at async <anonymous> (/opt/render/project/src/server/routes.ts:7773:26) {
+    at async speechToText (/opt/render/project/src/server/replit_integrations/audio/client.ts:248:20)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at OpenAI.makeRequest (/opt/render/project/src/node_modules/openai/src/client.ts:728:24)
+    at OpenAI.makeStatusError (/opt/render/project/src/node_modules/openai/src/client.ts:478:28)
+    at Function.generate (/opt/render/project/src/node_modules/openai/src/core/error.ts:96:14)
+[VibeScribe] Error transcribing audio: RateLimitError: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.
+[POST]
+theindiequillcollective.com/api/vibe/transcribe clientIP="143.103.10.5" requestID="764edd16-931c-4b60" responseTimeMS=2916 responseBytes=1241 userAgent="VibeScribe/1 CFNetwork/3826.600.41 Darwin/24.6.0"
+[VibeScribe] Audio converted to format: mp4 size: 106862
+[VibeScribe] Using multipart file: audio/x-m4a 106862 bytes
+[VibeScribe] Body keys: []
+[VibeScribe] Has body.audio: false
+}
+  size: 106862
+  mimetype: 'audio/x-m4a',
+  originalname: 'recording.m4a',
+  fieldname: 'audio',
+[VibeScribe] req.file details: {
+[VibeScribe] Has req.file: true
+[VibeScribe] Content-Length: 107115
+[VibeScribe] Content-Type: multipart/form-data; boundary=tLp1XiAxBUIc3swxt1l3uAz9k8s6LUy_MndqGAMZkv3AeGq1X86BlFXO_vJ2aD__aWQExH
+[VibeScribe] ========== TRANSCRIBE REQUEST ==========
+POST /api/vibe/verify 200 in 12ms
+[VibeScribe] Query result rows: 1
+]
+  }
+    vibe_scribe_id: '123-456'
+    first_name: 'Buildathon',
+    id: '24f15d74-61a3-4a7a-848e-a56118cdf948',
+  {
+  },
+    vibe_scribe_id: '123-456'
+    first_name: 'Buildathon',
+    id: 'ec5e2685-86f6-4444-92e3-b81d0524b993',
+  {
+  },
+    vibe_scribe_id: '123-456'
+    first_name: 'Buildathon',
+    id: 'bb0d57e5-462e-4924-9ba5-1664251cb257',
+  {
+  },
+    vibe_scribe_id: '618-244'
+    first_name: 'Bob',
+    id: '2f9806e5-5835-4e4c-af1b-b71a5481018c',
+  {
+  },
+    vibe_scribe_id: '874-738'
+    first_name: 'Kristine',
+    id: '06822f5a-9ac7-4824-9565-2d3785fa6bd2',
+  {
+  },
+    vibe_scribe_id: '386-699'
+    first_name: 'Marcella',
+    id: '7f7c2142-c98a-4309-8944-eec3821d15e0',
+  {
+  },
+    vibe_scribe_id: '435-767'
+    first_name: 'Kam',
+    id: '395149bb-0ed5-482c-857a-c0c54e253966',
+  {
+  },
+    vibe_scribe_id: '989-705'
+[POST]
+theindiequillcollective.com/api/vibe/verify clientIP="143.103.10.5" requestID="c4fb46e3-da34-429f" responseTimeMS=27 responseBytes=1182 userAgent="VibeScribe/1 CFNetwork/3826.600.41 Darwin/24.6.0"
