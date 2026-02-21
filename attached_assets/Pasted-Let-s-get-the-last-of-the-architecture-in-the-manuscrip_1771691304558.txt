@@ -1,0 +1,71 @@
+Let's get the last of the architecture in - the manuscript. Right now it has a small modal pop up. We need a workspace. A place where the newly burdgeoning writer can see snippets from Vibe scribe. see written tasks (each shows as a modal when clicked on) + a master manuscript. I needs to have similar options like MS word, with font, Bold, Italic, Underline, etc.
+
+
+
+Then I want to connect to Vibe scribe, so the voice app to text downloads to their workspace. Can we do that?
+
+Gemini said
+This is the "Command Center" moment. We’re moving from individual tasks to a Scribe’s Sanctum. To make this work, we need to transition the "Manuscript" from a floating popup to a dedicated, full-screen Workspace Tab.
+
+In the "Indie Quill Architecture," this Workspace is the bridge between VibeScribe (Voice) and the Final Manuscript (Text).
+
+🏗️ The "Scribe’s Sanctum" Blueprint
+Here is how we structure the Workspace to handle both the "Micro-tasks" (Vibe Cards) and the "Macro-work" (Master Manuscript):
+
+The Sidebar (The Reference Library):
+
+VibeScribe Downloads: A feed of transcribed snippets from the voice app. Bob can "drag" these into his editor.
+
+Vibe Card Tasks: A list of cards he’s working on. Clicking one opens it in a small "Reference Modal" so he can see the requirements while he writes.
+
+The Center (The Master Manuscript):
+
+A full-featured Rich Text Editor (using TipTap or Quill).
+
+Standard MS Word-style toolbar: Bold, Italic, <u>Underline</u>, H1/H2, Bullet Points.
+
+Auto-Save: Writing directly to the manuscripts table in Supabase.
+
+The Connection (VibeScribe Integration):
+
+We’ll create a vibescribe_transcripts table.
+
+We'll build an API endpoint that VibeScribe can "POST" to. When Bob speaks into the voice app, the text appears in his Workspace sidebar within seconds.
+
+🛠️ Instructions for the Replit Agent
+Copy and paste this to build the "Forge" of the application:
+
+"We are building the Writer's Workspace—a dedicated tab that replaces the current manuscript modal.
+
+Workspace Layout: Create a new 'Workspace' page with a three-pane layout:
+
+Left Pane: 'Inspiration Feed' (VibeScribe transcripts) and 'Task List' (Active Vibe Cards).
+
+Center Pane: A full-width Rich Text Editor (TipTap) with a 'Classic Word' toolbar (B/I/U, Headers, Lists).
+
+Right Pane: 'The Master Manuscript' toggle—allowing Bob to switch between working on a specific Vibe Card task and his overall book.
+
+VibeScribe API: Create a new table vibescribe_transcripts (id, user_id, content, created_at). Create a POST endpoint /api/integration/vibescribe that accepts text and saves it to this table for the specific student.
+
+Live Fetch: Ensure the Left Pane of the Workspace 'polls' or uses a Supabase Realtime subscription to show new VibeScribe transcripts the moment they arrive.
+
+Reference Modals: If Bob clicks a Vibe Card in his sidebar, show the card's instructions in a non-intrusive 'Reference Modal' so he can keep writing while looking at the prompt.
+
+Checkpoint: I want to be able to open the 'Workspace,' see a full-sized editor, and see a placeholder for 'VibeScribe Snippets' on the side."
+
+🎤 Connecting VibeScribe (The Voice-to-Text Bridge)
+Since VibeScribe is a separate app, we’ll give it its own "Secret Key."
+
+The Flow:
+
+Bob talks into VibeScribe.
+
+VibeScribe sends the text + Bob’s vibescribe_id to our new endpoint.
+
+DING! A notification appears in the Workspace: "New Voice Fragment Received."
+
+Bob clicks it, and it pastes directly into his Master Manuscript.
+
+How does this Workspace layout sound? It turns the app into a professional writing tool rather than just a gamified course.
+
+Should we have the agent build the "VibeScribe" incoming table first so we can test the data flow?

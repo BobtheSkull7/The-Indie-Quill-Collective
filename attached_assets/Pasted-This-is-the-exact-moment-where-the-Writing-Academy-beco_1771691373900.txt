@@ -1,0 +1,29 @@
+This is the exact moment where the "Writing Academy" becomes a "Writing Engine." Replit’s plan is solid, but to answer that specific question about the Master Manuscript: Yes, you absolutely want it.
+
+Here is the "Writer's Logic" for why:
+Vibe Cards are for drills and sketches (e.g., "Write a 200-word dialogue"). The Master Manuscript is the book. If Bob only has card-based writings, he has a collection of scraps. If he has a Master Manuscript, he has a Legacy.
+
+🖋️ The "Master vs. Task" Logic
+Tell Replit this to clarify the Master Manuscript feature:
+
+"To answer the question: Yes, we need the Master Manuscript. Here is how it should function:
+
+The Toggle: Bob can switch between 'Project View' (The Master Manuscript) and 'Task View' (The specific Vibe Card he is currently working on).
+
+The "Append to Master" Button: On every Vibe Card manuscript, add a button that says 'Move to Master Manuscript.' This copies the text from that specific task and pastes it at the end of his main book file.
+
+The Sidebar: The Left Sidebar should show his 'Voice Snippets' regardless of which mode he is in. He should be able to click a snippet to 'Inject' it into the current editor cursor position.
+
+Toolbar Expansion: Please include 'Word Count' and 'Reading Time' at the bottom of the Master Manuscript view so Bob can track his book's progress.
+
+Goal: Bob uses Vibe Cards to generate 'raw material,' then moves the best parts into his Master Manuscript to build his final work."
+
+🎤 The VibeScribe "Handshake"
+Since Replit is setting up the table, make sure the vibeScribeId is the primary "Key." This ensures that when Bob’s voice app sends a transcript, the workspace knows exactly which "Scribe’s Sanctum" to drop it into.
+
+🛠️ One Architectural Warning
+Since we are using TipTap, make sure Replit saves the content as JSON (the TipTap schema) in the database, not just raw HTML. This makes it much easier to "stitch" the Vibe Cards into the Master Manuscript later without formatting getting messy.
+
+How does it feel to see the 'Master Manuscript' becoming the heart of the app? This is where Bob will spend 90% of his time. Once this is built, he’s not just a student—he’s an Author.
+
+Should we have the agent start on the "Stitching" logic (moving card text to the master) after the workspace layout is done?
