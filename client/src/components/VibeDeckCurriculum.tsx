@@ -30,6 +30,7 @@ interface VibeDeckData {
   title: string;
   description: string | null;
   order_index: number;
+  is_published: boolean;
   card_count: number;
   cards?: VibeCardData[];
 }
@@ -39,6 +40,7 @@ interface CurriculumData {
   title: string;
   description: string | null;
   order_index: number;
+  is_published: boolean;
   deck_count: number;
   decks?: VibeDeckData[];
 }
@@ -275,6 +277,27 @@ export default function VibeDeckCurriculum() {
     }
   };
 
+  const handleTogglePublish = async (type: "curriculum" | "deck", id: number, currentlyPublished: boolean, parentId?: number) => {
+    try {
+      const endpoint = type === "curriculum" ? `/api/admin/curriculums/${id}` : `/api/admin/decks/${id}`;
+      const res = await fetch(endpoint, {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_published: !currentlyPublished }),
+      });
+      if (res.ok) {
+        if (type === "curriculum") {
+          await loadCurriculums();
+        } else if (parentId) {
+          await loadDecks(parentId);
+        }
+      }
+    } catch (err) {
+      console.error("Error toggling publish:", err);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -362,6 +385,12 @@ export default function VibeDeckCurriculum() {
                   <span className="text-xs bg-teal-100 text-teal-700 px-2 py-1 rounded-full font-medium">
                     {curriculum.deck_count} {Number(curriculum.deck_count) === 1 ? "Deck" : "Decks"}
                   </span>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleTogglePublish("curriculum", curriculum.id, curriculum.is_published); }}
+                    className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${curriculum.is_published ? "bg-green-100 text-green-700 hover:bg-green-200" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}
+                  >
+                    {curriculum.is_published ? "Published" : "Draft"}
+                  </button>
                   <button onClick={() => handleDeleteCurriculum(curriculum.id)} className="p-1.5 text-gray-400 hover:text-red-500 transition-colors">
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -419,6 +448,12 @@ export default function VibeDeckCurriculum() {
                               <span className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-medium">
                                 {deck.card_count} {Number(deck.card_count) === 1 ? "Card" : "Cards"}
                               </span>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleTogglePublish("deck", deck.id, deck.is_published, curriculum.id); }}
+                                className={`px-2 py-0.5 rounded-full text-xs font-medium transition-colors ${deck.is_published ? "bg-green-100 text-green-700 hover:bg-green-200" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}
+                              >
+                                {deck.is_published ? "Published" : "Draft"}
+                              </button>
                               <button onClick={() => handleDeleteDeck(deck.id, curriculum.id)} className="p-1 text-gray-400 hover:text-red-500 transition-colors">
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>

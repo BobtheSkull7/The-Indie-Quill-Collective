@@ -6219,12 +6219,21 @@ export async function registerDonationRoutes(app: Express) {
       return res.status(403).json({ error: "Admin access required" });
     }
     try {
-      const { title, description } = req.body;
-      const result = await db.execute(sql`
-        UPDATE curriculums SET title = ${title}, description = ${description || null}, updated_at = NOW()
-        WHERE id = ${Number(req.params.id)}
-        RETURNING *
-      `);
+      const { title, description, is_published } = req.body;
+      let result;
+      if (typeof is_published === "boolean") {
+        result = await db.execute(sql`
+          UPDATE curriculums SET is_published = ${is_published}, updated_at = NOW()
+          WHERE id = ${Number(req.params.id)}
+          RETURNING *
+        `);
+      } else {
+        result = await db.execute(sql`
+          UPDATE curriculums SET title = ${title}, description = ${description || null}, updated_at = NOW()
+          WHERE id = ${Number(req.params.id)}
+          RETURNING *
+        `);
+      }
       if (result.rows.length === 0) return res.status(404).json({ error: "Curriculum not found" });
       res.json(result.rows[0]);
     } catch (error) {
@@ -6291,12 +6300,21 @@ export async function registerDonationRoutes(app: Express) {
       return res.status(403).json({ error: "Admin access required" });
     }
     try {
-      const { title, description } = req.body;
-      const result = await db.execute(sql`
-        UPDATE vibe_decks SET title = ${title}, description = ${description || null}, updated_at = NOW()
-        WHERE id = ${Number(req.params.id)}
-        RETURNING *
-      `);
+      const { title, description, is_published } = req.body;
+      let result;
+      if (typeof is_published === "boolean") {
+        result = await db.execute(sql`
+          UPDATE vibe_decks SET is_published = ${is_published}, updated_at = NOW()
+          WHERE id = ${Number(req.params.id)}
+          RETURNING *
+        `);
+      } else {
+        result = await db.execute(sql`
+          UPDATE vibe_decks SET title = ${title}, description = ${description || null}, updated_at = NOW()
+          WHERE id = ${Number(req.params.id)}
+          RETURNING *
+        `);
+      }
       if (result.rows.length === 0) return res.status(404).json({ error: "Deck not found" });
       res.json(result.rows[0]);
     } catch (error) {
@@ -6406,7 +6424,7 @@ export async function registerDonationRoutes(app: Express) {
         FROM vibe_cards vc
         JOIN vibe_decks d ON d.id = vc.deck_id
         JOIN curriculums c ON c.id = d.curriculum_id
-        WHERE vc.is_published = true AND d.is_published = true AND c.is_published = true
+        WHERE d.is_published = true AND c.is_published = true
         ORDER BY vc.order_index, vc.id
       `);
       const decks = (decksResult.rows as any[]).map(deck => ({
