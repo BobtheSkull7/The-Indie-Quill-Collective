@@ -217,7 +217,8 @@ async function bootstrapFast() {
       created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
       updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
     );
-    DROP TABLE IF EXISTS tome_absorptions;
+  `);
+  await dbPool.query(`
     CREATE TABLE IF NOT EXISTS tome_absorptions (
       id SERIAL PRIMARY KEY,
       user_id VARCHAR(255) NOT NULL,
@@ -225,6 +226,8 @@ async function bootstrapFast() {
       absorbed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
       UNIQUE(user_id, deck_id)
     );
+  `);
+  await dbPool.query(`
     CREATE TABLE IF NOT EXISTS manuscripts (
       id SERIAL PRIMARY KEY,
       user_id VARCHAR(255) NOT NULL,
@@ -235,6 +238,8 @@ async function bootstrapFast() {
       updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
       UNIQUE(user_id, card_id)
     );
+  `);
+  await dbPool.query(`
     CREATE TABLE IF NOT EXISTS card_submissions (
       id SERIAL PRIMARY KEY,
       user_id VARCHAR(255) NOT NULL,
