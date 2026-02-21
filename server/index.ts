@@ -225,6 +225,27 @@ async function bootstrapFast() {
       absorbed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
       UNIQUE(user_id, deck_id)
     );
+    CREATE TABLE IF NOT EXISTS manuscripts (
+      id SERIAL PRIMARY KEY,
+      user_id VARCHAR(255) NOT NULL,
+      card_id INTEGER NOT NULL REFERENCES vibe_cards(id) ON DELETE CASCADE,
+      content TEXT NOT NULL DEFAULT '',
+      word_count INTEGER NOT NULL DEFAULT 0,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      UNIQUE(user_id, card_id)
+    );
+    CREATE TABLE IF NOT EXISTS card_submissions (
+      id SERIAL PRIMARY KEY,
+      user_id VARCHAR(255) NOT NULL,
+      card_id INTEGER NOT NULL REFERENCES vibe_cards(id) ON DELETE CASCADE,
+      manuscript_id INTEGER REFERENCES manuscripts(id) ON DELETE SET NULL,
+      reflection TEXT NOT NULL DEFAULT '',
+      xp_earned INTEGER NOT NULL DEFAULT 0,
+      status VARCHAR(50) NOT NULL DEFAULT 'submitted',
+      submitted_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      UNIQUE(user_id, card_id)
+    );
   `);
   await dbPool.query(`
     ALTER TABLE vibe_decks ADD COLUMN IF NOT EXISTS tome_title VARCHAR(255);

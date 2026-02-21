@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Layers, ChevronDown, ChevronRight, Sparkles, BookOpen, ScrollText, Lock, X } from "lucide-react";
 import VibeDeckCard from "./VibeDeckCard";
+import ManuscriptEditor from "./ManuscriptEditor";
 
 interface CardData {
   id: number;
@@ -37,6 +38,8 @@ export default function VibeDeckContainer() {
   const [tomeModalDeck, setTomeModalDeck] = useState<DeckData | null>(null);
   const [absorbing, setAbsorbing] = useState(false);
   const [showScrollContent, setShowScrollContent] = useState(false);
+  const [completedCards, setCompletedCards] = useState<Set<number>>(new Set());
+  const [activeManuscript, setActiveManuscript] = useState<CardData | null>(null);
 
   useEffect(() => {
     loadVibeDecks();
@@ -52,9 +55,12 @@ export default function VibeDeckContainer() {
 
   const loadVibeDecks = async () => {
     try {
-      const res = await fetch("/api/student/vibe-decks", { credentials: "include" });
-      if (res.ok) {
-        const data = await res.json();
+      const [decksRes, subsRes] = await Promise.all([
+        fetch("/api/student/vibe-decks", { credentials: "include" }),
+        fetch("/api/student/submissions", { credentials: "include" }),
+      ]);
+      if (decksRes.ok) {
+        const data = await decksRes.json();
         setCurriculums(data.curriculums || []);
         setDecks(data.decks || []);
         if (data.curriculums?.length > 0) {
@@ -62,6 +68,11 @@ export default function VibeDeckContainer() {
           const firstDeck = (data.decks || []).find((d: DeckData) => d.curriculum_id === data.curriculums[0].id);
           if (firstDeck) setExpandedDeck(firstDeck.id);
         }
+      }
+      if (subsRes.ok) {
+        const subs = await subsRes.json();
+        const completed = new Set<number>((subs || []).map((s: any) => s.card_id));
+        setCompletedCards(completed);
       }
     } catch (err) {
       console.error("Error loading vibe decks:", err);
@@ -414,6 +425,7 @@ export default function VibeDeckContainer() {
                                             task={card.task}
                                             qualifications={card.qualifications || "No specific qualifications"}
                                             xpValue={card.xp_value}
+                                            isCompleted={completedCards.has(card.id)}
                                           />
                                         ))}
                                       </div>
@@ -435,6 +447,8 @@ export default function VibeDeckContainer() {
                                             task={card.task}
                                             qualifications={card.qualifications || "No specific qualifications"}
                                             xpValue={card.xp_value}
+                                            isCompleted={completedCards.has(card.id)}
+                                            onStartWriting={() => setActiveManuscript(card)}
                                           />
                                         ))}
                                       </div>
@@ -552,6 +566,19 @@ export default function VibeDeckContainer() {
             </div>
           </div>
         </div>
+      )}
+
+      {activeManuscript && (
+        <ManuscriptEditor
+          cardId={activeManuscript.id}
+          cardTask={activeManuscript.task}
+          cardXp={activeManuscript.xp_value}
+          isCompleted={completedCards.has(activeManuscript.id)}
+          onClose={() => setActiveManuscript(null)}
+          onSubmitted={() => {
+            setCompletedCards(prev => new Set([...prev, activeManuscript.id]));
+          }}
+        />
       )}
     </div>
   );

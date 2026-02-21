@@ -6320,6 +6320,114 @@ export async function registerDonationRoutes(app: Express) {
     }
   });
 
+  app.get("/api/student/manuscripts/:cardId", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    try {
+      const cardId = parseInt(req.params.cardId);
+      if (isNaN(cardId)) return res.status(400).json({ error: "Invalid card ID" });
+      const result = await db.execute(sql`
+        SELECT m.*, 
+          CASE WHEN cs.id IS NOT NULL THEN true ELSE false END as submitted
+        FROM manuscripts m
+        LEFT JOIN card_submissions cs ON cs.card_id = m.card_id AND cs.user_id = m.user_id
+        WHERE m.user_id = ${req.session.userId} AND m.card_id = ${parseInt(cardId)}
+        LIMIT 1
+      `);
+      if (result.rows.length === 0) {
+        return res.json({ content: "", word_count: 0, submitted: false });
+      }
+      res.json(result.rows[0]);
+    } catch (error) {
+      console.error("Error fetching manuscript:", error);
+      res.status(500).json({ error: "Failed to fetch manuscript" });
+    }
+  });
+
+  app.put("/api/student/manuscripts/:cardId", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    try {
+      const cardId = parseInt(req.params.cardId);
+      if (isNaN(cardId)) return res.status(400).json({ error: "Invalid card ID" });
+      const { content, wordCount } = req.body;
+      const result = await db.execute(sql`
+        INSERT INTO manuscripts (user_id, card_id, content, word_count, created_at, updated_at)
+        VALUES (${req.session.userId}, ${cardId}, ${content || ''}, ${wordCount || 0}, NOW(), NOW())
+        ON CONFLICT (user_id, card_id) DO UPDATE SET
+          content = ${content || ''},
+          word_count = ${wordCount || 0},
+          updated_at = NOW()
+        RETURNING *
+      `);
+      res.json(result.rows[0]);
+    } catch (error) {
+      console.error("Error saving manuscript:", error);
+      res.status(500).json({ error: "Failed to save manuscript" });
+    }
+  });
+
+  app.post("/api/student/submissions/:cardId", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    try {
+      const { cardId } = req.params;
+      const { reflection } = req.body;
+      const cardIdNum = parseInt(cardId);
+
+      const existingCheck = await db.execute(sql`
+        SELECT id FROM card_submissions WHERE user_id = ${req.session.userId} AND card_id = ${cardIdNum}
+      `);
+      if (existingCheck.rows.length > 0) {
+        return res.status(400).json({ error: "Already submitted for this card" });
+      }
+
+      const cardResult = await db.execute(sql`
+        SELECT xp_value FROM vibe_cards WHERE id = ${cardIdNum}
+      `);
+      if (cardResult.rows.length === 0) {
+        return res.status(404).json({ error: "Card not found" });
+      }
+      const xpValue = (cardResult.rows[0] as any).xp_value || 0;
+
+      const manuscriptResult = await db.execute(sql`
+        SELECT id FROM manuscripts WHERE user_id = ${req.session.userId} AND card_id = ${cardIdNum}
+      `);
+      const manuscriptId = manuscriptResult.rows.length > 0 ? (manuscriptResult.rows[0] as any).id : null;
+
+      const result = await db.execute(sql`
+        INSERT INTO card_submissions (user_id, card_id, manuscript_id, reflection, xp_earned, status, submitted_at)
+        VALUES (${req.session.userId}, ${cardIdNum}, ${manuscriptId}, ${reflection || ''}, ${xpValue}, 'submitted', NOW())
+        RETURNING *
+      `);
+
+      res.json({ success: true, submission: result.rows[0], xp_earned: xpValue });
+    } catch (error) {
+      console.error("Error submitting card:", error);
+      res.status(500).json({ error: "Failed to submit" });
+    }
+  });
+
+  app.get("/api/student/submissions", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    try {
+      const result = await db.execute(sql`
+        SELECT card_id, xp_earned, status, submitted_at FROM card_submissions
+        WHERE user_id = ${req.session.userId}
+        ORDER BY submitted_at DESC
+      `);
+      res.json(result.rows);
+    } catch (error) {
+      console.error("Error fetching submissions:", error);
+      res.status(500).json({ error: "Failed to fetch submissions" });
+    }
+  });
+
   app.get("/api/student/training-stats", async (req: Request, res: Response) => {
     if (!req.session.userId) {
       return res.status(401).json({ error: "Not authenticated" });
@@ -6799,12 +6907,53 @@ export async function registerDonationRoutes(app: Express) {
         SELECT game_character_id FROM student_profiles WHERE user_id = ${req.session.userId} LIMIT 1
       `);
       const profile = profileResult.rows[0] as any;
-      const gameCharacterId = profile?.game_character_id;
+      let gameCharacterId = profile?.game_character_id;
       if (!gameCharacterId) {
-        return res.status(404).json({ 
-          message: "No game character assigned yet. Your character will be set up by an admin.",
-          noCharacter: true
-        });
+        try {
+          const userResult2 = await db.execute(sql`
+            SELECT vibe_scribe_id, first_name FROM users WHERE id = ${req.session.userId} LIMIT 1
+          `);
+          const userData = userResult2.rows[0] as any;
+          const username = userData?.vibe_scribe_id || userData?.first_name || "student";
+          
+          const createRes = await fetch(`${GAME_ENGINE_URL}/character/create`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              user_id: req.session.userId,
+              username: username,
+            }),
+          });
+          
+          if (createRes.ok) {
+            const createData = await createRes.json();
+            const newCharId = createData.user_id || createData.character_id || createData.id;
+            if (newCharId) {
+              const updateResult = await db.execute(sql`
+                UPDATE student_profiles SET game_character_id = ${String(newCharId)}
+                WHERE user_id = ${req.session.userId}
+              `);
+              if ((updateResult as any).rowCount === 0) {
+                await db.execute(sql`
+                  INSERT INTO student_profiles (user_id, game_character_id)
+                  VALUES (${req.session.userId}, ${String(newCharId)})
+                  ON CONFLICT (user_id) DO UPDATE SET game_character_id = ${String(newCharId)}
+                `);
+              }
+              gameCharacterId = String(newCharId);
+              console.log(`[Game Engine] Auto-created character ${newCharId} for user ${req.session.userId}`);
+            }
+          }
+        } catch (autoCreateErr) {
+          console.error("[Game Engine] Auto-create failed:", autoCreateErr);
+        }
+        
+        if (!gameCharacterId) {
+          return res.status(404).json({ 
+            message: "No game character assigned yet. Your character will be set up by an admin.",
+            noCharacter: true
+          });
+        }
       }
       const timestamp = Date.now();
       const endpoint = `${GAME_ENGINE_URL}/character/status/${gameCharacterId}?_t=${timestamp}`;
