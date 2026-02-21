@@ -52,18 +52,6 @@ export const personaTypeEnum = pgEnum('persona_type', [
   'family_student'
 ]);
 
-export const curriculumPathTypeEnum = pgEnum('curriculum_path_type', [
-  'general',
-  'literacy', 
-  'family'
-]);
-
-export const curriculumAudienceTypeEnum = pgEnum('curriculum_audience_type', [
-  'adult',
-  'child',
-  'shared'
-]);
-
 // NPO Applications table - maps to existing Supabase table
 export const npoApplications = pgTable("npo_applications", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -756,27 +744,11 @@ export const mentorStudentAssignments = pgTable("mentor_student_assignments", {
   isActive: boolean("is_active").default(true).notNull(),
 });
 
-// Curriculum Modules - 120-hour "Architecture of Authorship" course
-export const curriculumModules = pgTable("curriculum_modules", {
-  id: serial("id").primaryKey(),
-  title: text("title").notNull(),
-  description: text("description"),
-  orderIndex: integer("order_index").notNull(),
-  durationHours: integer("duration_hours").notNull().default(1),
-  contentType: text("content_type").default("lesson"), // lesson, video, exercise, assessment
-  contentUrl: text("content_url"), // Link to video or content
-  pathType: curriculumPathTypeEnum("path_type").default("general").notNull(),
-  audienceType: curriculumAudienceTypeEnum("audience_type").default("adult").notNull(),
-  isPublished: boolean("is_published").default(false).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
-
-// Student Curriculum Progress - tracks completion per module
+// Student Curriculum Progress - tracks completion per deck
 export const studentCurriculumProgress = pgTable("student_curriculum_progress", {
   id: serial("id").primaryKey(),
   userId: varchar("user_id").references(() => users.id).notNull(),
-  moduleId: integer("module_id").references(() => curriculumModules.id).notNull(),
+  moduleId: integer("module_id").notNull(),
   percentComplete: integer("percent_complete").default(0).notNull(),
   hoursSpent: integer("hours_spent").default(0).notNull(), // In minutes for precision
   startedAt: timestamp("started_at"),
@@ -952,18 +924,10 @@ export const mentorStudentAssignmentsRelations = relations(mentorStudentAssignme
   }),
 }));
 
-export const curriculumModulesRelations = relations(curriculumModules, ({ many }) => ({
-  progress: many(studentCurriculumProgress),
-}));
-
 export const studentCurriculumProgressRelations = relations(studentCurriculumProgress, ({ one }) => ({
   user: one(users, {
     fields: [studentCurriculumProgress.userId],
     references: [users.id],
-  }),
-  module: one(curriculumModules, {
-    fields: [studentCurriculumProgress.moduleId],
-    references: [curriculumModules.id],
   }),
 }));
 
@@ -1051,8 +1015,6 @@ export type MentorProfile = typeof mentorProfiles.$inferSelect;
 export type InsertMentorProfile = typeof mentorProfiles.$inferInsert;
 export type MentorStudentAssignment = typeof mentorStudentAssignments.$inferSelect;
 export type InsertMentorStudentAssignment = typeof mentorStudentAssignments.$inferInsert;
-export type CurriculumModule = typeof curriculumModules.$inferSelect;
-export type InsertCurriculumModule = typeof curriculumModules.$inferInsert;
 export type StudentCurriculumProgress = typeof studentCurriculumProgress.$inferSelect;
 export type InsertStudentCurriculumProgress = typeof studentCurriculumProgress.$inferInsert;
 export type TabeAssessment = typeof tabeAssessments.$inferSelect;

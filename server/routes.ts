@@ -5788,85 +5788,6 @@ export async function registerDonationRoutes(app: Express) {
   // STUDENT DASHBOARD API ROUTES
   // ============================================
 
-  // Get curriculum modules with Traffic Cop logic (filters by persona and family_role)
-  app.get("/api/student/curriculum", async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
-
-    try {
-      const applicationResult = await db.execute(sql`
-        SELECT persona_type FROM applications WHERE user_id = ${req.session.userId} LIMIT 1
-      `);
-      const personaType = applicationResult.rows?.[0]?.persona_type || 'writer';
-
-      const profileResult = await db.execute(sql`
-        SELECT family_role FROM student_profiles WHERE user_id = ${req.session.userId} LIMIT 1
-      `);
-      const familyRole = profileResult.rows?.[0]?.family_role || null;
-
-      const totalHoursResult = await db.execute(sql`
-        SELECT COALESCE(SUM(hours_spent), 0) as total_hours
-        FROM student_curriculum_progress
-        WHERE user_id = ${req.session.userId}
-      `);
-      const totalHours = parseInt(totalHoursResult.rows?.[0]?.total_hours || '0');
-      const unlockPublishing = totalHours >= 120;
-
-      let pathTypes: string[];
-      let audienceTypes: string[];
-
-      if (personaType === 'writer') {
-        pathTypes = ['general'];
-        audienceTypes = ['adult'];
-      } else if (personaType === 'adult_student') {
-        pathTypes = unlockPublishing ? ['literacy', 'general'] : ['literacy'];
-        audienceTypes = ['adult'];
-      } else if (personaType === 'family_student') {
-        pathTypes = ['literacy', 'family'];
-        audienceTypes = familyRole === 'child' ? ['child', 'shared'] : ['adult', 'shared'];
-      } else {
-        pathTypes = ['general'];
-        audienceTypes = ['adult'];
-      }
-
-      const pathTypesArray = `{${pathTypes.join(",")}}`;
-      const audienceTypesArray = `{${audienceTypes.join(",")}}`;
-
-      const modules = await db.execute(sql`
-        SELECT id, title, description, order_index, duration_hours, content_type, is_published, path_type, audience_type
-        FROM curriculum_modules
-        WHERE is_published = true 
-          AND path_type::text = ANY(${pathTypesArray}::text[])
-          AND audience_type::text = ANY(${audienceTypesArray}::text[])
-        ORDER BY order_index ASC
-      `);
-
-      res.json(modules.rows || []);
-    } catch (error) {
-      console.error("Error fetching curriculum:", error);
-      res.status(500).json({ message: "Failed to fetch curriculum" });
-    }
-  });
-
-  // Get student's progress on modules
-  app.get("/api/student/progress", async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
-
-    try {
-      const progress = await db.execute(sql`
-        SELECT module_id, percent_complete, hours_spent, started_at, completed_at
-        FROM student_curriculum_progress
-        WHERE user_id = ${req.session.userId}
-      `);
-      res.json(progress.rows || []);
-    } catch (error) {
-      console.error("Error fetching progress:", error);
-      res.status(500).json({ message: "Failed to fetch progress" });
-    }
-  });
 
   // Get student's upcoming meetings
   app.get("/api/student/meetings", async (req: Request, res: Response) => {
@@ -5912,76 +5833,6 @@ export async function registerDonationRoutes(app: Express) {
     }
   });
 
-  // Get student stats summary
-  app.get("/api/student/curriculum/:id", async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ error: "Not authenticated" });
-    }
-
-    const moduleId = parseInt(req.params.id);
-    if (isNaN(moduleId)) {
-      return res.status(400).json({ error: "Invalid module ID" });
-    }
-
-    try {
-      const result = await db.execute(sql`
-        SELECT id, title, description, content, order_index as "orderIndex", 
-               duration_hours as "durationHours", content_type as "contentType"
-        FROM curriculum_modules
-        WHERE id = ${moduleId} AND is_published = true
-      `);
-
-      if (result.rows.length === 0) {
-        return res.status(404).json({ error: "Module not found" });
-      }
-
-      res.json(result.rows[0]);
-    } catch (error) {
-      console.error("Error fetching module:", error);
-      res.status(500).json({ error: "Failed to fetch module" });
-    }
-  });
-
-  app.post("/api/student/progress", async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ error: "Not authenticated" });
-    }
-
-    const { moduleId, percentComplete } = req.body;
-    if (!moduleId || percentComplete === undefined) {
-      return res.status(400).json({ error: "Missing required fields" });
-    }
-
-    try {
-      const existingResult = await db.execute(sql`
-        SELECT id FROM student_curriculum_progress
-        WHERE user_id = ${req.session.userId} AND module_id = ${moduleId}
-      `);
-
-      const now = new Date().toISOString();
-      const isComplete = percentComplete >= 100;
-
-      if (existingResult.rows.length > 0) {
-        await db.execute(sql`
-          UPDATE student_curriculum_progress
-          SET percent_complete = ${percentComplete},
-              completed_at = ${isComplete ? now : null},
-              updated_at = ${now}
-          WHERE user_id = ${req.session.userId} AND module_id = ${moduleId}
-        `);
-      } else {
-        await db.execute(sql`
-          INSERT INTO student_curriculum_progress (user_id, module_id, percent_complete, started_at, completed_at)
-          VALUES (${req.session.userId}, ${moduleId}, ${percentComplete}, ${now}, ${isComplete ? now : null})
-        `);
-      }
-
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Error updating progress:", error);
-      res.status(500).json({ error: "Failed to update progress" });
-    }
-  });
 
   app.get("/api/student/drafts", async (req: Request, res: Response) => {
     if (!req.session.userId) {
@@ -6551,31 +6402,6 @@ export async function registerDonationRoutes(app: Express) {
     }
   });
 
-  app.post("/api/admin/curriculum", async (req: Request, res: Response) => {
-    if (!req.session.userId || !hasRole(req.session, "admin")) {
-      return res.status(403).json({ error: "Not authorized" });
-    }
-
-    const { title, description, orderIndex, durationHours, contentType, contentUrl, pathType, isPublished } = req.body;
-    if (!title?.trim()) {
-      return res.status(400).json({ error: "Title is required" });
-    }
-
-    try {
-      const nextOrder = orderIndex ?? ((await db.execute(sql`SELECT COALESCE(MAX(order_index), 0) + 1 as next_order FROM curriculum_modules`)).rows[0]?.next_order || 1);
-
-      const result = await db.execute(sql`
-        INSERT INTO curriculum_modules (title, description, order_index, duration_hours, content_type, content_url, path_type, is_published, created_at, updated_at)
-        VALUES (${title.trim()}, ${description || null}, ${nextOrder}, ${durationHours || 1}, ${contentType || 'lesson'}, ${contentUrl || null}, ${pathType || 'general'}, ${isPublished ?? false}, NOW(), NOW())
-        RETURNING *
-      `);
-
-      res.status(201).json(result.rows[0]);
-    } catch (error) {
-      console.error("Error creating curriculum module:", error);
-      res.status(500).json({ error: "Failed to create module" });
-    }
-  });
 
   app.get("/api/admin/mentor-stats", async (req: Request, res: Response) => {
     if (!req.session.userId || !hasRole(req.session, "admin", "board_member")) {
@@ -6885,11 +6711,10 @@ export async function registerDonationRoutes(app: Express) {
         WHERE user_id = ${req.session.userId}
       `);
 
-      // Get module completion stats
       const progressResult = await db.execute(sql`
         SELECT 
           COUNT(CASE WHEN completed_at IS NOT NULL THEN 1 END) as completed,
-          (SELECT COUNT(*) FROM curriculum_modules WHERE is_published = true) as total
+          (SELECT COUNT(*) FROM vibe_decks d JOIN curriculums c ON c.id = d.curriculum_id WHERE d.is_published = true AND c.is_published = true) as total
         FROM student_curriculum_progress
         WHERE user_id = ${req.session.userId}
       `);
