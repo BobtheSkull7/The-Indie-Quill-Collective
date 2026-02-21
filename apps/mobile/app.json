@@ -30,7 +30,9 @@
       },
       "package": "com.indiequill.vibescribe",
       "permissions": [
-        "RECORD_AUDIO"
+        "RECORD_AUDIO",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
       ]
     },
     "plugins": [
@@ -46,7 +48,10 @@
     ],
     "extra": {
       "eas": {
-        "projectId": ""
+        "projectId": "9b66cbc1-fe5b-4a3a-8042-fe9130439f37"
+      },
+      "router": {
+        "origin": false
       }
     },
     "runtimeVersion": {
