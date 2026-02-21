@@ -6151,11 +6151,17 @@ export async function registerDonationRoutes(app: Express) {
       return res.status(403).json({ error: "Admin access required" });
     }
     try {
-      const { title, description, is_published } = req.body;
+      const { title, description, is_published, tome_title, tome_content } = req.body;
       let result;
       if (typeof is_published === "boolean") {
         result = await db.execute(sql`
           UPDATE vibe_decks SET is_published = ${is_published}, updated_at = NOW()
+          WHERE id = ${Number(req.params.id)}
+          RETURNING *
+        `);
+      } else if (typeof tome_title !== "undefined" || typeof tome_content !== "undefined") {
+        result = await db.execute(sql`
+          UPDATE vibe_decks SET tome_title = ${tome_title || null}, tome_content = ${tome_content || null}, updated_at = NOW()
           WHERE id = ${Number(req.params.id)}
           RETURNING *
         `);
@@ -6260,6 +6266,7 @@ export async function registerDonationRoutes(app: Express) {
       return res.status(401).json({ error: "Not authenticated" });
     }
     try {
+      const userId = req.session.userId;
       const curriculumsResult = await db.execute(sql`
         SELECT * FROM curriculums WHERE is_published = true ORDER BY order_index, id
       `);
@@ -6278,14 +6285,38 @@ export async function registerDonationRoutes(app: Express) {
         WHERE d.is_published = true AND c.is_published = true
         ORDER BY vc.order_index, vc.id
       `);
+      const absorptionsResult = await db.execute(sql`
+        SELECT deck_id, absorbed_at FROM tome_absorptions WHERE user_id = ${userId}
+      `);
+      const absorbedDeckIds = new Set((absorptionsResult.rows as any[]).map(r => r.deck_id));
       const decks = (decksResult.rows as any[]).map(deck => ({
         ...deck,
         cards: (cardsResult.rows as any[]).filter(card => card.deck_id === deck.id),
+        tome_absorbed: absorbedDeckIds.has(deck.id),
       }));
       res.json({ curriculums: curriculumsResult.rows, decks });
     } catch (error) {
       console.error("Error fetching student vibe decks:", error);
       res.status(500).json({ error: "Failed to fetch vibe decks" });
+    }
+  });
+
+  app.post("/api/student/absorb-tome", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    try {
+      const { deckId } = req.body;
+      if (!deckId) return res.status(400).json({ error: "deckId is required" });
+      await db.execute(sql`
+        INSERT INTO tome_absorptions (user_id, deck_id, absorbed_at)
+        VALUES (${req.session.userId}, ${deckId}, NOW())
+        ON CONFLICT (user_id, deck_id) DO NOTHING
+      `);
+      res.json({ success: true, absorbed: true });
+    } catch (error) {
+      console.error("Error absorbing tome:", error);
+      res.status(500).json({ error: "Failed to absorb tome" });
     }
   });
 

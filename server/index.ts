@@ -200,6 +200,8 @@ async function bootstrapFast() {
       curriculum_id INTEGER NOT NULL REFERENCES curriculums(id) ON DELETE CASCADE,
       title VARCHAR(255) NOT NULL,
       description TEXT,
+      tome_title VARCHAR(255),
+      tome_content TEXT,
       order_index INTEGER NOT NULL DEFAULT 0,
       is_published BOOLEAN NOT NULL DEFAULT false,
       created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -215,6 +217,17 @@ async function bootstrapFast() {
       created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
       updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
     );
+    CREATE TABLE IF NOT EXISTS tome_absorptions (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL,
+      deck_id INTEGER NOT NULL REFERENCES vibe_decks(id) ON DELETE CASCADE,
+      absorbed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      UNIQUE(user_id, deck_id)
+    );
+  `);
+  await dbPool.query(`
+    ALTER TABLE vibe_decks ADD COLUMN IF NOT EXISTS tome_title VARCHAR(255);
+    ALTER TABLE vibe_decks ADD COLUMN IF NOT EXISTS tome_content TEXT;
   `);
   console.log("[Migration] Curriculum tables verified/created on Supabase");
 

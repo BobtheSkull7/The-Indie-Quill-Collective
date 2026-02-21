@@ -13,6 +13,7 @@ import {
   Check,
   X,
   Loader2,
+  ScrollText,
 } from "lucide-react";
 
 interface VibeCardData {
@@ -29,6 +30,8 @@ interface VibeDeckData {
   curriculum_id: number;
   title: string;
   description: string | null;
+  tome_title: string | null;
+  tome_content: string | null;
   order_index: number;
   is_published: boolean;
   card_count: number;
@@ -56,6 +59,8 @@ export default function VibeDeckCurriculum() {
   const [editCurrForm, setEditCurrForm] = useState({ title: "", description: "" });
   const [editingDeck, setEditingDeck] = useState<number | null>(null);
   const [editDeckForm, setEditDeckForm] = useState({ title: "", description: "" });
+  const [editingTome, setEditingTome] = useState<number | null>(null);
+  const [tomeForm, setTomeForm] = useState({ title: "", content: "" });
   const [saving, setSaving] = useState(false);
 
   const [addingCurriculum, setAddingCurriculum] = useState(false);
@@ -371,6 +376,31 @@ export default function VibeDeckCurriculum() {
     }
   };
 
+  const startEditTome = (deck: VibeDeckData) => {
+    setEditingTome(deck.id);
+    setTomeForm({ title: deck.tome_title || "", content: deck.tome_content || "" });
+  };
+
+  const handleSaveTome = async (deckId: number, curriculumId: number) => {
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/admin/decks/${deckId}`, {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tome_title: tomeForm.title, tome_content: tomeForm.content }),
+      });
+      if (res.ok) {
+        await loadDecks(curriculumId);
+        setEditingTome(null);
+      }
+    } catch (err) {
+      console.error("Error saving tome:", err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -576,6 +606,41 @@ export default function VibeDeckCurriculum() {
 
                             {isDeckExpanded && (
                               <div className="border-t border-gray-100 bg-slate-50/50">
+                                <div className="mx-4 mt-3 mb-2 p-3 bg-amber-50 rounded-lg border border-amber-200">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <div className="flex items-center gap-2">
+                                      <ScrollText className="w-4 h-4 text-amber-600" />
+                                      <h5 className="text-sm font-semibold text-amber-800">Tome of Wisdom</h5>
+                                    </div>
+                                    {editingTome !== deck.id && (
+                                      <button onClick={() => startEditTome(deck)} className="flex items-center gap-1 px-2 py-1 text-xs text-amber-700 hover:text-amber-900 hover:bg-amber-100 rounded transition-colors">
+                                        <Edit2 className="w-3 h-3" />
+                                        {deck.tome_title ? "Edit" : "Write Tome"}
+                                      </button>
+                                    )}
+                                  </div>
+                                  {editingTome === deck.id ? (
+                                    <div className="space-y-2">
+                                      <input type="text" value={tomeForm.title} onChange={(e) => setTomeForm({ ...tomeForm, title: e.target.value })} placeholder="Tome title (e.g., Scroll of the First Word)" className="w-full px-3 py-2 border border-amber-300 rounded-lg text-sm focus:outline-none focus:border-amber-500 bg-white" />
+                                      <textarea value={tomeForm.content} onChange={(e) => setTomeForm({ ...tomeForm, content: e.target.value })} placeholder="Write your wisdom here... (supports plain text)" rows={6} className="w-full px-3 py-2 border border-amber-300 rounded-lg text-sm focus:outline-none focus:border-amber-500 bg-white resize-y" />
+                                      <div className="flex justify-end gap-2">
+                                        <button onClick={() => { setEditingTome(null); setTomeForm({ title: "", content: "" }); }} className="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-xs transition-colors">Cancel</button>
+                                        <button onClick={() => handleSaveTome(deck.id, curriculum.id)} disabled={saving} className="flex items-center gap-1 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white rounded-lg text-xs font-medium transition-colors">
+                                          {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                                          Save Tome
+                                        </button>
+                                      </div>
+                                    </div>
+                                  ) : deck.tome_title ? (
+                                    <div>
+                                      <p className="text-sm font-medium text-amber-900">{deck.tome_title}</p>
+                                      <p className="text-xs text-amber-700 mt-1 line-clamp-2">{deck.tome_content || "No content yet"}</p>
+                                    </div>
+                                  ) : (
+                                    <p className="text-xs text-amber-600 italic">No tome written yet. Students must absorb the tome before accessing cards.</p>
+                                  )}
+                                </div>
+
                                 <div className="px-4 py-2 flex justify-end">
                                   <button
                                     onClick={() => { setAddingCardFor(addingCardFor === deck.id ? null : deck.id); setNewCardTask(""); setNewCardQuals(""); setNewCardXp(100); }}
