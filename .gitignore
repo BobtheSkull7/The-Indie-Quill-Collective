@@ -134,3 +134,15 @@ uploads/
 
 # Replit debugger
 .breakpoints
+
+# Expo / React Native
+apps/mobile/.expo/
+apps/mobile/node_modules/
+apps/mobile/dist/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+web-build/

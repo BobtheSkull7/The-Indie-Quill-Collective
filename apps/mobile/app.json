@@ -1,0 +1,47 @@
+{
+  "expo": {
+    "name": "VibeScribe",
+    "slug": "vibescribe",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "scheme": "vibescribe",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0D1B2A"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.indiequill.vibescribe",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "VibeScribe needs access to your microphone to record your voice and transcribe your stories."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0D1B2A"
+      },
+      "package": "com.indiequill.vibescribe",
+      "permissions": [
+        "RECORD_AUDIO"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-av",
+        {
+          "microphonePermission": "VibeScribe needs your microphone to record your voice."
+        }
+      ],
+      "expo-asset",
+      "expo-font"
+    ]
+  }
+}

@@ -6412,6 +6412,56 @@ export async function registerDonationRoutes(app: Express) {
     }
   });
 
+  app.post("/api/integration/vibescribe/validate", async (req: Request, res: Response) => {
+    try {
+      const apiKey = req.headers["x-vibescribe-key"] as string;
+      if (!apiKey || apiKey !== process.env.VIBESCRIBE_API_KEY) {
+        return res.status(401).json({ error: "Invalid API key" });
+      }
+      const { vibeScribeId } = req.body;
+      if (!vibeScribeId) {
+        return res.status(400).json({ valid: false, error: "vibeScribeId required" });
+      }
+      const userResult = await db.execute(sql`
+        SELECT id, first_name as "firstName" FROM public.users WHERE vibe_scribe_id = ${vibeScribeId}
+      `);
+      res.json({ valid: userResult.rows.length > 0 });
+    } catch (error) {
+      console.error("VibeScribe validate error:", error);
+      res.status(500).json({ valid: false, error: "Server error" });
+    }
+  });
+
+  app.get("/api/integration/vibescribe/history", async (req: Request, res: Response) => {
+    try {
+      const apiKey = req.headers["x-vibescribe-key"] as string;
+      if (!apiKey || apiKey !== process.env.VIBESCRIBE_API_KEY) {
+        return res.status(401).json({ error: "Invalid API key" });
+      }
+      const vibeScribeId = req.query.vibeScribeId as string;
+      if (!vibeScribeId) {
+        return res.status(400).json({ error: "vibeScribeId query param required" });
+      }
+      const userResult = await db.execute(sql`
+        SELECT id FROM public.users WHERE vibe_scribe_id = ${vibeScribeId}
+      `);
+      if (userResult.rows.length === 0) {
+        return res.status(404).json({ error: "No user found with that VibeScribe ID" });
+      }
+      const userId = (userResult.rows[0] as any).id;
+      const result = await db.execute(sql`
+        SELECT * FROM vibescribe_transcripts
+        WHERE user_id = ${String(userId)}
+        ORDER BY created_at DESC
+        LIMIT 100
+      `);
+      res.json({ transcripts: result.rows });
+    } catch (error) {
+      console.error("VibeScribe history error:", error);
+      res.status(500).json({ error: "Failed to fetch history" });
+    }
+  });
+
   app.get("/api/student/vibescribe-transcripts", async (req: Request, res: Response) => {
     if (!req.session.userId) {
       return res.status(401).json({ error: "Not authenticated" });
@@ -7624,6 +7674,38 @@ export async function registerDonationRoutes(app: Express) {
       });
     } catch (error) {
       console.error("Error verifying VibeScribe ID:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  app.get("/api/vibe/history", async (req: Request, res: Response) => {
+    try {
+      const vibeScribeId = req.query.vibeScribeId as string;
+      if (!vibeScribeId) {
+        return res.status(400).json({ message: "vibeScribeId query param required" });
+      }
+      const userResult = await db.execute(sql`
+        SELECT id FROM public.users WHERE vibe_scribe_id = ${vibeScribeId}
+      `);
+      if (userResult.rows.length === 0) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      const userId = (userResult.rows[0] as any).id;
+      const drafts = await db.execute(sql`
+        SELECT id, title, content, word_count, created_at FROM drafting_documents
+        WHERE user_id = ${String(userId)}
+        ORDER BY created_at DESC
+        LIMIT 50
+      `);
+      const transcripts = drafts.rows.map((d: any) => ({
+        id: d.id,
+        content: d.content || d.title || '',
+        source_type: 'voice',
+        created_at: d.created_at,
+      }));
+      res.json({ transcripts });
+    } catch (error) {
+      console.error("Error fetching vibe history:", error);
       res.status(500).json({ message: "Server error" });
     }
   });
