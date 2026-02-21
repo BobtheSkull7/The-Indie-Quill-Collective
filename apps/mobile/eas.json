@@ -28,5 +28,13 @@
         "NODE_ENV": "production"
       }
     }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "ascAppId": "6758448845",
+        "appleTeamId": "JD7969WZCA"
+      }
+    }
   }
 }
