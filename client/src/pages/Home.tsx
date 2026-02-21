@@ -407,9 +407,12 @@ export default function Home() {
                 <p className="text-xs text-red-400">501(c)(3) Non-Profit Organization</p>
               </div>
             </div>
-            <p className="text-xs">
-              &copy; {new Date().getFullYear()} The Indie Quill Collective. All rights reserved.
-            </p>
+            <div className="flex items-center gap-4">
+              <a href="/privacy" className="text-xs text-slate-400 hover:text-teal-400 transition-colors">Privacy Policy</a>
+              <p className="text-xs">
+                &copy; {new Date().getFullYear()} The Indie Quill Collective. All rights reserved.
+              </p>
+            </div>
           </div>
         </div>
       </footer>

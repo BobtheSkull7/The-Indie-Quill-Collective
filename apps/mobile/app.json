@@ -18,7 +18,7 @@
     ],
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.indiequill.vibescribe",
+      "bundleIdentifier": "com.theindiequill.vibescribe",
       "infoPlist": {
         "NSMicrophoneUsageDescription": "VibeScribe needs access to your microphone to record your voice and transcribe your stories.",
         "ITSAppUsesNonExemptEncryption": false

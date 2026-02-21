@@ -9,6 +9,7 @@ import {
   Alert,
   ScrollView,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
@@ -38,6 +39,8 @@ export default function RecorderScreen() {
   const [lastAudioUri, setLastAudioUri] = useState<string | null>(null);
   const [hasMicPermission, setHasMicPermission] = useState(false);
   const [statusMessage, setStatusMessage] = useState('Tap the button to start recording');
+  const [hasAIConsent, setHasAIConsent] = useState(false);
+  const [showConsentModal, setShowConsentModal] = useState(false);
 
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const glowAnim = useRef(new Animated.Value(0)).current;
@@ -47,6 +50,7 @@ export default function RecorderScreen() {
   useEffect(() => {
     loadScribeId();
     initPermissions();
+    loadConsentStatus();
     Animated.spring(scaleAnim, {
       toValue: 1,
       friction: 5,
@@ -70,6 +74,17 @@ export default function RecorderScreen() {
       return;
     }
     setScribeId(id);
+  };
+
+  const loadConsentStatus = async () => {
+    const consent = await SecureStore.getItemAsync('ai_consent');
+    setHasAIConsent(consent === 'true');
+  };
+
+  const handleConsentAccept = async () => {
+    await SecureStore.setItemAsync('ai_consent', 'true');
+    setHasAIConsent(true);
+    setShowConsentModal(false);
   };
 
   const initPermissions = async () => {
@@ -108,6 +123,11 @@ export default function RecorderScreen() {
   };
 
   const handleRecordPress = async () => {
+    if (!hasAIConsent) {
+      setShowConsentModal(true);
+      return;
+    }
+
     if (!hasMicPermission) {
       const granted = await requestMicrophonePermission();
       if (!granted) return;
@@ -322,6 +342,47 @@ export default function RecorderScreen() {
           </Text>
         </View>
       )}
+
+      <Modal
+        visible={showConsentModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowConsentModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Ionicons name="shield-checkmark" size={48} color={Colors.primary} style={{ alignSelf: 'center', marginBottom: 12 }} />
+            <Text style={styles.modalTitle}>AI Transcription & Audio Consent</Text>
+            <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
+              <Text style={styles.modalText}>
+                To transform your voice into Scribe actions, VibeScribe records your audio and sends it to OpenAI for transcription.
+              </Text>
+              <View style={styles.modalBullets}>
+                <Text style={styles.modalBullet}>{'\u2022'} Your audio is processed securely.</Text>
+                <Text style={styles.modalBullet}>{'\u2022'} No audio is used for AI model training.</Text>
+                <Text style={styles.modalBullet}>{'\u2022'} You can revoke this permission at any time in Settings.</Text>
+              </View>
+              <Text style={styles.modalText}>
+                Do you consent to sending your audio data to OpenAI for processing?
+              </Text>
+            </ScrollView>
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={styles.modalDeclineBtn}
+                onPress={() => setShowConsentModal(false)}
+              >
+                <Text style={styles.modalDeclineText}>Not Now</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modalConsentBtn}
+                onPress={handleConsentAccept}
+              >
+                <Text style={styles.modalConsentText}>I Consent</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -483,5 +544,75 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
     textAlign: 'center',
     lineHeight: 24,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: Spacing.lg,
+  },
+  modalContent: {
+    backgroundColor: Colors.surface,
+    borderRadius: 20,
+    padding: Spacing.xl,
+    width: '100%',
+    maxWidth: 360,
+    maxHeight: '80%',
+  },
+  modalTitle: {
+    fontSize: Fonts.sizes.lg,
+    fontWeight: Fonts.weights.bold,
+    color: Colors.text,
+    textAlign: 'center',
+    marginBottom: Spacing.lg,
+  },
+  modalScroll: {
+    maxHeight: 250,
+    marginBottom: Spacing.lg,
+  },
+  modalText: {
+    fontSize: Fonts.sizes.md,
+    color: Colors.textSecondary,
+    lineHeight: 24,
+    marginBottom: Spacing.md,
+  },
+  modalBullets: {
+    marginBottom: Spacing.md,
+    gap: Spacing.sm,
+  },
+  modalBullet: {
+    fontSize: Fonts.sizes.md,
+    color: Colors.text,
+    lineHeight: 24,
+    paddingLeft: Spacing.sm,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+  },
+  modalDeclineBtn: {
+    flex: 1,
+    paddingVertical: Spacing.md,
+    borderRadius: 12,
+    backgroundColor: Colors.surfaceLight,
+    alignItems: 'center',
+  },
+  modalDeclineText: {
+    fontSize: Fonts.sizes.md,
+    fontWeight: Fonts.weights.semibold,
+    color: Colors.textSecondary,
+  },
+  modalConsentBtn: {
+    flex: 1,
+    paddingVertical: Spacing.md,
+    borderRadius: 12,
+    backgroundColor: Colors.primary,
+    alignItems: 'center',
+  },
+  modalConsentText: {
+    fontSize: Fonts.sizes.md,
+    fontWeight: Fonts.weights.semibold,
+    color: Colors.text,
   },
 });

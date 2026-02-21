@@ -27,6 +27,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Initiation from "./pages/Initiation";
 import Workspace from "./pages/Workspace";
+import Privacy from "./pages/Privacy";
 import Navbar from "./components/Navbar";
 
 interface User {
@@ -84,6 +85,7 @@ function App() {
         <Switch>
           <Route path="/" component={Home} />
           <Route path="/about" component={AboutUs} />
+          <Route path="/privacy" component={Privacy} />
           <Route path="/donations" component={Donations} />
           <Route path="/donations/success" component={DonationSuccess} />
           <Route path="/apply" component={Apply} />
