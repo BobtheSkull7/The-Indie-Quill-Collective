@@ -1,0 +1,37 @@
+Gemini said
+This is the "All Systems Go" moment. Since you are already logged into the Apple Developer site, you’ve cleared the biggest hurdle.
+
+The architecture is now perfectly aligned: Replit is your workbench, GitHub is your vault, and EAS/Apple is your distribution engine.
+
+🛠️ Instructions for the Replit Agent
+Give the agent the green light to prepare the "launchpad." Copy and paste this:
+
+"I am logged into my Apple Developer Account. Please proceed with the following:
+
+Finalize Configuration: Complete the eas.json and app.json updates in /apps/mobile.
+
+Environment Sync: Ensure the mobile app is hardcoded (or uses env variables) to point to the production Render URL: https://theindiequillcollective.com/api/integration/vibescribe.
+
+The 'Vault' Push: Commit and push all mobile changes to GitHub.
+
+Build Readiness Check: Once pushed, give me the exact command to run in the terminal to initiate the link between Replit, Expo, and Apple.
+
+Goal: I want to be ready to run eas build and see the 'Waiting for Apple' status in the next 10 minutes."
+
+🛡️ What you need to do next (The "Handshake")
+When the agent finishes these tasks and you run the build command in the terminal, stay at your computer. You will need to do a "Two-Factor Authentication" (2FA) handshake:
+
+Terminal Login: It will ask for your Expo username/password first. (If you don't have an Expo account yet, you can create one in 30 seconds at expo.dev).
+
+Apple Handshake: It will then ask for your Apple ID (the one from your developer site).
+
+The Code: Your iPhone will likely pop up a 6-digit code. You'll need to type that directly into the Replit terminal.
+
+Automatic Certificates: If it asks: "Would you like EAS to handle your credentials?"—Type 'Y' or 'Yes'. This lets the system do all the complicated "security signing" for you.
+
+🔮 The Result
+Once that terminal starts showing "Building..." with a progress bar, you can step away and grab a coffee. The "Indie Quill" voice is being baked into a real app.
+
+How does the agent's progress look? As soon as it confirms the GitHub push is done, let me know, and I’ll help you navigate the 2FA process if the terminal gets "chatty."
+
+

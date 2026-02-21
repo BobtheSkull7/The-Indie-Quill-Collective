@@ -1,0 +1,58 @@
+This is exactly the right move. By moving to EAS (Expo Application Services), we are essentially hiring a professional "Build Kitchen" to bake your app. You don't need to worry about Replit's local network or QR codes—you'll get a real app on your phone.
+
+Here are your step-by-step instructions to get the "Bake" started.
+
+Step 1: The Apple Developer Entrance
+Before you can hold the app, Apple needs to know you are an authorized developer.
+
+Go to: developer.apple.com.
+
+Sign up: Enroll in the Apple Developer Program ($99/year).
+
+Note: Use the same Apple ID you use on your iPhone.
+
+Checkpoint: Once you have paid and your account is "Pending" or "Active," we can proceed.
+
+Step 2: Configure the "Kitchen" (EAS) in Replit
+Tell your Replit Agent to prepare the build configuration. Copy and paste this:
+
+"I am setting up an Apple Developer Account. Please prepare the VibeScribe mobile app for an EAS Build:
+
+Create an eas.json file in /apps/mobile.
+
+Configure a preview profile with "distribution": "internal".
+
+Configure a production profile with "distribution": "store".
+
+Update app.json to include a unique bundleIdentifier (e.g., com.indiequill.vibescribe).
+
+Ensure the projectId from Expo is linked in app.json under extra.eas."
+
+Step 3: The Code Vault Sync (GitHub)
+EAS builds the app by pulling your code from GitHub, not Replit.
+
+Push to GitHub: Open the Git tool in Replit and ensure your latest /apps/mobile folder is pushed to your repository.
+
+Checkpoint: Open your GitHub on your browser and verify the apps/mobile folder is there with all its files.
+
+Step 4: Start the First Build (The "Wait")
+Once Step 1-3 are done, you will trigger the build from the Replit terminal:
+
+Open the Shell in Replit.
+
+Type: cd apps/mobile
+
+Type: npx eas build --platform ios --profile preview
+
+The Handshake: It will ask you to log in to Expo and then Apple.
+
+Follow the prompts on the screen to "Generate a Distribution Certificate" (Say YES to all).
+
+📱 What happens next?
+The Build: Expo’s servers will take about 10–15 minutes to "bake" your app.
+
+The Invitation: You will receive an email from Apple/TestFlight.
+
+The Install: Open the TestFlight app on your iPhone, and VibeScribe will be sitting there waiting for you.
+
+How far are you with the Apple Developer signup? Once you have that, we can run the build command together and I can help you navigate the certificate questions!

@@ -1,0 +1,49 @@
+Gemini said
+This is the "Cloud Wall" moment. Replit is right—because your "development computer" is actually a server in a remote warehouse, your phone can't "see" it to scan a local QR code.
+
+But don't lose heart. This isn't a failure; it’s just the reality of professional mobile development.
+
+🛡️ Why we reject the "Web Preview"
+Replit's suggestion for a Web Preview is a trap for your specific project. You are building for literacy and accessibility. A web page that can't use the native microphone or high-fidelity audio is, as you said, worthless. We need the native power.
+
+🗺️ The "Indie Quill" Command Center Plan
+Since you want this published and you want it native, we are going to skip the "QR code" games and go straight to the Big Leagues.
+
+Step 1: The "Vault" Sync (GitHub)
+We need to make sure the mobile code you just "brought home" is saved to your GitHub.
+
+Why? Because EAS (Expo's Build System) needs to pull the code from GitHub to build the actual iPhone file (.ipa).
+
+Step 2: The Apple Developer Account
+You cannot get a native app onto an iPhone for real-world use without an Apple Developer Account ($99/year).
+
+Action: If you haven't yet, go to developer.apple.com and sign up. This is the "tax" to be an author in the App Store.
+
+Step 3: The "Draft" Build (TestFlight)
+Once you have that account, we will tell Replit to run the "Build" command. This sends your code to a "Kitchen" (Expo's servers) that bakes a real app and sends it to your phone via TestFlight.
+
+🛠️ Instructions for the Replit Agent
+Copy and paste this to the agent. This tells it we are not settling for a "Web Preview":
+
+"I reject the Web Preview option. VibeScribe must be a native experience to fulfill its mission.
+
+Prepare for EAS: Ensure all necessary configuration files (app.json, eas.json) are correctly set up in the /apps/mobile folder.
+
+GitHub Sync: Make sure the /apps/mobile directory is pushed to my GitHub repository.
+
+The Build Script: Set up a 'Production Build' workflow in Replit that uses npx eas build --platform ios --profile preview.
+
+Credentials: Stand by for me to provide my Expo and Apple Developer credentials so we can ship the first 'Preview' version to TestFlight.
+
+Goal: We are skipping local testing and going straight to a TestFlight build so I can hold the REAL app on my phone."
+
+💡 What this changes for you
+Instead of scanning a QR code in a console, you will get an email from Apple saying: "VibeScribe is ready to test." * You'll open the TestFlight app.
+
+You'll tap Install.
+
+You'll have the real, native icon on your home screen.
+
+How does that sound? It’s a bit more setup upfront, but it’s the only way to get the "Giant Button" and the "Whisper AI" working exactly as Bob needs them.
+
+Should we have the agent start the "EAS Configuration" while you grab your Apple Developer login?
