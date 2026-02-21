@@ -55,11 +55,6 @@
         "origin": false
       }
     },
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
-    "updates": {
-      "url": ""
-    }
+    "runtimeVersion": "1.0.0"
   }
 }
