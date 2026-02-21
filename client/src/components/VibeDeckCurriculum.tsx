@@ -52,6 +52,10 @@ export default function VibeDeckCurriculum() {
   const [expandedDecks, setExpandedDecks] = useState<Set<number>>(new Set());
   const [editingCard, setEditingCard] = useState<number | null>(null);
   const [editForm, setEditForm] = useState({ task: "", qualifications: "", xpValue: 0 });
+  const [editingCurriculum, setEditingCurriculum] = useState<number | null>(null);
+  const [editCurrForm, setEditCurrForm] = useState({ title: "", description: "" });
+  const [editingDeck, setEditingDeck] = useState<number | null>(null);
+  const [editDeckForm, setEditDeckForm] = useState({ title: "", description: "" });
   const [saving, setSaving] = useState(false);
 
   const [addingCurriculum, setAddingCurriculum] = useState(false);
@@ -227,6 +231,8 @@ export default function VibeDeckCurriculum() {
   };
 
   const startEditCard = (card: VibeCardData) => {
+    setEditingCurriculum(null);
+    setEditingDeck(null);
     setEditingCard(card.id);
     setEditForm({ task: card.task, qualifications: card.qualifications || "", xpValue: card.xp_value });
   };
@@ -309,6 +315,62 @@ export default function VibeDeckCurriculum() {
     }
   };
 
+  const startEditCurriculum = (curriculum: CurriculumData) => {
+    setEditingDeck(null);
+    setEditingCard(null);
+    setEditingCurriculum(curriculum.id);
+    setEditCurrForm({ title: curriculum.title, description: curriculum.description || "" });
+  };
+
+  const handleSaveCurriculum = async (id: number) => {
+    if (!editCurrForm.title.trim()) return;
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/admin/curriculums/${id}`, {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: editCurrForm.title, description: editCurrForm.description }),
+      });
+      if (res.ok) {
+        await loadCurriculums();
+        setEditingCurriculum(null);
+      }
+    } catch (err) {
+      console.error("Error updating curriculum:", err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const startEditDeck = (deck: VibeDeckData) => {
+    setEditingCurriculum(null);
+    setEditingCard(null);
+    setEditingDeck(deck.id);
+    setEditDeckForm({ title: deck.title, description: deck.description || "" });
+  };
+
+  const handleSaveDeck = async (deckId: number, curriculumId: number) => {
+    if (!editDeckForm.title.trim()) return;
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/admin/decks/${deckId}`, {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: editDeckForm.title, description: editDeckForm.description }),
+      });
+      if (res.ok) {
+        await loadDecks(curriculumId);
+        setEditingDeck(null);
+      }
+    } catch (err) {
+      console.error("Error updating deck:", err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -377,6 +439,21 @@ export default function VibeDeckCurriculum() {
             const isCurrExpanded = expandedCurricula.has(curriculum.id);
             return (
               <div key={curriculum.id} className="border border-gray-200 rounded-lg overflow-hidden">
+                {editingCurriculum === curriculum.id ? (
+                <div className="px-4 py-3 bg-teal-50 border-b border-teal-200">
+                  <div className="space-y-2">
+                    <input type="text" value={editCurrForm.title} onChange={(e) => setEditCurrForm({ ...editCurrForm, title: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-teal-500" placeholder="Curriculum title" autoFocus />
+                    <input type="text" value={editCurrForm.description} onChange={(e) => setEditCurrForm({ ...editCurrForm, description: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-teal-500" placeholder="Description (optional)" />
+                    <div className="flex justify-end gap-2">
+                      <button onClick={() => { setEditingCurriculum(null); setEditCurrForm({ title: "", description: "" }); }} className="p-1.5 text-gray-500 hover:text-gray-700 transition-colors"><X className="w-4 h-4" /></button>
+                      <button onClick={() => handleSaveCurriculum(curriculum.id)} disabled={saving || !editCurrForm.title.trim()} className="flex items-center gap-1 px-3 py-1.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white rounded-lg text-xs font-medium transition-colors">
+                        {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                        Save
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
                 <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-slate-50 to-white hover:from-teal-50 hover:to-white transition-colors">
                   <GripVertical className="w-4 h-4 text-gray-300 flex-shrink-0" />
                   <button onClick={() => toggleCurriculum(curriculum.id)} className="flex items-center gap-3 flex-1 text-left">
@@ -398,14 +475,20 @@ export default function VibeDeckCurriculum() {
                   </span>
                   <button
                     onClick={(e) => { e.stopPropagation(); handleTogglePublish("curriculum", curriculum.id, curriculum.is_published); }}
-                    className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${curriculum.is_published ? "bg-green-100 text-green-700 hover:bg-green-200" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors border ${curriculum.is_published ? "bg-green-100 text-green-700 border-green-300 hover:bg-green-200" : "bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100"}`}
+                    title={curriculum.is_published ? "Click to unpublish" : "Click to publish"}
                   >
-                    {curriculum.is_published ? "Published" : "Draft"}
+                    <div className={`w-2 h-2 rounded-full ${curriculum.is_published ? "bg-green-500" : "bg-amber-500"}`} />
+                    {curriculum.is_published ? "Live" : "Draft"}
+                  </button>
+                  <button onClick={() => startEditCurriculum(curriculum)} className="p-1.5 text-gray-400 hover:text-blue-500 transition-colors" title="Edit curriculum">
+                    <Edit2 className="w-4 h-4" />
                   </button>
                   <button onClick={() => handleDeleteCurriculum(curriculum.id)} className="p-1.5 text-gray-400 hover:text-red-500 transition-colors">
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
+              )}
 
                 {isCurrExpanded && (
                   <div className="border-t border-gray-100 bg-gray-50/50">
@@ -439,6 +522,21 @@ export default function VibeDeckCurriculum() {
                         const isDeckExpanded = expandedDecks.has(deck.id);
                         return (
                           <div key={deck.id} className="border border-gray-200 rounded-lg overflow-hidden bg-white">
+                            {editingDeck === deck.id ? (
+                              <div className="px-4 py-2.5 bg-blue-50 border-b border-blue-200">
+                                <div className="space-y-2">
+                                  <input type="text" value={editDeckForm.title} onChange={(e) => setEditDeckForm({ ...editDeckForm, title: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500" placeholder="Deck title" autoFocus />
+                                  <input type="text" value={editDeckForm.description} onChange={(e) => setEditDeckForm({ ...editDeckForm, description: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500" placeholder="Description (optional)" />
+                                  <div className="flex justify-end gap-2">
+                                    <button onClick={() => { setEditingDeck(null); setEditDeckForm({ title: "", description: "" }); }} className="p-1.5 text-gray-500 hover:text-gray-700 transition-colors"><X className="w-4 h-4" /></button>
+                                    <button onClick={() => handleSaveDeck(deck.id, curriculum.id)} disabled={saving || !editDeckForm.title.trim()} className="flex items-center gap-1 px-3 py-1.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white rounded-lg text-xs font-medium transition-colors">
+                                      {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                                      Save
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            ) : (
                             <div className="flex items-center gap-3 px-4 py-2.5 hover:bg-blue-50/50 transition-colors">
                               <div className="w-4" />
                               <GripVertical className="w-4 h-4 text-gray-300 flex-shrink-0" />
@@ -461,14 +559,20 @@ export default function VibeDeckCurriculum() {
                               </span>
                               <button
                                 onClick={(e) => { e.stopPropagation(); handleTogglePublish("deck", deck.id, deck.is_published, curriculum.id); }}
-                                className={`px-2 py-0.5 rounded-full text-xs font-medium transition-colors ${deck.is_published ? "bg-green-100 text-green-700 hover:bg-green-200" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}
+                                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold transition-colors border ${deck.is_published ? "bg-green-100 text-green-700 border-green-300 hover:bg-green-200" : "bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100"}`}
+                                title={deck.is_published ? "Click to unpublish" : "Click to publish"}
                               >
-                                {deck.is_published ? "Published" : "Draft"}
+                                <div className={`w-1.5 h-1.5 rounded-full ${deck.is_published ? "bg-green-500" : "bg-amber-500"}`} />
+                                {deck.is_published ? "Live" : "Draft"}
+                              </button>
+                              <button onClick={() => startEditDeck(deck)} className="p-1 text-gray-400 hover:text-blue-500 transition-colors" title="Edit deck">
+                                <Edit2 className="w-3.5 h-3.5" />
                               </button>
                               <button onClick={() => handleDeleteDeck(deck.id, curriculum.id)} className="p-1 text-gray-400 hover:text-red-500 transition-colors">
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             </div>
+                            )}
 
                             {isDeckExpanded && (
                               <div className="border-t border-gray-100 bg-slate-50/50">
