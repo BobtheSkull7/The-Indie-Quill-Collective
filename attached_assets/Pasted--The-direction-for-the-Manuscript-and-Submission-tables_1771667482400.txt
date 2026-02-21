@@ -1,0 +1,33 @@
+"The direction for the Manuscript and Submission tables is perfect. Let’s get specific on the Character Dashboard logic to ensure it’s not a black box anymore:
+
+The Handshake: On the Student Dashboard, the CharacterCard component must fetch data from the /api/student/game-character endpoint.
+
+Auto-Provisioning: If that API returns a 404 or 'No character found,' the backend should automatically trigger a POST to the GAME_ENGINE_URL to create a new character for that user_id, then save the new game_character_id to the student_profiles table in Supabase.
+
+The Data Mapping: Map the Game Engine response to the UI as follows:
+
+Level & Title: Display the character's current Level and their chosen Title (e.g., 'Level 1 Novice').
+
+The XP Bar: Calculate the percentage: (current_xp / xp_to_next_level) * 100.
+
+The Paper Doll: Create a grid of 6 slots. If the Game Engine returns an item for a slot (e.g., 'Quill'), show the icon. If not, show an empty 'locked' socket icon.
+
+The UI Vibe: Keep it in the 'Retro RPG' style—dark cards, gold accents, and high-contrast progress bars.
+
+Checkpoint: Once I can log in as Bob and see a 'Level 1' character with 0 XP and an empty inventory (instead of an error), we are ready to link the Manuscript submissions to XP gains."
+
+📝 A Strategic Note on the "Manuscript"
+Since you are a writer, you know that writing happens in "projects."
+
+Ensure the agent makes the manuscripts table include a vibe_card_id and a user_id.
+
+This allows Bob to have multiple drafts for different cards.
+
+Eventually, we can add a "Master Manuscript" view where all his small Vibe Card tasks are stitched together into one long story.
+
+💡 One "Pro" Idea for the Agent:
+Ask the agent to:
+
+"Add a 'Word Count' goal to the Manuscript editor based on the Vibe Card's requirements. If the card says 'Write 500 words,' show a progress ring that fills up as Bob types."
+
+How does that sound for the 'Forge' experience? Once the agent finishes this, Bob will have a place to write, a way to submit, and a dashboard to see his stats climb!
