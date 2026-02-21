@@ -280,8 +280,22 @@ async function bootstrapFast() {
       updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
     );
     CREATE INDEX IF NOT EXISTS idx_master_manuscripts_user ON master_manuscripts(user_id);
+
+    CREATE TABLE IF NOT EXISTS game_characters (
+      id SERIAL PRIMARY KEY,
+      user_id VARCHAR(255) NOT NULL UNIQUE,
+      xp INTEGER NOT NULL DEFAULT 0,
+      level INTEGER NOT NULL DEFAULT 1,
+      active_title VARCHAR(255) DEFAULT 'the Novice',
+      unlocked_titles JSONB NOT NULL DEFAULT '["the Novice"]',
+      equipped_items JSONB NOT NULL DEFAULT '{"main_hand": null, "off_hand": null, "head": null, "body": null, "hands": null, "feet": null}',
+      unlocked_items JSONB NOT NULL DEFAULT '[]',
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    );
+    CREATE INDEX IF NOT EXISTS idx_game_characters_user ON game_characters(user_id);
   `);
-  console.log("[Migration] Curriculum + Workspace tables verified/created on Supabase");
+  console.log("[Migration] Curriculum + Workspace + Game tables verified/created on Supabase");
 
   const { registerRoutes } = await import("./routes");
   registerRoutes(app);

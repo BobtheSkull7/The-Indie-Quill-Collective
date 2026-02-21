@@ -347,7 +347,7 @@ export async function registerRoutes(app: Express) {
 
     // Use raw SQL to bypass Drizzle ORM column issue
     const result = await db.execute(sql`
-      SELECT id, email, first_name as "firstName", last_name as "lastName", role, secondary_role as "secondaryRole", vibescribe_id as "vibeScribeId"
+      SELECT id, email, first_name as "firstName", last_name as "lastName", role, secondary_role as "secondaryRole", vibe_scribe_id as "vibeScribeId"
       FROM public.users WHERE id = ${req.session.userId}
     `);
     const user = result.rows[0] as any;
