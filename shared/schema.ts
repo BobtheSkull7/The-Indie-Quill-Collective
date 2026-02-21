@@ -1153,4 +1153,41 @@ export const vibeCards = pgTable("vibe_cards", {
 export type VibeCard = typeof vibeCards.$inferSelect;
 export type InsertVibeCard = typeof vibeCards.$inferInsert;
 
+export const tomeAbsorptions = pgTable("tome_absorptions", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id", { length: 255 }).notNull(),
+  deckId: integer("deck_id").references(() => vibeDecks.id, { onDelete: "cascade" }).notNull(),
+  absorbedAt: timestamp("absorbed_at", { withTimezone: true }).defaultNow(),
+});
+
+export type TomeAbsorption = typeof tomeAbsorptions.$inferSelect;
+export type InsertTomeAbsorption = typeof tomeAbsorptions.$inferInsert;
+
+export const manuscripts = pgTable("manuscripts", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id", { length: 255 }).notNull(),
+  cardId: integer("card_id").references(() => vibeCards.id, { onDelete: "cascade" }).notNull(),
+  content: text("content").default("").notNull(),
+  wordCount: integer("word_count").default(0).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+});
+
+export type Manuscript = typeof manuscripts.$inferSelect;
+export type InsertManuscript = typeof manuscripts.$inferInsert;
+
+export const cardSubmissions = pgTable("card_submissions", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id", { length: 255 }).notNull(),
+  cardId: integer("card_id").references(() => vibeCards.id, { onDelete: "cascade" }).notNull(),
+  manuscriptId: integer("manuscript_id").references(() => manuscripts.id, { onDelete: "set null" }),
+  reflection: text("reflection").default("").notNull(),
+  xpEarned: integer("xp_earned").default(0).notNull(),
+  status: varchar("status", { length: 50 }).default("submitted").notNull(),
+  submittedAt: timestamp("submitted_at", { withTimezone: true }).defaultNow(),
+});
+
+export type CardSubmission = typeof cardSubmissions.$inferSelect;
+export type InsertCardSubmission = typeof cardSubmissions.$inferInsert;
+
 export * from "./models/chat";
