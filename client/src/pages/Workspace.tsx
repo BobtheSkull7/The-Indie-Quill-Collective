@@ -399,9 +399,10 @@ export default function Workspace() {
             Scribe's Sanctum
           </h1>
           {user?.vibeScribeId && (
-            <span className="font-display text-lg font-bold text-teal-600 ml-3">
-              {user.vibeScribeId}
-            </span>
+            <div className="ml-4 flex items-center gap-2 bg-teal-50 border border-teal-200 rounded-lg px-3 py-1">
+              <span className="text-xs font-medium text-teal-500 uppercase tracking-wide">Scribe ID</span>
+              <span className="text-sm font-mono font-semibold text-teal-700">{user.vibeScribeId}</span>
+            </div>
           )}
         </div>
 
