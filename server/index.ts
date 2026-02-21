@@ -217,9 +217,10 @@ async function bootstrapFast() {
       created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
       updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
     );
+    DROP TABLE IF EXISTS tome_absorptions;
     CREATE TABLE IF NOT EXISTS tome_absorptions (
       id SERIAL PRIMARY KEY,
-      user_id INTEGER NOT NULL,
+      user_id VARCHAR(255) NOT NULL,
       deck_id INTEGER NOT NULL REFERENCES vibe_decks(id) ON DELETE CASCADE,
       absorbed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
       UNIQUE(user_id, deck_id)
