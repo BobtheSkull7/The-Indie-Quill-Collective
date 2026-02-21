@@ -6343,8 +6343,8 @@ export async function registerDonationRoutes(app: Express) {
       const maxOrder = await db.execute(sql`SELECT COALESCE(MAX(order_index), 0) + 1 as next_order FROM vibe_cards WHERE deck_id = ${deckId}`);
       const nextOrder = (maxOrder.rows[0] as any).next_order;
       const result = await db.execute(sql`
-        INSERT INTO vibe_cards (deck_id, task, qualifications, xp_value, order_index, is_published, created_at, updated_at)
-        VALUES (${deckId}, ${task.trim()}, ${qualifications || null}, ${xpValue || 0}, ${nextOrder}, false, NOW(), NOW())
+        INSERT INTO vibe_cards (deck_id, task, qualifications, xp_value, order_index, created_at, updated_at)
+        VALUES (${deckId}, ${task.trim()}, ${qualifications || null}, ${xpValue || 0}, ${nextOrder}, NOW(), NOW())
         RETURNING *
       `);
       res.status(201).json(result.rows[0]);
