@@ -1,0 +1,114 @@
+
+My project
+
+Production
+
+The-Indie-Quill-Collective-frontend
+
+
+Search
+Ctrl+
+K
+
+New
+
+
+j
+Environment
+The-Indie-Quill-Collective-frontend
+Events
+Settings
+Monitor
+Logs
+Metrics
+Manage
+Environment
+Shell
+Scaling
+Previews
+Disk
+Jobs
+
+Changelog
+Invite a friend
+
+Contact support
+Render Status
+
+All logs
+Search
+Search
+
+Last hour
+
+
+
+GET /api/student/vibescribe-transcripts 304 in 6ms
+[GET]
+theindiequillcollective.com/api/student/vibescribe-transcripts clientIP="143.103.10.5" requestID="10c8cbd3-634a-4bc7" responseTimeMS=8 responseBytes=972 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+GET /api/student/vibescribe-transcripts 304 in 5ms
+[GET]
+theindiequillcollective.com/api/student/vibescribe-transcripts clientIP="143.103.10.5" requestID="8d79cfbc-4d5b-4504" responseTimeMS=10 responseBytes=972 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+GET /api/student/vibescribe-transcripts 304 in 5ms
+[Sync Worker] Running scheduled sync at 2026-02-21T19:35:00.006Z
+[GET]
+theindiequillcollective.com/api/student/vibescribe-transcripts clientIP="143.103.10.5" requestID="6652510c-bc84-4770" responseTimeMS=11 responseBytes=972 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+GET /api/student/vibescribe-transcripts 304 in 6ms
+[GET]
+theindiequillcollective.com/api/student/vibescribe-transcripts clientIP="143.103.10.5" requestID="22f4b3d3-78e5-4eeb" responseTimeMS=9 responseBytes=972 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+GET /api/student/vibescribe-transcripts 304 in 5ms
+[GET]
+theindiequillcollective.com/api/student/vibescribe-transcripts clientIP="143.103.10.5" requestID="34bcc07c-cdc0-4503" responseTimeMS=8 responseBytes=972 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+GET /api/student/vibescribe-transcripts 304 in 5ms
+[GET]
+theindiequillcollective.com/api/student/vibescribe-transcripts clientIP="143.103.10.5" requestID="fac410ce-9c1d-43a8" responseTimeMS=9 responseBytes=972 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+GET /api/student/vibescribe-transcripts 304 in 10ms
+[GET]
+theindiequillcollective.com/api/student/vibescribe-transcripts clientIP="143.103.10.5" requestID="75587faa-a053-4a7c" responseTimeMS=43 responseBytes=972 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+GET /api/student/vibescribe-transcripts 304 in 5ms
+[GET]
+theindiequillcollective.com/api/student/vibescribe-transcripts clientIP="143.103.10.5" requestID="ea57fd64-65d5-4a09" responseTimeMS=11 responseBytes=972 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+GET /api/student/vibescribe-transcripts 304 in 5ms
+GET /api/student/master-manuscript 304 in 10ms
+GET /api/student/workspace-cards 500 in 11ms
+}
+  routine: 'errorMissingColumn'
+  line: '3716',
+  file: 'parse_relation.c',
+  constraint: undefined,
+  dataType: undefined,
+  column: undefined,
+  table: undefined,
+  schema: undefined,
+  where: undefined,
+  internalQuery: undefined,
+  internalPosition: undefined,
+  position: '490',
+  hint: undefined,
+  detail: undefined,
+  code: '42703',
+  severity: 'ERROR',
+  length: 108,
+    at async <anonymous> (/opt/render/project/src/server/routes.ts:6584:22) {
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at /opt/render/project/src/node_modules/pg-pool/index.js:45:11
+Error fetching workspace cards: error: column m.card_id does not exist
+[GET]
+theindiequillcollective.com/api/student/master-manuscript clientIP="143.103.10.5" requestID="07b66f9f-3270-4acb" responseTimeMS=13 responseBytes=973 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+[GET]
+theindiequillcollective.com/api/student/workspace-cards clientIP="143.103.10.5" requestID="f0944e91-7f6d-418b" responseTimeMS=16 responseBytes=1102 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+[GET]
+theindiequillcollective.com/api/student/vibescribe-transcripts clientIP="143.103.10.5" requestID="5eb7045d-a61c-4180" responseTimeMS=9 responseBytes=972 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+[GET]
+theindiequillcollective.com/generated-icon.png clientIP="143.103.10.5" requestID="ad5c69b0-5b36-400f" responseTimeMS=5 responseBytes=1060 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+[GET]
+theindiequillcollective.com/api/student/game-character?_t=1771702435152 clientIP="143.103.10.5" requestID="5dae5275-8b12-4a30" responseTimeMS=40 responseBytes=1433 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+[GET]
+theindiequillcollective.com/generated-icon.png clientIP="143.103.10.5" requestID="30718d06-744d-4cb7" responseTimeMS=24 responseBytes=1060 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+[GET]
+theindiequillcollective.com/api/student/vibe-decks clientIP="143.103.10.5" requestID="40c72707-fdc1-45d8" responseTimeMS=47 responseBytes=974 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+[GET]
+theindiequillcollective.com/api/student/stats clientIP="143.103.10.5" requestID="534e462c-d332-4442" responseTimeMS=116 responseBytes=1102 userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+GET /api/student/vibe-decks 304 in 44ms
+GET /api/student/game-character 200 in 35ms
+GET /api/student/submissions 304 in 34ms
