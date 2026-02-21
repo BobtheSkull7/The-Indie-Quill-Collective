@@ -31,6 +31,10 @@ author = "agent"
 task = "workflow.run"
 args = "Start application"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "EAS Build (iOS Preview)"
+
 [[workflows.workflow]]
 name = "Start application"
 author = "agent"
@@ -42,6 +46,17 @@ waitForPort = 5000
 
 [workflows.workflow.metadata]
 outputType = "webview"
+
+[[workflows.workflow]]
+name = "EAS Build (iOS Preview)"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd apps/mobile && echo \"=== Step 1: Log into Expo ===\" && npx eas login && echo \"=== Step 2: Initialize project ===\" && npx eas init && echo \"=== Step 3: Building iOS Preview ===\" && npx eas build --platform ios --profile preview"
+
+[workflows.workflow.metadata]
+outputType = "console"
 
 [[ports]]
 localPort = 5000
