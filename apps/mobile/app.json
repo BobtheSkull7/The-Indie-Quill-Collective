@@ -9,7 +9,7 @@
     "scheme": "vibescribe",
     "owner": "mcjon",
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#0D1B2A"
     },
