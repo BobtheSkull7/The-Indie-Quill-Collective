@@ -167,7 +167,7 @@ export default function CharacterCard({ userId = 1, className = "", apiEndpoint 
   if (!character) return null;
 
   return (
-    <div className={`bg-[#1a1a2e] rounded-xl text-white relative ${className}`}>
+    <div className={`bg-[#1a1a2e] rounded-xl text-white relative overflow-hidden ${className}`}>
       {/* Ding/Level-Up Overlay */}
       {dingData && (
         <div
@@ -230,10 +230,16 @@ export default function CharacterCard({ userId = 1, className = "", apiEndpoint 
         }
       `}</style>
 
-      <div className="flex flex-col lg:flex-row gap-6 p-6">
+      <div className="flex flex-col gap-6 p-6">
         
-        {/* Left Panel - Character Sheet */}
-        <div className="lg:w-80 shrink-0 bg-[#252542] rounded-xl p-5">
+        <div className="text-center">
+          <p className="text-cyan-400 text-lg font-medium">
+            {displayName} {activeTitle}
+          </p>
+        </div>
+
+        {/* Character Sheet */}
+        <div className="w-full bg-[#252542] rounded-xl p-5">
           <h3 className="font-['Playfair_Display'] text-xl text-white mb-4">
             Character Sheet
           </h3>
@@ -399,56 +405,15 @@ export default function CharacterCard({ userId = 1, className = "", apiEndpoint 
 
         </div>
 
-        {/* Right Panel - Character Overview */}
-        <div className="flex-1 min-w-0">
-          <div className="text-center mb-6">
-            <h1 className="font-['Playfair_Display'] text-3xl lg:text-4xl text-white mb-1">
-              Indie Quill Collective
-            </h1>
-            <p className="text-gray-400 text-sm mb-3">
-              Your Author Journey
-            </p>
-            <p className="text-cyan-400 text-lg font-medium">
-              {displayName} {activeTitle}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            <div className="bg-[#252542] rounded-xl p-5 border border-[#3a3a5e]">
-              <div className="text-yellow-400 text-3xl font-bold mb-1">{totalXp}</div>
-              <div className="text-gray-400 text-sm">Total XP Earned</div>
-              <div className="mt-3">
-                <div className="flex justify-between text-xs text-gray-500 mb-1">
-                  <span>Next Level</span>
-                  <span>{xpIntoLevel} / {xpNeededForNext}</span>
-                </div>
-                <div className="bg-[#1a1a2e] h-3 rounded-full overflow-hidden">
-                  <div
-                    className="bg-gradient-to-r from-yellow-500 to-orange-500 h-full transition-all duration-500 rounded-full"
-                    style={{ width: `${xpNeededForNext > 0 ? Math.min(100, (xpIntoLevel / xpNeededForNext) * 100) : 100}%` }}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-[#252542] rounded-xl p-5 border border-[#3a3a5e]">
-              <div className="text-green-400 text-3xl font-bold mb-1">Level {currentLevel}</div>
-              <div className="text-gray-400 text-sm">{activeTitle}</div>
-              <div className="mt-3 text-xs text-gray-500">
-                <span>{questsCompleted} cards completed</span>
-                <span className="mx-2">|</span>
-                <span>{proxyHours.toFixed(1)} proxy hours</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-[#252542] rounded-xl p-5 border border-[#3a3a5e] mb-4">
-            <h3 className="font-['Playfair_Display'] text-lg text-white mb-3">Unlocked Titles</h3>
+        {/* Unlocked Titles */}
+        {unlockedTitles.length > 1 && (
+          <div className="bg-[#252542] rounded-xl p-4 border border-[#3a3a5e]">
+            <h3 className="font-['Playfair_Display'] text-sm text-white mb-2">Unlocked Titles</h3>
             <div className="flex flex-wrap gap-2">
               {unlockedTitles.map((title) => (
                 <span
                   key={title}
-                  className={`px-3 py-1 rounded-full text-xs font-medium border ${
+                  className={`px-2 py-1 rounded-full text-xs font-medium border ${
                     title === activeTitle
                       ? "bg-purple-600/30 border-purple-400 text-purple-300"
                       : "bg-[#1a1a2e] border-[#3a3a5e] text-gray-400"
@@ -459,33 +424,34 @@ export default function CharacterCard({ userId = 1, className = "", apiEndpoint 
               ))}
             </div>
           </div>
+        )}
 
-          {unlockedItems.length > 0 && (
-            <div className="bg-[#252542] rounded-xl p-5 border border-[#3a3a5e] mb-4">
-              <h3 className="font-['Playfair_Display'] text-lg text-white mb-3">Inventory</h3>
-              <div className="flex flex-wrap gap-2">
-                {unlockedItems.map((item) => (
-                  <span
-                    key={item}
-                    className="px-3 py-1 rounded-full text-xs font-medium bg-yellow-600/20 border border-yellow-400/30 text-yellow-300"
-                  >
-                    {item.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}
-                  </span>
-                ))}
-              </div>
+        {/* Unlocked Items */}
+        {unlockedItems.length > 0 && (
+          <div className="bg-[#252542] rounded-xl p-4 border border-[#3a3a5e]">
+            <h3 className="font-['Playfair_Display'] text-sm text-white mb-2">Inventory</h3>
+            <div className="flex flex-wrap gap-2">
+              {unlockedItems.map((item) => (
+                <span
+                  key={item}
+                  className="px-2 py-1 rounded-full text-xs font-medium bg-yellow-600/20 border border-yellow-400/30 text-yellow-300"
+                >
+                  {item.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}
+                </span>
+              ))}
             </div>
-          )}
-
-          <div className="text-center">
-            <button
-              onClick={fetchCharacter}
-              disabled={loading}
-              className="px-4 py-2 bg-[#252542] hover:bg-[#3a3a5e] text-gray-300 text-sm rounded-lg flex items-center gap-2 transition-colors mx-auto"
-            >
-              <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-              Refresh Character
-            </button>
           </div>
+        )}
+
+        <div className="text-center">
+          <button
+            onClick={fetchCharacter}
+            disabled={loading}
+            className="px-3 py-1.5 bg-[#252542] hover:bg-[#3a3a5e] text-gray-300 text-xs rounded-lg flex items-center gap-2 transition-colors mx-auto"
+          >
+            <RefreshCw className={`w-3 h-3 ${loading ? "animate-spin" : ""}`} />
+            Refresh
+          </button>
         </div>
       </div>
     </div>
