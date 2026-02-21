@@ -183,6 +183,41 @@ async function bootstrapFast() {
     next();
   });
 
+  // Run table migrations on Supabase before registering routes
+  const { pool: dbPool } = await import("./db");
+  await dbPool.query(`
+    CREATE TABLE IF NOT EXISTS curriculums (
+      id SERIAL PRIMARY KEY,
+      title VARCHAR(255) NOT NULL,
+      description TEXT,
+      order_index INTEGER NOT NULL DEFAULT 0,
+      is_published BOOLEAN NOT NULL DEFAULT false,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    );
+    CREATE TABLE IF NOT EXISTS vibe_decks (
+      id SERIAL PRIMARY KEY,
+      curriculum_id INTEGER NOT NULL REFERENCES curriculums(id) ON DELETE CASCADE,
+      title VARCHAR(255) NOT NULL,
+      description TEXT,
+      order_index INTEGER NOT NULL DEFAULT 0,
+      is_published BOOLEAN NOT NULL DEFAULT false,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    );
+    CREATE TABLE IF NOT EXISTS vibe_cards (
+      id SERIAL PRIMARY KEY,
+      deck_id INTEGER NOT NULL REFERENCES vibe_decks(id) ON DELETE CASCADE,
+      task TEXT NOT NULL,
+      qualifications TEXT,
+      xp_value INTEGER NOT NULL DEFAULT 100,
+      order_index INTEGER NOT NULL DEFAULT 0,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    );
+  `);
+  console.log("[Migration] Curriculum tables verified/created on Supabase");
+
   const { registerRoutes } = await import("./routes");
   registerRoutes(app);
 
