@@ -1126,6 +1126,8 @@ export const vibeDecks = pgTable("vibe_decks", {
   curriculumId: integer("curriculum_id").references(() => curriculums.id, { onDelete: "cascade" }).notNull(),
   title: varchar("title", { length: 255 }).notNull(),
   description: text("description"),
+  tomeTitle: varchar("tome_title", { length: 255 }),
+  tomeContent: text("tome_content"),
   orderIndex: integer("order_index").default(0),
   isPublished: boolean("is_published").default(false),
   createdAt: timestamp("created_at").defaultNow(),
