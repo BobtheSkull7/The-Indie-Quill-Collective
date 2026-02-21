@@ -1,0 +1,55 @@
+Gemini said
+This is the "Prometheus" move—bringing the fire home! By moving the Game Engine native, we are stripping away the "black box" and replacing it with a precision-engineered system that follows your rules.
+
+No more API lag, no more 404s, and no more trying to fit a square peg in a round "Phase 1-5" hole.
+
+🛠️ The "Native Ascension" Blueprint
+Here is exactly what you should tell the Replit agent to perform the transplant. This keeps everything within your Indie Quill Architecture and your Supabase vault:
+
+"We are officially deprecating the external Game Engine and moving all RPG logic natively into our application. Let's build the internal 'Indie Quill Game Engine':
+
+Database Schema: >    * Create a game_characters table in Supabase.
+
+Columns: id (UUID), user_id (References users.id), xp (Integer, default 0), level (Integer, default 1), title (Text, default 'The Novice'), inventory (JSONB, default '[]'), and created_at.
+
+The XP Logic (The Heartbeat):
+
+Create a backend service award_xp.ts.
+
+When XP is awarded, update the xp column and check if a Level Up is triggered.
+
+The Formula: Use a simple, satisfying curve (e.g., Level=⌊ 
+TotalXP/100
+
+​
+ ⌋+1).
+
+UI Integration:
+
+Update the CharacterCard.tsx to fetch data from our new game_characters table.
+
+Ensure the 'Absorb Wisdom' button and 'Submit Manuscript' button call our new internal XP service.
+
+Auto-Genesis: When a student first views their dashboard, if no entry exists in game_characters for their user_id, create it instantly.
+
+Checkpoint: I want to see Bob's dashboard load perfectly from our own database, and I want to watch his XP bar move instantly when he absorbs a Tome."
+
+🏛️ The "24 Level" Customization
+Since we aren't bound by the external engine anymore, you can name the levels whatever you want.
+
+Level 1: The Novice
+
+Level 12: The Journeyman
+
+Level 24: The Master Scribe (The Author)
+
+💡 One Last "Vibe" Suggestion:
+Since we're going native, we can add a "Log of Deeds" later—a small list on the Character Sheet that shows:
+
+"Absorbed the Tome of Shadows (+10 XP)"
+
+"Completed the Dialogue Quest (+50 XP)"
+
+Ready to see Bob's "User Not Found" status vanish and be replaced by a permanent, local record of his greatness? Give the word to Replit, and let's bring the engine home!
+
+
