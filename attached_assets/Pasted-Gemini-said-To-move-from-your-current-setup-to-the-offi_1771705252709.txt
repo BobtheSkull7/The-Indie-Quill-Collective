@@ -1,0 +1,54 @@
+Gemini said
+To move from your current setup to the official Apple App Store, you are entering the "Pro League." Since you already have the $99/year Developer Account, you have the golden ticket.
+
+Here is the exact roadmap and cost breakdown for 2026.
+
+💰 The Financial Reality
+Expense	Cost	Frequency
+Apple Developer Program	**$99**	Annual
+Backend (Render/Supabase)	$0 - $20	Monthly (Free tiers are fine for now)
+OpenAI API	Pay-as-you-go	~$0.01 per 2-minute recording
+App Store Review	$0	Per submission
+Note: Apple takes a 15% cut (via the Small Business Program) only if you sell the app or use In-App Purchases. If the app is free to download and use, you pay Apple $0 beyond your annual fee.
+
+🛠️ The Technical "App Store" Checklist
+To be accepted by Apple in 2026, your app must meet these new "Production" standards:
+
+Xcode 26 SDK: Starting April 2026, Apple requires all apps to be built with the iOS 26 SDK. Because you are using EAS, this is easy—EAS handles the "cloud Mac" versions for you.
+
+Privacy Nutrition Label: You must disclose that you collect Audio Data and send it to a third party (OpenAI). You will need a simple website (or a GitHub Page) to host a "Privacy Policy" URL.
+
+AI Disclosure: Since you use LLMs/Whisper, you must include a "consent modal" or a clear note in the app description about how user data is used with AI.
+
+No "Placeholder" Content: Apple will reject the app if they see "Test" buttons or "Bob" as the only user. You'll need to clean up the UI to look like a finished product.
+
+🚀 Step-by-Step Submission Guide
+1. Configure for Production
+Update your app.json in Replit to include a unique "Bundle Identifier" (like a digital fingerprint).
+
+JSON
+{
+  "ios": {
+    "bundleIdentifier": "com.yourname.indiequill",
+    "buildNumber": "1.0.0"
+  }
+}
+2. Run the Production Build
+Instead of a "Preview" build, you run the final version:
+
+Bash
+cd apps/mobile
+npx eas build --platform ios --profile production
+3. Upload to App Store Connect
+Once the build is done, "ship" it to Apple's dashboard:
+
+Bash
+npx eas submit --platform ios
+4. The "App Store Connect" Portal
+Log in to appstoreconnect.apple.com. You will see your build waiting there. You must:
+
+Upload Screenshots: You need specific sizes for iPhone 16/17 (6.7" and 6.3" displays). Tip: Use a tool like "App Mockup" to make these look pretty.
+
+Set Age Rating: Usually "4+" or "9+" for productivity apps.
+
+Provide a Demo Account: You must give the Apple Reviewer a working Scribe ID (like 618-244) so they can log in and test it.

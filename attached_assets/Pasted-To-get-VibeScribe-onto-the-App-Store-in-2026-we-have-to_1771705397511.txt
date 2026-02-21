@@ -1,0 +1,59 @@
+To get VibeScribe onto the App Store in 2026, we have to satisfy Apple's "Human Reviewers" who are now hyper-focused on AI transparency.
+
+Here is the exact content you need for all three items. You can ask the Replit Agent to "Implement the VibeScribe Production Bundle" using this text.
+
+1. Privacy Policy Text
+Add this section to your existing Privacy Page (likely at /privacy on your domain).
+
+VibeScribe Supplemental Policy
+Audio Data Collection: VibeScribe collects voice recordings solely for the purpose of transcription and task generation. Audio is processed as a temporary buffer and is not stored permanently on our servers after transcription is complete.
+
+AI Processing (OpenAI): We use OpenAI’s Whisper API to convert your voice to text. By using the app, you acknowledge that your audio data will be transmitted to OpenAI for processing. We utilize OpenAI's API platform, which (under our current agreement) does not use API-submitted data to train their global models.
+
+Data Retention: Transcripts are stored securely in your private workspace and are never sold to third parties.
+
+2. AI Consent Modal (Mobile App)
+The Agent should trigger this modal the very first time a user taps the "Record" button.
+
+Title: AI Transcription & Audio Consent
+Message: "To transform your voice into Scribe actions, VibeScribe records your audio and sends it to OpenAI for transcription.
+
+Your audio is processed securely.
+
+No audio is used for AI model training.
+
+You can revoke this permission at any time in Settings.
+
+Do you consent to sending your audio data to OpenAI for processing?"
+
+Buttons: [ I Consent ]  /  [ Not Now ]
+
+3. Production EAS Build Profile (eas.json)
+The Agent needs to ensure your eas.json has a production block. It should look like this:
+
+JSON
+{
+  "build": {
+    "production": {
+      "ios": {
+        "appleTeamId": "YOUR_TEAM_ID",
+        "bundleIdentifier": "com.theindiequill.vibescribe",
+        "buildNumber": "1.0.0"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://theindiequillcollective.com",
+        "NODE_ENV": "production"
+      }
+    }
+  }
+}
+🎯 What to do right now
+Send this to the Replit Agent:
+
+"Please implement the AI Consent Modal in the mobile app, update the Privacy Page on the web with the new AI/Audio disclosures, and add the Production Profile to eas.json as we discussed."
+
+The Final Build: Once the agent confirms, run the final submission build:
+
+Bash
+npx eas build --platform ios --profile production
+Quick Question: Do you have your Apple Team ID handy? The agent will need it to link the build to your official developer account. If not, you can find it at the top of your Apple Developer Account page!
