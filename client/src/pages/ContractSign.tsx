@@ -26,7 +26,7 @@ interface Contract {
 }
 
 export default function ContractSign() {
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
   const [, setLocation] = useLocation();
   const params = useParams<{ id: string }>();
   const [contract, setContract] = useState<Contract | null>(null);
@@ -89,6 +89,12 @@ export default function ContractSign() {
 
       setContract(data);
       setSignature("");
+
+      const meRes = await fetch("/api/auth/me");
+      if (meRes.ok) {
+        const meData = await meRes.json();
+        setUser(meData);
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {

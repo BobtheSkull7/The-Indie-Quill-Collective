@@ -1324,7 +1324,6 @@ export async function registerRoutes(app: Express) {
       }
 
       if (updated.status === "signed") {
-        // Generate and store PDF immediately when contract is fully signed
         generateAndStorePDF(contract.id).catch(err => {
           console.error("Background PDF generation failed:", err);
         });
@@ -1332,6 +1331,19 @@ export async function registerRoutes(app: Express) {
         await db.update(applications)
           .set({ status: "migrated", updatedAt: new Date() })
           .where(eq(applications.id, contract.applicationId));
+
+        await db.update(users)
+          .set({ role: "student", updatedAt: new Date() })
+          .where(eq(users.id, contract.userId));
+
+        if (req.session.userId === contract.userId) {
+          req.session.userRole = "student";
+        }
+
+        const { ensureGameCharacter } = await import("./services/game-engine");
+        ensureGameCharacter(String(contract.userId)).catch(err => {
+          console.error("Background game character creation failed:", err);
+        });
 
         const [publishingUpdate] = await db.insert(publishingUpdates).values({
           applicationId: contract.applicationId,
