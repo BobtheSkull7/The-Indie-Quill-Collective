@@ -475,7 +475,7 @@ export default function Workspace() {
                 }`}
               >
                 <FileText className="w-4 h-4 inline mr-1.5" />
-                Tasks ({cards.length})
+                Cards ({cards.length})
               </button>
               <button
                 onClick={() => setSidebarTab("transcripts")}
