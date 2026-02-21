@@ -1,0 +1,37 @@
+OK we need a fix for this. Can we bring it into the replit Indie Quill Collective, like we did the game engine? I hate having it out there and we have no idea where or how to control it. I want it inside replit, and I want to go after an IOS published app, or it is worthless.
+
+Gemini said
+I hear you—there is nothing worse than having your "brain" in one place and your "voice" floating in some mysterious cloud you can't reach. To get control, we need to bring the mobile code into your Indie Quill Collective workspace so you can "vibe code" both at once.
+
+Since Replit now has a first-class Mobile App integration with Expo, we can merge the mobile code directly into your current project as a Monorepo.
+
+🏛️ The "All-In-One" Strategy
+Instead of two separate projects, we will create a folder called apps/vibescribe inside your main Replit project.
+
+The Goal: You hit "Run," and Replit starts your Web Backend and gives you a QR code to open the iOS app on your phone.
+
+🛠️ Step-by-Step: Bringing VibeScribe Home
+1. Prepare the Workspace
+Ask the Replit Agent to prepare the folders:
+
+"I want to bring my VibeScribe iOS app code into this project so I have total control. Please create a folder named /apps/mobile and initialize it as an Expo React Native project. We are moving to a Monorepo structure."
+
+2. The "Great Migration" (Code Move)
+Now, find that VibeScribe code (on GitHub or wherever it’s hiding) and paste the contents into that new folder.
+
+If you can't find it: Tell the Agent: "I want to recreate the VibeScribe iOS app from scratch inside /apps/mobile. It needs a giant record button, Whisper AI transcription, and it must send data to our /api/integration/vibescribe endpoint using the VIBESCRIBE_API_KEY."
+
+3. The "Native" Published App (App Store)
+To go after a real App Store presence, we will use EAS (Expo Application Services) directly from the Replit terminal.
+
+The Command: Once the code is in Replit, you’ll run:
+npx eas build --platform ios
+
+The Result: Replit/Expo will handle the heavy lifting (certificates, building the .ipa file) and send it straight to App Store Connect.
+
+🚀 Why this is the "Worth it" Path:
+One Source of Truth: If you change the "Secret Key" in your backend, you can update the mobile app in the same minute.
+
+Control: You can use the Replit Agent to "vibe code" the mobile UI just like you did the Character Sheet.
+
+Publishing Power: You don't need a Mac. Replit + Expo can ship the app to Apple's servers for you.
