@@ -76,7 +76,13 @@ export default function VibeDeckCurriculum() {
       const res = await fetch("/api/admin/curriculums", { credentials: "include" });
       if (res.ok) {
         const data = await res.json();
-        setCurriculums(data);
+        setCurriculums(prev => {
+          if (prev.length === 0) return data;
+          return data.map((c: any) => {
+            const existing = prev.find((p: any) => p.id === c.id);
+            return existing ? { ...c, decks: existing.decks } : c;
+          });
+        });
       }
     } catch (err) {
       console.error("Error loading curriculums:", err);
