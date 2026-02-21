@@ -91,16 +91,18 @@ export async function convertToWav(audioBuffer: Buffer): Promise<Buffer> {
 
 /**
  * Auto-detect and convert audio to OpenAI-compatible format.
- * - WAV/MP3: Pass through (already compatible)
- * - WebM/MP4/OGG: Convert to WAV via ffmpeg
+ * - WAV/MP3/MP4(M4A)/WebM: Pass through (Whisper supports these natively)
+ * - OGG/unknown: Convert to WAV via ffmpeg
  */
 export async function ensureCompatibleFormat(
   audioBuffer: Buffer
-): Promise<{ buffer: Buffer; format: "wav" | "mp3" }> {
+): Promise<{ buffer: Buffer; format: "wav" | "mp3" | "mp4" | "webm" }> {
   const detected = detectAudioFormat(audioBuffer);
   if (detected === "wav") return { buffer: audioBuffer, format: "wav" };
   if (detected === "mp3") return { buffer: audioBuffer, format: "mp3" };
-  // Convert WebM, MP4, OGG, or unknown to WAV
+  if (detected === "mp4") return { buffer: audioBuffer, format: "mp4" };
+  if (detected === "webm") return { buffer: audioBuffer, format: "webm" };
+  // Convert OGG or unknown to WAV via ffmpeg
   const wavBuffer = await convertToWav(audioBuffer);
   return { buffer: wavBuffer, format: "wav" };
 }
@@ -239,9 +241,10 @@ export async function textToSpeechStream(
  */
 export async function speechToText(
   audioBuffer: Buffer,
-  format: "wav" | "mp3" | "webm" = "wav"
+  format: "wav" | "mp3" | "webm" | "mp4" | "m4a" = "wav"
 ): Promise<string> {
-  const file = await toFile(audioBuffer, `audio.${format}`);
+  const ext = format === "mp4" ? "m4a" : format;
+  const file = await toFile(audioBuffer, `audio.${ext}`);
   const response = await openai.audio.transcriptions.create({
     file,
     model: "whisper-1",
@@ -255,9 +258,10 @@ export async function speechToText(
  */
 export async function speechToTextStream(
   audioBuffer: Buffer,
-  format: "wav" | "mp3" | "webm" = "wav"
+  format: "wav" | "mp3" | "webm" | "mp4" | "m4a" = "wav"
 ): Promise<AsyncIterable<string>> {
-  const file = await toFile(audioBuffer, `audio.${format}`);
+  const ext = format === "mp4" ? "m4a" : format;
+  const file = await toFile(audioBuffer, `audio.${ext}`);
   const stream = await openai.audio.transcriptions.create({
     file,
     model: "whisper-1",
