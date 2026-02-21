@@ -38,6 +38,9 @@ The project utilizes a client-server architecture. The frontend is built with Re
 - **Native Game Engine:** Fully native RPG progression system stored in `game_characters` table (xp, level, active_title, unlocked_titles JSONB, equipped_items JSONB, unlocked_items JSONB). 24-level progression curve with milestone item rewards (Traveler's Satchel at L5, Golden Quill at L9, etc.) and title unlocks per level. `awardXP()` service in `server/services/game-engine.ts` handles XP grants, level-up detection, and reward unlocks. XP flows automatically: card submissions award card's xp_value, tome absorptions award 25 XP bonus. CharacterCard component displays paper doll inventory, level, XP progress bar, unlocked titles/items. Auto-creates game character on first dashboard load. External Game Engine API (curriculum-import-tool) has been deprecated.
 - **Email Notifications:** Automated via Resend for key events.
 
+## Important Accounts
+- **Apple Review Demo Account:** Scribe ID `123-456` (Buildathon Tester, buildathon.tester@theindiequill.org, role: student). This is the permanent demo account for Apple's App Store review team. Do not delete or modify this user.
+
 ## External Dependencies
 - **Supabase:** PostgreSQL database services.
 - **Google Calendar API:** For two-way event synchronization.
