@@ -7,7 +7,7 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "scheme": "vibescribe",
-    "owner": "indiequill",
+    "owner": "mcjon",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
