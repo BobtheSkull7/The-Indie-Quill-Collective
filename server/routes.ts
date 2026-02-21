@@ -6581,20 +6581,41 @@ export async function registerDonationRoutes(app: Express) {
       return res.status(401).json({ error: "Not authenticated" });
     }
     try {
-      const result = await db.execute(sql`
-        SELECT vc.id, vc.task, vc.qualifications, vc.xp_value, vc.deck_id,
-          vd.title as deck_title, c.title as curriculum_title,
-          m.content as manuscript_content, m.word_count as manuscript_word_count,
-          CASE WHEN cs.id IS NOT NULL THEN true ELSE false END as is_submitted,
-          cs.xp_earned
-        FROM vibe_cards vc
-        JOIN vibe_decks vd ON vc.deck_id = vd.id
-        JOIN curriculums c ON vd.curriculum_id = c.id
-        LEFT JOIN manuscripts m ON m.card_id = vc.id AND m.user_id = ${req.session.userId}
-        LEFT JOIN card_submissions cs ON cs.card_id = vc.id AND cs.user_id = ${req.session.userId}
-        WHERE vd.is_published = true AND c.is_published = true
-        ORDER BY c.order_index, vd.order_index, vc.order_index
-      `);
+      let result;
+      try {
+        result = await db.execute(sql`
+          SELECT vc.id, vc.task, vc.qualifications, vc.xp_value, vc.deck_id,
+            vd.title as deck_title, c.title as curriculum_title,
+            m.content as manuscript_content, m.word_count as manuscript_word_count,
+            CASE WHEN cs.id IS NOT NULL THEN true ELSE false END as is_submitted,
+            cs.xp_earned
+          FROM vibe_cards vc
+          JOIN vibe_decks vd ON vc.deck_id = vd.id
+          JOIN curriculums c ON vd.curriculum_id = c.id
+          LEFT JOIN manuscripts m ON m.card_id = vc.id AND m.user_id = ${req.session.userId}
+          LEFT JOIN card_submissions cs ON cs.card_id = vc.id AND cs.user_id = ${req.session.userId}
+          WHERE vd.is_published = true AND c.is_published = true
+          ORDER BY c.order_index, vd.order_index, vc.order_index
+        `);
+      } catch (innerError: any) {
+        if (innerError?.code === '42703') {
+          result = await db.execute(sql`
+            SELECT vc.id, vc.task, vc.qualifications, vc.xp_value, vc.deck_id,
+              vd.title as deck_title, c.title as curriculum_title,
+              NULL as manuscript_content, NULL as manuscript_word_count,
+              CASE WHEN cs.id IS NOT NULL THEN true ELSE false END as is_submitted,
+              cs.xp_earned
+            FROM vibe_cards vc
+            JOIN vibe_decks vd ON vc.deck_id = vd.id
+            JOIN curriculums c ON vd.curriculum_id = c.id
+            LEFT JOIN card_submissions cs ON cs.card_id = vc.id AND cs.user_id = ${req.session.userId}
+            WHERE vd.is_published = true AND c.is_published = true
+            ORDER BY c.order_index, vd.order_index, vc.order_index
+          `);
+        } else {
+          throw innerError;
+        }
+      }
       res.json(result.rows);
     } catch (error) {
       console.error("Error fetching workspace cards:", error);
