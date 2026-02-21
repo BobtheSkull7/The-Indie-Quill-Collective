@@ -30,7 +30,7 @@ The project utilizes a client-server architecture. The frontend is built with Re
 - **Integrations:** Automatic syncing with The Indie Quill LLC (HMAC-SHA256 signed), Google Calendar two-way sync, Stripe for donations.
 - **Admin Features:** Comprehensive dashboard for user, application, cohort, board, grant, and ledger management.
 - **VibeScribe:** PWA with audio capture, AI transcription (OpenAI), and draft saving.
-- **Vibe Deck Curriculum System:** Unified Path > Deck > Card hierarchy. `curriculums` table (top-level paths like Professional Writer), `vibe_decks` table (lessons within a curriculum), `vibe_cards` table (individual task cards with task, qualifications, XP value). Admin Vibe Deck Builder with full CRUD, inline editing, and nested accordion UI. Student view shows published decks with 3D flip cards (front: task, back: qualifications + XP badge). Old essence system (archetype/themes/tone Vibe Cards, Writer Character Sheets) has been removed.
+- **Vibe Deck Curriculum System:** Unified Curriculum > Deck > Card hierarchy. `curriculums` table (top-level paths like Professional Writer), `vibe_decks` table (lessons within a curriculum), `vibe_cards` table (individual task cards with task, qualifications, XP value). Admin Vibe Deck Builder with full CRUD, inline editing, and nested accordion UI. Student view shows published curricula and decks in grouped hierarchy with 3D flip cards (front: task, back: qualifications + XP badge). Old essence system and old module-based curriculum have been removed. "My Manuscript" tab removed from student dashboard (may return later).
 - **Email Notifications:** Automated via Resend for key events.
 
 ## External Dependencies
