@@ -1,41 +1,15 @@
 import { useState, useEffect } from "react";
-import { useLocation, Link } from "wouter";
+import { useLocation } from "wouter";
 import { useAuth } from "../App";
 import CharacterCard from "../components/CharacterCard";
 import { 
-  BookOpen, 
   Clock, 
   Calendar, 
   Video, 
   TrendingUp, 
-  Award,
-  FileText,
-  Play,
-  CheckCircle,
-  ChevronRight,
-  Edit3,
-  Mic,
-  Scroll
+  Award
 } from "lucide-react";
 import VibeDeckContainer from "../components/VibeDeckContainer";
-
-interface CurriculumModule {
-  id: number;
-  title: string;
-  description: string | null;
-  orderIndex: number;
-  durationHours: number;
-  contentType: string;
-  isPublished: boolean;
-}
-
-interface ModuleProgress {
-  moduleId: number;
-  percentComplete: number;
-  hoursSpent: number;
-  startedAt: string | null;
-  completedAt: string | null;
-}
 
 interface Meeting {
   id: number;
@@ -66,26 +40,12 @@ interface StudentStats {
   totalModules: number;
 }
 
-interface StudentWorkEntry {
-  id: number;
-  questId: number | null;
-  contentType: string;
-  contentBody: string;
-  wordCount: number;
-  sourceDevice: string | null;
-  createdAt: string;
-}
-
 export default function StudentDashboard() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
   const [loading, setLoading] = useState(true);
-  const [modules, setModules] = useState<CurriculumModule[]>([]);
-  const [progress, setProgress] = useState<ModuleProgress[]>([]);
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [tabeScores, setTabeScores] = useState<TabeScore[]>([]);
-  const [activeTab, setActiveTab] = useState<'overview' | 'manuscript'>('overview');
-  const [studentWork, setStudentWork] = useState<StudentWorkEntry[]>([]);
   const [stats, setStats] = useState<StudentStats>({
     totalHoursActive: 0,
     totalWordCount: 0,
@@ -124,31 +84,14 @@ export default function StudentDashboard() {
     };
 
     try {
-      const [modulesRes, progressRes, meetingsRes, tabeRes, statsRes, workRes, draftsRes] = await Promise.all([
-        safeFetch("/api/student/curriculum"),
-        safeFetch("/api/student/progress"),
+      const [meetingsRes, tabeRes, statsRes] = await Promise.all([
         safeFetch("/api/student/meetings"),
         safeFetch("/api/student/tabe-scores"),
-        safeFetch("/api/student/stats"),
-        safeFetch("/api/student/work"),
-        safeFetch("/api/student/drafts")
+        safeFetch("/api/student/stats")
       ]);
 
-      const rawModules = Array.isArray(modulesRes) ? modulesRes : [];
-      setModules(rawModules.map((m: any) => ({
-        id: m.id,
-        title: m.title,
-        description: m.description ?? null,
-        orderIndex: m.orderIndex ?? m.order_index ?? 0,
-        durationHours: m.durationHours ?? m.duration_hours ?? 1,
-        contentType: m.contentType ?? m.content_type ?? "lesson",
-        isPublished: m.isPublished ?? m.is_published ?? false,
-      })));
-      setProgress(Array.isArray(progressRes) ? progressRes : []);
       setMeetings(Array.isArray(meetingsRes) ? meetingsRes : []);
       setTabeScores(Array.isArray(tabeRes) ? tabeRes : []);
-      setStudentWork(Array.isArray(workRes) ? workRes : []);
-      setDrafts(Array.isArray(draftsRes) ? draftsRes : []);
       if (statsRes && typeof statsRes === 'object' && !Array.isArray(statsRes)) {
         setStats(statsRes);
       }
@@ -156,96 +99,6 @@ export default function StudentDashboard() {
       console.error("Error loading dashboard data:", error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const [updatingModule, setUpdatingModule] = useState<number | null>(null);
-  const [creatingDraft, setCreatingDraft] = useState(false);
-  const [newDraftTitle, setNewDraftTitle] = useState("");
-  const [showNewDraftForm, setShowNewDraftForm] = useState(false);
-  const [drafts, setDrafts] = useState<any[]>([]);
-
-  const getModuleProgress = (moduleId: number): ModuleProgress | undefined => {
-    return progress.find(p => p.moduleId === moduleId);
-  };
-
-  const handleStartModule = async (moduleId: number) => {
-    setUpdatingModule(moduleId);
-    try {
-      const res = await fetch("/api/student/progress", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ moduleId, percentComplete: 1 }),
-      });
-      if (res.ok) {
-        const existing = progress.find(p => p.moduleId === moduleId);
-        if (existing) {
-          setProgress(progress.map(p => p.moduleId === moduleId ? { ...p, percentComplete: 1, startedAt: new Date().toISOString() } : p));
-        } else {
-          setProgress([...progress, { moduleId, percentComplete: 1, hoursSpent: 0, startedAt: new Date().toISOString(), completedAt: null }]);
-        }
-      }
-    } catch (err) {
-      console.error("Error starting module:", err);
-    } finally {
-      setUpdatingModule(null);
-    }
-  };
-
-  const handleCompleteModule = async (moduleId: number) => {
-    if (!confirm("Mark this module as complete?")) return;
-    setUpdatingModule(moduleId);
-    try {
-      const res = await fetch("/api/student/progress", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ moduleId, percentComplete: 100 }),
-      });
-      if (res.ok) {
-        const existing = progress.find(p => p.moduleId === moduleId);
-        if (existing) {
-          setProgress(progress.map(p => p.moduleId === moduleId
-            ? { ...p, percentComplete: 100, completedAt: new Date().toISOString() }
-            : p
-          ));
-        } else {
-          setProgress([...progress, { moduleId, percentComplete: 100, hoursSpent: 0, startedAt: new Date().toISOString(), completedAt: new Date().toISOString() }]);
-        }
-        setStats(prev => ({
-          ...prev,
-          modulesCompleted: prev.modulesCompleted + 1,
-          overallProgress: Math.round(((prev.modulesCompleted + 1) / Math.max(prev.totalModules, 1)) * 100)
-        }));
-      }
-    } catch (err) {
-      console.error("Error completing module:", err);
-    } finally {
-      setUpdatingModule(null);
-    }
-  };
-
-  const handleCreateDraft = async () => {
-    if (!newDraftTitle.trim()) return;
-    setCreatingDraft(true);
-    try {
-      const res = await fetch("/api/student/drafts", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: newDraftTitle.trim() }),
-      });
-      if (res.ok) {
-        const draft = await res.json();
-        setDrafts([draft, ...drafts]);
-        setNewDraftTitle("");
-        setShowNewDraftForm(false);
-      }
-    } catch (err) {
-      console.error("Error creating draft:", err);
-    } finally {
-      setCreatingDraft(false);
     }
   };
 
@@ -302,7 +155,7 @@ export default function StudentDashboard() {
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
             <div className="flex items-center gap-3 mb-2">
               <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                <FileText className="w-5 h-5 text-blue-600" />
+                <Award className="w-5 h-5 text-blue-600" />
               </div>
               <span className="text-sm text-gray-500">Word Count</span>
             </div>
@@ -330,252 +183,9 @@ export default function StudentDashboard() {
           </div>
         </div>
 
-        {/* Tab Navigation */}
-        <div className="flex gap-2 mb-6">
-          <button
-            onClick={() => setActiveTab('overview')}
-            className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors flex items-center gap-2 ${
-              activeTab === 'overview'
-                ? 'bg-teal-500 text-white'
-                : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
-            }`}
-          >
-            <BookOpen className="w-4 h-4" />
-            Overview
-          </button>
-          <button
-            onClick={() => setActiveTab('manuscript')}
-            className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors flex items-center gap-2 ${
-              activeTab === 'manuscript'
-                ? 'bg-purple-500 text-white'
-                : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
-            }`}
-          >
-            <Scroll className="w-4 h-4" />
-            My Manuscript
-            {studentWork.length > 0 && (
-              <span className="bg-purple-100 text-purple-600 px-2 py-0.5 rounded-full text-xs">
-                {studentWork.length}
-              </span>
-            )}
-          </button>
-        </div>
 
-        {activeTab === 'manuscript' ? (
-          /* My Manuscript Tab Content */
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="font-display text-xl font-bold text-slate-800 flex items-center gap-2">
-                <Scroll className="w-5 h-5 text-purple-500" />
-                My Manuscript
-              </h2>
-              <div className="flex items-center gap-3">
-                <div className="text-sm text-gray-500">
-                  {studentWork.reduce((sum, w) => sum + w.wordCount, 0).toLocaleString()} total words
-                </div>
-                <button
-                  onClick={() => setShowNewDraftForm(true)}
-                  className="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
-                >
-                  <Edit3 className="w-4 h-4" />
-                  New Draft
-                </button>
-              </div>
-            </div>
-
-            {showNewDraftForm && (
-              <div className="mb-6 p-4 bg-purple-50 rounded-lg border border-purple-200">
-                <h3 className="text-sm font-medium text-slate-800 mb-2">Create a New Draft</h3>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={newDraftTitle}
-                    onChange={(e) => setNewDraftTitle(e.target.value)}
-                    placeholder="Give your draft a title..."
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-purple-500"
-                    onKeyDown={(e) => e.key === 'Enter' && handleCreateDraft()}
-                    autoFocus
-                  />
-                  <button
-                    onClick={handleCreateDraft}
-                    disabled={creatingDraft || !newDraftTitle.trim()}
-                    className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors"
-                  >
-                    {creatingDraft ? "Creating..." : "Create"}
-                  </button>
-                  <button
-                    onClick={() => { setShowNewDraftForm(false); setNewDraftTitle(""); }}
-                    className="px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-sm transition-colors"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {drafts.length > 0 && (
-              <div className="mb-6 space-y-3">
-                {drafts.map((draft) => (
-                  <div key={draft.id} className="p-4 bg-purple-50 rounded-lg border border-purple-200">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <FileText className="w-4 h-4 text-purple-600" />
-                        <span className="font-medium text-slate-800">{draft.title}</span>
-                      </div>
-                      <span className="text-xs text-gray-500">{draft.wordCount || 0} words</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {studentWork.length === 0 && drafts.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">
-                <Mic className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                <p className="text-lg font-medium mb-2">No entries yet</p>
-                <p className="text-sm mb-4">
-                  Use the VibeScribe app to record your voice, or click "New Draft" to start writing.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {studentWork.map((entry) => (
-                  <div
-                    key={entry.id}
-                    className={`p-4 rounded-lg border ${
-                      entry.contentType === 'vibescribe_snippet'
-                        ? 'bg-teal-50 border-teal-200'
-                        : 'bg-purple-50 border-purple-200'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        {entry.contentType === 'vibescribe_snippet' ? (
-                          <Mic className="w-4 h-4 text-teal-600" />
-                        ) : (
-                          <FileText className="w-4 h-4 text-purple-600" />
-                        )}
-                        <span className="text-sm font-medium text-gray-700">
-                          {entry.contentType === 'vibescribe_snippet' ? 'Voice Recording' : 'Draft'}
-                        </span>
-                        {entry.questId && (
-                          <span className="bg-white px-2 py-0.5 rounded text-xs text-gray-500">
-                            Chapter {entry.questId}
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-3 text-xs text-gray-500">
-                        <span>{entry.wordCount} words</span>
-                        <span>{new Date(entry.createdAt).toLocaleDateString()}</span>
-                      </div>
-                    </div>
-                    <p className="text-gray-700 text-sm line-clamp-3">{entry.contentBody}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        ) : (
-          /* Overview Tab Content (Original) */
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="font-display text-xl font-bold text-slate-800 flex items-center gap-2">
-                  <BookOpen className="w-5 h-5 text-teal-500" />
-                  Your Curriculum
-                </h2>
-                <span className="text-sm text-gray-500">120-Hour Course</span>
-              </div>
-
-              {modules.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <BookOpen className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                  <p>Curriculum modules are being prepared for you.</p>
-                  <p className="text-sm">Check back soon!</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {modules.slice(0, 6).map((module) => {
-                    const moduleProgress = getModuleProgress(module.id);
-                    const isCompleted = moduleProgress?.completedAt;
-                    const inProgress = moduleProgress && !isCompleted && moduleProgress.percentComplete > 0;
-                    
-                    return (
-                      <div 
-                        key={module.id}
-                        className={`p-4 rounded-lg border transition-all ${
-                          isCompleted 
-                            ? 'bg-green-50 border-green-200' 
-                            : inProgress 
-                              ? 'bg-teal-50 border-teal-200' 
-                              : 'bg-gray-50 border-gray-200 hover:border-teal-300'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                              isCompleted 
-                                ? 'bg-green-500 text-white' 
-                                : inProgress 
-                                  ? 'bg-teal-500 text-white' 
-                                  : 'bg-gray-300 text-gray-600'
-                            }`}>
-                              {isCompleted ? <CheckCircle className="w-4 h-4" /> : module.orderIndex}
-                            </div>
-                            <div>
-                              <h3 className="font-medium text-slate-800">{module.title}</h3>
-                              <p className="text-sm text-gray-500">{module.durationHours}h • {module.contentType}</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            {moduleProgress && (
-                              <div className="w-24">
-                                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                                  <div 
-                                    className="h-full bg-teal-500 transition-all"
-                                    style={{ width: `${moduleProgress.percentComplete}%` }}
-                                  />
-                                </div>
-                                <p className="text-xs text-gray-500 text-right mt-1">{moduleProgress.percentComplete}%</p>
-                              </div>
-                            )}
-                            {isCompleted ? (
-                              <span className="px-3 py-1.5 bg-green-100 text-green-700 rounded-lg text-xs font-medium flex items-center gap-1">
-                                <CheckCircle className="w-3.5 h-3.5" /> Done
-                              </span>
-                            ) : inProgress ? (
-                              <button
-                                onClick={() => handleCompleteModule(module.id)}
-                                disabled={updatingModule === module.id}
-                                className="px-3 py-1.5 bg-teal-500 hover:bg-teal-600 text-white rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
-                              >
-                                {updatingModule === module.id ? "..." : "Mark Complete"}
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => handleStartModule(module.id)}
-                                disabled={updatingModule === module.id}
-                                className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-xs font-medium transition-colors flex items-center gap-1 disabled:opacity-50"
-                              >
-                                <Play className="w-3 h-3" />
-                                {updatingModule === module.id ? "..." : "Start"}
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                  {modules.length > 6 && (
-                    <button className="w-full py-3 text-teal-600 hover:text-teal-700 font-medium flex items-center justify-center gap-1">
-                      View All {modules.length} Modules <ChevronRight className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
               <VibeDeckContainer />
             </div>
@@ -674,23 +284,6 @@ export default function StudentDashboard() {
               )}
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-              <h2 className="font-display text-xl font-bold text-slate-800 flex items-center gap-2 mb-4">
-                <Edit3 className="w-5 h-5 text-purple-500" />
-                Your Legacy Work
-              </h2>
-              <p className="text-gray-600 text-sm mb-4">
-                Write, edit, and develop your manuscript in the Drafting Suite.
-              </p>
-              <Link 
-                href="/student/drafts"
-                className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
-              >
-                <Edit3 className="w-4 h-4" />
-                Open Drafting Suite
-              </Link>
-            </div>
-
             <div className="bg-gradient-to-br from-teal-500 to-blue-600 rounded-xl p-6 text-white">
               <h3 className="font-display text-lg font-bold mb-2">Need Help?</h3>
               <p className="text-teal-100 text-sm mb-4">
@@ -702,7 +295,6 @@ export default function StudentDashboard() {
             </div>
           </div>
         </div>
-        )}
       </div>
     </div>
   );
