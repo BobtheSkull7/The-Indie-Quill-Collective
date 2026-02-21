@@ -295,6 +295,11 @@ async function bootstrapFast() {
     );
     CREATE INDEX IF NOT EXISTS idx_game_characters_user ON game_characters(user_id);
   `);
+  try {
+    await dbPool.query(`ALTER TABLE public.users ADD COLUMN IF NOT EXISTS vibe_scribe_id VARCHAR(50)`);
+  } catch (e) {
+    console.warn("[Migration] vibe_scribe_id column may already exist:", (e as any).message);
+  }
   console.log("[Migration] Curriculum + Workspace + Game tables verified/created on Supabase");
 
   const { registerRoutes } = await import("./routes");
