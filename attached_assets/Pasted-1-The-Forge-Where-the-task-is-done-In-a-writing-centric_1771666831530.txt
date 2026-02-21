@@ -1,0 +1,39 @@
+1. The "Forge" (Where the task is done)
+In a writing-centric app, the "Work" usually lives in a Manuscript Editor or a Journal Tab.
+
+The Workflow: Bob flips a Vibe Card that says "Write a 500-word character sketch." * The Action: He clicks a button on the card that says "Start Writing."
+
+The Transition: This takes him to a dedicated Manuscript Tab where a blank page (or a template) is waiting for him.
+
+2. The "Submission & Validation" (The Judge)
+This is the trickiest part. How do we know Bob actually did the work?
+
+Option A (Self-Report/Honesty): Bob clicks "I did it," types a short reflection, and gets XP. (Fastest to build, but easy to game).
+
+Option B (AI Peer Review): When Bob clicks "Submit," we send his manuscript and the Vibe Card's "Qualifications" to an AI agent. The AI checks if he met the criteria.
+
+Success: "Ding!" XP Gained.
+
+Failure: The AI gives feedback: "Great start, but you missed the 'Show, Don't Tell' requirement. Try again!" No XP yet.
+
+Option C (Human Review): Jon (the Admin) sees a notification, reads the work, and clicks "Approve." (Best for quality, hardest to scale).
+
+3. Opening the "Black Box" (The Character Sheet)
+Since the Game Engine is currently a black box, we need to visualize it. Instead of an external link, we need to bring those stats into the Student View.
+
+We need a "Stat Registry" in your app that displays:
+
+Current Level: (e.g., Level 3 "Aspirant")
+
+XP Progress: (e.g., 450 / 1000 XP)
+
+Inventory: (The Paper Doll items we discussed—the Quill, the Briefcase, etc.)
+
+🛠️ The "Missing Pieces" Build List
+Before we sync XP, we should ask the Replit agent to build these three components:
+
+The Manuscript Tab: A simple text editor where Bob can actually write his responses to Vibe Cards.
+
+The Submission Logic: A "Submit for Review" button on the Vibe Card that links the current Manuscript text to that specific card.
+
+The Character Dashboard UI: A dedicated tab that pulls data from the Game Engine and displays it beautifully (no more black box).
