@@ -6347,6 +6347,183 @@ export async function registerDonationRoutes(app: Express) {
     }
   });
 
+  // ═══════════════════════════════════════════════════════════════
+  // WORKSPACE: VibeScribe Transcripts + Master Manuscript
+  // ═══════════════════════════════════════════════════════════════
+
+  app.post("/api/integration/vibescribe", async (req: Request, res: Response) => {
+    try {
+      const apiKey = req.headers["x-vibescribe-key"] as string;
+      if (!apiKey || apiKey !== process.env.VIBESCRIBE_API_KEY) {
+        return res.status(401).json({ error: "Invalid API key" });
+      }
+
+      const { vibeScribeId, content, sourceType } = req.body;
+      if (!vibeScribeId || !content) {
+        return res.status(400).json({ error: "vibeScribeId and content are required" });
+      }
+
+      const userResult = await db.execute(sql`
+        SELECT id FROM public.users WHERE vibe_scribe_id = ${vibeScribeId}
+      `);
+      if (userResult.rows.length === 0) {
+        return res.status(404).json({ error: "No user found with that VibeScribe ID" });
+      }
+      const userId = (userResult.rows[0] as any).id;
+
+      const result = await db.execute(sql`
+        INSERT INTO vibescribe_transcripts (user_id, vibescribe_id, content, source_type, created_at)
+        VALUES (${String(userId)}, ${vibeScribeId}, ${content}, ${sourceType || 'voice'}, NOW())
+        RETURNING *
+      `);
+
+      res.json({ success: true, transcript: result.rows[0] });
+    } catch (error) {
+      console.error("VibeScribe integration error:", error);
+      res.status(500).json({ error: "Failed to save transcript" });
+    }
+  });
+
+  app.get("/api/student/vibescribe-transcripts", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    try {
+      const result = await db.execute(sql`
+        SELECT * FROM vibescribe_transcripts
+        WHERE user_id = ${req.session.userId}
+        ORDER BY created_at DESC
+        LIMIT 50
+      `);
+      res.json(result.rows);
+    } catch (error) {
+      console.error("Error fetching transcripts:", error);
+      res.status(500).json({ error: "Failed to fetch transcripts" });
+    }
+  });
+
+  app.patch("/api/student/vibescribe-transcripts/:id/used", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    try {
+      const id = parseInt(req.params.id);
+      await db.execute(sql`
+        UPDATE vibescribe_transcripts SET is_used = true
+        WHERE id = ${id} AND user_id = ${req.session.userId}
+      `);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error marking transcript used:", error);
+      res.status(500).json({ error: "Failed to update transcript" });
+    }
+  });
+
+  app.get("/api/student/master-manuscript", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    try {
+      const result = await db.execute(sql`
+        SELECT * FROM master_manuscripts
+        WHERE user_id = ${req.session.userId}
+        LIMIT 1
+      `);
+      if (result.rows.length === 0) {
+        const newResult = await db.execute(sql`
+          INSERT INTO master_manuscripts (user_id, title, content, word_count, created_at, updated_at)
+          VALUES (${req.session.userId}, 'My Master Manuscript', '{}', 0, NOW(), NOW())
+          RETURNING *
+        `);
+        return res.json(newResult.rows[0]);
+      }
+      res.json(result.rows[0]);
+    } catch (error) {
+      console.error("Error fetching master manuscript:", error);
+      res.status(500).json({ error: "Failed to fetch master manuscript" });
+    }
+  });
+
+  app.put("/api/student/master-manuscript", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    try {
+      const { title, content, wordCount } = req.body;
+      const contentStr = typeof content === 'object' ? JSON.stringify(content) : content;
+      const result = await db.execute(sql`
+        INSERT INTO master_manuscripts (user_id, title, content, word_count, created_at, updated_at)
+        VALUES (${req.session.userId}, ${title || 'My Master Manuscript'}, ${contentStr}::jsonb, ${wordCount || 0}, NOW(), NOW())
+        ON CONFLICT (user_id) DO UPDATE SET
+          title = ${title || 'My Master Manuscript'},
+          content = ${contentStr}::jsonb,
+          word_count = ${wordCount || 0},
+          updated_at = NOW()
+        RETURNING *
+      `);
+      res.json(result.rows[0]);
+    } catch (error) {
+      console.error("Error saving master manuscript:", error);
+      res.status(500).json({ error: "Failed to save master manuscript" });
+    }
+  });
+
+  app.post("/api/student/master-manuscript/append", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    try {
+      const { content } = req.body;
+      if (!content) {
+        return res.status(400).json({ error: "Content is required" });
+      }
+
+      let existing = await db.execute(sql`
+        SELECT * FROM master_manuscripts WHERE user_id = ${req.session.userId} LIMIT 1
+      `);
+      if (existing.rows.length === 0) {
+        await db.execute(sql`
+          INSERT INTO master_manuscripts (user_id, title, content, word_count, created_at, updated_at)
+          VALUES (${req.session.userId}, 'My Master Manuscript', '{}', 0, NOW(), NOW())
+        `);
+        existing = await db.execute(sql`
+          SELECT * FROM master_manuscripts WHERE user_id = ${req.session.userId} LIMIT 1
+        `);
+      }
+
+      res.json({ success: true, message: "Content ready to append. Use the editor to merge." });
+    } catch (error) {
+      console.error("Error appending to master manuscript:", error);
+      res.status(500).json({ error: "Failed to append" });
+    }
+  });
+
+  app.get("/api/student/workspace-cards", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    try {
+      const result = await db.execute(sql`
+        SELECT vc.id, vc.task, vc.qualifications, vc.xp_value, vc.deck_id,
+          vd.title as deck_title, c.title as curriculum_title,
+          m.content as manuscript_content, m.word_count as manuscript_word_count,
+          CASE WHEN cs.id IS NOT NULL THEN true ELSE false END as is_submitted,
+          cs.xp_earned
+        FROM vibe_cards vc
+        JOIN vibe_decks vd ON vc.deck_id = vd.id
+        JOIN curriculums c ON vd.curriculum_id = c.id
+        LEFT JOIN manuscripts m ON m.card_id = vc.id AND m.user_id = ${req.session.userId}
+        LEFT JOIN card_submissions cs ON cs.card_id = vc.id AND cs.user_id = ${req.session.userId}
+        WHERE vd.is_published = true AND c.is_published = true
+        ORDER BY c.order_index, vd.order_index, vc.order_index
+      `);
+      res.json(result.rows);
+    } catch (error) {
+      console.error("Error fetching workspace cards:", error);
+      res.status(500).json({ error: "Failed to fetch cards" });
+    }
+  });
+
   app.get("/api/student/training-stats", async (req: Request, res: Response) => {
     if (!req.session.userId) {
       return res.status(401).json({ error: "Not authenticated" });

@@ -26,6 +26,7 @@ import GameTest from "./pages/GameTest";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Initiation from "./pages/Initiation";
+import Workspace from "./pages/Workspace";
 import Navbar from "./components/Navbar";
 
 interface User {
@@ -95,6 +96,7 @@ function App() {
           <Route path="/student" component={StudentDashboard} />
           <Route path="/student/module/:id" component={CurriculumPlayer} />
           <Route path="/student/drafts" component={DraftingSuite} />
+          <Route path="/student/workspace" component={Workspace} />
           <Route path="/mentor" component={MentorDashboard} />
           <Route path="/family" component={FamilyDashboard} />
           <Route path="/vibe" component={VibeScribe} />

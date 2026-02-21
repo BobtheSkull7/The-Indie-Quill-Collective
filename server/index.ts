@@ -256,7 +256,32 @@ async function bootstrapFast() {
     ALTER TABLE vibe_decks ADD COLUMN IF NOT EXISTS tome_title VARCHAR(255);
     ALTER TABLE vibe_decks ADD COLUMN IF NOT EXISTS tome_content TEXT;
   `);
-  console.log("[Migration] Curriculum tables verified/created on Supabase");
+  await dbPool.query(`
+    CREATE TABLE IF NOT EXISTS vibescribe_transcripts (
+      id SERIAL PRIMARY KEY,
+      user_id VARCHAR(255) NOT NULL,
+      vibescribe_id VARCHAR(50),
+      content TEXT NOT NULL,
+      source_type VARCHAR(50) NOT NULL DEFAULT 'voice',
+      is_used BOOLEAN NOT NULL DEFAULT false,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    );
+    CREATE INDEX IF NOT EXISTS idx_vibescribe_transcripts_user ON vibescribe_transcripts(user_id);
+    CREATE INDEX IF NOT EXISTS idx_vibescribe_transcripts_vsid ON vibescribe_transcripts(vibescribe_id);
+  `);
+  await dbPool.query(`
+    CREATE TABLE IF NOT EXISTS master_manuscripts (
+      id SERIAL PRIMARY KEY,
+      user_id VARCHAR(255) NOT NULL UNIQUE,
+      title VARCHAR(500) NOT NULL DEFAULT 'My Master Manuscript',
+      content JSONB NOT NULL DEFAULT '{}',
+      word_count INTEGER NOT NULL DEFAULT 0,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    );
+    CREATE INDEX IF NOT EXISTS idx_master_manuscripts_user ON master_manuscripts(user_id);
+  `);
+  console.log("[Migration] Curriculum + Workspace tables verified/created on Supabase");
 
   const { registerRoutes } = await import("./routes");
   registerRoutes(app);
