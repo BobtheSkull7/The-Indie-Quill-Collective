@@ -30,7 +30,7 @@ The project utilizes a client-server architecture. The frontend is built with Re
 - **Integrations:** Automatic syncing with The Indie Quill LLC (HMAC-SHA256 signed), Google Calendar two-way sync, Stripe for donations.
 - **Admin Features:** Comprehensive dashboard for user, application, cohort, board, grant, and ledger management.
 - **VibeScribe:** PWA with audio capture, AI transcription (OpenAI), and draft saving.
-- **Creative Brain System:** Vibe Cards (creative essence: archetype, themes, tone, backstory), Writer Character Sheets (persona: name, motivations, strengths, flaws, goals), training_path field on student_profiles (auto-assigned based on persona_type enum: writer/adult_student/family_student). Real training stats replace all Math.random() mock data.
+- **Vibe Deck Curriculum System:** Unified Path > Deck > Card hierarchy. `curriculums` table (top-level paths like Professional Writer), `vibe_decks` table (lessons within a curriculum), `vibe_cards` table (individual task cards with task, qualifications, XP value). Admin Vibe Deck Builder with full CRUD, inline editing, and nested accordion UI. Student view shows published decks with 3D flip cards (front: task, back: qualifications + XP badge). Old essence system (archetype/themes/tone Vibe Cards, Writer Character Sheets) has been removed.
 - **Email Notifications:** Automated via Resend for key events.
 
 ## External Dependencies

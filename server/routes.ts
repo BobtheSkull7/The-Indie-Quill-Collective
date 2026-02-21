@@ -2,7 +2,7 @@ import type { Express, Request, Response } from "express";
 import rateLimit from "express-rate-limit";
 import multer from "multer";
 import { db, pool } from "./db";
-import { users, applications, contracts, publishingUpdates, calendarEvents, fundraisingCampaigns, donations, auditLogs, cohorts, familyUnits, operatingCosts, foundations, solicitationLogs, foundationGrants, pilotLedger, emailLogs, grantPrograms, organizationCredentials, grantCalendarAlerts, wikiEntries, wikiAttachments, boardMembers, studentWork, studentProfiles, passwordResetTokens, vibeCards, writerCharacterSheets } from "@shared/schema";
+import { users, applications, contracts, publishingUpdates, calendarEvents, fundraisingCampaigns, donations, auditLogs, cohorts, familyUnits, operatingCosts, foundations, solicitationLogs, foundationGrants, pilotLedger, emailLogs, grantPrograms, organizationCredentials, grantCalendarAlerts, wikiEntries, wikiAttachments, boardMembers, studentWork, studentProfiles, passwordResetTokens } from "@shared/schema";
 import path from "path";
 import fs from "fs";
 import { eq, desc, gte, sql, inArray, lt, and } from "drizzle-orm";
@@ -6174,189 +6174,249 @@ export async function registerDonationRoutes(app: Express) {
     }
   });
 
-  // ============ VIBE CARD & CHARACTER SHEET ENDPOINTS ============
+  // ============ VIBE DECK CURRICULUM SYSTEM ============
 
-  app.get("/api/student/vibe-card", async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ error: "Not authenticated" });
+  app.get("/api/admin/curriculums", async (req: Request, res: Response) => {
+    if (!req.session.userId || req.session.userRole !== "admin") {
+      return res.status(403).json({ error: "Admin access required" });
     }
-
     try {
       const result = await db.execute(sql`
-        SELECT id, user_id as "userId", archetype, themes, tone, backstory, 
-               raw_vibe_data as "rawVibeData", is_active as "isActive",
-               created_at as "createdAt", updated_at as "updatedAt"
-        FROM vibe_cards 
-        WHERE user_id = ${req.session.userId} AND is_active = true 
-        LIMIT 1
+        SELECT c.*,
+          (SELECT COUNT(*) FROM vibe_decks WHERE curriculum_id = c.id) as deck_count
+        FROM curriculums c ORDER BY c.order_index, c.id
       `);
+      res.json(result.rows);
+    } catch (error) {
+      console.error("Error fetching curriculums:", error);
+      res.status(500).json({ error: "Failed to fetch curriculums" });
+    }
+  });
 
-      if (result.rows.length === 0) {
-        return res.json(null);
-      }
+  app.post("/api/admin/curriculums", async (req: Request, res: Response) => {
+    if (!req.session.userId || req.session.userRole !== "admin") {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+    try {
+      const { title, description } = req.body;
+      if (!title?.trim()) return res.status(400).json({ error: "Title is required" });
+      const maxOrder = await db.execute(sql`SELECT COALESCE(MAX(order_index), 0) + 1 as next_order FROM curriculums`);
+      const nextOrder = (maxOrder.rows[0] as any).next_order;
+      const result = await db.execute(sql`
+        INSERT INTO curriculums (title, description, order_index, is_published, created_at, updated_at)
+        VALUES (${title.trim()}, ${description || null}, ${nextOrder}, false, NOW(), NOW())
+        RETURNING *
+      `);
+      res.status(201).json(result.rows[0]);
+    } catch (error) {
+      console.error("Error creating curriculum:", error);
+      res.status(500).json({ error: "Failed to create curriculum" });
+    }
+  });
+
+  app.put("/api/admin/curriculums/:id", async (req: Request, res: Response) => {
+    if (!req.session.userId || req.session.userRole !== "admin") {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+    try {
+      const { title, description } = req.body;
+      const result = await db.execute(sql`
+        UPDATE curriculums SET title = ${title}, description = ${description || null}, updated_at = NOW()
+        WHERE id = ${Number(req.params.id)}
+        RETURNING *
+      `);
+      if (result.rows.length === 0) return res.status(404).json({ error: "Curriculum not found" });
       res.json(result.rows[0]);
     } catch (error) {
-      console.error("Error fetching vibe card:", error);
-      res.status(500).json({ error: "Failed to fetch vibe card" });
+      console.error("Error updating curriculum:", error);
+      res.status(500).json({ error: "Failed to update curriculum" });
     }
   });
 
-  app.put("/api/student/vibe-card", async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ error: "Not authenticated" });
+  app.delete("/api/admin/curriculums/:id", async (req: Request, res: Response) => {
+    if (!req.session.userId || req.session.userRole !== "admin") {
+      return res.status(403).json({ error: "Admin access required" });
     }
-
     try {
-      const { archetype, themes, tone, backstory, rawVibeData } = req.body;
-
-      const existingResult = await db.execute(sql`
-        SELECT id, archetype, themes, tone, backstory, raw_vibe_data as "rawVibeData"
-        FROM vibe_cards 
-        WHERE user_id = ${req.session.userId} AND is_active = true 
-        LIMIT 1
-      `);
-      const existing = existingResult.rows[0] as any;
-
-      if (existing) {
-        const safeJsonify = (val: any) => val == null ? null : (typeof val === 'string' ? val : JSON.stringify(val));
-        const themesVal = safeJsonify(themes ?? existing.themes);
-        const vibeDataVal = safeJsonify(rawVibeData ?? existing.rawVibeData);
-        const updateResult = await db.execute(sql`
-          UPDATE vibe_cards SET
-            archetype = ${archetype ?? existing.archetype},
-            themes = ${themesVal}::jsonb,
-            tone = ${tone ?? existing.tone},
-            backstory = ${backstory ?? existing.backstory},
-            raw_vibe_data = ${vibeDataVal}::jsonb,
-            updated_at = NOW()
-          WHERE id = ${existing.id}
-          RETURNING id, user_id as "userId", archetype, themes, tone, backstory,
-                    raw_vibe_data as "rawVibeData", is_active as "isActive",
-                    created_at as "createdAt", updated_at as "updatedAt"
-        `);
-        return res.json(updateResult.rows[0]);
-      }
-
-      const themesJson = themes ? JSON.stringify(themes) : null;
-      const vibeDataJson = rawVibeData ? JSON.stringify(rawVibeData) : null;
-      const createResult = await db.execute(sql`
-        INSERT INTO vibe_cards (user_id, archetype, themes, tone, backstory, raw_vibe_data, is_active, created_at, updated_at)
-        VALUES (${req.session.userId}, ${archetype || null}, ${themesJson}::jsonb, ${tone || null}, ${backstory || null}, ${vibeDataJson}::jsonb, true, NOW(), NOW())
-        RETURNING id, user_id as "userId", archetype, themes, tone, backstory,
-                  raw_vibe_data as "rawVibeData", is_active as "isActive",
-                  created_at as "createdAt", updated_at as "updatedAt"
-      `);
-
-      res.status(201).json(createResult.rows[0]);
+      await db.execute(sql`DELETE FROM curriculums WHERE id = ${Number(req.params.id)}`);
+      res.json({ success: true });
     } catch (error) {
-      console.error("Error saving vibe card:", error);
-      res.status(500).json({ error: "Failed to save vibe card" });
+      console.error("Error deleting curriculum:", error);
+      res.status(500).json({ error: "Failed to delete curriculum" });
     }
   });
 
-  app.get("/api/student/character-sheet", async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ error: "Not authenticated" });
+  app.get("/api/admin/curriculums/:curriculumId/decks", async (req: Request, res: Response) => {
+    if (!req.session.userId || req.session.userRole !== "admin") {
+      return res.status(403).json({ error: "Admin access required" });
     }
-
     try {
       const result = await db.execute(sql`
-        SELECT id, user_id as "userId", vibe_card_id as "vibeCardId", name, archetype, backstory,
-               motivations, strengths, flaws, goals, is_active as "isActive",
-               created_at as "createdAt", updated_at as "updatedAt"
-        FROM writer_character_sheets
-        WHERE user_id = ${req.session.userId} AND is_active = true
-        LIMIT 1
+        SELECT d.*,
+          (SELECT COUNT(*) FROM vibe_cards WHERE deck_id = d.id) as card_count
+        FROM vibe_decks d
+        WHERE d.curriculum_id = ${Number(req.params.curriculumId)}
+        ORDER BY d.order_index, d.id
       `);
+      res.json(result.rows);
+    } catch (error) {
+      console.error("Error fetching decks:", error);
+      res.status(500).json({ error: "Failed to fetch decks" });
+    }
+  });
 
-      if (result.rows.length === 0) {
-        return res.json(null);
-      }
+  app.post("/api/admin/decks", async (req: Request, res: Response) => {
+    if (!req.session.userId || req.session.userRole !== "admin") {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+    try {
+      const { curriculumId, title, description } = req.body;
+      if (!title?.trim() || !curriculumId) return res.status(400).json({ error: "Title and curriculumId are required" });
+      const maxOrder = await db.execute(sql`SELECT COALESCE(MAX(order_index), 0) + 1 as next_order FROM vibe_decks WHERE curriculum_id = ${curriculumId}`);
+      const nextOrder = (maxOrder.rows[0] as any).next_order;
+      const result = await db.execute(sql`
+        INSERT INTO vibe_decks (curriculum_id, title, description, order_index, is_published, created_at, updated_at)
+        VALUES (${curriculumId}, ${title.trim()}, ${description || null}, ${nextOrder}, false, NOW(), NOW())
+        RETURNING *
+      `);
+      res.status(201).json(result.rows[0]);
+    } catch (error) {
+      console.error("Error creating deck:", error);
+      res.status(500).json({ error: "Failed to create deck" });
+    }
+  });
+
+  app.put("/api/admin/decks/:id", async (req: Request, res: Response) => {
+    if (!req.session.userId || req.session.userRole !== "admin") {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+    try {
+      const { title, description } = req.body;
+      const result = await db.execute(sql`
+        UPDATE vibe_decks SET title = ${title}, description = ${description || null}, updated_at = NOW()
+        WHERE id = ${Number(req.params.id)}
+        RETURNING *
+      `);
+      if (result.rows.length === 0) return res.status(404).json({ error: "Deck not found" });
       res.json(result.rows[0]);
     } catch (error) {
-      console.error("Error fetching character sheet:", error);
-      res.status(500).json({ error: "Failed to fetch character sheet" });
+      console.error("Error updating deck:", error);
+      res.status(500).json({ error: "Failed to update deck" });
     }
   });
 
-  app.put("/api/student/character-sheet", async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ error: "Not authenticated" });
+  app.delete("/api/admin/decks/:id", async (req: Request, res: Response) => {
+    if (!req.session.userId || req.session.userRole !== "admin") {
+      return res.status(403).json({ error: "Admin access required" });
     }
-
     try {
-      const { name, archetype, backstory, motivations, strengths, flaws, goals, vibeCardId } = req.body;
-
-      const existingResult = await db.execute(sql`
-        SELECT id, name, archetype, backstory, motivations, strengths, flaws, goals, vibe_card_id
-        FROM writer_character_sheets
-        WHERE user_id = ${req.session.userId} AND is_active = true
-        LIMIT 1
-      `);
-      const existing = existingResult.rows[0] as any;
-
-      if (existing) {
-        const safeJsonify = (val: any) => val == null ? null : (typeof val === 'string' ? val : JSON.stringify(val));
-        const motivationsJson = safeJsonify(motivations ?? existing.motivations);
-        const strengthsJson = safeJsonify(strengths ?? existing.strengths);
-        const flawsJson = safeJsonify(flaws ?? existing.flaws);
-        const updateResult = await db.execute(sql`
-          UPDATE writer_character_sheets SET
-            name = ${name ?? existing.name},
-            archetype = ${archetype ?? existing.archetype},
-            backstory = ${backstory ?? existing.backstory},
-            motivations = ${motivationsJson}::jsonb,
-            strengths = ${strengthsJson}::jsonb,
-            flaws = ${flawsJson}::jsonb,
-            goals = ${goals ?? existing.goals},
-            vibe_card_id = ${vibeCardId ?? existing.vibe_card_id},
-            updated_at = NOW()
-          WHERE id = ${existing.id}
-          RETURNING id, user_id as "userId", vibe_card_id as "vibeCardId", name, archetype, backstory,
-                    motivations, strengths, flaws, goals, is_active as "isActive",
-                    created_at as "createdAt", updated_at as "updatedAt"
-        `);
-        return res.json(updateResult.rows[0]);
-      }
-
-      const motivationsJson = motivations ? JSON.stringify(motivations) : null;
-      const strengthsJson = strengths ? JSON.stringify(strengths) : null;
-      const flawsJson = flaws ? JSON.stringify(flaws) : null;
-      const createResult = await db.execute(sql`
-        INSERT INTO writer_character_sheets (user_id, name, archetype, backstory, motivations, strengths, flaws, goals, vibe_card_id, is_active, created_at, updated_at)
-        VALUES (${req.session.userId}, ${name || null}, ${archetype || null}, ${backstory || null}, ${motivationsJson}::jsonb, ${strengthsJson}::jsonb, ${flawsJson}::jsonb, ${goals || null}, ${vibeCardId || null}, true, NOW(), NOW())
-        RETURNING id, user_id as "userId", vibe_card_id as "vibeCardId", name, archetype, backstory,
-                  motivations, strengths, flaws, goals, is_active as "isActive",
-                  created_at as "createdAt", updated_at as "updatedAt"
-      `);
-
-      res.status(201).json(createResult.rows[0]);
+      await db.execute(sql`DELETE FROM vibe_decks WHERE id = ${Number(req.params.id)}`);
+      res.json({ success: true });
     } catch (error) {
-      console.error("Error saving character sheet:", error);
-      res.status(500).json({ error: "Failed to save character sheet" });
+      console.error("Error deleting deck:", error);
+      res.status(500).json({ error: "Failed to delete deck" });
     }
   });
 
-  app.post("/api/student/reset-creative-profile", async (req: Request, res: Response) => {
+  app.get("/api/admin/decks/:deckId/cards", async (req: Request, res: Response) => {
+    if (!req.session.userId || req.session.userRole !== "admin") {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+    try {
+      const result = await db.execute(sql`
+        SELECT * FROM vibe_cards WHERE deck_id = ${Number(req.params.deckId)} ORDER BY order_index, id
+      `);
+      res.json(result.rows);
+    } catch (error) {
+      console.error("Error fetching cards:", error);
+      res.status(500).json({ error: "Failed to fetch cards" });
+    }
+  });
+
+  app.post("/api/admin/cards", async (req: Request, res: Response) => {
+    if (!req.session.userId || req.session.userRole !== "admin") {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+    try {
+      const { deckId, task, qualifications, xpValue } = req.body;
+      if (!task?.trim() || !deckId) return res.status(400).json({ error: "Task and deckId are required" });
+      const maxOrder = await db.execute(sql`SELECT COALESCE(MAX(order_index), 0) + 1 as next_order FROM vibe_cards WHERE deck_id = ${deckId}`);
+      const nextOrder = (maxOrder.rows[0] as any).next_order;
+      const result = await db.execute(sql`
+        INSERT INTO vibe_cards (deck_id, task, qualifications, xp_value, order_index, is_published, created_at, updated_at)
+        VALUES (${deckId}, ${task.trim()}, ${qualifications || null}, ${xpValue || 0}, ${nextOrder}, false, NOW(), NOW())
+        RETURNING *
+      `);
+      res.status(201).json(result.rows[0]);
+    } catch (error) {
+      console.error("Error creating card:", error);
+      res.status(500).json({ error: "Failed to create card" });
+    }
+  });
+
+  app.put("/api/admin/cards/:id", async (req: Request, res: Response) => {
+    if (!req.session.userId || req.session.userRole !== "admin") {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+    try {
+      const { task, qualifications, xpValue } = req.body;
+      const result = await db.execute(sql`
+        UPDATE vibe_cards SET task = ${task}, qualifications = ${qualifications || null}, xp_value = ${xpValue || 0}, updated_at = NOW()
+        WHERE id = ${Number(req.params.id)}
+        RETURNING *
+      `);
+      if (result.rows.length === 0) return res.status(404).json({ error: "Card not found" });
+      res.json(result.rows[0]);
+    } catch (error) {
+      console.error("Error updating card:", error);
+      res.status(500).json({ error: "Failed to update card" });
+    }
+  });
+
+  app.delete("/api/admin/cards/:id", async (req: Request, res: Response) => {
+    if (!req.session.userId || req.session.userRole !== "admin") {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+    try {
+      await db.execute(sql`DELETE FROM vibe_cards WHERE id = ${Number(req.params.id)}`);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting card:", error);
+      res.status(500).json({ error: "Failed to delete card" });
+    }
+  });
+
+  app.get("/api/student/vibe-decks", async (req: Request, res: Response) => {
     if (!req.session.userId) {
       return res.status(401).json({ error: "Not authenticated" });
     }
-
     try {
-      await db.execute(sql`
-        UPDATE vibe_cards SET is_active = false, updated_at = NOW()
-        WHERE user_id = ${req.session.userId}
+      const curriculumsResult = await db.execute(sql`
+        SELECT * FROM curriculums WHERE is_published = true ORDER BY order_index, id
       `);
-
-      await db.execute(sql`
-        UPDATE writer_character_sheets SET is_active = false, updated_at = NOW()
-        WHERE user_id = ${req.session.userId}
+      const decksResult = await db.execute(sql`
+        SELECT d.*, c.title as curriculum_title
+        FROM vibe_decks d
+        JOIN curriculums c ON c.id = d.curriculum_id
+        WHERE d.is_published = true AND c.is_published = true
+        ORDER BY d.order_index, d.id
       `);
-
-      res.json({ success: true, message: "Creative profile reset successfully" });
+      const cardsResult = await db.execute(sql`
+        SELECT vc.*
+        FROM vibe_cards vc
+        JOIN vibe_decks d ON d.id = vc.deck_id
+        JOIN curriculums c ON c.id = d.curriculum_id
+        WHERE vc.is_published = true AND d.is_published = true AND c.is_published = true
+        ORDER BY vc.order_index, vc.id
+      `);
+      const decks = (decksResult.rows as any[]).map(deck => ({
+        ...deck,
+        cards: (cardsResult.rows as any[]).filter(card => card.deck_id === deck.id),
+      }));
+      res.json({ curriculums: curriculumsResult.rows, decks });
     } catch (error) {
-      console.error("Error resetting creative profile:", error);
-      res.status(500).json({ error: "Failed to reset creative profile" });
+      console.error("Error fetching student vibe decks:", error);
+      res.status(500).json({ error: "Failed to fetch vibe decks" });
     }
   });
 
@@ -6464,8 +6524,6 @@ export async function registerDonationRoutes(app: Express) {
           SELECT user_id, COUNT(*) as snippet_count
           FROM student_work WHERE content_type = 'vibescribe_snippet' GROUP BY user_id
         ) sw ON sw.user_id = u.id
-        LEFT JOIN vibe_cards vc ON vc.user_id = u.id AND vc.is_active = true
-        LEFT JOIN writer_character_sheets wcs ON wcs.user_id = u.id AND wcs.is_active = true
         WHERE u.role IN ('student', 'writer')
         ORDER BY u.created_at DESC
       `);

@@ -272,26 +272,6 @@ export default function CharacterCard({ userId = 1, className = "", apiEndpoint 
     }
   };
 
-  const handleResetProgress = async () => {
-    if (!confirm("Are you sure you want to reset your creative profile (Vibe Card & Character Sheet)? This cannot be undone.")) {
-      return;
-    }
-    try {
-      const res = await fetch("/api/student/reset-creative-profile", {
-        method: "POST",
-        credentials: "include",
-      });
-      if (res.ok) {
-        setApiLog("Creative profile reset successfully");
-        fetchCharacter();
-      } else {
-        const data = await res.json();
-        setApiLog(`Reset failed: ${data.error || "Unknown error"}`);
-      }
-    } catch (err) {
-      setApiLog(`Reset error: ${err instanceof Error ? err.message : "Network error"}`);
-    }
-  };
 
   const xpIntoLevel = Number(character?.xp_into_current_level) || 0;
   const xpNeededForNext = Number(character?.xp_needed_for_next_level) || 500;
@@ -631,13 +611,6 @@ export default function CharacterCard({ userId = 1, className = "", apiEndpoint 
             </select>
           </div>
 
-          {/* Reset Progress Button */}
-          <button
-            onClick={handleResetProgress}
-            className="w-full mt-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
-          >
-            Reset Progress
-          </button>
         </div>
 
         {/* Right Panel - Quest Dashboard */}

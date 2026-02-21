@@ -1144,41 +1144,49 @@ export type QuizResult = typeof quizResults.$inferSelect;
 export type InsertQuizResult = typeof quizResults.$inferInsert;
 export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
 
-// Vibe Cards - the "essence" distilled from VibeScribe captures
+// Curriculums - top-level training paths (e.g., Professional Writer)
+export const curriculums = pgTable("curriculums", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  orderIndex: integer("order_index").default(0),
+  isPublished: boolean("is_published").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type Curriculum = typeof curriculums.$inferSelect;
+export type InsertCurriculum = typeof curriculums.$inferInsert;
+
+// Vibe Decks - lesson/level containers within a curriculum
+export const vibeDecks = pgTable("vibe_decks", {
+  id: serial("id").primaryKey(),
+  curriculumId: integer("curriculum_id").references(() => curriculums.id, { onDelete: "cascade" }).notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  orderIndex: integer("order_index").default(0),
+  isPublished: boolean("is_published").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type VibeDeck = typeof vibeDecks.$inferSelect;
+export type InsertVibeDeck = typeof vibeDecks.$inferInsert;
+
+// Vibe Cards - individual task cards within a deck
 export const vibeCards = pgTable("vibe_cards", {
   id: serial("id").primaryKey(),
-  userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
-  archetype: text("archetype"),
-  themes: jsonb("themes"),
-  tone: text("tone"),
-  backstory: text("backstory"),
-  rawVibeData: jsonb("raw_vibe_data"),
-  isActive: boolean("is_active").default(true).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  deckId: integer("deck_id").references(() => vibeDecks.id, { onDelete: "cascade" }).notNull(),
+  task: text("task").notNull(),
+  qualifications: text("qualifications"),
+  xpValue: integer("xp_value").default(0),
+  orderIndex: integer("order_index").default(0),
+  isPublished: boolean("is_published").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export type VibeCard = typeof vibeCards.$inferSelect;
 export type InsertVibeCard = typeof vibeCards.$inferInsert;
-
-// Writer Character Sheets - structured persona derived from the Vibe Card
-export const writerCharacterSheets = pgTable("writer_character_sheets", {
-  id: serial("id").primaryKey(),
-  userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
-  vibeCardId: integer("vibe_card_id").references(() => vibeCards.id),
-  name: text("name"),
-  archetype: text("archetype"),
-  backstory: text("backstory"),
-  motivations: jsonb("motivations"),
-  strengths: jsonb("strengths"),
-  flaws: jsonb("flaws"),
-  goals: text("goals"),
-  isActive: boolean("is_active").default(true).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
-
-export type WriterCharacterSheet = typeof writerCharacterSheets.$inferSelect;
-export type InsertWriterCharacterSheet = typeof writerCharacterSheets.$inferInsert;
 
 export * from "./models/chat";

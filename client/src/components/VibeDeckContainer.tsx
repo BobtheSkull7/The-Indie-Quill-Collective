@@ -1,60 +1,68 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Layers, ChevronDown, ChevronRight, Sparkles } from "lucide-react";
 import VibeDeckCard from "./VibeDeckCard";
 
 interface CardData {
-  id: string;
+  id: number;
   task: string;
-  qualifications: string;
-  xpValue: number;
-  isCompleted?: boolean;
+  qualifications: string | null;
+  xp_value: number;
+  deck_id: number;
 }
 
 interface DeckData {
-  id: string;
+  id: number;
   title: string;
-  description: string;
+  description: string | null;
+  curriculum_title: string;
   cards: CardData[];
 }
 
-const PLACEHOLDER_DECKS: DeckData[] = [
-  {
-    id: "deck-1",
-    title: "Finding Your Voice",
-    description: "Discover your unique writing style and narrative voice",
-    cards: [
-      { id: "c1", task: "Write a 500-word personal essay about a moment that changed you", qualifications: "Complete the Voice Discovery module. Must demonstrate personal reflection and narrative structure.", xpValue: 150, isCompleted: true },
-      { id: "c2", task: "Read and annotate 3 different author voice examples", qualifications: "Submit annotated PDFs or notes for each reading. Identify tone, word choice, and rhythm patterns.", xpValue: 100 },
-      { id: "c3", task: "Record a VibeScribe voice reflection on your writing style", qualifications: "Minimum 2-minute recording. Discuss what makes your voice unique and areas to develop.", xpValue: 75 },
-    ],
-  },
-  {
-    id: "deck-2",
-    title: "Character Building",
-    description: "Create compelling, multi-dimensional characters",
-    cards: [
-      { id: "c4", task: "Create a full character profile sheet for your protagonist", qualifications: "Include backstory, motivations, strengths, flaws, and goals. Use the Writer Character Sheet format.", xpValue: 200 },
-      { id: "c5", task: "Write a dialogue scene between two contrasting characters", qualifications: "Minimum 300 words. Characters must have distinct, recognizable voices.", xpValue: 175 },
-    ],
-  },
-  {
-    id: "deck-3",
-    title: "World Building",
-    description: "Craft immersive settings for your stories",
-    cards: [
-      { id: "c6", task: "Create a detailed map or diagram of your story's world", qualifications: "Include at least 5 key locations with brief descriptions of each place's significance.", xpValue: 125 },
-      { id: "c7", task: "Write a 400-word immersive setting description", qualifications: "Engage all 5 senses. The reader should feel transported to this place.", xpValue: 150, isCompleted: true },
-    ],
-  },
-];
-
 export default function VibeDeckContainer() {
-  const [expandedDeck, setExpandedDeck] = useState<string | null>("deck-1");
+  const [decks, setDecks] = useState<DeckData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [expandedDeck, setExpandedDeck] = useState<number | null>(null);
 
-  const totalXP = PLACEHOLDER_DECKS.flatMap((d) => d.cards).reduce((sum, c) => sum + c.xpValue, 0);
-  const earnedXP = PLACEHOLDER_DECKS.flatMap((d) => d.cards)
-    .filter((c) => c.isCompleted)
-    .reduce((sum, c) => sum + c.xpValue, 0);
+  useEffect(() => {
+    loadVibeDecks();
+  }, []);
+
+  const loadVibeDecks = async () => {
+    try {
+      const res = await fetch("/api/student/vibe-decks", { credentials: "include" });
+      if (res.ok) {
+        const data = await res.json();
+        setDecks(data.decks || []);
+        if (data.decks?.length > 0) {
+          setExpandedDeck(data.decks[0].id);
+        }
+      }
+    } catch (err) {
+      console.error("Error loading vibe decks:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-500"></div>
+      </div>
+    );
+  }
+
+  if (decks.length === 0) {
+    return (
+      <div className="text-center py-8 text-gray-500">
+        <Sparkles className="w-10 h-10 mx-auto mb-3 text-gray-300" />
+        <p className="font-medium">No Vibe Decks available yet</p>
+        <p className="text-sm mt-1">Your training materials are being prepared. Check back soon!</p>
+      </div>
+    );
+  }
+
+  const totalXP = decks.flatMap(d => d.cards).reduce((sum, c) => sum + c.xp_value, 0);
 
   return (
     <div className="space-y-6">
@@ -69,16 +77,14 @@ export default function VibeDeckContainer() {
           </div>
         </div>
         <div className="flex items-center gap-2 bg-amber-50 px-4 py-2 rounded-full border border-amber-200">
-          <span className="text-sm text-amber-700 font-medium">{earnedXP} / {totalXP} XP</span>
+          <span className="text-sm text-amber-700 font-medium">{totalXP} XP available</span>
         </div>
       </div>
 
       <div className="space-y-4">
-        {PLACEHOLDER_DECKS.map((deck) => {
+        {decks.map((deck) => {
           const isExpanded = expandedDeck === deck.id;
-          const deckEarnedXP = deck.cards.filter((c) => c.isCompleted).reduce((sum, c) => sum + c.xpValue, 0);
-          const deckTotalXP = deck.cards.reduce((sum, c) => sum + c.xpValue, 0);
-          const completedCount = deck.cards.filter((c) => c.isCompleted).length;
+          const deckTotalXP = deck.cards.reduce((sum, c) => sum + c.xp_value, 0);
 
           return (
             <div key={deck.id} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
@@ -99,32 +105,31 @@ export default function VibeDeckContainer() {
                   <p className="text-xs text-gray-500">{deck.description}</p>
                 </div>
                 <div className="flex items-center gap-3 flex-shrink-0">
-                  <span className="text-xs text-gray-500">{completedCount}/{deck.cards.length} done</span>
-                  <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-purple-400 to-teal-400 rounded-full transition-all duration-500"
-                      style={{ width: `${deck.cards.length > 0 ? (completedCount / deck.cards.length) * 100 : 0}%` }}
-                    />
-                  </div>
+                  <span className="text-xs text-gray-500">{deck.cards.length} tasks</span>
                   <span className="text-xs font-medium text-amber-600 min-w-[60px] text-right">
-                    {deckEarnedXP}/{deckTotalXP} XP
+                    {deckTotalXP} XP
                   </span>
                 </div>
               </button>
 
               {isExpanded && (
                 <div className="px-5 pb-5 pt-1 border-t border-gray-100 bg-gradient-to-b from-gray-50/50 to-white">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-                    {deck.cards.map((card) => (
-                      <VibeDeckCard
-                        key={card.id}
-                        task={card.task}
-                        qualifications={card.qualifications}
-                        xpValue={card.xpValue}
-                        isCompleted={card.isCompleted}
-                      />
-                    ))}
-                  </div>
+                  {deck.cards.length === 0 ? (
+                    <div className="text-center py-6 text-gray-400 text-sm">
+                      No tasks available in this deck yet.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+                      {deck.cards.map((card) => (
+                        <VibeDeckCard
+                          key={card.id}
+                          task={card.task}
+                          qualifications={card.qualifications || "No specific qualifications"}
+                          xpValue={card.xp_value}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
