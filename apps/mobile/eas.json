@@ -20,9 +20,6 @@
     "production": {
       "distribution": "store",
       "autoIncrement": true,
-      "ios": {
-        "appleTeamId": "JD7969WZCA"
-      },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://theindiequillcollective.com",
         "NODE_ENV": "production"

@@ -33,7 +33,7 @@ args = "Start application"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "EAS Build (iOS Preview)"
+args = "EAS Build (iOS Production)"
 
 [[workflows.workflow]]
 name = "Start application"
@@ -48,15 +48,15 @@ waitForPort = 5000
 outputType = "webview"
 
 [[workflows.workflow]]
-name = "EAS Build (iOS Preview)"
+name = "EAS Build (iOS Production)"
 author = "agent"
-
-[workflows.workflow.metadata]
-outputType = "console"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd apps/mobile && npx eas build --platform ios --profile preview --non-interactive"
+args = "cd apps/mobile && npx eas build --platform ios --profile production --non-interactive"
+
+[workflows.workflow.metadata]
+outputType = "console"
 
 [[ports]]
 localPort = 5000
