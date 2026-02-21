@@ -37,6 +37,7 @@ import {
   X,
   PenTool,
   ScrollText,
+  RefreshCw,
 } from "lucide-react";
 
 interface VibeCard {
@@ -565,6 +566,13 @@ export default function Workspace() {
                 </div>
               ) : (
                 <div className="p-3 space-y-2">
+                  <button
+                    onClick={fetchTranscripts}
+                    className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs text-purple-600 bg-purple-50 hover:bg-purple-100 rounded-md transition-colors font-medium"
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                    Refresh Feed
+                  </button>
                   {transcripts.length === 0 ? (
                     <div className="text-center py-8 text-gray-400">
                       <Mic className="w-10 h-10 mx-auto mb-2" />

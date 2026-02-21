@@ -7810,6 +7810,16 @@ export async function registerDonationRoutes(app: Express) {
         VALUES (${user.id}, ${"Voice Note " + timestamp}, ${content}, ${wordCount}, NOW(), NOW())
       `);
       
+      // Also save to vibescribe_transcripts so the Sanctum Inspiration Feed can display it
+      try {
+        await db.execute(sql`
+          INSERT INTO vibescribe_transcripts (user_id, vibescribe_id, content, source_type, is_used, created_at)
+          VALUES (${user.id}, ${vibeScribeId}, ${content}, 'voice', false, NOW())
+        `);
+      } catch (transcriptErr) {
+        console.error("[VibeScribe] Warning: Could not save to vibescribe_transcripts:", transcriptErr);
+      }
+      
       // Get updated family word count
       let familyWordCount = 0;
       if (user.familyUnitId) {
