@@ -42,8 +42,6 @@ export default function ManuscriptEditor({
   const [saving, setSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [showReflection, setShowReflection] = useState(false);
-  const [reflection, setReflection] = useState("");
   const [submitted, setSubmitted] = useState(isCompleted);
   const [wordCount, setWordCount] = useState(0);
   const [loadingDraft, setLoadingDraft] = useState(true);
@@ -146,7 +144,6 @@ export default function ManuscriptEditor({
   };
 
   const handleSubmit = async () => {
-    if (!reflection.trim()) return;
     setSubmitting(true);
     try {
       if (editor) {
@@ -156,11 +153,10 @@ export default function ManuscriptEditor({
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reflection: reflection.trim() }),
+        body: JSON.stringify({ reflection: "" }),
       });
       if (res.ok) {
         setSubmitted(true);
-        setShowReflection(false);
         onSubmitted();
       }
     } catch (err) {
@@ -308,39 +304,6 @@ export default function ManuscriptEditor({
                 Submitted! You earned {cardXp} XP
               </span>
             </div>
-          ) : showReflection ? (
-            <div className="space-y-3">
-              <label className="block text-sm font-medium text-slate-700">
-                Brief reflection — what did you learn from this task?
-              </label>
-              <textarea
-                value={reflection}
-                onChange={(e) => setReflection(e.target.value)}
-                placeholder="Share a short thought on what this exercise taught you..."
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm resize-none h-20"
-                autoFocus
-              />
-              <div className="flex items-center justify-between">
-                <button
-                  onClick={() => setShowReflection(false)}
-                  className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSubmit}
-                  disabled={submitting || !reflection.trim()}
-                  className="inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 text-white rounded-lg font-medium text-sm shadow-sm transition-all"
-                >
-                  {submitting ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Send className="w-4 h-4" />
-                  )}
-                  {submitting ? "Submitting..." : `Submit & Earn ${cardXp} XP`}
-                </button>
-              </div>
-            </div>
           ) : (
             <div className="flex items-center justify-between">
               <button
@@ -351,17 +314,21 @@ export default function ManuscriptEditor({
                 Save Draft
               </button>
               <button
-                onClick={() => setShowReflection(true)}
-                disabled={wordCount < 10}
-                className="inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-medium text-sm shadow-sm transition-all"
+                onClick={handleSubmit}
+                disabled={wordCount < 10 || submitting}
+                className="inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-medium text-sm shadow-sm transition-all"
                 title={
                   wordCount < 10
                     ? "Write at least 10 words before submitting"
                     : ""
                 }
               >
-                <Send className="w-4 h-4" />
-                Submit for Review
+                {submitting ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
+                {submitting ? "Submitting..." : `Submit & Earn ${cardXp} XP`}
               </button>
             </div>
           )}
