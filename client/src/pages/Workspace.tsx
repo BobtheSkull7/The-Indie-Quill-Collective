@@ -398,6 +398,11 @@ export default function Workspace() {
             <PenTool className="w-5 h-5 text-teal-600" />
             Scribe's Sanctum
           </h1>
+          {user?.vibeScribeId && (
+            <span className="font-display text-lg font-bold text-teal-600 ml-3">
+              {user.vibeScribeId}
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-3">

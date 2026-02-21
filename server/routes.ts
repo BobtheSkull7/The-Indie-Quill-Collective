@@ -347,7 +347,7 @@ export async function registerRoutes(app: Express) {
 
     // Use raw SQL to bypass Drizzle ORM column issue
     const result = await db.execute(sql`
-      SELECT id, email, first_name as "firstName", last_name as "lastName", role, secondary_role as "secondaryRole"
+      SELECT id, email, first_name as "firstName", last_name as "lastName", role, secondary_role as "secondaryRole", vibescribe_id as "vibeScribeId"
       FROM public.users WHERE id = ${req.session.userId}
     `);
     const user = result.rows[0] as any;
@@ -362,7 +362,8 @@ export async function registerRoutes(app: Express) {
         firstName: user.firstName,
         lastName: user.lastName,
         role: user.role,
-        secondaryRole: user.secondaryRole || null
+        secondaryRole: user.secondaryRole || null,
+        vibeScribeId: user.vibeScribeId || null
       } 
     });
   });
