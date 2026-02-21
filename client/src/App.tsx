@@ -25,6 +25,7 @@ import VibeScribe from "./pages/VibeScribe";
 import GameTest from "./pages/GameTest";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import Initiation from "./pages/Initiation";
 import Navbar from "./components/Navbar";
 
 interface User {
@@ -84,6 +85,7 @@ function App() {
           <Route path="/donations" component={Donations} />
           <Route path="/donations/success" component={DonationSuccess} />
           <Route path="/apply" component={Apply} />
+          <Route path="/initiation" component={Initiation} />
           <Route path="/login" component={Login} />
           <Route path="/register" component={Register} />
           <Route path="/forgot-password" component={ForgotPassword} />

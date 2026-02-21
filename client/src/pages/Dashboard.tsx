@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "../App";
-import { FileText, Clock, CheckCircle, XCircle, ArrowRight, BookOpen, AlertCircle, Download, Trash2, Shield, ExternalLink } from "lucide-react";
+import { FileText, Clock, CheckCircle, XCircle, ArrowRight, BookOpen, AlertCircle, Download, Trash2, Shield, ExternalLink, Scroll, Sparkles, Star } from "lucide-react";
 
 interface Application {
   id: number;
@@ -99,7 +99,6 @@ export default function Dashboard() {
     if (contract?.status === "signed") return 3;
     if (appStatus === "accepted") return 2;
     if (appStatus === "under_review") return 1;
-    if (appStatus === "migrated") return 3;
     return 0;
   };
 
@@ -179,6 +178,79 @@ export default function Dashboard() {
     );
   }
 
+  const hasPendingApp = applications.some(a => a.status === "pending" || a.status === "under_review");
+  const pendingApp = applications.find(a => a.status === "pending" || a.status === "under_review");
+  const hasSignedContract = contracts.some(c => c.authorSignature);
+
+  if (hasPendingApp && hasSignedContract) {
+    return (
+      <div className="min-h-screen py-12 px-4 bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900">
+        <div className="max-w-2xl mx-auto text-center">
+          <div className="relative mb-8">
+            <div className="w-20 h-20 bg-gradient-to-br from-amber-400 to-amber-600 rounded-full flex items-center justify-center mx-auto shadow-lg shadow-amber-500/20">
+              <Scroll className="w-10 h-10 text-white" />
+            </div>
+            <div className="absolute inset-0 w-20 h-20 mx-auto rounded-full bg-amber-400/20 animate-ping" style={{ animationDuration: '3s' }} />
+          </div>
+
+          <h1 className="font-display text-3xl font-bold text-amber-100 mb-3">
+            Your Pledge Has Been Received
+          </h1>
+          <p className="text-lg text-slate-300 mb-8">
+            The Scribes are currently verifying your credentials.
+          </p>
+
+          <div className="relative mx-auto max-w-lg">
+            <div className="absolute inset-0 bg-gradient-to-b from-amber-900/30 to-amber-800/10 rounded-xl blur-xl" />
+            <div className="relative bg-amber-50/95 rounded-xl p-8 shadow-2xl border border-amber-200" style={{ fontFamily: "'EB Garamond', 'Georgia', serif" }}>
+              <div className="absolute top-0 left-0 right-0 h-3 bg-gradient-to-r from-amber-700 via-amber-500 to-amber-700 rounded-t-xl" />
+              <div className="absolute bottom-0 left-0 right-0 h-3 bg-gradient-to-r from-amber-700 via-amber-500 to-amber-700 rounded-b-xl" />
+              
+              <div className="py-4">
+                <p className="text-amber-900 text-lg leading-relaxed mb-6" style={{ textIndent: '2em' }}>
+                  While you wait, prepare your mind for the <em>Tomes of Wisdom</em> that await you. 
+                  Within them lie the secrets to mastering your craft and unlocking your potential as an author.
+                </p>
+
+                <div className="border-t border-amber-300 pt-6 mt-6">
+                  <div className="flex items-center justify-center space-x-3 mb-4">
+                    <Star className="w-5 h-5 text-amber-600" />
+                    <p className="text-sm font-semibold text-amber-800 uppercase tracking-wider">A Glimpse of Your Destiny</p>
+                    <Star className="w-5 h-5 text-amber-600" />
+                  </div>
+                  
+                  <div className="bg-amber-100/50 rounded-lg p-4 border border-amber-200">
+                    <div className="flex items-center justify-center space-x-2 mb-2">
+                      <Sparkles className="w-4 h-4 text-teal-600" />
+                      <span className="text-sm text-teal-700 font-medium">Level 1</span>
+                    </div>
+                    <p className="font-display text-xl font-bold text-slate-800 mb-1">the Novice</p>
+                    <p className="text-sm text-amber-700">Your title upon entering the Collective</p>
+                    <div className="mt-3 w-full bg-amber-200 rounded-full h-2">
+                      <div className="bg-teal-500 h-2 rounded-full" style={{ width: '0%' }} />
+                    </div>
+                    <p className="text-xs text-amber-600 mt-1">0 / 100 XP</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {pendingApp && (
+            <div className="mt-8 text-center">
+              <p className="text-sm text-slate-400 mb-2">
+                Submitted as <span className="text-amber-300 font-medium">{pendingApp.pseudonym || "Author"}</span> on {new Date(pendingApp.createdAt).toLocaleDateString()}
+              </p>
+              <p className="text-xs text-slate-500">
+                You will be notified by email when a decision has been made.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen py-12 px-4 bg-gray-50">
       <div className="max-w-5xl mx-auto">
@@ -189,10 +261,6 @@ export default function Dashboard() {
             </h1>
             <p className="text-gray-600 mt-1">Track your applications and publishing journey</p>
           </div>
-          <Link href="/apply" className="mt-4 md:mt-0 btn-primary inline-flex items-center space-x-2">
-            <span>New Application</span>
-            <ArrowRight className="w-4 h-4" />
-          </Link>
         </div>
 
         {applications.length === 0 ? (
@@ -201,14 +269,14 @@ export default function Dashboard() {
               <BookOpen className="w-8 h-8 text-blue-600" />
             </div>
             <h2 className="font-display text-2xl font-semibold text-slate-800 mb-3">
-              No Applications Yet
+              Begin Your Journey
             </h2>
             <p className="text-gray-600 mb-6 max-w-md mx-auto">
               Ready to share your story with the world? Start your publishing journey 
-              by submitting your first application.
+              with the Ritual of Initiation.
             </p>
-            <Link href="/apply" className="btn-primary inline-flex items-center space-x-2">
-              <span>Apply Now</span>
+            <Link href="/initiation" className="btn-primary inline-flex items-center space-x-2">
+              <span>Begin Initiation</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>

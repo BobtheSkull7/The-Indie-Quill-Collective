@@ -548,6 +548,140 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  app.post("/api/initiation/contract-preview", async (req: Request, res: Response) => {
+    try {
+      const { pseudonym, isMinor, identityMode } = req.body;
+      const contractText = generateContract({
+        pseudonym: pseudonym || "[Pseudonym]",
+        isMinor: !!isMinor,
+        publicIdentityEnabled: identityMode === "public",
+      });
+      return res.json({ contractText });
+    } catch (error) {
+      console.error("Contract preview error:", error);
+      return res.status(500).json({ message: "Failed to generate contract preview" });
+    }
+  });
+
+  app.post("/api/initiation", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    try {
+      const {
+        pseudonym, personaType, identityMode, dateOfBirth, isMinor,
+        guardianName, guardianEmail, guardianPhone, guardianRelationship,
+        expressionTypes, expressionOther, whyCollective, goals, hearAboutUs,
+        publicIdentityEnabled, signature, guardianSignature,
+      } = req.body;
+
+      if (!dateOfBirth || !pseudonym || !personaType) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+
+      const user = await getUserById(req.session.userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const authorLegalName = `${user.firstName?.trim() || ''} ${user.lastName?.trim() || ''}`.trim();
+      const normalizeName = (name: string): string => name.trim().toLowerCase().replace(/\s+/g, ' ');
+
+      if (normalizeName(signature || '') !== normalizeName(authorLegalName)) {
+        return res.status(400).json({
+          message: `Signature must match your legal name: "${authorLegalName}"`,
+        });
+      }
+
+      if (isMinor && guardianName) {
+        if (normalizeName(guardianSignature || '') !== normalizeName(guardianName)) {
+          return res.status(400).json({
+            message: `Guardian signature must match: "${guardianName}"`,
+          });
+        }
+      }
+
+      const applicationData = {
+        userId: req.session.userId,
+        status: "pending",
+        pseudonym: pseudonym?.trim() || null,
+        personaType,
+        identityMode,
+        dateOfBirth,
+        isMinor: !!isMinor,
+        guardianName: guardianName?.trim() || null,
+        guardianEmail: guardianEmail?.trim()?.toLowerCase() || null,
+        guardianPhone: guardianPhone?.trim() || null,
+        guardianRelationship: guardianRelationship || null,
+        expressionTypes: expressionTypes || "",
+        expressionOther: expressionOther || null,
+        whyCollective: whyCollective || null,
+        goals: goals || null,
+        hearAboutUs: hearAboutUs || null,
+        publicIdentityEnabled: !!publicIdentityEnabled,
+        hasStoryToTell: true,
+        personalStruggles: whyCollective || "",
+      };
+
+      const [newApplication] = await db.insert(applications).values(applicationData).returning();
+
+      const contractContent = generateContract(newApplication);
+      const clientIp = getClientIp(req) || "unknown";
+      const userAgent = req.headers["user-agent"] || "unknown";
+
+      const contractData: any = {
+        applicationId: newApplication.id,
+        userId: req.session.userId,
+        contractType: "publishing_agreement",
+        contractContent,
+        requiresGuardian: !!isMinor,
+        status: isMinor && !guardianSignature ? "pending_guardian" : "signed",
+        authorSignature: signature,
+        authorSignedAt: new Date(),
+        authorSignatureIp: clientIp,
+        authorSignatureUserAgent: userAgent,
+      };
+
+      if (isMinor && guardianSignature) {
+        contractData.guardianSignature = guardianSignature;
+        contractData.guardianSignedAt = new Date();
+        contractData.guardianSignatureIp = clientIp;
+        contractData.guardianSignatureUserAgent = userAgent;
+        contractData.status = "signed";
+      }
+
+      await db.insert(contracts).values(contractData);
+
+      try {
+        await sendApplicationReceivedEmail(user.email, user.firstName, user.id, newApplication.id);
+      } catch (emailError) {
+        console.error("Failed to send confirmation email:", emailError);
+      }
+
+      try {
+        const syncResult = await sendApplicationToLLC(
+          newApplication.id,
+          user.id,
+          applicationData,
+          { email: user.email, firstName: user.firstName, lastName: user.lastName }
+        );
+        if (syncResult.success) {
+          console.log(`Initiation application ${newApplication.id} synced to LLC: ${syncResult.llcApplicationId}`);
+        } else {
+          console.error(`Failed to sync initiation to LLC: ${syncResult.error}`);
+        }
+      } catch (syncError) {
+        console.error("Failed to sync initiation to LLC:", syncError);
+      }
+
+      return res.json({ success: true, applicationId: newApplication.id });
+    } catch (error) {
+      console.error("Initiation submission error:", error);
+      return res.status(500).json({ message: "Failed to complete initiation" });
+    }
+  });
+
   app.post("/api/applications", async (req: Request, res: Response) => {
     if (!req.session.userId) {
       return res.status(401).json({ message: "Not authenticated" });
@@ -851,17 +985,20 @@ export async function registerRoutes(app: Express) {
           .where(eq(applications.id, applicationId))
           .returning();
 
-        await db.insert(contracts).values({
-          applicationId: updated.id,
-          userId: updated.userId,
-          contractType: "publishing_agreement",
-          contractContent: generateContract(updated),
-          requiresGuardian: updated.isMinor,
-          status: "pending_signature",
-        });
+        const existingContracts = await db.select().from(contracts)
+          .where(eq(contracts.applicationId, applicationId));
+        const existingContract = existingContracts[0];
 
-        // NOTE: Sync to LLC is deferred until contract is signed (see contract signing endpoint)
-        // This ensures the Manual Ledger and Forensic Audit Trail are accurate before touching the Bookstore
+        if (!existingContract) {
+          await db.insert(contracts).values({
+            applicationId: updated.id,
+            userId: updated.userId,
+            contractType: "publishing_agreement",
+            contractContent: generateContract(updated),
+            requiresGuardian: updated.isMinor,
+            status: "pending_signature",
+          });
+        }
 
         try {
           const identityMode = updated.publicIdentityEnabled ? 'public' : 'pseudonym';
