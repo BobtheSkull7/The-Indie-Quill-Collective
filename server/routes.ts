@@ -1265,7 +1265,6 @@ export async function registerRoutes(app: Express) {
 
       if (signatureType === "author") {
         const normalizedAuthorName = normalizeName(authorLegalName);
-        console.log(`[Contract Sign] Author name validation: entered="${normalizedSignature}" expected="${normalizedAuthorName}" match=${normalizedSignature === normalizedAuthorName}`);
         if (normalizedSignature !== normalizedAuthorName) {
           return res.status(400).json({ 
             message: `Identity Mismatch: The name entered does not match the Author's Legal Name. Please enter your name exactly as "${authorLegalName}". This is required to maintain the Zero-PII safety of your account.`
