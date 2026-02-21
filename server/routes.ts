@@ -6988,8 +6988,17 @@ export async function registerDonationRoutes(app: Express) {
 
     try {
       const userId = String(req.session.userId);
-      const character = await ensureGameCharacter(userId);
+      console.log(`[Game Character] Loading for user ${userId}`);
+      
+      let character;
+      try {
+        character = await ensureGameCharacter(userId);
+      } catch (charErr) {
+        console.error("[Game Character] ensureGameCharacter failed:", charErr);
+        return res.status(500).json({ message: "Failed to create game character" });
+      }
       if (!character) {
+        console.error("[Game Character] ensureGameCharacter returned null for user", userId);
         return res.status(500).json({ message: "Failed to create game character" });
       }
 
@@ -7002,17 +7011,22 @@ export async function registerDonationRoutes(app: Express) {
       displayData.display_name = userData?.first_name || "Student";
       displayData.full_name = `${displayData.display_name} ${character.active_title || "the Novice"}`;
 
-      const submissionsResult = await db.execute(sql`
-        SELECT COUNT(*) as count FROM card_submissions WHERE user_id = ${userId}
-      `);
-      displayData.quests_completed = parseInt((submissionsResult.rows[0] as any).count) || 0;
+      try {
+        const submissionsResult = await db.execute(sql`
+          SELECT COUNT(*) as count FROM card_submissions WHERE user_id = ${userId}
+        `);
+        displayData.quests_completed = parseInt((submissionsResult.rows[0] as any).count) || 0;
+      } catch (subErr) {
+        console.warn("[Game Character] card_submissions query failed, defaulting to 0:", subErr);
+        displayData.quests_completed = 0;
+      }
 
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.set('Pragma', 'no-cache');
       res.set('Expires', '0');
       return res.json(displayData);
     } catch (error) {
-      console.error("Error fetching game character:", error);
+      console.error("[Game Character] Error fetching game character:", error);
       res.status(500).json({ message: "Failed to load character data" });
     }
   });
