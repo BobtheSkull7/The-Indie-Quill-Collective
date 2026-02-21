@@ -6503,9 +6503,7 @@ export async function registerDonationRoutes(app: Express) {
           COALESCE(sal.total_hours, 0) as "hoursActive",
           COALESCE(scp.avg_progress, 0) as "courseProgress",
           COALESCE(scp.modules_completed, 0) as "modulesCompleted",
-          COALESCE(sw.snippet_count, 0) as "vibeSnippetCount",
-          vc.archetype as "vibeArchetype",
-          CASE WHEN wcs.id IS NOT NULL THEN true ELSE false END as "hasCharacterSheet"
+          COALESCE(sw.snippet_count, 0) as "vibeSnippetCount"
         FROM users u
         LEFT JOIN student_profiles sp ON sp.user_id = u.id
         LEFT JOIN (
