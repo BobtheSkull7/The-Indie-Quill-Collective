@@ -43,6 +43,7 @@ import express from "express";
 import { processAcceptance } from "./services/cohort-service";
 import { createSyncJob, processSyncJob, registerNpoAuthorWithLLC } from "./services/npo-sync-service";
 import { assignAuthorId } from "./utils/authorId";
+import { awardXP, ensureGameCharacter, getCharacterDisplayData, TOME_XP_BONUS } from "./services/game-engine";
 
 // Helper function to generate and store contract PDF
 async function generateAndStorePDF(contractId: number): Promise<Buffer | null> {
@@ -1765,285 +1766,43 @@ export async function registerRoutes(app: Express) {
     }
   });
 
-  // Game Engine proxy endpoint - Admin only
+  // Native Game Engine - Admin character view by ID
   app.get("/api/admin/game-engine/character/:id", async (req: Request, res: Response) => {
     if (!req.session.userId || req.session.userRole !== "admin") {
       return res.status(403).json({ message: "Not authorized" });
     }
 
-    const GAME_ENGINE_URL = process.env.GAME_ENGINE_URL;
-    if (!GAME_ENGINE_URL) {
-      return res.status(500).json({ message: "Game Engine URL not configured" });
-    }
-
-    const characterId = req.params.id;
-    const timestamp = Date.now();
-    const endpoint = `${GAME_ENGINE_URL}/character/status/${characterId}?_t=${timestamp}`;
-
     try {
-      const response = await fetch(endpoint, {
-        cache: 'no-store',
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-        },
-      });
-      if (!response.ok) {
-        const errorText = await response.text();
-        return res.status(response.status).json({ 
-          message: `Game Engine returned ${response.status}`,
-          details: errorText
-        });
+      const targetUserId = req.params.id;
+      const character = await ensureGameCharacter(targetUserId);
+      if (!character) {
+        return res.status(404).json({ message: "Character not found" });
       }
-      const data = await response.json();
+      const displayData = getCharacterDisplayData(character);
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-      res.set('Pragma', 'no-cache');
-      res.set('Expires', '0');
-      return res.json(data);
+      return res.json(displayData);
     } catch (error) {
-      console.error("Game Engine fetch error:", error);
-      return res.status(502).json({ 
-        message: "Failed to connect to Game Engine",
-        error: String(error)
-      });
+      console.error("Error fetching admin character:", error);
+      return res.status(500).json({ message: "Failed to load character" });
     }
   });
 
-  // Game Engine Quest Actions - works for both student and admin
-  // Helper to resolve gameCharacterId from student profile
-  async function resolveGameCharacterId(req: Request, res: Response): Promise<string | null> {
-    const isAdmin = req.session.userRole === "admin";
-    const userIdParam = req.query.userId as string | undefined;
-
-    const targetUserId = (isAdmin && userIdParam) ? parseInt(userIdParam) : req.session.userId;
-    if (!targetUserId) return null;
-
-    const [profile] = await db.select({ gameCharacterId: studentProfiles.gameCharacterId })
-      .from(studentProfiles)
-      .where(eq(studentProfiles.userId, targetUserId))
-      .limit(1);
-
-    return profile?.gameCharacterId || null;
-  }
-
-  app.post("/api/student/game-engine/quest/submit/:questId", async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
-
-    const GAME_ENGINE_URL = process.env.GAME_ENGINE_URL;
-    if (!GAME_ENGINE_URL) {
-      return res.status(500).json({ message: "Game Engine URL not configured" });
-    }
-
-    const gameCharacterId = await resolveGameCharacterId(req, res);
-    if (!gameCharacterId) {
-      return res.status(404).json({ message: "Game character not found" });
-    }
-
-    const questId = req.params.questId;
-    const { proof } = req.body;
-    const endpoint = `${GAME_ENGINE_URL}/quest/submit/${gameCharacterId}/${questId}`;
-
-    try {
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ proof: proof || "" }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        return res.status(response.status).json(data);
-      }
-      return res.json(data);
-    } catch (error) {
-      console.error("Game Engine quest submit error:", error);
-      return res.status(502).json({ message: "Failed to connect to Game Engine", error: String(error) });
-    }
-  });
-
-  app.post("/api/student/game-engine/quest/complete/:questId", async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
-
-    const GAME_ENGINE_URL = process.env.GAME_ENGINE_URL;
-    if (!GAME_ENGINE_URL) {
-      return res.status(500).json({ message: "Game Engine URL not configured" });
-    }
-
-    const gameCharacterId = await resolveGameCharacterId(req, res);
-    if (!gameCharacterId) {
-      return res.status(404).json({ message: "Game character not found" });
-    }
-
-    const questId = req.params.questId;
-    const endpoint = `${GAME_ENGINE_URL}/quest/complete?user_id=${gameCharacterId}&quest_id=${questId}`;
-
-    try {
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        return res.status(response.status).json(data);
-      }
-      return res.json(data);
-    } catch (error) {
-      console.error("Game Engine quest complete error:", error);
-      return res.status(502).json({ message: "Failed to connect to Game Engine", error: String(error) });
-    }
-  });
-
-  app.post("/api/student/game-engine/quest/claim/:questId", async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
-
-    const GAME_ENGINE_URL = process.env.GAME_ENGINE_URL;
-    if (!GAME_ENGINE_URL) {
-      return res.status(500).json({ message: "Game Engine URL not configured" });
-    }
-
-    const gameCharacterId = await resolveGameCharacterId(req, res);
-    if (!gameCharacterId) {
-      return res.status(404).json({ message: "Game character not found" });
-    }
-
-    const questId = req.params.questId;
-    const endpoint = `${GAME_ENGINE_URL}/quest/claim/${gameCharacterId}/${questId}`;
-
-    try {
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        return res.status(response.status).json(data);
-      }
-      return res.json(data);
-    } catch (error) {
-      console.error("Game Engine quest claim error:", error);
-      return res.status(502).json({ message: "Failed to connect to Game Engine", error: String(error) });
-    }
-  });
-
-  // Admin quest action endpoints (mirror student ones but require admin role)
-  app.post("/api/admin/game-engine/quest/submit/:questId", async (req: Request, res: Response) => {
+  // Native Game Engine - Admin award XP to any user
+  app.post("/api/admin/game-engine/award-xp", async (req: Request, res: Response) => {
     if (!req.session.userId || req.session.userRole !== "admin") {
       return res.status(403).json({ message: "Not authorized" });
     }
 
-    const GAME_ENGINE_URL = process.env.GAME_ENGINE_URL;
-    if (!GAME_ENGINE_URL) {
-      return res.status(500).json({ message: "Game Engine URL not configured" });
-    }
-
-    const targetUserId = req.query.userId ? parseInt(req.query.userId as string) : req.session.userId!;
-    const [profile] = await db.select({ gameCharacterId: studentProfiles.gameCharacterId })
-      .from(studentProfiles)
-      .where(eq(studentProfiles.userId, targetUserId))
-      .limit(1);
-    const characterId = profile?.gameCharacterId;
-    if (!characterId) {
-      return res.status(404).json({ message: "Game character not found for user" });
-    }
-    const questId = req.params.questId;
-    const { proof } = req.body;
-    const endpoint = `${GAME_ENGINE_URL}/quest/submit/${characterId}/${questId}`;
-
     try {
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ proof: proof || "" }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        return res.status(response.status).json(data);
+      const { userId, amount, source } = req.body;
+      if (!userId || !amount || amount <= 0) {
+        return res.status(400).json({ message: "userId and positive amount required" });
       }
-      return res.json(data);
+      const result = await awardXP(String(userId), amount, source || "admin_grant");
+      return res.json(result);
     } catch (error) {
-      console.error("Game Engine quest submit error:", error);
-      return res.status(502).json({ message: "Failed to connect to Game Engine", error: String(error) });
-    }
-  });
-
-  app.post("/api/admin/game-engine/quest/complete/:questId", async (req: Request, res: Response) => {
-    if (!req.session.userId || req.session.userRole !== "admin") {
-      return res.status(403).json({ message: "Not authorized" });
-    }
-
-    const GAME_ENGINE_URL = process.env.GAME_ENGINE_URL;
-    if (!GAME_ENGINE_URL) {
-      return res.status(500).json({ message: "Game Engine URL not configured" });
-    }
-
-    const targetUserId2 = req.query.userId ? parseInt(req.query.userId as string) : req.session.userId!;
-    const [profile2] = await db.select({ gameCharacterId: studentProfiles.gameCharacterId })
-      .from(studentProfiles)
-      .where(eq(studentProfiles.userId, targetUserId2))
-      .limit(1);
-    const characterId = profile2?.gameCharacterId;
-    if (!characterId) {
-      return res.status(404).json({ message: "Game character not found for user" });
-    }
-    const questId = req.params.questId;
-    const endpoint = `${GAME_ENGINE_URL}/quest/complete?user_id=${characterId}&quest_id=${questId}`;
-
-    try {
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        return res.status(response.status).json(data);
-      }
-      return res.json(data);
-    } catch (error) {
-      console.error("Game Engine quest complete error:", error);
-      return res.status(502).json({ message: "Failed to connect to Game Engine", error: String(error) });
-    }
-  });
-
-  app.post("/api/admin/game-engine/quest/claim/:questId", async (req: Request, res: Response) => {
-    if (!req.session.userId || req.session.userRole !== "admin") {
-      return res.status(403).json({ message: "Not authorized" });
-    }
-
-    const GAME_ENGINE_URL = process.env.GAME_ENGINE_URL;
-    if (!GAME_ENGINE_URL) {
-      return res.status(500).json({ message: "Game Engine URL not configured" });
-    }
-
-    const targetUserId3 = req.query.userId ? parseInt(req.query.userId as string) : req.session.userId!;
-    const [profile3] = await db.select({ gameCharacterId: studentProfiles.gameCharacterId })
-      .from(studentProfiles)
-      .where(eq(studentProfiles.userId, targetUserId3))
-      .limit(1);
-    const characterId = profile3?.gameCharacterId;
-    if (!characterId) {
-      return res.status(404).json({ message: "Game character not found for user" });
-    }
-    const questId = req.params.questId;
-    const endpoint = `${GAME_ENGINE_URL}/quest/claim/${characterId}/${questId}`;
-
-    try {
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        return res.status(response.status).json(data);
-      }
-      return res.json(data);
-    } catch (error) {
-      console.error("Game Engine quest claim error:", error);
-      return res.status(502).json({ message: "Failed to connect to Game Engine", error: String(error) });
+      console.error("Error awarding XP:", error);
+      return res.status(500).json({ message: "Failed to award XP" });
     }
   });
 
@@ -2596,27 +2355,13 @@ export async function registerRoutes(app: Express) {
       if (role === "student" || role === "writer") {
         const userVibeScribeId = updated?.vibeScribeId || shortId || "N/A";
         
-        // Game Engine character creation - ONLY for students, writers skip this
+        // Native Game Engine character creation - ONLY for students
         if (role === "student") {
-          const GAME_ENGINE_URL = process.env.GAME_ENGINE_URL;
-          if (GAME_ENGINE_URL) {
-            try {
-              const gameEngineRes = await fetch(`${GAME_ENGINE_URL}/character/create`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  user_id: userId,
-                  username: userVibeScribeId,
-                }),
-              });
-              if (gameEngineRes.ok) {
-                console.log(`Game Engine character created for user ${userId}`);
-              } else {
-                console.error(`Game Engine character creation failed: ${gameEngineRes.status}`);
-              }
-            } catch (gameError) {
-              console.error("Failed to create Game Engine character:", gameError);
-            }
+          try {
+            await ensureGameCharacter(String(userId));
+            console.log(`[Game Engine] Native character created for user ${userId}`);
+          } catch (gameError) {
+            console.error("Failed to create native game character:", gameError);
           }
         }
         
@@ -6308,12 +6053,28 @@ export async function registerDonationRoutes(app: Express) {
     try {
       const { deckId } = req.body;
       if (!deckId) return res.status(400).json({ error: "deckId is required" });
+
+      const existingCheck = await db.execute(sql`
+        SELECT id FROM tome_absorptions WHERE user_id = ${req.session.userId} AND deck_id = ${deckId}
+      `);
+      const alreadyAbsorbed = existingCheck.rows.length > 0;
+
       await db.execute(sql`
         INSERT INTO tome_absorptions (user_id, deck_id, absorbed_at)
         VALUES (${req.session.userId}, ${deckId}, NOW())
         ON CONFLICT (user_id, deck_id) DO NOTHING
       `);
-      res.json({ success: true, absorbed: true });
+
+      let xpResult = null;
+      if (!alreadyAbsorbed) {
+        try {
+          xpResult = await awardXP(String(req.session.userId), TOME_XP_BONUS, `tome_absorption:${deckId}`);
+        } catch (xpErr) {
+          console.error("[Game Engine] Failed to award XP on tome absorption:", xpErr);
+        }
+      }
+
+      res.json({ success: true, absorbed: true, xp_bonus: alreadyAbsorbed ? 0 : TOME_XP_BONUS, xp_result: xpResult });
     } catch (error) {
       console.error("Error absorbing tome:", error);
       res.status(500).json({ error: "Failed to absorb tome" });
@@ -6404,7 +6165,16 @@ export async function registerDonationRoutes(app: Express) {
         RETURNING *
       `);
 
-      res.json({ success: true, submission: result.rows[0], xp_earned: xpValue });
+      let xpResult = null;
+      if (xpValue > 0) {
+        try {
+          xpResult = await awardXP(String(req.session.userId), xpValue, `card_submission:${cardIdNum}`);
+        } catch (xpErr) {
+          console.error("[Game Engine] Failed to award XP on card submission:", xpErr);
+        }
+      }
+
+      res.json({ success: true, submission: result.rows[0], xp_earned: xpValue, xp_result: xpResult });
     } catch (error) {
       console.error("Error submitting card:", error);
       res.status(500).json({ error: "Failed to submit" });
@@ -6883,167 +6653,70 @@ export async function registerDonationRoutes(app: Express) {
     }
   });
 
-  // Get student's game character data from Game Engine
+  // Get student's game character data from native Game Engine
   app.get("/api/student/game-character", async (req: Request, res: Response) => {
     if (!req.session.userId) {
       return res.status(401).json({ message: "Not authenticated" });
     }
 
-    // Verify user is a student
-    const userResult = await db.execute(sql`
-      SELECT id, role FROM users WHERE id = ${req.session.userId} LIMIT 1
-    `);
-    if (userResult.rows.length === 0 || (userResult.rows[0] as any).role !== "student") {
-      return res.status(403).json({ message: "Student access required" });
-    }
-
     try {
-      const GAME_ENGINE_URL = process.env.GAME_ENGINE_URL;
-      if (!GAME_ENGINE_URL) {
-        return res.status(503).json({ message: "Game Engine not configured" });
+      const userId = String(req.session.userId);
+      const character = await ensureGameCharacter(userId);
+      if (!character) {
+        return res.status(500).json({ message: "Failed to create game character" });
       }
 
-      const profileResult = await db.execute(sql`
-        SELECT game_character_id FROM student_profiles WHERE user_id = ${req.session.userId} LIMIT 1
+      const userResult = await db.execute(sql`
+        SELECT first_name, vibe_scribe_id FROM users WHERE id = ${userId} LIMIT 1
       `);
-      const profile = profileResult.rows[0] as any;
-      let gameCharacterId = profile?.game_character_id;
-      if (!gameCharacterId) {
-        try {
-          const userResult2 = await db.execute(sql`
-            SELECT vibe_scribe_id, first_name FROM users WHERE id = ${req.session.userId} LIMIT 1
-          `);
-          const userData = userResult2.rows[0] as any;
-          const username = userData?.vibe_scribe_id || userData?.first_name || "student";
-          
-          const createRes = await fetch(`${GAME_ENGINE_URL}/character/create`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              user_id: req.session.userId,
-              username: username,
-            }),
-          });
-          
-          if (createRes.ok) {
-            const createData = await createRes.json();
-            const newCharId = createData.user_id || createData.character_id || createData.id;
-            if (newCharId) {
-              const updateResult = await db.execute(sql`
-                UPDATE student_profiles SET game_character_id = ${String(newCharId)}
-                WHERE user_id = ${req.session.userId}
-              `);
-              if ((updateResult as any).rowCount === 0) {
-                await db.execute(sql`
-                  INSERT INTO student_profiles (user_id, game_character_id)
-                  VALUES (${req.session.userId}, ${String(newCharId)})
-                  ON CONFLICT (user_id) DO UPDATE SET game_character_id = ${String(newCharId)}
-                `);
-              }
-              gameCharacterId = String(newCharId);
-              console.log(`[Game Engine] Auto-created character ${newCharId} for user ${req.session.userId}`);
-            }
-          }
-        } catch (autoCreateErr) {
-          console.error("[Game Engine] Auto-create failed:", autoCreateErr);
-        }
-        
-        if (!gameCharacterId) {
-          return res.status(404).json({ 
-            message: "No game character assigned yet. Your character will be set up by an admin.",
-            noCharacter: true
-          });
-        }
-      }
-      const timestamp = Date.now();
-      const endpoint = `${GAME_ENGINE_URL}/character/status/${gameCharacterId}?_t=${timestamp}`;
+      const userData = userResult.rows[0] as any;
+      const displayData = getCharacterDisplayData(character);
+      displayData.username = userData?.vibe_scribe_id || userData?.first_name || "student";
+      displayData.display_name = userData?.first_name || "Student";
+      displayData.full_name = `${displayData.display_name} ${character.active_title || "the Novice"}`;
 
-      const response = await fetch(endpoint, {
-        headers: {
-          "Cache-Control": "no-cache, no-store, must-revalidate",
-          "Pragma": "no-cache",
-        },
-      });
+      const submissionsResult = await db.execute(sql`
+        SELECT COUNT(*) as count FROM card_submissions WHERE user_id = ${userId}
+      `);
+      displayData.quests_completed = parseInt((submissionsResult.rows[0] as any).count) || 0;
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Game Engine error:", errorText);
-        return res.status(response.status).json({ 
-          message: `Game Engine returned ${response.status}`,
-          details: errorText
-        });
-      }
-
-      const data = await response.json();
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.set('Pragma', 'no-cache');
       res.set('Expires', '0');
-      return res.json(data);
+      return res.json(displayData);
     } catch (error) {
       console.error("Error fetching game character:", error);
-      res.status(502).json({ message: "Failed to connect to Game Engine" });
+      res.status(500).json({ message: "Failed to load character data" });
     }
   });
 
-  // Admin endpoint for game character (testing)
+  // Admin endpoint for game character - view any student's character
   app.get("/api/admin/game-character", async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
-
-    // Verify user is admin
-    const adminCheckResult = await db.execute(sql`
-      SELECT id, role FROM users WHERE id = ${req.session.userId} LIMIT 1
-    `);
-    if (adminCheckResult.rows.length === 0 || (adminCheckResult.rows[0] as any).role !== "admin") {
+    if (!req.session.userId || !hasRole(req.session, "admin")) {
       return res.status(403).json({ message: "Admin access required" });
     }
 
     try {
-      const GAME_ENGINE_URL = process.env.GAME_ENGINE_URL;
-      if (!GAME_ENGINE_URL) {
-        console.error("GAME_ENGINE_URL env var is not set");
-        return res.status(503).json({ message: "Game Engine URL not configured. Set GAME_ENGINE_URL environment variable." });
+      const targetUserId = (req.query.userId as string) || String(req.session.userId);
+      const character = await ensureGameCharacter(targetUserId);
+      if (!character) {
+        return res.status(500).json({ message: "Failed to load character" });
       }
 
-      const gameCharacterId = 1;
-      const timestamp = Date.now();
-      const endpoint = `${GAME_ENGINE_URL}/character/status/${gameCharacterId}?_t=${timestamp}`;
-      console.log(`[Game Engine] Fetching: ${endpoint}`);
+      const userResult = await db.execute(sql`
+        SELECT first_name, vibe_scribe_id FROM users WHERE id = ${targetUserId} LIMIT 1
+      `);
+      const userData = userResult.rows[0] as any;
+      const displayData = getCharacterDisplayData(character);
+      displayData.username = userData?.vibe_scribe_id || userData?.first_name || "student";
+      displayData.display_name = userData?.first_name || "Student";
+      displayData.full_name = `${displayData.display_name} ${character.active_title || "the Novice"}`;
 
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000);
-
-      const response = await fetch(endpoint, {
-        headers: {
-          "Cache-Control": "no-cache, no-store, must-revalidate",
-          "Pragma": "no-cache",
-        },
-        signal: controller.signal,
-      });
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`[Game Engine] Error ${response.status}: ${errorText}`);
-        return res.status(response.status).json({ 
-          message: `Game Engine returned ${response.status}`,
-          details: errorText
-        });
-      }
-
-      const data = await response.json();
-      console.log(`[Game Engine] Success - got character data for user ${data.user_id}`);
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-      res.set('Pragma', 'no-cache');
-      res.set('Expires', '0');
-      return res.json(data);
-    } catch (error: any) {
-      console.error("[Game Engine] Connection error:", error.message || error);
-      if (error.name === 'AbortError') {
-        return res.status(504).json({ message: "Game Engine request timed out (15s). The server may be starting up - try again in a moment." });
-      }
-      res.status(502).json({ message: `Failed to connect to Game Engine: ${error.message || 'Unknown error'}` });
+      return res.json(displayData);
+    } catch (error) {
+      console.error("Error fetching admin game character:", error);
+      res.status(500).json({ message: "Failed to load character data" });
     }
   });
 

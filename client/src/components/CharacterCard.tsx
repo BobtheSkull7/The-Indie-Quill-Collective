@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
-import { RefreshCw, Gift, X, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { RefreshCw, X } from "lucide-react";
 
 interface EquippedItems {
   main_hand: string | null;
@@ -10,20 +10,8 @@ interface EquippedItems {
   feet: string | null;
 }
 
-interface Quest {
-  id: number;
-  title: string;
-  description: string;
-  phase: number;
-  chapter: number;
-  xp_reward: number;
-  proxy_hours_reward: number;
-  is_claimable: boolean;
-  is_completed: boolean;
-}
-
 interface CharacterData {
-  user_id: number;
+  user_id: string;
   username: string;
   display_name: string;
   full_name: string;
@@ -38,9 +26,6 @@ interface CharacterData {
   unlocked_items: string[];
   quests_completed: number;
   total_quests: number;
-  claimable_quests: string[];
-  completed_quests: string[];
-  available_quests?: Quest[];
 }
 
 interface CharacterCardProps {
@@ -71,38 +56,12 @@ const PAPER_DOLL_SLOTS: SlotConfig[] = [
   { key: "feet", label: "Sneakers", icon: "👟", unlockLevel: 6 },
 ];
 
-const PHASE_COLORS: Record<number, string> = {
-  1: "bg-blue-600",
-  2: "bg-green-600",
-  3: "bg-yellow-500 text-black",
-  4: "bg-purple-600",
-  5: "bg-red-600",
-};
-
 export default function CharacterCard({ userId = 1, className = "", apiEndpoint = "/api/student/game-character" }: CharacterCardProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [character, setCharacter] = useState<CharacterData | null>(null);
   const [selectedTitle, setSelectedTitle] = useState<string>("");
-  const [apiLog, setApiLog] = useState<string>("");
-
-  const [proofModalQuestId, setProofModalQuestId] = useState<number | null>(null);
-  const [proofText, setProofText] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [completingQuestId, setCompletingQuestId] = useState<number | null>(null);
-  const [claimingQuestId, setClaimingQuestId] = useState<number | null>(null);
   const [dingData, setDingData] = useState<DingData | null>(null);
-
-  const isAdmin = apiEndpoint.includes("admin");
-
-  const getQuestEndpointBase = useCallback(() => {
-    if (isAdmin) {
-      const match = apiEndpoint.match(/\/character\/(\d+)/);
-      const charId = match ? match[1] : "1";
-      return { base: "/api/admin/game-engine/quest", query: `?userId=${charId}` };
-    }
-    return { base: "/api/student/game-engine/quest", query: "" };
-  }, [apiEndpoint, isAdmin]);
 
   const fetchCharacter = async () => {
     setLoading(true);
@@ -111,7 +70,6 @@ export default function CharacterCard({ userId = 1, className = "", apiEndpoint 
     try {
       const timestamp = Date.now();
       const url = `${apiEndpoint}?_t=${timestamp}`;
-      setApiLog(`Fetching: ${url}`);
       
       const res = await fetch(url, {
         credentials: "include",
@@ -129,7 +87,6 @@ export default function CharacterCard({ userId = 1, className = "", apiEndpoint 
         try {
           const data = await res.json();
           if (data.noCharacter) {
-            setApiLog(`Info (${elapsed}ms): No character assigned yet`);
             setError(data.message || "No game character assigned yet.");
             setLoading(false);
             return;
@@ -139,14 +96,12 @@ export default function CharacterCard({ userId = 1, className = "", apiEndpoint 
           const text = await res.text();
           errorMessage = text || `Error ${res.status}`;
         }
-        setApiLog(`Error (${elapsed}ms): ${errorMessage}`);
         throw new Error(errorMessage);
       }
       
       const data = await res.json();
       setCharacter(data);
       setSelectedTitle(data.active_title || "the Novice");
-      setApiLog(`Success (${elapsed}ms): Level ${data.current_level}, ${data.total_xp} XP`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
@@ -164,115 +119,6 @@ export default function CharacterCard({ userId = 1, className = "", apiEndpoint 
     return () => clearTimeout(timer);
   }, [dingData]);
 
-  const checkForDing = (data: any) => {
-    if (data.ding || data.unlocked_item || data.new_titles) {
-      setDingData({
-        message: data.ding || data.message || "Quest completed!",
-        unlocked_item: data.unlocked_item,
-        new_titles: data.new_titles,
-      });
-    }
-  };
-
-  const handleSubmitProof = (questId: number) => {
-    setProofModalQuestId(questId);
-    setProofText("");
-  };
-
-  const handleProofSubmit = async () => {
-    if (!proofModalQuestId || !proofText.trim()) return;
-    setSubmitting(true);
-    const startTime = Date.now();
-    const { base, query } = getQuestEndpointBase();
-
-    try {
-      const res = await fetch(`${base}/submit/${proofModalQuestId}${query}`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ proof: proofText.trim() }),
-      });
-      const elapsed = Date.now() - startTime;
-      const data = await res.json();
-
-      if (!res.ok) {
-        setApiLog(`Submit Proof Error (${elapsed}ms): ${data.message || "Failed"}`);
-      } else {
-        setApiLog(`Submit Proof Success (${elapsed}ms): Quest #${proofModalQuestId} - ${JSON.stringify(data).slice(0, 120)}`);
-        checkForDing(data);
-        fetchCharacter();
-      }
-      setProofModalQuestId(null);
-      setProofText("");
-    } catch (err) {
-      const elapsed = Date.now() - startTime;
-      setApiLog(`Submit Proof Error (${elapsed}ms): ${err instanceof Error ? err.message : "Network error"}`);
-      setProofModalQuestId(null);
-      setProofText("");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleQuickComplete = async (questId: number) => {
-    setCompletingQuestId(questId);
-    const startTime = Date.now();
-    const { base, query } = getQuestEndpointBase();
-
-    try {
-      const res = await fetch(`${base}/complete/${questId}${query}`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-      });
-      const elapsed = Date.now() - startTime;
-      const data = await res.json();
-
-      if (!res.ok) {
-        setApiLog(`Quick Complete Error (${elapsed}ms): ${data.message || "Failed"}`);
-      } else {
-        setApiLog(`Quick Complete Success (${elapsed}ms): Quest #${questId} - ${JSON.stringify(data).slice(0, 120)}`);
-        checkForDing(data);
-        fetchCharacter();
-      }
-    } catch (err) {
-      const elapsed = Date.now() - startTime;
-      setApiLog(`Quick Complete Error (${elapsed}ms): ${err instanceof Error ? err.message : "Network error"}`);
-    } finally {
-      setCompletingQuestId(null);
-    }
-  };
-
-  const handleClaimReward = async (questId: number) => {
-    setClaimingQuestId(questId);
-    const startTime = Date.now();
-    const { base, query } = getQuestEndpointBase();
-
-    try {
-      const res = await fetch(`${base}/claim/${questId}${query}`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-      });
-      const elapsed = Date.now() - startTime;
-      const data = await res.json();
-
-      if (!res.ok) {
-        setApiLog(`Claim Reward Error (${elapsed}ms): ${data.message || "Failed"}`);
-      } else {
-        setApiLog(`Claim Reward Success (${elapsed}ms): Quest #${questId} - ${JSON.stringify(data).slice(0, 120)}`);
-        checkForDing(data);
-        fetchCharacter();
-      }
-    } catch (err) {
-      const elapsed = Date.now() - startTime;
-      setApiLog(`Claim Reward Error (${elapsed}ms): ${err instanceof Error ? err.message : "Network error"}`);
-    } finally {
-      setClaimingQuestId(null);
-    }
-  };
-
-
   const xpIntoLevel = Number(character?.xp_into_current_level) || 0;
   const xpNeededForNext = Number(character?.xp_needed_for_next_level) || 500;
   const totalXp = Number(character?.total_xp) || 0;
@@ -286,18 +132,10 @@ export default function CharacterCard({ userId = 1, className = "", apiEndpoint 
   
   const questsCompleted = Number(character?.quests_completed) || 0;
   const totalQuests = Number(character?.total_quests) || 24;
-  const claimableQuests = Array.isArray(character?.claimable_quests) ? character.claimable_quests : [];
   
   const equippedItems: EquippedItems = character?.equipped_items && typeof character.equipped_items === 'object'
     ? character.equipped_items
     : { main_hand: null, off_hand: null, head: null, body: null, hands: null, feet: null };
-
-  const sampleQuests: Quest[] = character?.available_quests || [
-    { id: 1, title: "Crossing the Finish Line", description: "Write the final scene and the words \"The End\".", phase: 2, chapter: 9, xp_reward: 250, proxy_hours_reward: 1.5, is_claimable: true, is_completed: false },
-    { id: 2, title: "Being Your Own Coach", description: "Find one part of your story that needs to be explained better.", phase: 3, chapter: 10, xp_reward: 250, proxy_hours_reward: 1.5, is_claimable: false, is_completed: false },
-    { id: 3, title: "The Big Fix-Up", description: "Delete or rewrite one paragraph to make it more exciting.", phase: 3, chapter: 11, xp_reward: 250, proxy_hours_reward: 1.5, is_claimable: false, is_completed: false },
-    { id: 4, title: "Polish Your Prose", description: "Read your story aloud and fix any awkward sentences.", phase: 3, chapter: 12, xp_reward: 250, proxy_hours_reward: 1.5, is_claimable: false, is_completed: false },
-  ];
 
   if (loading && !character) {
     return (
@@ -376,58 +214,6 @@ export default function CharacterCard({ userId = 1, className = "", apiEndpoint 
                 </div>
               )}
               <p className="text-gray-500 text-xs mt-4">Click anywhere to dismiss</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Proof Submission Modal */}
-      {proofModalQuestId !== null && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
-          onClick={() => { if (!submitting) { setProofModalQuestId(null); setProofText(""); } }}
-        >
-          <div
-            className="bg-[#252542] rounded-xl p-6 border border-[#3a3a5e] shadow-2xl max-w-lg w-full mx-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-['Playfair_Display'] text-xl text-white">Submit Proof</h3>
-              <button
-                onClick={() => { if (!submitting) { setProofModalQuestId(null); setProofText(""); } }}
-                className="text-gray-400 hover:text-white transition-colors"
-                disabled={submitting}
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <p className="text-gray-400 text-sm mb-4">
-              Quest #{proofModalQuestId} — Describe what you did to complete this quest:
-            </p>
-            <textarea
-              value={proofText}
-              onChange={(e) => setProofText(e.target.value)}
-              placeholder="Enter your proof here..."
-              className="w-full bg-[#1a1a2e] border border-[#3a3a5e] rounded-lg px-4 py-3 text-white text-sm focus:outline-none focus:border-blue-500 resize-none h-32 mb-4"
-              disabled={submitting}
-              autoFocus
-            />
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => { setProofModalQuestId(null); setProofText(""); }}
-                className="px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white text-sm rounded-lg transition-colors"
-                disabled={submitting}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleProofSubmit}
-                disabled={submitting || !proofText.trim()}
-                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
-              >
-                {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
-                {submitting ? "Submitting..." : "Submit Proof"}
-              </button>
             </div>
           </div>
         </div>
@@ -613,126 +399,93 @@ export default function CharacterCard({ userId = 1, className = "", apiEndpoint 
 
         </div>
 
-        {/* Right Panel - Quest Dashboard */}
+        {/* Right Panel - Character Overview */}
         <div className="flex-1 min-w-0">
-          {/* Header */}
           <div className="text-center mb-6">
             <h1 className="font-['Playfair_Display'] text-3xl lg:text-4xl text-white mb-1">
               Indie Quill Collective
             </h1>
             <p className="text-gray-400 text-sm mb-3">
-              Game Engine - Admin Test Dashboard
+              Your Author Journey
             </p>
             <p className="text-cyan-400 text-lg font-medium">
               {displayName} {activeTitle}
             </p>
           </div>
 
-          {/* Available Quests */}
-          <div className="mb-4">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-['Playfair_Display'] text-xl text-white">
-                Available Quests
-              </h2>
-              <div className="flex items-center gap-2 text-sm">
-                <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-                <span className="text-green-400">Glowing</span>
-                <span className="text-gray-500">= Ready to Claim</span>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div className="bg-[#252542] rounded-xl p-5 border border-[#3a3a5e]">
+              <div className="text-yellow-400 text-3xl font-bold mb-1">{totalXp}</div>
+              <div className="text-gray-400 text-sm">Total XP Earned</div>
+              <div className="mt-3">
+                <div className="flex justify-between text-xs text-gray-500 mb-1">
+                  <span>Next Level</span>
+                  <span>{xpIntoLevel} / {xpNeededForNext}</span>
+                </div>
+                <div className="bg-[#1a1a2e] h-3 rounded-full overflow-hidden">
+                  <div
+                    className="bg-gradient-to-r from-yellow-500 to-orange-500 h-full transition-all duration-500 rounded-full"
+                    style={{ width: `${xpNeededForNext > 0 ? Math.min(100, (xpIntoLevel / xpNeededForNext) * 100) : 100}%` }}
+                  />
+                </div>
               </div>
             </div>
 
-            {/* Quest List */}
-            <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
-              {sampleQuests.map((quest) => (
-                <div
-                  key={quest.id}
-                  className={`bg-[#252542] rounded-lg p-4 border-l-4 transition-all ${
-                    quest.is_claimable 
-                      ? "border-green-400 shadow-lg shadow-green-400/10" 
-                      : "border-[#3a3a5e]"
+            <div className="bg-[#252542] rounded-xl p-5 border border-[#3a3a5e]">
+              <div className="text-green-400 text-3xl font-bold mb-1">Level {currentLevel}</div>
+              <div className="text-gray-400 text-sm">{activeTitle}</div>
+              <div className="mt-3 text-xs text-gray-500">
+                <span>{questsCompleted} cards completed</span>
+                <span className="mx-2">|</span>
+                <span>{proxyHours.toFixed(1)} proxy hours</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-[#252542] rounded-xl p-5 border border-[#3a3a5e] mb-4">
+            <h3 className="font-['Playfair_Display'] text-lg text-white mb-3">Unlocked Titles</h3>
+            <div className="flex flex-wrap gap-2">
+              {unlockedTitles.map((title) => (
+                <span
+                  key={title}
+                  className={`px-3 py-1 rounded-full text-xs font-medium border ${
+                    title === activeTitle
+                      ? "bg-purple-600/30 border-purple-400 text-purple-300"
+                      : "bg-[#1a1a2e] border-[#3a3a5e] text-gray-400"
                   }`}
                 >
-                  <div className="flex flex-col lg:flex-row lg:items-start gap-3">
-                    <div className="flex-1 min-w-0">
-                      {/* Badges */}
-                      <div className="flex flex-wrap items-center gap-2 mb-2">
-                        <span className={`px-2 py-0.5 rounded text-xs font-bold ${PHASE_COLORS[quest.phase] || "bg-gray-600"}`}>
-                          Phase {quest.phase}
-                        </span>
-                        <span className="px-2 py-0.5 bg-gray-600 rounded text-xs">
-                          Ch. {quest.chapter}
-                        </span>
-                        {quest.is_claimable && (
-                          <span className="px-2 py-0.5 bg-red-600 rounded text-xs font-bold flex items-center gap-1">
-                            <Gift className="w-3 h-3" />
-                            Phase Reward
-                          </span>
-                        )}
-                      </div>
-                      
-                      {/* Title & Description */}
-                      <h4 className="font-semibold text-white mb-1">{quest.title}</h4>
-                      <p className="text-gray-400 text-sm mb-2">{quest.description}</p>
-                      
-                      {/* Rewards */}
-                      <div className="flex gap-3 text-xs">
-                        <span className="text-yellow-400">+{quest.xp_reward} XP</span>
-                        <span className="text-cyan-400">+{quest.proxy_hours_reward} Proxy Hours</span>
-                      </div>
-                    </div>
-                    
-                    {/* Action Buttons */}
-                    <div className="flex lg:flex-col gap-2 shrink-0">
-                      <button
-                        onClick={() => handleSubmitProof(quest.id)}
-                        disabled={submitting}
-                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors whitespace-nowrap"
-                      >
-                        Submit Proof
-                      </button>
-                      <button
-                        onClick={() => handleQuickComplete(quest.id)}
-                        disabled={completingQuestId !== null}
-                        className="px-4 py-2 bg-gray-600 hover:bg-gray-500 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors whitespace-nowrap flex items-center gap-2 justify-center"
-                      >
-                        {completingQuestId === quest.id && <Loader2 className="w-3 h-3 animate-spin" />}
-                        Quick Complete
-                      </button>
-                      {quest.is_claimable && (
-                        <button
-                          onClick={() => handleClaimReward(quest.id)}
-                          disabled={claimingQuestId !== null}
-                          className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors whitespace-nowrap flex items-center gap-2 justify-center animate-pulse"
-                        >
-                          {claimingQuestId === quest.id && <Loader2 className="w-3 h-3 animate-spin" />}
-                          <Gift className="w-3 h-3" />
-                          Claim Reward
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                  {title}
+                </span>
               ))}
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* API Response Log */}
-      <div className="border-t border-[#3a3a5e] px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h4 className="font-['Playfair_Display'] text-lg text-white mb-1">API Response Log</h4>
-            <p className="text-gray-500 text-sm font-mono">{apiLog || "Quest submission responses will appear here..."}</p>
+          {unlockedItems.length > 0 && (
+            <div className="bg-[#252542] rounded-xl p-5 border border-[#3a3a5e] mb-4">
+              <h3 className="font-['Playfair_Display'] text-lg text-white mb-3">Inventory</h3>
+              <div className="flex flex-wrap gap-2">
+                {unlockedItems.map((item) => (
+                  <span
+                    key={item}
+                    className="px-3 py-1 rounded-full text-xs font-medium bg-yellow-600/20 border border-yellow-400/30 text-yellow-300"
+                  >
+                    {item.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="text-center">
+            <button
+              onClick={fetchCharacter}
+              disabled={loading}
+              className="px-4 py-2 bg-[#252542] hover:bg-[#3a3a5e] text-gray-300 text-sm rounded-lg flex items-center gap-2 transition-colors mx-auto"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+              Refresh Character
+            </button>
           </div>
-          <button
-            onClick={fetchCharacter}
-            disabled={loading}
-            className="px-4 py-2 bg-[#252542] hover:bg-[#3a3a5e] text-gray-300 text-sm rounded-lg flex items-center gap-2 transition-colors"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-            Refresh
-          </button>
         </div>
       </div>
     </div>

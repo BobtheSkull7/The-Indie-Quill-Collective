@@ -1190,4 +1190,22 @@ export const cardSubmissions = pgTable("card_submissions", {
 export type CardSubmission = typeof cardSubmissions.$inferSelect;
 export type InsertCardSubmission = typeof cardSubmissions.$inferInsert;
 
+export const gameCharacters = pgTable("game_characters", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id", { length: 255 }).notNull().unique(),
+  xp: integer("xp").default(0).notNull(),
+  level: integer("level").default(1).notNull(),
+  activeTitle: varchar("active_title", { length: 100 }).default("the Novice").notNull(),
+  unlockedTitles: jsonb("unlocked_titles").default(["the Novice"]).notNull(),
+  equippedItems: jsonb("equipped_items").default({
+    main_hand: null, off_hand: null, head: null, body: null, hands: null, feet: null
+  }).notNull(),
+  unlockedItems: jsonb("unlocked_items").default([]).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+});
+
+export type GameCharacter = typeof gameCharacters.$inferSelect;
+export type InsertGameCharacter = typeof gameCharacters.$inferInsert;
+
 export * from "./models/chat";
