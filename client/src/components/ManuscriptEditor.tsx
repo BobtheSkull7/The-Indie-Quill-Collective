@@ -26,19 +26,32 @@ interface ManuscriptEditorProps {
   cardId: number;
   cardTask: string;
   cardXp: number;
+  cardQualifications: string;
   isCompleted: boolean;
   onClose: () => void;
   onSubmitted: () => void;
+}
+
+function parseMinWordCount(qualifications: string): number {
+  const match = qualifications.match(/(?:min(?:imum)?)\s+(\d+)\s+words/i);
+  if (match) return parseInt(match[1], 10);
+  const match2 = qualifications.match(/(\d+)\s+words/i);
+  if (match2) return parseInt(match2[1], 10);
+  const match3 = qualifications.match(/(\d+)\s+sentences/i);
+  if (match3) return parseInt(match3[1], 10) * 10;
+  return 10;
 }
 
 export default function ManuscriptEditor({
   cardId,
   cardTask,
   cardXp,
+  cardQualifications,
   isCompleted,
   onClose,
   onSubmitted,
 }: ManuscriptEditorProps) {
+  const requiredWords = parseMinWordCount(cardQualifications);
   const [saving, setSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -158,6 +171,9 @@ export default function ManuscriptEditor({
       if (res.ok) {
         setSubmitted(true);
         onSubmitted();
+      } else {
+        const data = await res.json().catch(() => null);
+        alert(data?.error || "Failed to submit. Please try again.");
       }
     } catch (err) {
       console.error("Error submitting:", err);
@@ -195,7 +211,7 @@ export default function ManuscriptEditor({
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 text-xs text-gray-500">
-              <span className="font-medium">{wordCount} words</span>
+              <span className={`font-medium ${wordCount < requiredWords ? 'text-amber-600' : 'text-green-600'}`}>{wordCount} / {requiredWords} words</span>
               {saving && (
                 <span className="flex items-center gap-1 text-blue-500">
                   <Loader2 className="w-3 h-3 animate-spin" />
@@ -315,11 +331,11 @@ export default function ManuscriptEditor({
               </button>
               <button
                 onClick={handleSubmit}
-                disabled={wordCount < 10 || submitting}
+                disabled={wordCount < requiredWords || submitting}
                 className="inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-medium text-sm shadow-sm transition-all"
                 title={
-                  wordCount < 10
-                    ? "Write at least 10 words before submitting"
+                  wordCount < requiredWords
+                    ? `Write at least ${requiredWords} words before submitting`
                     : ""
                 }
               >

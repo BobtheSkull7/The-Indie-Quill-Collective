@@ -6324,16 +6324,27 @@ export async function registerDonationRoutes(app: Express) {
       }
 
       const cardResult = await db.execute(sql`
-        SELECT xp_value FROM vibe_cards WHERE id = ${cardIdNum}
+        SELECT xp_value, qualifications FROM vibe_cards WHERE id = ${cardIdNum}
       `);
       if (cardResult.rows.length === 0) {
         return res.status(404).json({ error: "Card not found" });
       }
       const xpValue = (cardResult.rows[0] as any).xp_value || 0;
+      const qualifications = (cardResult.rows[0] as any).qualifications || '';
 
       const manuscriptResult = await db.execute(sql`
-        SELECT id FROM manuscripts WHERE user_id = ${req.session.userId} AND card_id = ${cardIdNum}
+        SELECT id, word_count FROM manuscripts WHERE user_id = ${req.session.userId} AND card_id = ${cardIdNum}
       `);
+
+      const minWordsMatch = qualifications.match(/(?:min(?:imum)?)\s+(\d+)\s+words/i)
+        || qualifications.match(/(\d+)\s+words/i);
+      if (minWordsMatch) {
+        const requiredWords = parseInt(minWordsMatch[1], 10);
+        const actualWords = manuscriptResult.rows.length > 0 ? ((manuscriptResult.rows[0] as any).word_count || 0) : 0;
+        if (actualWords < requiredWords) {
+          return res.status(400).json({ error: `This card requires at least ${requiredWords} words. You have ${actualWords}.` });
+        }
+      }
       const manuscriptId = manuscriptResult.rows.length > 0 ? (manuscriptResult.rows[0] as any).id : null;
 
       const result = await db.execute(sql`

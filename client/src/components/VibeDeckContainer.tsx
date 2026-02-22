@@ -573,6 +573,7 @@ export default function VibeDeckContainer() {
           cardId={activeManuscript.id}
           cardTask={activeManuscript.task}
           cardXp={activeManuscript.xp_value}
+          cardQualifications={activeManuscript.qualifications || ''}
           isCompleted={completedCards.has(activeManuscript.id)}
           onClose={() => setActiveManuscript(null)}
           onSubmitted={() => {
