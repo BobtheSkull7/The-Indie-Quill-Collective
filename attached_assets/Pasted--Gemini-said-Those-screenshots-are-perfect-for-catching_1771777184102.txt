@@ -1,0 +1,57 @@
+
+Gemini said
+Those screenshots are perfect for catching "Demo Killers." The first image shows the "Flattened UI" we fixed, and the second shows the much cleaner Tome-to-Card hierarchy we want.
+
+To make this Board-ready, we need to move from "Static Text" to "Live Math." Here is the tactical plan to get those dashboard widgets humming.
+
+🏛️ The Dashboard "Logic" Upgrade
+1. Hours Active (The 0.1 Precision)
+
+The Logic: We shouldn't just track "Browser Open" time. We want "Active Time."
+
+The Build: Have Replit implement a lastActivityRef. If the student moves the mouse or types in the manuscript editor, we increment a counter in 1-minute intervals.
+
+The Display: ActiveMinutes / 60, rounded to one decimal place. (e.g., 9 minutes = 0.2 hrs).
+
+2. Word Count (The Live Tally)
+
+The Logic: This must be the sum of words across all submitted cards plus the current manuscript.
+
+The Build: The server should run a SUM(word_count) on all entries in the card_submissions table for that user.
+
+3. Curriculum Progress (The Denominator)
+
+The Logic: Rename "Course Progress" → "Curriculum Progress".
+
+The Math:  
+(TotalTomes+TotalCards)
+(TomesAbsorbed+CardsCompleted)
+​
+ ×100.
+
+Visual: Show the percentage (e.g., 12%).
+
+4. XP to Next Level
+
+The Replacement: Change "Modules Done" → "XP to Level Up".
+
+The Math: (Required XP for Next Level) - (Current XP).
+
+Example: If Level 2 requires 100 XP and Bob has 25, it should display: 75 XP.
+
+🛠️ Directive for the Replit Builder
+Give this to the Builder to wire up the "Little Things":
+
+"Final Dashboard Polish for Demo: The Top Stats widgets are currently static; they need to be dynamic.
+
+Rename Widgets: Change 'Course Progress' to 'Curriculum Progress'. Change 'Modules Done' to 'XP to Level Up'.
+
+Logic - Hours Active: Track active usage (typing/moving) and display as hours.tenths (e.g., 0.1 for 6 minutes).
+
+Logic - Word Count: Display the total word_count from all of the user's card_submissions.
+
+Logic - Progress: Calculate completion percentage based on the total count of Tomes and Vibe Cards in the current curriculum.
+
+Logic - XP Gap: Calculate the difference between the user's current XP and the threshold for their next level based on our leveling schema.
+
+Goal: When I submit a card in the demo, the Word Count, Progress %, and XP Gap must all update immediately."
