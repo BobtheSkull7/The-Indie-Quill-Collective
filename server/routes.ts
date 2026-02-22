@@ -6313,9 +6313,8 @@ export async function registerDonationRoutes(app: Express) {
     }
     try {
       const { cardId } = req.params;
-      const { reflection, pasteCount } = req.body;
+      const { reflection } = req.body;
       const cardIdNum = parseInt(cardId);
-      const pasteCountNum = Math.max(0, parseInt(pasteCount) || 0);
 
       const existingCheck = await db.execute(sql`
         SELECT id FROM card_submissions WHERE user_id = ${req.session.userId} AND card_id = ${cardIdNum}
@@ -6334,7 +6333,7 @@ export async function registerDonationRoutes(app: Express) {
       const requiredWords = (cardResult.rows[0] as any).min_word_count || 10;
 
       const manuscriptResult = await db.execute(sql`
-        SELECT id, word_count, content FROM manuscripts WHERE user_id = ${req.session.userId} AND card_id = ${cardIdNum}
+        SELECT id, word_count FROM manuscripts WHERE user_id = ${req.session.userId} AND card_id = ${cardIdNum}
       `);
 
       const actualWords = manuscriptResult.rows.length > 0 ? ((manuscriptResult.rows[0] as any).word_count || 0) : 0;
@@ -6343,13 +6342,9 @@ export async function registerDonationRoutes(app: Express) {
       }
       const manuscriptId = manuscriptResult.rows.length > 0 ? (manuscriptResult.rows[0] as any).id : null;
 
-      const manuscriptContent = manuscriptResult.rows.length > 0 ? ((manuscriptResult.rows[0] as any).content || '') : '';
-      const totalChars = typeof manuscriptContent === 'string' ? manuscriptContent.replace(/<[^>]*>/g, '').length : 0;
-      const flagged = totalChars > 0 && pasteCountNum > (totalChars * 0.5);
-
       const result = await db.execute(sql`
-        INSERT INTO card_submissions (user_id, card_id, manuscript_id, reflection, xp_earned, status, paste_count, is_flagged_for_review, submitted_at)
-        VALUES (${req.session.userId}, ${cardIdNum}, ${manuscriptId}, ${reflection || ''}, ${xpValue}, 'submitted', ${pasteCountNum}, ${flagged}, NOW())
+        INSERT INTO card_submissions (user_id, card_id, manuscript_id, reflection, xp_earned, status, submitted_at)
+        VALUES (${req.session.userId}, ${cardIdNum}, ${manuscriptId}, ${reflection || ''}, ${xpValue}, 'submitted', NOW())
         RETURNING *
       `);
 
@@ -6382,45 +6377,6 @@ export async function registerDonationRoutes(app: Express) {
       res.json(result.rows);
     } catch (error) {
       console.error("Error fetching submissions:", error);
-      res.status(500).json({ error: "Failed to fetch submissions" });
-    }
-  });
-
-  // ═══════════════════════════════════════════════════════════════
-  // ADMIN: Submissions Review
-  // ═══════════════════════════════════════════════════════════════
-
-  app.get("/api/admin/submissions", async (req: Request, res: Response) => {
-    if (!req.session.userId || req.session.role !== "admin") {
-      return res.status(403).json({ error: "Admin access required" });
-    }
-    try {
-      const flaggedOnly = req.query.flagged === "true";
-      let query;
-      if (flaggedOnly) {
-        query = sql`
-          SELECT cs.*, vc.task as card_task, vd.title as deck_title, u.name as author_name
-          FROM card_submissions cs
-          JOIN vibe_cards vc ON vc.id = cs.card_id
-          JOIN vibe_decks vd ON vd.id = vc.deck_id
-          LEFT JOIN users u ON u.id::text = cs.user_id
-          WHERE cs.is_flagged_for_review = true
-          ORDER BY cs.submitted_at DESC
-        `;
-      } else {
-        query = sql`
-          SELECT cs.*, vc.task as card_task, vd.title as deck_title, u.name as author_name
-          FROM card_submissions cs
-          JOIN vibe_cards vc ON vc.id = cs.card_id
-          JOIN vibe_decks vd ON vd.id = vc.deck_id
-          LEFT JOIN users u ON u.id::text = cs.user_id
-          ORDER BY cs.submitted_at DESC
-        `;
-      }
-      const result = await db.execute(query);
-      res.json(result.rows);
-    } catch (error) {
-      console.error("Error fetching admin submissions:", error);
       res.status(500).json({ error: "Failed to fetch submissions" });
     }
   });

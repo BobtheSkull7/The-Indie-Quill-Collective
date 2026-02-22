@@ -10,7 +10,6 @@ import OperationsPanel from "../components/OperationsPanel";
 import WikiContent from "../components/tabs/WikiContent";
 import CalendarView from "../components/CalendarView";
 import EventModal, { type EventFormData } from "../components/EventModal";
-import SubmissionsPanel from "../components/SubmissionsPanel";
 
 interface Application {
   id: number;
@@ -137,7 +136,7 @@ export default function AdminDashboard() {
   const [reviewNotes, setReviewNotes] = useState("");
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
-  const [activeTab, setActiveTab] = useState<"applicants" | "calendar" | "operations" | "wiki" | "submissions">("applicants");
+  const [activeTab, setActiveTab] = useState<"applicants" | "calendar" | "operations" | "wiki">("applicants");
   const [retrying, setRetrying] = useState<number | null>(null);
   const [updatingStage, setUpdatingStage] = useState<number | null>(null);
   const [allUsers, setAllUsers] = useState<UserRecord[]>([]);
@@ -862,17 +861,6 @@ export default function AdminDashboard() {
             <BookOpen className="w-4 h-4" />
             <span>Wiki</span>
           </button>
-          <button
-            onClick={() => setActiveTab("submissions")}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2 ${
-              activeTab === "submissions"
-                ? "bg-red-500 text-white"
-                : "bg-white text-gray-600 hover:bg-gray-100"
-            }`}
-          >
-            <Shield className="w-4 h-4" />
-            <span>Submissions</span>
-          </button>
         </div>
 
         {activeTab === "applicants" && (
@@ -1491,10 +1479,6 @@ export default function AdminDashboard() {
           <div className="card">
             <WikiContent />
           </div>
-        )}
-
-        {activeTab === "submissions" && (
-          <SubmissionsPanel />
         )}
 
         {selectedApp && (
