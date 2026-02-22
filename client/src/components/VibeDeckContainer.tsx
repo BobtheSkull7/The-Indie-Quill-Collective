@@ -282,7 +282,7 @@ export default function VibeDeckContainer() {
             <Sparkles className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h2 className="font-display text-xl font-bold text-slate-800">Your Curriculum</h2>
+            <h2 className="font-display text-xl font-bold text-slate-800">Published Writer Curriculum</h2>
             <p className="text-sm text-gray-500">Complete tasks to earn XP and level up</p>
           </div>
         </div>
