@@ -19,7 +19,7 @@ export default function VibeDeckCard({ task, qualifications, xpValue, isComplete
   return (
     <div
       className="vibe-deck-card-container cursor-pointer"
-      style={{ perspective: "1000px", height: "280px" }}
+      style={{ perspective: "1000px", height: "260px" }}
       onClick={handleCardClick}
     >
       <div
@@ -68,7 +68,7 @@ export default function VibeDeckCard({ task, qualifications, xpValue, isComplete
               <CheckCircle className="w-5 h-5 text-green-400" />
             )}
           </div>
-          <div className="flex-1 overflow-y-auto flex items-start">
+          <div className="flex-1 flex items-center">
             <p className="text-white/90 text-sm leading-relaxed">{qualifications}</p>
           </div>
 
