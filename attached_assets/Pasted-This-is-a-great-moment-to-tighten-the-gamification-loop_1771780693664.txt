@@ -1,0 +1,43 @@
+This is a great moment to tighten the "gamification" loop before the Board sees it.
+
+1. The Gate Decision (Access vs. Linear)
+I strongly agree: Stay with Option A (Access) for the demo.
+
+Why: During a demo, you want the freedom to jump to "The Writer's Polish" to show off the sensory immersion cards without having to "unlock" 16 cards in "The Story Engine" first. It shows the breadth of the platform immediately.
+
+2. The XP Question (The "Wisdom Bonus")
+I recommend adding a small XP bonus for Tome Absorption.
+
+The Logic: In any RPG or learning app, "Learning" (reading/absorbing) and "Doing" (writing) are two different but valuable actions.
+
+The Value: I’d suggest 10 XP per Tome.
+
+The "Why": It makes the "Accept Wisdom" button feel weightier. When the student clicks it, they see their XP bar move immediately before they even start the card task. It’s instant gratification.
+
+Updated Total Potential XP: * 33 Cards (950 XP) + 21 Tomes (210 XP) = 1,160 Total XP.
+
+🛠️ Directive for the Replit Builder
+If you want to pull the trigger on the "Wisdom Bonus," give this to the Builder:
+
+"Final XP and Progress Calibration:
+
+Tome XP: Set a global value of 10 XP for 'Absorbing' a Tome. This XP should hit the user's total as soon as the Tome is accepted.
+
+Progress Denominator: Confirm the math is (Tomes Absorbed + Cards Submitted) / (Total Tomes + Total Cards).
+
+The 'Onboarding' Gate: Ensure 'The Scribe's Oath' (Tome 0) is the only exception—it must be accepted and its card submitted before the other 20 Tomes become visible. This acts as our 'Tutorial' completion."
+
+🧐 The "Hours Active" Sanity Check
+Since we are "frozen" on content, let's verify the Hours Active (0.1 precision).
+
+To test this yourself today:
+
+Open the Dev environment.
+
+Stay active (type in the manuscript or click around) for 6 minutes.
+
+Refresh the dashboard.
+
+Expectation: The "Hours Active" widget should move from 0.0 to 0.1.
+
+If it stays at 0.0 after 6-7 minutes of activity, we need to check if the "Heartbeat" script is firing every 60 seconds.
