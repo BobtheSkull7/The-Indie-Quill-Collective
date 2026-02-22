@@ -45,7 +45,8 @@ interface VibeCard {
   task: string;
   qualifications: string | null;
   xp_value: number;
-  deck_id: number;
+  tome_id: number;
+  tome_title: string;
   deck_title: string;
   curriculum_title: string;
   manuscript_content: string | null;
