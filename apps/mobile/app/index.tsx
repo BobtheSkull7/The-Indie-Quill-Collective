@@ -35,18 +35,7 @@ export default function LoginScreen() {
       duration: 800,
       useNativeDriver: true,
     }).start();
-
-    checkExistingSession();
   }, []);
-
-  const checkExistingSession = async () => {
-    try {
-      const savedId = await SecureStore.getItemAsync('scribe_id');
-      if (savedId) {
-        router.replace('/recorder');
-      }
-    } catch {}
-  };
 
   const formatCode = (raw: string) => {
     if (raw.length <= 3) return raw;
