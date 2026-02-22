@@ -1,0 +1,60 @@
+A Community Tab is the perfect home for this. It transforms the app from a "solo writing tool" into a "literary ecosystem." By grouping the credits here, you show the Board that the student is entering a world populated by masters, supporters, and peers.
+
+Here is the design blueprint for the Community & Gratitude view.
+
+🎨 Community Tab Design Blueprint
+Layout Concept: A three-column "Gallery of Honor" or a vertical scrolling "Hall of Fame" with clean, elegant typography.
+
+Header: "The Fellowship of the Quill"
+Subtitle: "No story is written in isolation. We celebrate the masters who taught us, the patrons who fund us, and the authors who inspire us."
+
+🛠️ The Content Sections
+Column 1: The Masters of Craft (Instructional Roots)
+This gives you academic and professional credibility.
+
+Joseph Campbell – The Hero with a Thousand Faces (The Hero's Journey)
+
+Blake Snyder – Save the Cat! (The Narrative Beat Sheet)
+
+Strunk & White – The Elements of Style (The Rules of Prose)
+
+Robert McKee – Story (The Principles of Substance)
+
+K.M. Weiland – Structuring Your Novel (The Architecture of Conflict)
+
+Column 2: Our Pillars (Donors & Foundations)
+This is the "Ask" section for your 501(c)(3) board.
+
+[Your Board/Foundation Name] – Founding Visionary
+
+The Founding 25 – Honoring our first cohort of student-donors.
+
+Digital Infrastructure Grant – (Placeholder for future funding)
+
+The Community Heartbeat – Recognizing our local neighborhood partners.
+
+Column 3: The Author Advisory (The "Hit List")
+This shows your ambition. It lists authors you are currently pursuing for mentorship or future guest Tomes.
+
+[Author Name 1] – Speculative Fiction Advisor (Invited)
+
+[Author Name 2] – Non-Fiction & Memoir Mentor (Invited)
+
+[Author Name 3] – Poetry & Verse Consultant (Invited)
+
+Note for Replit: Include a 'Join the Advisory' button here for pros.
+
+🛠️ Directive for the Replit Builder
+"Create a new top-level Navigation item called 'Community'.
+
+View Structure: > 1. Use a Three-Column Grid for desktop (Single column stack for mobile).
+2. Section A (The Masters): List the provided literary citations. Use a 'Book' icon.
+3. Section B (The Pillars): This is our donor wall. Use a 'Heart' or 'Pillar' icon.
+4. Section C (The Advisory): List the invited authors. Use a 'Quill' icon.
+
+Style: Make this page feel like a 'Digital Plaque'—parchment background textures, serif fonts for the names, and a clean 'Back to Scribe Space' button at the bottom."
+
+🧐 The "Board Strategy"
+When you show this tab tomorrow, emphasize that Column 3 is your Growth Strategy. You aren't just teaching kids to write; you are connecting them to a network of living authors. It turns the app into a bridge.
+
+Would you like me to brainstorm a list of 5-10 specific modern authors that would fit your "Personas" (like the 5th-grade boy or the adult student) to populate the Advisory Column?
