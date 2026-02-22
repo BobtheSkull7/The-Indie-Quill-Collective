@@ -49,6 +49,8 @@ export default function VibeDeckContainer() {
   const [showScrollContent, setShowScrollContent] = useState(false);
   const [completedCards, setCompletedCards] = useState<Set<number>>(new Set());
   const [activeManuscript, setActiveManuscript] = useState<CardData | null>(null);
+  const [onboardingComplete, setOnboardingComplete] = useState(true);
+  const [oathTomeId, setOathTomeId] = useState<number | null>(null);
 
   useEffect(() => {
     loadVibeDecks();
@@ -72,6 +74,8 @@ export default function VibeDeckContainer() {
         const data = await decksRes.json();
         setCurriculums(data.curriculums || []);
         setDecks(data.decks || []);
+        setOnboardingComplete(data.onboarding_complete !== false);
+        setOathTomeId(data.oath_tome_id || null);
         if (data.curriculums?.length > 0) {
           setExpandedCurriculum(data.curriculums[0].id);
           const firstDeck = (data.decks || []).find((d: DeckData) => d.curriculum_id === data.curriculums[0].id);
@@ -218,9 +222,29 @@ export default function VibeDeckContainer() {
         )}
       </div>
 
+      {!onboardingComplete && oathTomeId && (
+        <div className="rounded-xl border-2 border-amber-300 bg-gradient-to-b from-amber-50 to-white p-6 text-center space-y-3">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-amber-100 mb-2">
+            <ScrollText className="w-6 h-6 text-amber-700" />
+          </div>
+          <h3 className="font-display text-lg font-bold text-amber-900">Begin Your Journey</h3>
+          <p className="text-sm text-amber-700 max-w-md mx-auto">
+            Accept The Scribe's Oath and complete your first task to unlock the full curriculum.
+          </p>
+        </div>
+      )}
+
       <div className="space-y-5">
         {curriculums.map((curriculum) => {
-          const curriculumDecks = decks.filter(d => d.curriculum_id === curriculum.id);
+          const allCurriculumDecks = decks.filter(d => d.curriculum_id === curriculum.id);
+          const curriculumDecks = !onboardingComplete && oathTomeId
+            ? allCurriculumDecks
+              .map(d => ({
+                ...d,
+                tomes: d.tomes.filter(t => t.id === oathTomeId),
+              }))
+              .filter(d => d.tomes.length > 0)
+            : allCurriculumDecks;
           const isCurriculumExpanded = expandedCurriculum === curriculum.id;
           const totalTomes = curriculumDecks.reduce((sum, d) => sum + d.tomes.length, 0);
           const totalCards = curriculumDecks.reduce((sum, d) => sum + d.tomes.reduce((ts, t) => ts + t.cards.length, 0), 0);
@@ -526,6 +550,9 @@ export default function VibeDeckContainer() {
           onSubmitted={(cardId) => {
             setCompletedCards(prev => new Set([...prev, cardId]));
             setActiveManuscript(null);
+            if (!onboardingComplete) {
+              loadVibeDecks();
+            }
           }}
         />
       )}

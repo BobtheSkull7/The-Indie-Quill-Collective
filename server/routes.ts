@@ -6309,7 +6309,23 @@ export async function registerDonationRoutes(app: Express) {
         ...deck,
         tomes: allTomes.filter(tome => tome.deck_id === deck.id),
       }));
-      res.json({ curriculums: curriculumsResult.rows, decks });
+
+      const oathTome = allTomes.find(t => t.order_index === 0 && t.title === "The Scribe's Oath");
+      let onboardingComplete = true;
+      if (oathTome) {
+        const oathAbsorbed = absorbedTomeIds.has(oathTome.id);
+        const oathCardIds = oathTome.cards.map((c: any) => c.id);
+        let oathCardSubmitted = false;
+        if (oathCardIds.length > 0 && oathAbsorbed) {
+          const subCheck = await db.execute(sql`
+            SELECT id FROM card_submissions WHERE user_id = ${String(userId)} AND card_id = ANY(${oathCardIds})
+          `);
+          oathCardSubmitted = subCheck.rows.length > 0;
+        }
+        onboardingComplete = oathAbsorbed && oathCardSubmitted;
+      }
+
+      res.json({ curriculums: curriculumsResult.rows, decks, onboarding_complete: onboardingComplete, oath_tome_id: oathTome?.id || null });
     } catch (error) {
       console.error("Error fetching student vibe decks:", error);
       res.status(500).json({ error: "Failed to fetch vibe decks" });

@@ -241,5 +241,5 @@ export function getCharacterDisplayData(character: any) {
   };
 }
 
-export const TOME_XP_BONUS = 25;
+export const TOME_XP_BONUS = 10;
 export const LEVEL_INFO = { thresholds: LEVEL_THRESHOLDS, names: LEVEL_NAMES, items: ITEM_REWARDS };
