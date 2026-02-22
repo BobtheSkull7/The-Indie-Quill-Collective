@@ -250,6 +250,8 @@ async function bootstrapFast() {
       reflection TEXT NOT NULL DEFAULT '',
       xp_earned INTEGER NOT NULL DEFAULT 0,
       status VARCHAR(50) NOT NULL DEFAULT 'submitted',
+      paste_count INTEGER NOT NULL DEFAULT 0,
+      is_flagged_for_review BOOLEAN NOT NULL DEFAULT false,
       submitted_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
       UNIQUE(user_id, card_id)
     );
@@ -257,6 +259,10 @@ async function bootstrapFast() {
   await dbPool.query(`
     ALTER TABLE vibe_decks ADD COLUMN IF NOT EXISTS tome_title VARCHAR(255);
     ALTER TABLE vibe_decks ADD COLUMN IF NOT EXISTS tome_content TEXT;
+  `);
+  await dbPool.query(`
+    ALTER TABLE card_submissions ADD COLUMN IF NOT EXISTS paste_count INTEGER NOT NULL DEFAULT 0;
+    ALTER TABLE card_submissions ADD COLUMN IF NOT EXISTS is_flagged_for_review BOOLEAN NOT NULL DEFAULT false;
   `);
   await dbPool.query(`
     CREATE TABLE IF NOT EXISTS vibescribe_transcripts (

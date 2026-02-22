@@ -136,7 +136,7 @@ export default function AdminDashboard() {
   const [reviewNotes, setReviewNotes] = useState("");
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
-  const [activeTab, setActiveTab] = useState<"applicants" | "calendar" | "operations" | "wiki">("applicants");
+  const [activeTab, setActiveTab] = useState<"applicants" | "submissions" | "calendar" | "operations" | "wiki">("applicants");
   const [retrying, setRetrying] = useState<number | null>(null);
   const [updatingStage, setUpdatingStage] = useState<number | null>(null);
   const [allUsers, setAllUsers] = useState<UserRecord[]>([]);
@@ -829,6 +829,17 @@ export default function AdminDashboard() {
             <span>Applicants</span>
           </button>
           <button
+            onClick={() => setActiveTab("submissions")}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2 ${
+              activeTab === "submissions"
+                ? "bg-red-500 text-white"
+                : "bg-white text-gray-600 hover:bg-gray-100"
+            }`}
+          >
+            <FileText className="w-4 h-4" />
+            <span>Submissions</span>
+          </button>
+          <button
             onClick={() => setActiveTab("operations")}
             className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2 ${
               activeTab === "operations"
@@ -1123,6 +1134,10 @@ export default function AdminDashboard() {
               </div>
             )}
           </div>
+        )}
+
+        {activeTab === "submissions" && (
+          <SubmissionsPanel />
         )}
 
         {activeTab === "calendar" && (
@@ -1742,6 +1757,116 @@ export default function AdminDashboard() {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function SubmissionsPanel() {
+  const [submissions, setSubmissions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<"all" | "flagged">("all");
+
+  useEffect(() => {
+    fetch("/api/admin/submissions", { credentials: "include" })
+      .then(res => res.json())
+      .then(data => setSubmissions(Array.isArray(data) ? data : []))
+      .catch(err => console.error("Error fetching submissions:", err))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const filtered = filter === "flagged" ? submissions.filter(s => s.is_flagged_for_review) : submissions;
+  const flaggedCount = submissions.filter(s => s.is_flagged_for_review).length;
+
+  if (loading) {
+    return (
+      <div className="card flex items-center justify-center py-12">
+        <RefreshCw className="w-5 h-5 animate-spin text-gray-400 mr-2" />
+        <span className="text-gray-500">Loading submissions...</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="card">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="font-display text-xl font-semibold text-slate-800">
+          Card Submissions
+          <span className="text-sm font-normal text-gray-500 ml-2">({submissions.length} total)</span>
+        </h2>
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={() => setFilter("all")}
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+              filter === "all" ? "bg-slate-700 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            }`}
+          >
+            All
+          </button>
+          <button
+            onClick={() => setFilter("flagged")}
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center space-x-1 ${
+              filter === "flagged" ? "bg-amber-500 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            }`}
+          >
+            <AlertTriangle className="w-3.5 h-3.5" />
+            <span>Flagged ({flaggedCount})</span>
+          </button>
+        </div>
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="text-center py-8 text-gray-500">
+          {filter === "flagged" ? "No flagged submissions" : "No submissions yet"}
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-200">
+                <th className="text-left py-3 px-3 font-medium text-gray-600">Author</th>
+                <th className="text-left py-3 px-3 font-medium text-gray-600">Card</th>
+                <th className="text-left py-3 px-3 font-medium text-gray-600">Deck</th>
+                <th className="text-center py-3 px-3 font-medium text-gray-600">XP</th>
+                <th className="text-center py-3 px-3 font-medium text-gray-600">Paste Count</th>
+                <th className="text-center py-3 px-3 font-medium text-gray-600">Integrity</th>
+                <th className="text-left py-3 px-3 font-medium text-gray-600">Submitted</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((sub: any) => (
+                <tr key={sub.id} className={`border-b border-gray-100 hover:bg-gray-50 ${sub.is_flagged_for_review ? 'bg-amber-50' : ''}`}>
+                  <td className="py-3 px-3">
+                    <div className="font-medium text-slate-800">{sub.author_name || "Unknown"}</div>
+                    <div className="text-xs text-gray-400">{sub.author_email || ""}</div>
+                  </td>
+                  <td className="py-3 px-3 text-slate-700 max-w-[200px] truncate">{sub.card_task}</td>
+                  <td className="py-3 px-3 text-slate-600">{sub.deck_title}</td>
+                  <td className="py-3 px-3 text-center">
+                    <span className="inline-flex items-center gap-1 text-purple-700 font-medium">
+                      <Zap className="w-3 h-3" /> {sub.xp_earned}
+                    </span>
+                  </td>
+                  <td className="py-3 px-3 text-center font-mono text-xs text-gray-500">{sub.paste_count || 0}</td>
+                  <td className="py-3 px-3 text-center">
+                    {sub.is_flagged_for_review ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs font-medium">
+                        <AlertTriangle className="w-3 h-3" /> Review
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-medium">
+                        <CheckCircle className="w-3 h-3" /> Clear
+                      </span>
+                    )}
+                  </td>
+                  <td className="py-3 px-3 text-gray-500 text-xs">
+                    {sub.submitted_at ? new Date(sub.submitted_at).toLocaleDateString() : "—"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
