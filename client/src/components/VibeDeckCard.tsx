@@ -63,7 +63,7 @@ export default function VibeDeckCard({ task, qualifications, xpValue, isComplete
           }}
         >
           <div className="flex items-center justify-between mb-3">
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-teal-200">Qualifications</h4>
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-teal-200">Your Assignment</h4>
             {isCompleted && (
               <CheckCircle className="w-5 h-5 text-green-400" />
             )}
