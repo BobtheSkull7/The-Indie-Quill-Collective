@@ -6515,14 +6515,14 @@ export async function registerDonationRoutes(app: Express) {
         return res.status(404).json({ error: "Card not found" });
       }
       const xpValue = (cardResult.rows[0] as any).xp_value || 0;
-      const requiredWords = (cardResult.rows[0] as any).min_word_count || 10;
+      const requiredWords = (cardResult.rows[0] as any).min_word_count || 0;
 
       const manuscriptResult = await db.execute(sql`
         SELECT id, word_count, content FROM manuscripts WHERE user_id = ${req.session.userId} AND card_id = ${cardIdNum}
       `);
 
       const actualWords = manuscriptResult.rows.length > 0 ? ((manuscriptResult.rows[0] as any).word_count || 0) : 0;
-      if (actualWords < requiredWords) {
+      if (requiredWords > 0 && actualWords < requiredWords) {
         return res.status(400).json({ error: `This card requires at least ${requiredWords} words. You have ${actualWords}.` });
       }
       const manuscriptId = manuscriptResult.rows.length > 0 ? (manuscriptResult.rows[0] as any).id : null;

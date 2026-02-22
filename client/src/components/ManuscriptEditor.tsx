@@ -24,28 +24,27 @@ import {
 
 interface ManuscriptEditorProps {
   cardId: number;
-  cardTask: string;
-  cardXp: number;
+  task: string;
+  qualifications?: string;
+  xpValue: number;
   minWordCount: number;
-  isCompleted: boolean;
   onClose: () => void;
-  onSubmitted: () => void;
+  onSubmitted: (cardId: number) => void;
 }
 
 export default function ManuscriptEditor({
   cardId,
-  cardTask,
-  cardXp,
+  task,
+  xpValue,
   minWordCount,
-  isCompleted,
   onClose,
   onSubmitted,
 }: ManuscriptEditorProps) {
-  const requiredWords = minWordCount || 10;
+  const requiredWords = minWordCount > 0 ? minWordCount : 0;
   const [saving, setSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(isCompleted);
+  const [submitted, setSubmitted] = useState(false);
   const [wordCount, setWordCount] = useState(0);
   const [loadingDraft, setLoadingDraft] = useState(true);
   const autoSaveTimer = useRef<NodeJS.Timeout | null>(null);
@@ -168,7 +167,7 @@ export default function ManuscriptEditor({
       });
       if (res.ok) {
         setSubmitted(true);
-        onSubmitted();
+        onSubmitted(cardId);
       } else {
         const data = await res.json().catch(() => null);
         alert(data?.error || "Failed to submit. Please try again.");
@@ -203,13 +202,13 @@ export default function ManuscriptEditor({
                 Manuscript
               </h2>
               <p className="text-xs text-gray-500 max-w-md truncate">
-                {cardTask}
+                {task}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 text-xs text-gray-500">
-              <span className={`font-medium ${wordCount < requiredWords ? 'text-amber-600' : 'text-green-600'}`}>{wordCount} / {requiredWords} words</span>
+              <span className={`font-medium ${requiredWords > 0 && wordCount < requiredWords ? 'text-amber-600' : 'text-green-600'}`}>{wordCount} {requiredWords > 0 ? `/ ${requiredWords}` : ''} words</span>
               {saving && (
                 <span className="flex items-center gap-1 text-blue-500">
                   <Loader2 className="w-3 h-3 animate-spin" />
@@ -315,7 +314,7 @@ export default function ManuscriptEditor({
             <div className="flex items-center justify-center gap-2 text-green-600">
               <CheckCircle className="w-5 h-5" />
               <span className="font-medium">
-                Submitted! You earned {cardXp} XP
+                Submitted!{xpValue > 0 ? ` You earned ${xpValue} XP` : ''}
               </span>
             </div>
           ) : (
@@ -329,10 +328,10 @@ export default function ManuscriptEditor({
               </button>
               <button
                 onClick={handleSubmit}
-                disabled={wordCount < requiredWords || submitting}
+                disabled={(requiredWords > 0 && wordCount < requiredWords) || submitting}
                 className="inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-medium text-sm shadow-sm transition-all"
                 title={
-                  wordCount < requiredWords
+                  requiredWords > 0 && wordCount < requiredWords
                     ? `Write at least ${requiredWords} words before submitting`
                     : ""
                 }
@@ -342,7 +341,7 @@ export default function ManuscriptEditor({
                 ) : (
                   <Send className="w-4 h-4" />
                 )}
-                {submitting ? "Submitting..." : `Submit & Earn ${cardXp} XP`}
+                {submitting ? "Submitting..." : "Submit"}
               </button>
             </div>
           )}
