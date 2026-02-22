@@ -41,6 +41,9 @@ The project utilizes a client-server architecture. The frontend is built with Re
 ## Important Accounts
 - **Apple Review Demo Account:** Scribe ID `123-456` (Buildathon Tester, buildathon.tester@theindiequill.org, role: student). This is the permanent demo account for Apple's App Store review team. Do not delete or modify this user.
 
+## App Store Compliance Notes
+- **Issue 90725 (SDK Version):** Starting April 28, 2026, all iOS and iPadOS apps must be built with the iOS 26 SDK or later (included in Xcode 26 or later) to be uploaded to App Store Connect or submitted for distribution. Current builds use iOS 18.2 SDK — must upgrade before that deadline.
+
 ## External Dependencies
 - **Supabase:** PostgreSQL database services.
 - **Google Calendar API:** For two-way event synchronization.
