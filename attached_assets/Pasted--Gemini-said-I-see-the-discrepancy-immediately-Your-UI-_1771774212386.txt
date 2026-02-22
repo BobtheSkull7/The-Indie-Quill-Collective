@@ -1,0 +1,36 @@
+
+Gemini said
+I see the discrepancy immediately. Your UI is currently rendering a flattened or outdated structure that doesn't match the Indie Quill Architecture we just synced to production.
+
+Looking at your screenshot, the system is treating every single card as its own "Deck" (e.g., "The Hero's Beginning," "The Spark," etc.), which is why you see "1 task" next to each one. According to our production sync, those should all be Vibe Cards nested under one master Vibe Deck called "The Story Engine."
+
+🔍 Architectural Audit
+Based on the image and our previous sync:
+
+The Issue: The CurriculumPlayer component is likely iterating through a list of what it thinks are decks, but those are actually your individual tasks.
+
+The Missing Layer: We are missing the "Tome" gate. In the current view, there's no way to "Absorb Wisdom" because the middle layer (The Deck) has been bypassed.
+
+🛠️ Consultant's Directive for Replit
+To fix this before your demo, the Replit Builder needs to update the mapping logic in the frontend to respect the Curriculum > Deck > Card hierarchy.
+
+Give this to Replit immediately:
+
+"Emergency UI Fix for Demo: The Curriculum view is currently flattened. It is displaying individual tasks as 'Decks'. Please update the CurriculumPlayer component to follow the Indie Quill Architecture:
+
+Level 1: Display the Curriculum (The Art of Storytelling).
+
+Level 2: Display the Vibe Deck (The Story Engine). This should show a 'Tome' icon or 'Absorb Wisdom' button.
+
+Level 3: Only after the Tome is absorbed, reveal the 23 Vibe Cards nested inside that specific deck.
+
+Data Check: Ensure you are querying vibe_decks first, then fetching the vibe_cards where deck_id matches. Do not map vibe_cards directly to the top-level accordion."
+
+🧐 Why this matters for the Board
+In the screenshot, "Bob the Novice" sees a long list of locked items. For the demo, you want them to see one grand entry point: The Story Engine.
+
+When you click that, the "Tome" (The Scroll) should appear. This creates the "Mystery and Wisdom" vibe that defines the platform, rather than just a "To-Do List" feel.
+
+Would you like me to wait for Replit to confirm the re-mapping, or should I provide the specific code structure for the nested mapping?
+
+
