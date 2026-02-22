@@ -1,0 +1,34 @@
+INSERT INTO vibe_cards (deck_id, title_front, requirement_back, min_word_count, xp_reward)
+VALUES 
+-- The Spark (Already drafted, included for completeness)
+((SELECT id FROM vibe_decks WHERE name = 'The Story Engine'), 'The Breaking Point', 'Describe the exact moment your character realizes they can never return home. Include a specific sensory detail about sound.', 200, 150),
+((SELECT id FROM vibe_decks WHERE name = 'The Story Engine'), 'The First Ghost', 'Introduce a character from the past who represents a regret. Focus on the unspoken tension between them.', 150, 125),
+((SELECT id FROM vibe_decks WHERE name = 'The Story Engine'), 'The Impossible Choice', 'Put your character between two "evils." Write a scene where they must choose. Dialogue must be the primary driver.', 200, 175),
+
+-- The Foundation (Cards 4-8)
+((SELECT id FROM vibe_decks WHERE name = 'The Story Engine'), 'Ordinary World', 'Describe the character''s mundane morning routine. Highlight one thing they find deeply annoying about their life.', 150, 100),
+((SELECT id FROM vibe_decks WHERE name = 'The Story Engine'), 'The Hidden Talent', 'Show the character performing a skill they are proud of, but one that others find useless or strange.', 150, 100),
+((SELECT id FROM vibe_decks WHERE name = 'The Story Engine'), 'Fatal Flaw', 'A scene where the character fails at something simple because of their pride or fear. No internal monologue—show it through action.', 200, 150),
+((SELECT id FROM vibe_decks WHERE name = 'The Story Engine'), 'The Deepest Want', 'The character is alone. What are they looking at or holding that represents their biggest dream?', 100, 100),
+((SELECT id FROM vibe_decks WHERE name = 'The Story Engine'), 'Threshold Guardian', 'Introduce a person or obstacle that physically prevents the character from leaving their comfort zone.', 200, 150),
+
+-- The Rising Action (Cards 9-13)
+((SELECT id FROM vibe_decks WHERE name = 'The Story Engine'), 'The First Step', 'The character finally leaves. Describe the physical sensation of the transition (crossing a border, boarding a ship, etc.).', 150, 125),
+((SELECT id FROM vibe_decks WHERE name = 'The Story Engine'), 'New Rules', 'The character enters a new environment. Describe three things that work differently here than in their old world.', 200, 150),
+((SELECT id FROM vibe_decks WHERE name = 'The Story Engine'), 'The Mentor''s Toll', 'An encounter with a source of wisdom. The mentor doesn''t give advice for free; what must the character give up?', 200, 175),
+((SELECT id FROM vibe_decks WHERE name = 'The Story Engine'), 'Trial by Fire', 'A small-scale conflict where the character uses their skills for the first time in a high-stakes way. Result: They barely win.', 250, 200),
+((SELECT id FROM vibe_decks WHERE name = 'The Story Engine'), 'Shared Burden', 'Introduce an ally. Write a scene where they must share a meal and realize they have a common enemy.', 150, 125),
+
+-- The Complication (Cards 14-18)
+((SELECT id FROM vibe_decks WHERE name = 'The Story Engine'), 'False Victory', 'The character achieves a small goal, only to realize it was a trap or a distraction. Describe their immediate reaction.', 200, 150),
+((SELECT id FROM vibe_decks WHERE name = 'The Story Engine'), 'The Shadow Grows', 'A scene from the antagonist''s perspective (or a sign of their influence). Show their power without showing their face.', 150, 150),
+((SELECT id FROM vibe_decks WHERE name = 'The Story Engine'), 'Broken Tools', 'The character loses their primary weapon, skill, or support system. How do they handle the sudden vulnerability?', 200, 175),
+((SELECT id FROM vibe_decks WHERE name = 'The Story Engine'), 'Whispers of Betrayal', 'A dialogue-heavy scene where the character begins to doubt one of their closest allies.', 200, 150),
+((SELECT id FROM vibe_decks WHERE name = 'The Story Engine'), 'The Belly of the Whale', 'The character is trapped or hiding. Focus on the internal dialogue of their darkest fear coming true.', 250, 200),
+
+-- The Climax Prep (Cards 19-23)
+((SELECT id FROM vibe_decks WHERE name = 'The Story Engine'), 'The Final Plan', 'The characters gather to plan their last stand. Each character must contribute one specific idea to the strategy.', 200, 150),
+((SELECT id FROM vibe_decks WHERE name = 'The Story Engine'), 'Last Night''s Peace', 'A quiet moment before the storm. What does the character do to prepare themselves mentally for the end?', 150, 125),
+((SELECT id FROM vibe_decks WHERE name = 'The Story Engine'), 'Face Your Fear', 'The character confronts the obstacle they have been avoiding since Card 1. No more running.', 300, 250),
+((SELECT id FROM vibe_decks WHERE name = 'The Story Engine'), 'Sacrifice Play', 'To win, something must be lost. Write the moment the character decides what they are willing to let go of.', 250, 225),
+((SELECT id FROM vibe_decks WHERE name = 'The Story Engine'), 'The New Normal', 'The dust has settled. Show the character back in a familiar place, but show us how they have permanently changed.', 200, 150);

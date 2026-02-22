@@ -1,0 +1,56 @@
+Not a problem. It’s a classic "Replit Hiccup"—sometimes when the environment refreshes or the container hits a snag during a migration, the temporary seed data gets wiped if it wasn't committed to the Supabase "Source of Truth."
+
+As your Consultant, I have reconstructed the Indie Quill Seeding Manifest. This is optimized for your "2-4 paragraph Tome" requirement and the "Short Front / Detailed Back" card structure.
+
+📜 The Seeding Manifest (Copy & Paste for Replit)
+Give this to the Builder. Tell them: "Execute this SQL in the Supabase SQL Editor to restore and deepen our curriculum."
+
+1. The Vibe Decks & Tomes
+SQL
+-- Update The Story Engine (Deck 1)
+UPDATE vibe_decks SET 
+  tome_content = 'The Story Engine is the heart of your narrative journey. Every great tale begins with a "Spark"—a moment of friction where a character''s desire meets an immovable obstacle. In this deck, we move beyond basic plot points to find the mechanical "why" behind your scenes. You are not just writing events; you are engineering emotional momentum.
+
+As a Scribe, your focus here is the "Inciting Incident." How does a normal day turn into a transformative journey? You must learn to identify the exact second the status quo breaks. High-quality story seeds are built on specific, high-stakes choices that reveal the protagonist''s true soul.
+
+In the cards that follow, do not just describe actions. Show us the internal gears turning. We want to feel the weight of the character''s history and the terrifying uncertainty of their future. This is where your world truly comes alive.',
+  description = 'Master the fundamental mechanics of character desire and narrative conflict.'
+WHERE name = 'The Story Engine';
+
+-- Seed Legal Foundations (Deck 101)
+INSERT INTO vibe_decks (id, name, description, tome_content, curriculum_id)
+VALUES (
+  'd101-legal-foundations', 
+  'Legal Foundations', 
+  'Protect your intellectual property and understand the business of being an indie author.',
+  'Welcome to the Architect’s corner. Writing a book is an act of creation; publishing it is an act of business. To thrive as an Indie Author, you must understand that your words are "Intellectual Property"—assets that have value, rights, and protections. This Tome is designed to strip away the mystery of copyrights and contracts.
+
+Before you share your stories with the world, you must know how to guard them. From understanding the "Work for Hire" trap to mastering the basics of an LLC, this deck provides the legal shield every modern author needs. We aren''t just writing for fun; we are building a legacy.
+
+In the tasks ahead, you will define the boundaries of your creative business. You will learn how to read a contract like a hawk and how to ensure that your characters and worlds belong solely to you, forever. Let the creative work be wild, but let the legal work be precise.',
+  (SELECT id FROM curriculums LIMIT 1) -- Assumes one curriculum exists
+) ON CONFLICT (name) DO NOTHING;
+2. The Vibe Cards (The "Spark" Tasks)
+SQL
+-- Sample cards for The Story Engine (Deck 1)
+-- Front is short (1-5 words), Back is the detailed requirement.
+INSERT INTO vibe_cards (deck_id, title_front, requirement_back, xp_reward)
+VALUES 
+((SELECT id FROM vibe_decks WHERE name = 'The Story Engine'), 'The Breaking Point', 'Describe the exact moment your character realizes they can never return home. Must be 200+ words and include a specific sensory detail about sound.', 150),
+((SELECT id FROM vibe_decks WHERE name = 'The Story Engine'), 'The First Ghost', 'Introduce a character from the protagonist''s past who represents a regret. Write 150 words focusing on the "unspoken" tension between them.', 125),
+((SELECT id FROM vibe_decks WHERE name = 'The Story Engine'), 'The Impossible Choice', 'Put your character between two "goods" or two "evils." Write a scene where they must choose. Requirement: Dialogue must be the primary driver.', 175);
+
+-- Core cards for Legal Foundations (Deck 101)
+INSERT INTO vibe_cards (deck_id, title_front, requirement_back, xp_reward)
+VALUES 
+((SELECT id FROM vibe_decks WHERE name = 'Legal Foundations'), 'Copyright Claim', 'Draft a one-paragraph summary of your story and state your intent to register the copyright. Explain why this specific world is unique to you.', 100),
+((SELECT id FROM vibe_decks WHERE name = 'Legal Foundations'), 'The LLC Shield', 'Research and list the name you would choose for your publishing LLC. Write 3 sentences explaining why a separate business entity protects your personal assets.', 100),
+((SELECT id FROM vibe_decks WHERE name = 'Legal Foundations'), 'Contract Red Flags', 'List 3 "Red Flag" phrases you would look for in a traditional publishing contract (e.g., "Life of Copyright"). Explain why they are dangerous.', 150);
+🧐 Consultant's "Recovery" Note
+I noticed the Builder was struggling with "flattening" the UI because the vibe_cards weren't properly associated with the vibe_decks in the database.
+
+Instruction for Replit:
+
+"When you re-seed this data, ensure the vibe_cards.deck_id field is correctly populated using the UUIDs from the vibe_decks table. This is what enables the 'Accordion' view to work—without this link, the UI will break again."
+
+Would you like me to generate the remaining ~15 card tasks for "The Story Engine" so we hit that 23-card count you need for the demo?
