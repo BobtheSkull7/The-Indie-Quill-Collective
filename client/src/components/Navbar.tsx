@@ -76,6 +76,12 @@ export default function Navbar() {
                 >
                   Outcomes
                 </Link>
+                <Link 
+                  href="/student/community" 
+                  className={`text-sm font-medium transition-colors ${location === "/student/community" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`}
+                >
+                  Community
+                </Link>
                 <div className="flex items-center space-x-3 border-l pl-6 border-gray-200">
                   <div className="flex items-center space-x-2">
                     <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
@@ -210,6 +216,12 @@ export default function Navbar() {
                 >
                   Outcomes
                 </Link>
+                <Link 
+                  href="/student/community" 
+                  className={`text-sm font-medium transition-colors ${location === "/student/community" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`}
+                >
+                  Community
+                </Link>
                 <div className="flex items-center space-x-3 border-l pl-6 border-gray-200">
                   <div className="flex items-center space-x-2">
                     <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
@@ -289,6 +301,7 @@ export default function Navbar() {
               <Link href="/admin/training" className="block text-gray-600 hover:text-slate-800 py-2">Training</Link>
               <Link href="/admin/publishing" className="block text-gray-600 hover:text-slate-800 py-2">Publishing</Link>
               <Link href="/admin/outcomes" className="block text-gray-600 hover:text-slate-800 py-2">Outcomes</Link>
+              <Link href="/student/community" className="block text-gray-600 hover:text-slate-800 py-2">Community</Link>
               <button onClick={handleLogout} className="block w-full text-left text-red-500 py-2">Logout</button>
             </>
           ) : user.role === "auditor" ? (
@@ -316,6 +329,7 @@ export default function Navbar() {
               <Link href="/admin/training" className="block text-gray-600 hover:text-slate-800 py-2">Training</Link>
               <Link href="/admin/publishing" className="block text-gray-600 hover:text-slate-800 py-2">Publishing</Link>
               <Link href="/admin/outcomes" className="block text-gray-600 hover:text-slate-800 py-2">Outcomes</Link>
+              <Link href="/student/community" className="block text-gray-600 hover:text-slate-800 py-2">Community</Link>
               <button onClick={handleLogout} className="block w-full text-left text-red-500 py-2">Logout</button>
             </>
           ) : (
