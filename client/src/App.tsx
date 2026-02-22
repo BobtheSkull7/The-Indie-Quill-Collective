@@ -28,6 +28,7 @@ import ResetPassword from "./pages/ResetPassword";
 import Initiation from "./pages/Initiation";
 import Workspace from "./pages/Workspace";
 import Privacy from "./pages/Privacy";
+import Community from "./pages/Community";
 import Navbar from "./components/Navbar";
 
 interface User {
@@ -100,6 +101,7 @@ function App() {
           <Route path="/student/module/:id" component={CurriculumPlayer} />
           <Route path="/student/drafts" component={DraftingSuite} />
           <Route path="/student/workspace" component={Workspace} />
+          <Route path="/student/community" component={Community} />
           <Route path="/mentor" component={MentorDashboard} />
           <Route path="/family" component={FamilyDashboard} />
           <Route path="/vibe" component={VibeScribe} />

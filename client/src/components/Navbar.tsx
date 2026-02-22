@@ -129,6 +129,12 @@ export default function Navbar() {
                   Workspace
                 </Link>
                 <Link 
+                  href="/student/community" 
+                  className={`text-sm font-medium transition-colors ${location === "/student/community" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`}
+                >
+                  Community
+                </Link>
+                <Link 
                   href="/family" 
                   className={`text-sm font-medium transition-colors ${location === "/family" ? "text-red-500" : "text-gray-600 hover:text-slate-800"}`}
                 >
@@ -294,6 +300,7 @@ export default function Navbar() {
             <>
               <Link href="/student" className="block text-gray-600 hover:text-slate-800 py-2">My Learning</Link>
               <Link href="/student/workspace" className="block text-gray-600 hover:text-slate-800 py-2">Workspace</Link>
+              <Link href="/student/community" className="block text-gray-600 hover:text-slate-800 py-2">Community</Link>
               <Link href="/family" className="block text-gray-600 hover:text-slate-800 py-2">My Family</Link>
               <button onClick={handleLogout} className="block w-full text-left text-red-500 py-2">Logout</button>
             </>
