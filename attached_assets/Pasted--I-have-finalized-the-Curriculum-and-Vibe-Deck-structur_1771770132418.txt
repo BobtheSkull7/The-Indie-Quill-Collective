@@ -1,0 +1,67 @@
+"I have finalized the Curriculum and Vibe Deck structure in Production Supabase. Please execute the following SQL script in our Dev Supabase environment to bring them into 100% sync.
+
+Rules:
+
+Use the SUPABASE_URL (Port 5432) only.
+
+This script resets and rebuilds the learning hierarchy to match Production.
+
+All 23 'Craft' cards are now intentionally grouped under the first deck, 'The Story Engine'."
+
+🛠️ The Full Sync Script (Copy/Paste to Replit)
+SQL
+BEGIN;
+
+-- 1. CLEANUP (Wipe to prevent primary key conflicts during sync)
+DELETE FROM vibe_cards;
+DELETE FROM vibe_decks;
+DELETE FROM curriculums;
+
+-- 2. CREATE CURRICULUMS
+INSERT INTO curriculums (id, title) VALUES 
+(1, 'The Art of Storytelling'),
+(2, 'The Indie Publisher');
+
+-- 3. CREATE DECKS (The Art of Storytelling)
+INSERT INTO vibe_decks (id, curriculum_id, title, description, tome_title, tome_content, order_index, is_published)
+VALUES 
+(1, 1, 'The Story Engine', 'The complete 23-step journey from idea to author note.', 'Your Writing Journey', 'Welcome, Scribe. Your journey begins not with a word, but with a commitment...', 1, true),
+(2, 1, 'The Writer''s Polish', 'Deepening your craft with sensory immersion and active voice.', null, null, 2, true),
+(3, 1, 'The Revision Lab', 'Smoothing out the rough edges and making your story shine.', null, null, 3, true);
+
+-- 4. CREATE DECKS (The Indie Publisher)
+INSERT INTO vibe_decks (id, curriculum_id, title, description, order_index, is_published)
+VALUES 
+(101, 2, 'Legal Foundations', 'Setting up your identity as an author and protecting your work.', 1, true);
+
+-- 5. INSERT ALL 23 CARDS (All assigned to deck_id 1)
+INSERT INTO vibe_cards (deck_id, task, qualifications, xp_value, order_index) VALUES
+(1, 'Write a 200-word letter to your future self about why you want to finish this book.', 'Min 200 words.', 50, 1),
+(1, 'Define your "High Concept" premise in exactly three sentences.', '3 sentences exactly.', 75, 2),
+(1, 'Create a character profile including their greatest fear and their hidden strength.', 'Fear/Strength included.', 75, 3),
+(1, 'Outline your story using the 3-Act structure (3 sentences per act).', '9 sentences total.', 100, 4),
+(1, 'Describe one unique cultural rule or physical law of your story’s world.', 'Min 150 words.', 100, 5),
+(1, 'Write a scene of dialogue where two characters want the same object but never mention it.', 'Dialogue-only.', 75, 6),
+(1, 'Summarize your story''s theme in one word and write why it matters.', 'Min 100 words.', 50, 7),
+(1, 'Describe your hero''s morning routine and one frustration.', 'Min 250 words.', 100, 8),
+(1, 'Write the "Life-Changing Event" that forces your character out of their routine.', 'Sensory detail required.', 100, 9),
+(1, 'Write the moment your character decides to commit to the journey.', 'Internal monologue focus.', 125, 10),
+(1, 'Write a "trailer" scene—the most exciting or funny moment you imagine.', 'Min 300 words.', 150, 11),
+(1, 'Introduce a side character who disagrees with the hero but shares their goal.', 'Dialogue required.', 100, 12),
+(1, 'Write a scene where the hero gains information that changes everything.', 'Min 300 words.', 150, 13),
+(1, 'Take your hero''s current goal and make it twice as difficult.', 'Min 200 words.', 100, 14),
+(1, 'Write a scene where the hero loses something or someone essential.', 'Emotional resonance focus.', 150, 15),
+(1, 'Write the realization where the hero understands what they must truly do.', 'Internal monologue.', 100, 16),
+(1, 'Write the climax. The hero must win using a skill from Act One.', 'Min 500 words.', 250, 17),
+(1, 'Write the final scene. Contrast it with the very first scene.', 'Focus on change.', 150, 18),
+(1, 'Rewrite a "telling" paragraph into a "showing" scene.', 'Before and After required.', 100, 19),
+(1, 'Map out 5 events using "X happened, therefore Y happened" logic.', 'Logical flow.', 75, 20),
+(1, 'Write a 1,000-word sprint. Do not edit.', 'Verified word count.', 300, 21),
+(1, 'Identify one "filler" word you over-use and remove it from 3 pages.', 'Self-audit.', 100, 22),
+(1, 'Write your Author’s Note. Who is this book for?', 'Min 300 words.', 100, 23);
+
+COMMIT;
+🏁 Final Checkpoint
+Once Replit runs this, both your Local/Dev and Production environments will be perfectly aligned. The vibe_decks table will handle the Tomes, and the vibe_cards table will serve the 23-level "Story Engine" campaign.
+
+Would you like me to wait while you run this in Replit, or should we move on to drafting the new cards for "Legal Foundations"?
