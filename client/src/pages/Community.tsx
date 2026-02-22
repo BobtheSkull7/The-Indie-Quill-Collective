@@ -1,6 +1,4 @@
-import { useEffect } from "react";
-import { useLocation, Link } from "wouter";
-import { useAuth } from "../App";
+import { Link } from "wouter";
 import { BookOpen, Heart, Feather, ArrowLeft, Mail } from "lucide-react";
 
 const masters = [
@@ -25,16 +23,6 @@ const advisors = [
 ];
 
 export default function Community() {
-  const { user } = useAuth();
-  const [, setLocation] = useLocation();
-
-  useEffect(() => {
-    if (!user) {
-      setLocation("/login");
-    }
-  }, [user, setLocation]);
-
-  if (!user) return null;
 
   return (
     <div className="min-h-screen" style={{ background: "linear-gradient(180deg, #faf6f0 0%, #f5efe6 40%, #ede4d6 100%)" }}>

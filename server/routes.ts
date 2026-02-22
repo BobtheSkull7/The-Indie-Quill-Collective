@@ -5950,7 +5950,7 @@ export async function registerDonationRoutes(app: Express) {
   // ============ VIBE DECK CURRICULUM SYSTEM ============
 
   app.get("/api/admin/curriculums", async (req: Request, res: Response) => {
-    if (!req.session.userId || req.session.userRole !== "admin") {
+    if (!req.session.userId || !hasRole(req.session, "admin", "board_member")) {
       return res.status(403).json({ error: "Admin access required" });
     }
     try {
@@ -5967,7 +5967,7 @@ export async function registerDonationRoutes(app: Express) {
   });
 
   app.post("/api/admin/curriculums", async (req: Request, res: Response) => {
-    if (!req.session.userId || req.session.userRole !== "admin") {
+    if (!req.session.userId || !hasRole(req.session, "admin", "board_member")) {
       return res.status(403).json({ error: "Admin access required" });
     }
     try {
@@ -5988,7 +5988,7 @@ export async function registerDonationRoutes(app: Express) {
   });
 
   app.put("/api/admin/curriculums/:id", async (req: Request, res: Response) => {
-    if (!req.session.userId || req.session.userRole !== "admin") {
+    if (!req.session.userId || !hasRole(req.session, "admin", "board_member")) {
       return res.status(403).json({ error: "Admin access required" });
     }
     try {
@@ -6016,7 +6016,7 @@ export async function registerDonationRoutes(app: Express) {
   });
 
   app.delete("/api/admin/curriculums/:id", async (req: Request, res: Response) => {
-    if (!req.session.userId || req.session.userRole !== "admin") {
+    if (!req.session.userId || !hasRole(req.session, "admin", "board_member")) {
       return res.status(403).json({ error: "Admin access required" });
     }
     try {
@@ -6029,7 +6029,7 @@ export async function registerDonationRoutes(app: Express) {
   });
 
   app.get("/api/admin/curriculums/:curriculumId/decks", async (req: Request, res: Response) => {
-    if (!req.session.userId || req.session.userRole !== "admin") {
+    if (!req.session.userId || !hasRole(req.session, "admin", "board_member")) {
       return res.status(403).json({ error: "Admin access required" });
     }
     try {
@@ -6062,7 +6062,7 @@ export async function registerDonationRoutes(app: Express) {
   });
 
   app.post("/api/admin/decks", async (req: Request, res: Response) => {
-    if (!req.session.userId || req.session.userRole !== "admin") {
+    if (!req.session.userId || !hasRole(req.session, "admin", "board_member")) {
       return res.status(403).json({ error: "Admin access required" });
     }
     try {
@@ -6083,7 +6083,7 @@ export async function registerDonationRoutes(app: Express) {
   });
 
   app.put("/api/admin/decks/:id", async (req: Request, res: Response) => {
-    if (!req.session.userId || req.session.userRole !== "admin") {
+    if (!req.session.userId || !hasRole(req.session, "admin", "board_member")) {
       return res.status(403).json({ error: "Admin access required" });
     }
     try {
@@ -6111,7 +6111,7 @@ export async function registerDonationRoutes(app: Express) {
   });
 
   app.delete("/api/admin/decks/:id", async (req: Request, res: Response) => {
-    if (!req.session.userId || req.session.userRole !== "admin") {
+    if (!req.session.userId || !hasRole(req.session, "admin", "board_member")) {
       return res.status(403).json({ error: "Admin access required" });
     }
     try {
@@ -6125,7 +6125,7 @@ export async function registerDonationRoutes(app: Express) {
 
   // Admin Tomes CRUD
   app.get("/api/admin/decks/:deckId/tomes", async (req: Request, res: Response) => {
-    if (!req.session.userId || req.session.userRole !== "admin") {
+    if (!req.session.userId || !hasRole(req.session, "admin", "board_member")) {
       return res.status(403).json({ error: "Admin access required" });
     }
     try {
@@ -6141,7 +6141,7 @@ export async function registerDonationRoutes(app: Express) {
   });
 
   app.post("/api/admin/tomes", async (req: Request, res: Response) => {
-    if (!req.session.userId || req.session.userRole !== "admin") {
+    if (!req.session.userId || !hasRole(req.session, "admin", "board_member")) {
       return res.status(403).json({ error: "Admin access required" });
     }
     try {
@@ -6162,7 +6162,7 @@ export async function registerDonationRoutes(app: Express) {
   });
 
   app.put("/api/admin/tomes/:id", async (req: Request, res: Response) => {
-    if (!req.session.userId || req.session.userRole !== "admin") {
+    if (!req.session.userId || !hasRole(req.session, "admin", "board_member")) {
       return res.status(403).json({ error: "Admin access required" });
     }
     try {
@@ -6181,7 +6181,7 @@ export async function registerDonationRoutes(app: Express) {
   });
 
   app.delete("/api/admin/tomes/:id", async (req: Request, res: Response) => {
-    if (!req.session.userId || req.session.userRole !== "admin") {
+    if (!req.session.userId || !hasRole(req.session, "admin", "board_member")) {
       return res.status(403).json({ error: "Admin access required" });
     }
     try {
@@ -6195,7 +6195,7 @@ export async function registerDonationRoutes(app: Express) {
 
   // Admin Cards - now under tomes
   app.get("/api/admin/tomes/:tomeId/cards", async (req: Request, res: Response) => {
-    if (!req.session.userId || req.session.userRole !== "admin") {
+    if (!req.session.userId || !hasRole(req.session, "admin", "board_member")) {
       return res.status(403).json({ error: "Admin access required" });
     }
     try {
@@ -6210,7 +6210,7 @@ export async function registerDonationRoutes(app: Express) {
   });
 
   app.post("/api/admin/cards", async (req: Request, res: Response) => {
-    if (!req.session.userId || req.session.userRole !== "admin") {
+    if (!req.session.userId || !hasRole(req.session, "admin", "board_member")) {
       return res.status(403).json({ error: "Admin access required" });
     }
     try {
@@ -6231,7 +6231,7 @@ export async function registerDonationRoutes(app: Express) {
   });
 
   app.put("/api/admin/cards/:id", async (req: Request, res: Response) => {
-    if (!req.session.userId || req.session.userRole !== "admin") {
+    if (!req.session.userId || !hasRole(req.session, "admin", "board_member")) {
       return res.status(403).json({ error: "Admin access required" });
     }
     try {
@@ -6250,7 +6250,7 @@ export async function registerDonationRoutes(app: Express) {
   });
 
   app.delete("/api/admin/cards/:id", async (req: Request, res: Response) => {
-    if (!req.session.userId || req.session.userRole !== "admin") {
+    if (!req.session.userId || !hasRole(req.session, "admin", "board_member")) {
       return res.status(403).json({ error: "Admin access required" });
     }
     try {
