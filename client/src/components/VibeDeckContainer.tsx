@@ -9,19 +9,26 @@ interface CardData {
   qualifications: string | null;
   xp_value: number;
   min_word_count: number;
+  tome_id: number;
+}
+
+interface TomeData {
+  id: number;
   deck_id: number;
+  title: string;
+  content: string;
+  order_index: number;
+  cards: CardData[];
+  absorbed: boolean;
 }
 
 interface DeckData {
   id: number;
   title: string;
   description: string | null;
-  tome_title: string | null;
-  tome_content: string | null;
   curriculum_id: number;
   curriculum_title: string;
-  cards: CardData[];
-  tome_absorbed: boolean;
+  tomes: TomeData[];
 }
 
 interface CurriculumData {
@@ -36,7 +43,8 @@ export default function VibeDeckContainer() {
   const [loading, setLoading] = useState(true);
   const [expandedCurriculum, setExpandedCurriculum] = useState<number | null>(null);
   const [expandedDeck, setExpandedDeck] = useState<number | null>(null);
-  const [tomeModalDeck, setTomeModalDeck] = useState<DeckData | null>(null);
+  const [expandedTome, setExpandedTome] = useState<number | null>(null);
+  const [tomeModal, setTomeModal] = useState<TomeData | null>(null);
   const [absorbing, setAbsorbing] = useState(false);
   const [showScrollContent, setShowScrollContent] = useState(false);
   const [completedCards, setCompletedCards] = useState<Set<number>>(new Set());
@@ -47,12 +55,12 @@ export default function VibeDeckContainer() {
   }, []);
 
   useEffect(() => {
-    if (tomeModalDeck) {
+    if (tomeModal) {
       setShowScrollContent(false);
       const timer = setTimeout(() => setShowScrollContent(true), 600);
       return () => clearTimeout(timer);
     }
-  }, [tomeModalDeck]);
+  }, [tomeModal]);
 
   const loadVibeDecks = async () => {
     try {
@@ -82,21 +90,24 @@ export default function VibeDeckContainer() {
     }
   };
 
-  const handleAbsorbTome = async (deckId: number) => {
+  const handleAbsorbTome = async (tomeId: number) => {
     setAbsorbing(true);
     try {
       const res = await fetch("/api/student/absorb-tome", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ deckId }),
+        body: JSON.stringify({ tomeId }),
       });
       if (res.ok) {
-        setDecks(prev => prev.map(d =>
-          d.id === deckId ? { ...d, tome_absorbed: true } : d
-        ));
+        setDecks(prev => prev.map(d => ({
+          ...d,
+          tomes: d.tomes.map(t =>
+            t.id === tomeId ? { ...t, absorbed: true } : t
+          ),
+        })));
         setTimeout(() => {
-          setTomeModalDeck(null);
+          setTomeModal(null);
         }, 800);
       }
     } catch (err) {
@@ -105,9 +116,6 @@ export default function VibeDeckContainer() {
       setAbsorbing(false);
     }
   };
-
-  const hasTome = (deck: DeckData) => !!(deck.tome_title && deck.tome_content);
-  const isLocked = (deck: DeckData) => hasTome(deck) && !deck.tome_absorbed;
 
   if (loading) {
     return (
@@ -121,40 +129,21 @@ export default function VibeDeckContainer() {
     return null;
   }
 
-  const totalXP = decks.flatMap(d => d.cards).reduce((sum, c) => sum + c.xp_value, 0);
+  const allCards = decks.flatMap(d => d.tomes.flatMap(t => t.cards));
+  const totalXP = allCards.reduce((sum, c) => sum + c.xp_value, 0);
 
   return (
     <div className="space-y-6">
       <style>{`
         @keyframes scrollUnrollCenter {
-          0% {
-            clip-path: inset(50% 0 50% 0);
-            opacity: 0;
-          }
-          20% {
-            opacity: 1;
-          }
-          100% {
-            clip-path: inset(0% 0 0% 0);
-            opacity: 1;
-          }
+          0% { clip-path: inset(50% 0 50% 0); opacity: 0; }
+          20% { opacity: 1; }
+          100% { clip-path: inset(0% 0 0% 0); opacity: 1; }
         }
-        @keyframes dowelTop {
-          0% { top: 50%; }
-          100% { top: 0%; }
-        }
-        @keyframes dowelBottom {
-          0% { bottom: 50%; }
-          100% { bottom: 0%; }
-        }
-        @keyframes fadeInContent {
-          0% { opacity: 0; }
-          100% { opacity: 1; }
-        }
-        @keyframes backdropFadeIn {
-          0% { opacity: 0; }
-          100% { opacity: 1; }
-        }
+        @keyframes dowelTop { 0% { top: 50%; } 100% { top: 0%; } }
+        @keyframes dowelBottom { 0% { bottom: 50%; } 100% { bottom: 0%; } }
+        @keyframes fadeInContent { 0% { opacity: 0; } 100% { opacity: 1; } }
+        @keyframes backdropFadeIn { 0% { opacity: 0; } 100% { opacity: 1; } }
         @keyframes candleFlicker {
           0%   { box-shadow: 0 0 15px 3px rgba(217, 164, 65, 0.25), 0 0 40px 8px rgba(217, 164, 65, 0.10), inset 0 0 20px rgba(180, 130, 50, 0.05); }
           15%  { box-shadow: 0 0 20px 5px rgba(230, 170, 60, 0.30), 0 0 50px 12px rgba(230, 170, 60, 0.12), inset 0 0 25px rgba(180, 130, 50, 0.07); }
@@ -164,47 +153,23 @@ export default function VibeDeckContainer() {
           85%  { box-shadow: 0 0 18px 4px rgba(225, 168, 62, 0.28), 0 0 45px 10px rgba(225, 168, 62, 0.11), inset 0 0 22px rgba(180, 130, 50, 0.06); }
           100% { box-shadow: 0 0 15px 3px rgba(217, 164, 65, 0.25), 0 0 40px 8px rgba(217, 164, 65, 0.10), inset 0 0 20px rgba(180, 130, 50, 0.05); }
         }
-        .scroll-backdrop {
-          animation: backdropFadeIn 0.4s ease-out forwards;
-          background: rgba(10, 15, 40, 0.85);
-          backdrop-filter: blur(6px);
-        }
-        .scroll-container {
-          animation: scrollUnrollCenter 0.8s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
-          position: relative;
-        }
-        .scroll-candlelight {
-          animation: candleFlicker 3s ease-in-out infinite;
-          animation-delay: 0.8s;
-        }
+        .scroll-backdrop { animation: backdropFadeIn 0.4s ease-out forwards; background: rgba(10, 15, 40, 0.85); backdrop-filter: blur(6px); }
+        .scroll-container { animation: scrollUnrollCenter 0.8s cubic-bezier(0.22, 0.61, 0.36, 1) forwards; position: relative; }
+        .scroll-candlelight { animation: candleFlicker 3s ease-in-out infinite; animation-delay: 0.8s; }
         .dowel {
-          position: absolute;
-          left: -8px;
-          right: -8px;
-          height: 20px;
-          z-index: 20;
-          border-radius: 10px;
+          position: absolute; left: -8px; right: -8px; height: 20px; z-index: 20; border-radius: 10px;
           background: linear-gradient(180deg, #8B6914 0%, #c9a227 20%, #dbb84d 40%, #c9a227 60%, #a07d1a 80%, #8B6914 100%);
           box-shadow: 0 2px 8px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.2);
         }
         .dowel::before, .dowel::after {
-          content: '';
-          position: absolute;
-          top: 2px;
-          bottom: 2px;
-          width: 24px;
-          border-radius: 8px;
+          content: ''; position: absolute; top: 2px; bottom: 2px; width: 24px; border-radius: 8px;
           background: linear-gradient(180deg, #7a5c10 0%, #b8921f 30%, #d4ac35 50%, #b8921f 70%, #7a5c10 100%);
           box-shadow: 0 1px 4px rgba(0,0,0,0.3);
         }
         .dowel::before { left: -4px; }
         .dowel::after { right: -4px; }
-        .dowel-top {
-          animation: dowelTop 0.8s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
-        }
-        .dowel-bottom {
-          animation: dowelBottom 0.8s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
-        }
+        .dowel-top { animation: dowelTop 0.8s cubic-bezier(0.22, 0.61, 0.36, 1) forwards; }
+        .dowel-bottom { animation: dowelBottom 0.8s cubic-bezier(0.22, 0.61, 0.36, 1) forwards; }
         .scroll-parchment {
           background-color: #f2e8cf;
           background-image:
@@ -214,65 +179,25 @@ export default function VibeDeckContainer() {
             linear-gradient(180deg, rgba(139, 105, 20, 0.06) 0%, transparent 5%, transparent 95%, rgba(139, 105, 20, 0.06) 100%);
         }
         .scroll-parchment::before {
-          content: '';
-          position: absolute;
-          inset: 0;
+          content: ''; position: absolute; inset: 0;
           background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
-          pointer-events: none;
-          border-radius: inherit;
+          pointer-events: none; border-radius: inherit;
         }
-        .scroll-edge-left, .scroll-edge-right {
-          position: absolute;
-          top: 20px;
-          bottom: 20px;
-          width: 12px;
-          z-index: 5;
-          pointer-events: none;
-        }
-        .scroll-edge-left {
-          left: 0;
-          background: linear-gradient(to right, rgba(139, 105, 20, 0.12), transparent);
-          border-left: 1px solid rgba(139, 105, 20, 0.15);
-        }
-        .scroll-edge-right {
-          right: 0;
-          background: linear-gradient(to left, rgba(139, 105, 20, 0.12), transparent);
-          border-right: 1px solid rgba(139, 105, 20, 0.15);
-        }
-        .scroll-content-reveal {
-          animation: fadeInContent 0.5s ease-out 0.6s both;
-        }
+        .scroll-edge-left, .scroll-edge-right { position: absolute; top: 20px; bottom: 20px; width: 12px; z-index: 5; pointer-events: none; }
+        .scroll-edge-left { left: 0; background: linear-gradient(to right, rgba(139, 105, 20, 0.12), transparent); border-left: 1px solid rgba(139, 105, 20, 0.15); }
+        .scroll-edge-right { right: 0; background: linear-gradient(to left, rgba(139, 105, 20, 0.12), transparent); border-right: 1px solid rgba(139, 105, 20, 0.15); }
+        .scroll-content-reveal { animation: fadeInContent 0.5s ease-out 0.6s both; }
         .tome-drop-cap::first-letter {
-          float: left;
-          font-family: 'Playfair Display', 'Georgia', serif;
-          font-size: 4.2rem;
-          line-height: 0.8;
-          font-weight: 700;
-          color: #6b4c11;
-          margin-right: 8px;
-          margin-top: 6px;
-          text-shadow: 1px 1px 2px rgba(107, 76, 17, 0.2);
+          float: left; font-family: 'Playfair Display', 'Georgia', serif;
+          font-size: 4.2rem; line-height: 0.8; font-weight: 700; color: #6b4c11;
+          margin-right: 8px; margin-top: 6px; text-shadow: 1px 1px 2px rgba(107, 76, 17, 0.2);
         }
-        .locked-cards {
-          filter: blur(4px);
-          opacity: 0.5;
-          pointer-events: none;
-          user-select: none;
-        }
+        .locked-cards { filter: blur(4px); opacity: 0.5; pointer-events: none; user-select: none; }
         @media (prefers-reduced-motion: reduce) {
-          .scroll-container,
-          .dowel-top,
-          .dowel-bottom,
-          .scroll-content-reveal,
-          .scroll-backdrop,
-          .scroll-candlelight {
-            animation: none !important;
-          }
+          .scroll-container, .dowel-top, .dowel-bottom, .scroll-content-reveal, .scroll-backdrop, .scroll-candlelight { animation: none !important; }
           .scroll-container { clip-path: none; opacity: 1; }
-          .dowel-top { top: 0%; }
-          .dowel-bottom { bottom: 0%; }
-          .scroll-content-reveal { opacity: 1; }
-          .scroll-backdrop { opacity: 1; }
+          .dowel-top { top: 0%; } .dowel-bottom { bottom: 0%; }
+          .scroll-content-reveal { opacity: 1; } .scroll-backdrop { opacity: 1; }
         }
       `}</style>
 
@@ -282,7 +207,7 @@ export default function VibeDeckContainer() {
             <Sparkles className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h2 className="font-display text-xl font-bold text-slate-800">Published Writer Curriculum</h2>
+            <h2 className="font-display text-xl font-bold text-slate-800">Curriculum</h2>
             <p className="text-sm text-gray-500">Complete tasks to earn XP and level up</p>
           </div>
         </div>
@@ -297,8 +222,9 @@ export default function VibeDeckContainer() {
         {curriculums.map((curriculum) => {
           const curriculumDecks = decks.filter(d => d.curriculum_id === curriculum.id);
           const isCurriculumExpanded = expandedCurriculum === curriculum.id;
-          const curriculumXP = curriculumDecks.flatMap(d => d.cards).reduce((sum, c) => sum + c.xp_value, 0);
-          const totalCards = curriculumDecks.reduce((sum, d) => sum + d.cards.length, 0);
+          const totalTomes = curriculumDecks.reduce((sum, d) => sum + d.tomes.length, 0);
+          const totalCards = curriculumDecks.reduce((sum, d) => sum + d.tomes.reduce((ts, t) => ts + t.cards.length, 0), 0);
+          const curriculumXP = curriculumDecks.flatMap(d => d.tomes.flatMap(t => t.cards)).reduce((sum, c) => sum + c.xp_value, 0);
 
           return (
             <div key={curriculum.id} className="rounded-xl border border-purple-200 bg-white shadow-sm overflow-hidden">
@@ -321,7 +247,7 @@ export default function VibeDeckContainer() {
                   )}
                 </div>
                 <div className="flex items-center gap-4 flex-shrink-0">
-                  <span className="text-xs text-gray-500">{curriculumDecks.length} {curriculumDecks.length === 1 ? 'deck' : 'decks'} · {totalCards} {totalCards === 1 ? 'task' : 'tasks'}</span>
+                  <span className="text-xs text-gray-500">{curriculumDecks.length} {curriculumDecks.length === 1 ? 'deck' : 'decks'} · {totalTomes} {totalTomes === 1 ? 'tome' : 'tomes'} · {totalCards} {totalCards === 1 ? 'task' : 'tasks'}</span>
                   {curriculumXP > 0 && (
                     <span className="text-xs font-medium text-amber-600">{curriculumXP} XP</span>
                   )}
@@ -338,9 +264,8 @@ export default function VibeDeckContainer() {
                     <div className="space-y-3 mt-4">
                       {curriculumDecks.map((deck) => {
                         const isDeckExpanded = expandedDeck === deck.id;
-                        const deckTotalXP = deck.cards.reduce((sum, c) => sum + c.xp_value, 0);
-                        const locked = isLocked(deck);
-                        const hasTomeContent = hasTome(deck);
+                        const deckCards = deck.tomes.flatMap(t => t.cards);
+                        const deckTotalXP = deckCards.reduce((sum, c) => sum + c.xp_value, 0);
 
                         return (
                           <div key={deck.id} className="rounded-lg border border-gray-200 bg-white shadow-sm overflow-hidden">
@@ -363,19 +288,7 @@ export default function VibeDeckContainer() {
                                 )}
                               </div>
                               <div className="flex items-center gap-3 flex-shrink-0">
-                                {locked && (
-                                  <span className="flex items-center gap-1 text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-full border border-amber-200">
-                                    <Lock className="w-3 h-3" />
-                                    Locked
-                                  </span>
-                                )}
-                                {hasTomeContent && deck.tome_absorbed && (
-                                  <span className="flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full border border-green-200">
-                                    <ScrollText className="w-3 h-3" />
-                                    Absorbed
-                                  </span>
-                                )}
-                                <span className="text-xs text-gray-500">{deck.cards.length} {deck.cards.length === 1 ? 'task' : 'tasks'}</span>
+                                <span className="text-xs text-gray-500">{deck.tomes.length} {deck.tomes.length === 1 ? 'tome' : 'tomes'}</span>
                                 {deckTotalXP > 0 && (
                                   <span className="text-xs font-medium text-amber-600">{deckTotalXP} XP</span>
                                 )}
@@ -384,77 +297,119 @@ export default function VibeDeckContainer() {
 
                             {isDeckExpanded && (
                               <div className="px-4 pb-4 pt-1 border-t border-gray-100 bg-gradient-to-b from-gray-50/50 to-white">
-                                {hasTomeContent && (
-                                  <div className="mb-4 mt-2">
-                                    <button
-                                      onClick={(e) => { e.stopPropagation(); setTomeModalDeck(deck); }}
-                                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg border-2 transition-all ${
-                                        locked
-                                          ? "border-amber-300 bg-gradient-to-r from-amber-50 to-yellow-50 hover:from-amber-100 hover:to-yellow-100 shadow-sm"
-                                          : "border-green-200 bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100"
-                                      }`}
-                                    >
-                                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${locked ? "bg-amber-100" : "bg-green-100"}`}>
-                                        <ScrollText className={`w-5 h-5 ${locked ? "text-amber-600" : "text-green-600"}`} />
-                                      </div>
-                                      <div className="flex-1 text-left">
-                                        <p className={`font-semibold text-sm ${locked ? "text-amber-800" : "text-green-800"}`}>
-                                          {deck.tome_title}
-                                        </p>
-                                        <p className={`text-xs ${locked ? "text-amber-600" : "text-green-600"}`}>
-                                          {locked ? "Read & absorb to unlock cards" : "Wisdom absorbed - tap to re-read"}
-                                        </p>
-                                      </div>
-                                      <ScrollText className={`w-5 h-5 ${locked ? "text-amber-400" : "text-green-400"}`} />
-                                    </button>
+                                {deck.tomes.length === 0 ? (
+                                  <div className="text-center py-6 text-gray-400 text-sm">
+                                    No tomes available in this deck yet.
                                   </div>
-                                )}
+                                ) : (
+                                  <div className="space-y-3 mt-3">
+                                    {deck.tomes.map((tome) => {
+                                      const isTomeExpanded = expandedTome === tome.id;
+                                      const locked = !tome.absorbed;
+                                      const tomeXP = tome.cards.reduce((sum, c) => sum + c.xp_value, 0);
 
-                                {locked && (
-                                  <div className="relative">
-                                    <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-                                      <div className="flex flex-col items-center gap-2 bg-white/80 backdrop-blur-sm px-6 py-4 rounded-xl border border-amber-200 shadow-lg">
-                                        <Lock className="w-8 h-8 text-amber-500" />
-                                        <p className="text-sm font-medium text-amber-800">Absorb the Tome to unlock</p>
-                                      </div>
-                                    </div>
-                                    <div className="locked-cards">
-                                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-3">
-                                        {deck.cards.map((card) => (
-                                          <VibeDeckCard
-                                            key={card.id}
-                                            task={card.task}
-                                            qualifications={card.qualifications || "No specific qualifications"}
-                                            xpValue={card.xp_value}
-                                            isCompleted={completedCards.has(card.id)}
-                                          />
-                                        ))}
-                                      </div>
-                                    </div>
+                                      return (
+                                        <div key={tome.id} className="rounded-lg border border-amber-200/60 bg-gradient-to-b from-amber-50/30 to-white overflow-hidden">
+                                          <div className="flex items-center gap-3 px-4 py-3">
+                                            <button
+                                              onClick={() => setExpandedTome(isTomeExpanded ? null : tome.id)}
+                                              className="flex items-center gap-3 flex-1 hover:opacity-80 transition-opacity"
+                                            >
+                                              {isTomeExpanded ? (
+                                                <ChevronDown className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                                              ) : (
+                                                <ChevronRight className="w-4 h-4 text-amber-400 flex-shrink-0" />
+                                              )}
+                                              <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${tome.absorbed ? "bg-green-100" : "bg-amber-100"}`}>
+                                                {locked ? (
+                                                  <Lock className="w-4 h-4 text-amber-600" />
+                                                ) : (
+                                                  <ScrollText className="w-4 h-4 text-green-600" />
+                                                )}
+                                              </div>
+                                              <div className="flex-1 text-left">
+                                                <h5 className="font-semibold text-slate-800 text-sm">{tome.title}</h5>
+                                                <p className="text-xs text-gray-500">
+                                                  {locked ? "Read & absorb to unlock cards" : `${tome.cards.length} ${tome.cards.length === 1 ? 'task' : 'tasks'}`}
+                                                </p>
+                                              </div>
+                                            </button>
+                                            <div className="flex items-center gap-2 flex-shrink-0">
+                                              {tome.absorbed && (
+                                                <span className="flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full border border-green-200">
+                                                  <ScrollText className="w-3 h-3" />
+                                                  Absorbed
+                                                </span>
+                                              )}
+                                              {tomeXP > 0 && (
+                                                <span className="text-xs font-medium text-amber-600">{tomeXP} XP</span>
+                                              )}
+                                              <button
+                                                onClick={(e) => { e.stopPropagation(); setTomeModal(tome); }}
+                                                className={`flex items-center gap-1 text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                                                  locked
+                                                    ? "border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100"
+                                                    : "border-green-200 bg-green-50 text-green-700 hover:bg-green-100"
+                                                }`}
+                                              >
+                                                <ScrollText className="w-3 h-3" />
+                                                {locked ? "Read Tome" : "Re-read"}
+                                              </button>
+                                            </div>
+                                          </div>
+
+                                          {isTomeExpanded && (
+                                            <div className="px-4 pb-4 pt-1 border-t border-amber-100">
+                                              {locked ? (
+                                                <div className="relative">
+                                                  <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+                                                    <div className="flex flex-col items-center gap-2 bg-white/80 backdrop-blur-sm px-6 py-4 rounded-xl border border-amber-200 shadow-lg">
+                                                      <Lock className="w-8 h-8 text-amber-500" />
+                                                      <p className="text-sm font-medium text-amber-800">Absorb the Tome to unlock</p>
+                                                    </div>
+                                                  </div>
+                                                  <div className="locked-cards">
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-3">
+                                                      {tome.cards.map((card) => (
+                                                        <VibeDeckCard
+                                                          key={card.id}
+                                                          task={card.task}
+                                                          qualifications={card.qualifications || "No specific qualifications"}
+                                                          xpValue={card.xp_value}
+                                                          isCompleted={completedCards.has(card.id)}
+                                                        />
+                                                      ))}
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                              ) : (
+                                                <>
+                                                  {tome.cards.length === 0 ? (
+                                                    <div className="text-center py-6 text-gray-400 text-sm">
+                                                      No tasks available in this tome yet.
+                                                    </div>
+                                                  ) : (
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-3">
+                                                      {tome.cards.map((card) => (
+                                                        <VibeDeckCard
+                                                          key={card.id}
+                                                          task={card.task}
+                                                          qualifications={card.qualifications || "No specific qualifications"}
+                                                          xpValue={card.xp_value}
+                                                          isCompleted={completedCards.has(card.id)}
+                                                          onStartWriting={() => setActiveManuscript(card)}
+                                                        />
+                                                      ))}
+                                                    </div>
+                                                  )}
+                                                </>
+                                              )}
+                                            </div>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
                                   </div>
-                                )}
-
-                                {!locked && (
-                                  <>
-                                    {deck.cards.length === 0 ? (
-                                      <div className="text-center py-6 text-gray-400 text-sm">
-                                        No tasks available in this deck yet.
-                                      </div>
-                                    ) : (
-                                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-3">
-                                        {deck.cards.map((card) => (
-                                          <VibeDeckCard
-                                            key={card.id}
-                                            task={card.task}
-                                            qualifications={card.qualifications || "No specific qualifications"}
-                                            xpValue={card.xp_value}
-                                            isCompleted={completedCards.has(card.id)}
-                                            onStartWriting={() => setActiveManuscript(card)}
-                                          />
-                                        ))}
-                                      </div>
-                                    )}
-                                  </>
                                 )}
                               </div>
                             )}
@@ -470,8 +425,8 @@ export default function VibeDeckContainer() {
         })}
       </div>
 
-      {tomeModalDeck && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-8" onClick={() => setTomeModalDeck(null)}>
+      {tomeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-8" onClick={() => setTomeModal(null)}>
           <div className="absolute inset-0 scroll-backdrop" />
 
           <div
@@ -487,7 +442,7 @@ export default function VibeDeckContainer() {
 
               <div className="absolute top-3 right-3 z-30">
                 <button
-                  onClick={() => setTomeModalDeck(null)}
+                  onClick={() => setTomeModal(null)}
                   className="p-2 rounded-full bg-amber-800/20 hover:bg-amber-800/40 text-amber-900/60 hover:text-amber-900 transition-colors"
                 >
                   <X className="w-5 h-5" />
@@ -502,65 +457,56 @@ export default function VibeDeckContainer() {
                         <ScrollText className="w-7 h-7 text-amber-800/70" />
                       </div>
                       <h2
-                        className="text-2xl sm:text-3xl font-bold text-amber-900 mb-1 tracking-wide"
-                        style={{ fontFamily: "'Playfair Display', 'Georgia', serif" }}
+                        className="text-2xl sm:text-3xl font-bold text-amber-900/90 mb-3"
+                        style={{ fontFamily: "'EB Garamond', 'Playfair Display', Georgia, serif" }}
                       >
-                        {tomeModalDeck.tome_title}
+                        {tomeModal.title}
                       </h2>
-                      <div className="flex items-center justify-center gap-3 mt-5">
-                        <div className="h-px w-16 bg-gradient-to-r from-transparent to-amber-700/40" />
-                        <div className="w-2 h-2 rounded-full bg-amber-700/30" />
-                        <div className="h-px w-16 bg-gradient-to-l from-transparent to-amber-700/40" />
+                      <div className="flex items-center justify-center gap-3">
+                        <div className="h-px w-20 bg-gradient-to-r from-amber-700/30 to-transparent" />
+                        <ScrollText className="w-4 h-4 text-amber-700/30" />
+                        <div className="h-px w-20 bg-gradient-to-r from-transparent to-amber-700/30" />
                       </div>
                     </div>
 
                     <div
                       className="tome-drop-cap text-amber-900/80 leading-[1.9] text-base sm:text-lg whitespace-pre-wrap"
-                      style={{ fontFamily: "'EB Garamond', 'Georgia', serif" }}
+                      style={{ fontFamily: "'EB Garamond', 'Playfair Display', Georgia, serif" }}
                     >
-                      {tomeModalDeck.tome_content}
+                      {tomeModal.content}
                     </div>
 
-                    <div className="mt-12 pt-8">
-                      <div className="flex items-center justify-center gap-3 mb-8">
-                        <div className="h-px w-20 bg-gradient-to-r from-transparent to-amber-700/30" />
-                        <ScrollText className="w-4 h-4 text-amber-700/30" />
-                        <div className="h-px w-20 bg-gradient-to-l from-transparent to-amber-700/30" />
-                      </div>
-
-                      {!tomeModalDeck.tome_absorbed ? (
-                        <div className="text-center">
-                          <p
-                            className="text-sm text-amber-800/60 mb-5 italic"
-                            style={{ fontFamily: "'EB Garamond', 'Georgia', serif", fontSize: '1.05rem' }}
-                          >
-                            By absorbing this wisdom, you unlock the tasks within this deck.
+                    <div className="mt-10 pt-6 border-t border-amber-800/10 text-center">
+                      {!tomeModal.absorbed ? (
+                        <div className="space-y-3">
+                          <p className="text-sm text-amber-800/60" style={{ fontFamily: "'EB Garamond', Georgia, serif" }}>
+                            By absorbing this wisdom, you unlock the tasks within this tome.
                           </p>
                           <button
-                            onClick={() => handleAbsorbTome(tomeModalDeck.id)}
+                            onClick={() => handleAbsorbTome(tomeModal.id)}
                             disabled={absorbing}
-                            className="inline-flex items-center gap-2.5 px-10 py-3.5 bg-gradient-to-r from-amber-700 to-amber-800 hover:from-amber-800 hover:to-amber-900 disabled:opacity-50 text-amber-50 rounded-md font-semibold shadow-lg hover:shadow-xl transition-all transform hover:scale-[1.03] active:scale-[0.98]"
-                            style={{ fontFamily: "'Playfair Display', serif", letterSpacing: '0.05em' }}
+                            className="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-amber-700 to-amber-800 text-amber-50 rounded-lg
+                              font-semibold hover:from-amber-800 hover:to-amber-900 transition-all shadow-lg shadow-amber-900/20
+                              disabled:opacity-50 transform hover:scale-[1.03] active:scale-[0.98]"
+                            style={{ fontFamily: "'EB Garamond', Georgia, serif" }}
                           >
-                            <Sparkles className="w-5 h-5" />
+                            <BookOpen className="w-5 h-5" />
                             {absorbing ? "Absorbing..." : "Absorb Wisdom"}
                           </button>
                         </div>
                       ) : (
-                        <div className="text-center">
-                          <div className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-green-800/10 border border-green-700/20">
-                            <Sparkles className="w-4 h-4 text-green-700" />
-                            <p className="text-green-800 font-semibold text-sm" style={{ fontFamily: "'EB Garamond', serif", fontSize: '1.05rem' }}>
-                              Wisdom Absorbed
-                            </p>
-                          </div>
-                        </div>
+                        <p className="text-sm text-green-700 font-medium flex items-center justify-center gap-2">
+                          <ScrollText className="w-4 h-4" />
+                          Wisdom Absorbed
+                        </p>
                       )}
                     </div>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-center py-24">
-                    <div className="animate-spin rounded-full h-8 w-8 border-2 border-amber-800/20 border-t-amber-800/60"></div>
+                  <div className="flex items-center justify-center py-20">
+                    <div className="animate-pulse text-amber-700/30">
+                      <ScrollText className="w-8 h-8" />
+                    </div>
                   </div>
                 )}
               </div>
@@ -572,13 +518,14 @@ export default function VibeDeckContainer() {
       {activeManuscript && (
         <ManuscriptEditor
           cardId={activeManuscript.id}
-          cardTask={activeManuscript.task}
-          cardXp={activeManuscript.xp_value}
-          minWordCount={activeManuscript.min_word_count || 10}
-          isCompleted={completedCards.has(activeManuscript.id)}
+          task={activeManuscript.task}
+          qualifications={activeManuscript.qualifications || ""}
+          xpValue={activeManuscript.xp_value}
+          minWordCount={activeManuscript.min_word_count}
           onClose={() => setActiveManuscript(null)}
-          onSubmitted={() => {
-            setCompletedCards(prev => new Set([...prev, activeManuscript.id]));
+          onSubmitted={(cardId) => {
+            setCompletedCards(prev => new Set([...prev, cardId]));
+            setActiveManuscript(null);
           }}
         />
       )}

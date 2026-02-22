@@ -6033,14 +6033,28 @@ export async function registerDonationRoutes(app: Express) {
       return res.status(403).json({ error: "Admin access required" });
     }
     try {
-      const result = await db.execute(sql`
+      const decksResult = await db.execute(sql`
         SELECT d.*,
-          (SELECT COUNT(*) FROM vibe_cards WHERE deck_id = d.id) as card_count
+          (SELECT COUNT(*) FROM tomes WHERE deck_id = d.id) as tome_count,
+          (SELECT COUNT(*) FROM vibe_cards vc JOIN tomes t ON t.id = vc.tome_id WHERE t.deck_id = d.id) as card_count
         FROM vibe_decks d
         WHERE d.curriculum_id = ${Number(req.params.curriculumId)}
         ORDER BY d.order_index, d.id
       `);
-      res.json(result.rows);
+      const deckIds = (decksResult.rows as any[]).map(d => d.id);
+      let tomesResult: any = { rows: [] };
+      if (deckIds.length > 0) {
+        tomesResult = await db.execute(sql`
+          SELECT t.*, (SELECT COUNT(*) FROM vibe_cards WHERE tome_id = t.id) as card_count
+          FROM tomes t WHERE t.deck_id = ANY(${deckIds}::int[])
+          ORDER BY t.order_index, t.id
+        `);
+      }
+      const decks = (decksResult.rows as any[]).map(d => ({
+        ...d,
+        tomes: (tomesResult.rows as any[]).filter((t: any) => t.deck_id === d.id),
+      }));
+      res.json(decks);
     } catch (error) {
       console.error("Error fetching decks:", error);
       res.status(500).json({ error: "Failed to fetch decks" });
@@ -6073,17 +6087,11 @@ export async function registerDonationRoutes(app: Express) {
       return res.status(403).json({ error: "Admin access required" });
     }
     try {
-      const { title, description, is_published, tome_title, tome_content } = req.body;
+      const { title, description, is_published } = req.body;
       let result;
       if (typeof is_published === "boolean") {
         result = await db.execute(sql`
           UPDATE vibe_decks SET is_published = ${is_published}, updated_at = NOW()
-          WHERE id = ${Number(req.params.id)}
-          RETURNING *
-        `);
-      } else if (typeof tome_title !== "undefined" || typeof tome_content !== "undefined") {
-        result = await db.execute(sql`
-          UPDATE vibe_decks SET tome_title = ${tome_title || null}, tome_content = ${tome_content || null}, updated_at = NOW()
           WHERE id = ${Number(req.params.id)}
           RETURNING *
         `);
@@ -6115,13 +6123,84 @@ export async function registerDonationRoutes(app: Express) {
     }
   });
 
-  app.get("/api/admin/decks/:deckId/cards", async (req: Request, res: Response) => {
+  // Admin Tomes CRUD
+  app.get("/api/admin/decks/:deckId/tomes", async (req: Request, res: Response) => {
     if (!req.session.userId || req.session.userRole !== "admin") {
       return res.status(403).json({ error: "Admin access required" });
     }
     try {
       const result = await db.execute(sql`
-        SELECT * FROM vibe_cards WHERE deck_id = ${Number(req.params.deckId)} ORDER BY order_index, id
+        SELECT t.*, (SELECT COUNT(*) FROM vibe_cards WHERE tome_id = t.id) as card_count
+        FROM tomes t WHERE t.deck_id = ${Number(req.params.deckId)} ORDER BY t.order_index, t.id
+      `);
+      res.json(result.rows);
+    } catch (error) {
+      console.error("Error fetching tomes:", error);
+      res.status(500).json({ error: "Failed to fetch tomes" });
+    }
+  });
+
+  app.post("/api/admin/tomes", async (req: Request, res: Response) => {
+    if (!req.session.userId || req.session.userRole !== "admin") {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+    try {
+      const { deckId, title, content } = req.body;
+      if (!title?.trim() || !deckId) return res.status(400).json({ error: "Title and deckId are required" });
+      const maxOrder = await db.execute(sql`SELECT COALESCE(MAX(order_index), 0) + 1 as next_order FROM tomes WHERE deck_id = ${deckId}`);
+      const nextOrder = (maxOrder.rows[0] as any).next_order;
+      const result = await db.execute(sql`
+        INSERT INTO tomes (deck_id, title, content, order_index, created_at, updated_at)
+        VALUES (${deckId}, ${title.trim()}, ${content || ''}, ${nextOrder}, NOW(), NOW())
+        RETURNING *
+      `);
+      res.status(201).json(result.rows[0]);
+    } catch (error) {
+      console.error("Error creating tome:", error);
+      res.status(500).json({ error: "Failed to create tome" });
+    }
+  });
+
+  app.put("/api/admin/tomes/:id", async (req: Request, res: Response) => {
+    if (!req.session.userId || req.session.userRole !== "admin") {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+    try {
+      const { title, content } = req.body;
+      const result = await db.execute(sql`
+        UPDATE tomes SET title = ${title}, content = ${content || ''}, updated_at = NOW()
+        WHERE id = ${Number(req.params.id)}
+        RETURNING *
+      `);
+      if (result.rows.length === 0) return res.status(404).json({ error: "Tome not found" });
+      res.json(result.rows[0]);
+    } catch (error) {
+      console.error("Error updating tome:", error);
+      res.status(500).json({ error: "Failed to update tome" });
+    }
+  });
+
+  app.delete("/api/admin/tomes/:id", async (req: Request, res: Response) => {
+    if (!req.session.userId || req.session.userRole !== "admin") {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+    try {
+      await db.execute(sql`DELETE FROM tomes WHERE id = ${Number(req.params.id)}`);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting tome:", error);
+      res.status(500).json({ error: "Failed to delete tome" });
+    }
+  });
+
+  // Admin Cards - now under tomes
+  app.get("/api/admin/tomes/:tomeId/cards", async (req: Request, res: Response) => {
+    if (!req.session.userId || req.session.userRole !== "admin") {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+    try {
+      const result = await db.execute(sql`
+        SELECT * FROM vibe_cards WHERE tome_id = ${Number(req.params.tomeId)} ORDER BY order_index, id
       `);
       res.json(result.rows);
     } catch (error) {
@@ -6135,13 +6214,13 @@ export async function registerDonationRoutes(app: Express) {
       return res.status(403).json({ error: "Admin access required" });
     }
     try {
-      const { deckId, task, qualifications, xpValue, minWordCount } = req.body;
-      if (!task?.trim() || !deckId) return res.status(400).json({ error: "Task and deckId are required" });
-      const maxOrder = await db.execute(sql`SELECT COALESCE(MAX(order_index), 0) + 1 as next_order FROM vibe_cards WHERE deck_id = ${deckId}`);
+      const { tomeId, task, qualifications, xpValue, minWordCount } = req.body;
+      if (!task?.trim() || !tomeId) return res.status(400).json({ error: "Task and tomeId are required" });
+      const maxOrder = await db.execute(sql`SELECT COALESCE(MAX(order_index), 0) + 1 as next_order FROM vibe_cards WHERE tome_id = ${tomeId}`);
       const nextOrder = (maxOrder.rows[0] as any).next_order;
       const result = await db.execute(sql`
-        INSERT INTO vibe_cards (deck_id, task, qualifications, xp_value, min_word_count, order_index, created_at, updated_at)
-        VALUES (${deckId}, ${task.trim()}, ${qualifications || null}, ${xpValue || 0}, ${minWordCount || 10}, ${nextOrder}, NOW(), NOW())
+        INSERT INTO vibe_cards (tome_id, task, qualifications, xp_value, min_word_count, order_index, created_at, updated_at)
+        VALUES (${tomeId}, ${task.trim()}, ${qualifications || null}, ${xpValue || 0}, ${minWordCount || 10}, ${nextOrder}, NOW(), NOW())
         RETURNING *
       `);
       res.status(201).json(result.rows[0]);
@@ -6199,22 +6278,36 @@ export async function registerDonationRoutes(app: Express) {
         WHERE d.is_published = true AND c.is_published = true
         ORDER BY d.order_index, d.id
       `);
+      const tomesResult = await db.execute(sql`
+        SELECT t.*
+        FROM tomes t
+        JOIN vibe_decks d ON d.id = t.deck_id
+        JOIN curriculums c ON c.id = d.curriculum_id
+        WHERE d.is_published = true AND c.is_published = true
+        ORDER BY t.order_index, t.id
+      `);
       const cardsResult = await db.execute(sql`
-        SELECT vc.*
+        SELECT vc.*, t.deck_id
         FROM vibe_cards vc
-        JOIN vibe_decks d ON d.id = vc.deck_id
+        JOIN tomes t ON t.id = vc.tome_id
+        JOIN vibe_decks d ON d.id = t.deck_id
         JOIN curriculums c ON c.id = d.curriculum_id
         WHERE d.is_published = true AND c.is_published = true
         ORDER BY vc.order_index, vc.id
       `);
       const absorptionsResult = await db.execute(sql`
-        SELECT deck_id, absorbed_at FROM tome_absorptions WHERE user_id = ${userId}
+        SELECT tome_id, absorbed_at FROM tome_absorptions WHERE user_id = ${userId}
       `);
-      const absorbedDeckIds = new Set((absorptionsResult.rows as any[]).map(r => r.deck_id));
+      const absorbedTomeIds = new Set((absorptionsResult.rows as any[]).map(r => r.tome_id));
+      const allCards = cardsResult.rows as any[];
+      const allTomes = (tomesResult.rows as any[]).map(tome => ({
+        ...tome,
+        cards: allCards.filter(card => card.tome_id === tome.id),
+        absorbed: absorbedTomeIds.has(tome.id),
+      }));
       const decks = (decksResult.rows as any[]).map(deck => ({
         ...deck,
-        cards: (cardsResult.rows as any[]).filter(card => card.deck_id === deck.id),
-        tome_absorbed: absorbedDeckIds.has(deck.id),
+        tomes: allTomes.filter(tome => tome.deck_id === deck.id),
       }));
       res.json({ curriculums: curriculumsResult.rows, decks });
     } catch (error) {
@@ -6228,24 +6321,24 @@ export async function registerDonationRoutes(app: Express) {
       return res.status(401).json({ error: "Not authenticated" });
     }
     try {
-      const { deckId } = req.body;
-      if (!deckId) return res.status(400).json({ error: "deckId is required" });
+      const { tomeId } = req.body;
+      if (!tomeId) return res.status(400).json({ error: "tomeId is required" });
 
       const existingCheck = await db.execute(sql`
-        SELECT id FROM tome_absorptions WHERE user_id = ${req.session.userId} AND deck_id = ${deckId}
+        SELECT id FROM tome_absorptions WHERE user_id = ${req.session.userId} AND tome_id = ${tomeId}
       `);
       const alreadyAbsorbed = existingCheck.rows.length > 0;
 
       await db.execute(sql`
-        INSERT INTO tome_absorptions (user_id, deck_id, absorbed_at)
-        VALUES (${req.session.userId}, ${deckId}, NOW())
-        ON CONFLICT (user_id, deck_id) DO NOTHING
+        INSERT INTO tome_absorptions (user_id, tome_id, absorbed_at)
+        VALUES (${req.session.userId}, ${tomeId}, NOW())
+        ON CONFLICT (user_id, tome_id) DO NOTHING
       `);
 
       let xpResult = null;
       if (!alreadyAbsorbed) {
         try {
-          xpResult = await awardXP(String(req.session.userId), TOME_XP_BONUS, `tome_absorption:${deckId}`);
+          xpResult = await awardXP(String(req.session.userId), TOME_XP_BONUS, `tome_absorption:${tomeId}`);
         } catch (xpErr) {
           console.error("[Game Engine] Failed to award XP on tome absorption:", xpErr);
         }
@@ -6392,11 +6485,12 @@ export async function registerDonationRoutes(app: Express) {
     }
     try {
       const result = await db.execute(sql`
-        SELECT cs.*, vc.task as card_task, vd.title as deck_title,
+        SELECT cs.*, vc.task as card_task, t.title as tome_title, vd.title as deck_title,
                u.name as author_name, u.email as author_email
         FROM card_submissions cs
         JOIN vibe_cards vc ON vc.id = cs.card_id
-        JOIN vibe_decks vd ON vd.id = vc.deck_id
+        JOIN tomes t ON t.id = vc.tome_id
+        JOIN vibe_decks vd ON vd.id = t.deck_id
         LEFT JOIN users u ON u.id::text = cs.user_id
         ORDER BY cs.is_flagged_for_review DESC, cs.submitted_at DESC
       `);
@@ -6616,33 +6710,35 @@ export async function registerDonationRoutes(app: Express) {
       let result;
       try {
         result = await db.execute(sql`
-          SELECT vc.id, vc.task, vc.qualifications, vc.xp_value, vc.deck_id,
-            vd.title as deck_title, c.title as curriculum_title,
+          SELECT vc.id, vc.task, vc.qualifications, vc.xp_value, vc.tome_id,
+            t.title as tome_title, vd.title as deck_title, c.title as curriculum_title,
             m.content as manuscript_content, m.word_count as manuscript_word_count,
             CASE WHEN cs.id IS NOT NULL THEN true ELSE false END as is_submitted,
             cs.xp_earned
           FROM vibe_cards vc
-          JOIN vibe_decks vd ON vc.deck_id = vd.id
+          JOIN tomes t ON t.id = vc.tome_id
+          JOIN vibe_decks vd ON vd.id = t.deck_id
           JOIN curriculums c ON vd.curriculum_id = c.id
           LEFT JOIN manuscripts m ON m.card_id = vc.id AND m.user_id = ${req.session.userId}
           LEFT JOIN card_submissions cs ON cs.card_id = vc.id AND cs.user_id = ${req.session.userId}
           WHERE vd.is_published = true AND c.is_published = true
-          ORDER BY c.order_index, vd.order_index, vc.order_index
+          ORDER BY c.order_index, vd.order_index, t.order_index, vc.order_index
         `);
       } catch (innerError: any) {
         if (innerError?.code === '42703') {
           result = await db.execute(sql`
-            SELECT vc.id, vc.task, vc.qualifications, vc.xp_value, vc.deck_id,
-              vd.title as deck_title, c.title as curriculum_title,
+            SELECT vc.id, vc.task, vc.qualifications, vc.xp_value, vc.tome_id,
+              t.title as tome_title, vd.title as deck_title, c.title as curriculum_title,
               NULL as manuscript_content, NULL as manuscript_word_count,
               CASE WHEN cs.id IS NOT NULL THEN true ELSE false END as is_submitted,
               cs.xp_earned
             FROM vibe_cards vc
-            JOIN vibe_decks vd ON vc.deck_id = vd.id
+            JOIN tomes t ON t.id = vc.tome_id
+            JOIN vibe_decks vd ON vd.id = t.deck_id
             JOIN curriculums c ON vd.curriculum_id = c.id
             LEFT JOIN card_submissions cs ON cs.card_id = vc.id AND cs.user_id = ${req.session.userId}
             WHERE vd.is_published = true AND c.is_published = true
-            ORDER BY c.order_index, vd.order_index, vc.order_index
+            ORDER BY c.order_index, vd.order_index, t.order_index, vc.order_index
           `);
         } else {
           throw innerError;
@@ -7078,9 +7174,10 @@ export async function registerDonationRoutes(app: Express) {
           WHERE cs.user_id = ${userId}
         `),
         db.execute(sql`
-          SELECT COUNT(DISTINCT ta.deck_id) as count
+          SELECT COUNT(DISTINCT ta.tome_id) as count
           FROM tome_absorptions ta
-          JOIN vibe_decks vd ON vd.id = ta.deck_id
+          JOIN tomes t ON t.id = ta.tome_id
+          JOIN vibe_decks vd ON vd.id = t.deck_id
           JOIN curriculums c ON c.id = vd.curriculum_id
           WHERE ta.user_id = ${userId} AND vd.is_published = true AND c.is_published = true
         `),
@@ -7088,21 +7185,23 @@ export async function registerDonationRoutes(app: Express) {
           SELECT COUNT(DISTINCT cs.card_id) as count
           FROM card_submissions cs
           JOIN vibe_cards vc ON vc.id = cs.card_id
-          JOIN vibe_decks vd ON vd.id = vc.deck_id
+          JOIN tomes t ON t.id = vc.tome_id
+          JOIN vibe_decks vd ON vd.id = t.deck_id
           JOIN curriculums c ON c.id = vd.curriculum_id
           WHERE cs.user_id = ${userId} AND vd.is_published = true AND c.is_published = true
         `),
         db.execute(sql`
-          SELECT COUNT(DISTINCT vd.id) as count
-          FROM vibe_decks vd
+          SELECT COUNT(*) as count
+          FROM tomes t
+          JOIN vibe_decks vd ON vd.id = t.deck_id
           JOIN curriculums c ON c.id = vd.curriculum_id
           WHERE vd.is_published = true AND c.is_published = true
-          AND vd.tome_content IS NOT NULL AND vd.tome_content != ''
         `),
         db.execute(sql`
           SELECT COUNT(*) as count
           FROM vibe_cards vc
-          JOIN vibe_decks vd ON vd.id = vc.deck_id
+          JOIN tomes t ON t.id = vc.tome_id
+          JOIN vibe_decks vd ON vd.id = t.deck_id
           JOIN curriculums c ON c.id = vd.curriculum_id
           WHERE vd.is_published = true AND c.is_published = true
         `),

@@ -200,16 +200,23 @@ async function bootstrapFast() {
       curriculum_id INTEGER NOT NULL REFERENCES curriculums(id) ON DELETE CASCADE,
       title VARCHAR(255) NOT NULL,
       description TEXT,
-      tome_title VARCHAR(255),
-      tome_content TEXT,
       order_index INTEGER NOT NULL DEFAULT 0,
       is_published BOOLEAN NOT NULL DEFAULT false,
       created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
       updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
     );
-    CREATE TABLE IF NOT EXISTS vibe_cards (
+    CREATE TABLE IF NOT EXISTS tomes (
       id SERIAL PRIMARY KEY,
       deck_id INTEGER NOT NULL REFERENCES vibe_decks(id) ON DELETE CASCADE,
+      title VARCHAR(255) NOT NULL,
+      content TEXT NOT NULL,
+      order_index INTEGER NOT NULL DEFAULT 0,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    );
+    CREATE TABLE IF NOT EXISTS vibe_cards (
+      id SERIAL PRIMARY KEY,
+      tome_id INTEGER NOT NULL REFERENCES tomes(id) ON DELETE CASCADE,
       task TEXT NOT NULL,
       qualifications TEXT,
       xp_value INTEGER NOT NULL DEFAULT 100,
@@ -218,15 +225,14 @@ async function bootstrapFast() {
       created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
       updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
     );
-    ALTER TABLE vibe_cards ADD COLUMN IF NOT EXISTS min_word_count INTEGER NOT NULL DEFAULT 10;
   `);
   await dbPool.query(`
     CREATE TABLE IF NOT EXISTS tome_absorptions (
       id SERIAL PRIMARY KEY,
       user_id VARCHAR(255) NOT NULL,
-      deck_id INTEGER NOT NULL REFERENCES vibe_decks(id) ON DELETE CASCADE,
+      tome_id INTEGER NOT NULL REFERENCES tomes(id) ON DELETE CASCADE,
       absorbed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-      UNIQUE(user_id, deck_id)
+      UNIQUE(user_id, tome_id)
     );
   `);
   await dbPool.query(`
@@ -256,9 +262,21 @@ async function bootstrapFast() {
       UNIQUE(user_id, card_id)
     );
   `);
+  // Migrate: create tomes table if needed, add tome_id to vibe_cards if migrating from old schema
   await dbPool.query(`
-    ALTER TABLE vibe_decks ADD COLUMN IF NOT EXISTS tome_title VARCHAR(255);
-    ALTER TABLE vibe_decks ADD COLUMN IF NOT EXISTS tome_content TEXT;
+    DO $$ BEGIN
+      IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'tomes') THEN
+        CREATE TABLE tomes (
+          id SERIAL PRIMARY KEY,
+          deck_id INTEGER NOT NULL REFERENCES vibe_decks(id) ON DELETE CASCADE,
+          title VARCHAR(255) NOT NULL,
+          content TEXT NOT NULL,
+          order_index INTEGER NOT NULL DEFAULT 0,
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+          updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        );
+      END IF;
+    END $$;
   `);
   await dbPool.query(`
     ALTER TABLE card_submissions ADD COLUMN IF NOT EXISTS paste_count INTEGER NOT NULL DEFAULT 0;

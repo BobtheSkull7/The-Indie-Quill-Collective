@@ -1126,8 +1126,6 @@ export const vibeDecks = pgTable("vibe_decks", {
   curriculumId: integer("curriculum_id").references(() => curriculums.id, { onDelete: "cascade" }).notNull(),
   title: varchar("title", { length: 255 }).notNull(),
   description: text("description"),
-  tomeTitle: varchar("tome_title", { length: 255 }),
-  tomeContent: text("tome_content"),
   orderIndex: integer("order_index").default(0),
   isPublished: boolean("is_published").default(false),
   createdAt: timestamp("created_at").defaultNow(),
@@ -1137,17 +1135,31 @@ export const vibeDecks = pgTable("vibe_decks", {
 export type VibeDeck = typeof vibeDecks.$inferSelect;
 export type InsertVibeDeck = typeof vibeDecks.$inferInsert;
 
-// Vibe Cards - individual task cards within a deck
-export const vibeCards = pgTable("vibe_cards", {
+// Tomes - instructional content within a deck, gates access to vibe cards
+export const tomes = pgTable("tomes", {
   id: serial("id").primaryKey(),
   deckId: integer("deck_id").references(() => vibeDecks.id, { onDelete: "cascade" }).notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  content: text("content").notNull(),
+  orderIndex: integer("order_index").default(0),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+});
+
+export type Tome = typeof tomes.$inferSelect;
+export type InsertTome = typeof tomes.$inferInsert;
+
+// Vibe Cards - individual task cards within a tome
+export const vibeCards = pgTable("vibe_cards", {
+  id: serial("id").primaryKey(),
+  tomeId: integer("tome_id").references(() => tomes.id, { onDelete: "cascade" }).notNull(),
   task: text("task").notNull(),
   qualifications: text("qualifications"),
   xpValue: integer("xp_value").default(0),
+  minWordCount: integer("min_word_count").default(10),
   orderIndex: integer("order_index").default(0),
-  isPublished: boolean("is_published").default(false),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
 
 export type VibeCard = typeof vibeCards.$inferSelect;
@@ -1156,7 +1168,7 @@ export type InsertVibeCard = typeof vibeCards.$inferInsert;
 export const tomeAbsorptions = pgTable("tome_absorptions", {
   id: serial("id").primaryKey(),
   userId: varchar("user_id", { length: 255 }).notNull(),
-  deckId: integer("deck_id").references(() => vibeDecks.id, { onDelete: "cascade" }).notNull(),
+  tomeId: integer("tome_id").references(() => tomes.id, { onDelete: "cascade" }).notNull(),
   absorbedAt: timestamp("absorbed_at", { withTimezone: true }).defaultNow(),
 });
 
