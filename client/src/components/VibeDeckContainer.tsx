@@ -229,7 +229,7 @@ export default function VibeDeckContainer() {
           </div>
           <h3 className="font-display text-lg font-bold text-amber-900">Begin Your Journey</h3>
           <p className="text-sm text-amber-700 max-w-md mx-auto">
-            Accept The Scribe's Oath and complete your first task to unlock the full curriculum.
+            Start with The Scribe's Oath in The Story Engine to begin your writing adventure.
           </p>
         </div>
       )}
@@ -237,14 +237,7 @@ export default function VibeDeckContainer() {
       <div className="space-y-5">
         {curriculums.map((curriculum) => {
           const allCurriculumDecks = decks.filter(d => d.curriculum_id === curriculum.id);
-          const curriculumDecks = !onboardingComplete && oathTomeId
-            ? allCurriculumDecks
-              .map(d => ({
-                ...d,
-                tomes: d.tomes.filter(t => t.id === oathTomeId),
-              }))
-              .filter(d => d.tomes.length > 0)
-            : allCurriculumDecks;
+          const curriculumDecks = allCurriculumDecks;
           const isCurriculumExpanded = expandedCurriculum === curriculum.id;
           const totalTomes = curriculumDecks.reduce((sum, d) => sum + d.tomes.length, 0);
           const totalCards = curriculumDecks.reduce((sum, d) => sum + d.tomes.reduce((ts, t) => ts + t.cards.length, 0), 0);

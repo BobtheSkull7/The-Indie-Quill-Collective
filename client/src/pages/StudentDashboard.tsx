@@ -66,7 +66,7 @@ export default function StudentDashboard() {
       return;
     }
 
-    if (user.role !== "student") {
+    if (user.role !== "student" && user.role !== "admin") {
       setLocation("/dashboard");
       return;
     }
