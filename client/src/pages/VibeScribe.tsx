@@ -186,6 +186,8 @@ export default function VibeScribe() {
   const audioChunksRef = useRef<Blob[]>([]);
   const sessionWordCountRef = useRef(0);
   const [transcribing, setTranscribing] = useState(false);
+  const [savedClips, setSavedClips] = useState<Array<{ id: number; content: string; source_type: string; created_at: string }>>([]);
+  const [loadingClips, setLoadingClips] = useState(false);
   
   // Force MediaRecorder + Whisper AI for all browsers (more reliable)
   const hasSpeechRecognition = false;
@@ -224,6 +226,20 @@ export default function VibeScribe() {
     }
   }, [vibeId]);
 
+  const fetchSavedClips = async (vibeScribeId: string) => {
+    try {
+      setLoadingClips(true);
+      const res = await fetch(`/api/vibe/history?vibeScribeId=${encodeURIComponent(vibeScribeId)}`);
+      if (res.ok) {
+        const data = await res.json();
+        setSavedClips(data.transcripts || []);
+      }
+    } catch {
+    } finally {
+      setLoadingClips(false);
+    }
+  };
+
   const verifyVibeId = async (id: string) => {
     try {
       setError("");
@@ -239,6 +255,7 @@ export default function VibeScribe() {
         setFamilyWordCount(data.familyWordCount || 0);
         setScreen("hub");
         startQuizPolling(data.user.vibeScribeId);
+        fetchSavedClips(data.user.vibeScribeId);
         
         // Show install prompt if not in standalone mode
         const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
@@ -674,6 +691,7 @@ export default function VibeScribe() {
         setFamilyWordCount(newCount);
         setTranscript("");
         setShowToast(true);
+        if (user) fetchSavedClips(user.vibeScribeId);
         
         // Check for 100-word milestone
         const prevHundred = Math.floor(prevCount / 100);
@@ -883,6 +901,27 @@ export default function VibeScribe() {
                 </svg>
                 <span className="text-sm">Play last snippet</span>
               </button>
+            )}
+
+            {savedClips.length > 0 && !isRecording && (
+              <div className="mt-6 w-full">
+                <h3 className="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-2">Saved Voice Notes</h3>
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {savedClips.map((clip) => (
+                    <div key={clip.id} className="bg-slate-800/80 rounded-lg p-3 border border-slate-700">
+                      <p className="text-slate-300 text-sm line-clamp-2">{clip.content}</p>
+                      <div className="flex justify-between items-center mt-1">
+                        <span className="text-slate-500 text-xs">
+                          {new Date(clip.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' })} {new Date(clip.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                        <span className="text-slate-500 text-xs">
+                          {clip.content.split(/\s+/).filter(Boolean).length} words
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
           
