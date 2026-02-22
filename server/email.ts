@@ -1,8 +1,34 @@
 import { Resend } from 'resend';
 import { db } from './db';
 import { emailLogs } from '../shared/schema';
+import { sql } from 'drizzle-orm';
 
-const ADMIN_CC_EMAIL = 'jon@theindiequill.com';
+const DEFAULT_ADMIN_EMAIL = 'jon@theindiequill.com';
+
+let cachedAdminEmail: string | null = null;
+let cacheTimestamp = 0;
+const CACHE_TTL = 60000;
+
+export async function getAdminEmail(): Promise<string> {
+  const now = Date.now();
+  if (cachedAdminEmail && (now - cacheTimestamp) < CACHE_TTL) {
+    return cachedAdminEmail;
+  }
+  try {
+    const result = await db.execute(sql`SELECT value FROM system_settings WHERE key = 'admin_email' LIMIT 1`);
+    const val = (result.rows[0] as any)?.value;
+    cachedAdminEmail = val || DEFAULT_ADMIN_EMAIL;
+    cacheTimestamp = now;
+    return cachedAdminEmail;
+  } catch {
+    return DEFAULT_ADMIN_EMAIL;
+  }
+}
+
+export function clearAdminEmailCache() {
+  cachedAdminEmail = null;
+  cacheTimestamp = 0;
+}
 
 let connectionSettings: any;
 
@@ -92,10 +118,11 @@ async function sendFailureNotification(
 ) {
   try {
     const { client, fromEmail } = await getResendClient();
+    const adminEmail = await getAdminEmail();
     
     await client.emails.send({
       from: fromEmail,
-      to: ADMIN_CC_EMAIL,
+      to: adminEmail,
       subject: `[EMAIL FAILURE ALERT] ${emailType} Email Failed`,
       html: `
         <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -150,11 +177,12 @@ export async function sendApplicationReceivedEmail(
 ) {
   try {
     const { client, fromEmail } = await getResendClient();
+    const adminEmail = await getAdminEmail();
     
     await client.emails.send({
       from: fromEmail,
       to: toEmail,
-      cc: ADMIN_CC_EMAIL,
+      cc: adminEmail,
       subject: '[COLLECTIVE-LOG] Your Writing Journey Begins',
       html: `
         <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -194,7 +222,7 @@ export async function sendApplicationReceivedEmail(
     });
     
     await logEmail('application_received', toEmail, firstName, 'sent', userId, applicationId);
-    console.log(`Application received email sent to ${toEmail} (CC: ${ADMIN_CC_EMAIL})`);
+    console.log(`Application received email sent to ${toEmail} (CC: ${adminEmail})`);
     return true;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -214,6 +242,7 @@ export async function sendApplicationAcceptedEmail(
 ) {
   try {
     const { client, fromEmail } = await getResendClient();
+    const adminEmail = await getAdminEmail();
     
     const baseUrl = process.env.REPLIT_DEV_DOMAIN 
       ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
@@ -227,7 +256,7 @@ export async function sendApplicationAcceptedEmail(
     await client.emails.send({
       from: fromEmail,
       to: toEmail,
-      cc: ADMIN_CC_EMAIL,
+      cc: adminEmail,
       subject: '[COLLECTIVE-LOG] Congratulations - Agreement Ready',
       html: `
         <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -270,7 +299,7 @@ export async function sendApplicationAcceptedEmail(
     });
     
     await logEmail('application_accepted', toEmail, firstName, 'sent', userId, applicationId);
-    console.log(`Application accepted email sent to ${toEmail} (CC: ${ADMIN_CC_EMAIL})`);
+    console.log(`Application accepted email sent to ${toEmail} (CC: ${adminEmail})`);
     return true;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -289,11 +318,12 @@ export async function sendApplicationRejectedEmail(
 ) {
   try {
     const { client, fromEmail } = await getResendClient();
+    const adminEmail = await getAdminEmail();
     
     await client.emails.send({
       from: fromEmail,
       to: toEmail,
-      cc: ADMIN_CC_EMAIL,
+      cc: adminEmail,
       subject: '[COLLECTIVE-LOG] Application Update',
       html: `
         <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -332,7 +362,7 @@ export async function sendApplicationRejectedEmail(
     });
     
     await logEmail('application_rejected', toEmail, firstName, 'sent', userId, applicationId);
-    console.log(`Application rejected email sent to ${toEmail} (CC: ${ADMIN_CC_EMAIL})`);
+    console.log(`Application rejected email sent to ${toEmail} (CC: ${adminEmail})`);
     return true;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -351,6 +381,7 @@ export async function sendWelcomeToCollectiveEmail(
 ) {
   try {
     const { client, fromEmail } = await getCredentials().then(() => getResendClient());
+    const adminEmail = await getAdminEmail();
     
     const baseUrl = process.env.REPLIT_DEV_DOMAIN 
       ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
@@ -360,7 +391,7 @@ export async function sendWelcomeToCollectiveEmail(
     await client.emails.send({
       from: fromEmail,
       to: toEmail,
-      cc: ADMIN_CC_EMAIL,
+      cc: adminEmail,
       subject: '[COLLECTIVE-LOG] Welcome to the Collective!',
       html: `
         <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -413,7 +444,7 @@ export async function sendWelcomeToCollectiveEmail(
       `
     });
     
-    console.log(`Welcome to Collective email sent to ${toEmail} (CC: ${ADMIN_CC_EMAIL})`);
+    console.log(`Welcome to Collective email sent to ${toEmail} (CC: ${adminEmail})`);
     return true;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -433,6 +464,7 @@ export async function sendActiveAuthorEmail(
 ) {
   try {
     const { client, fromEmail } = await getResendClient();
+    const adminEmail = await getAdminEmail();
     
     const coppaNote = isMinor ? `
               <p style="color: #64748b; font-size: 14px; line-height: 1.6; margin: 20px 0 0 0;">
@@ -443,7 +475,7 @@ export async function sendActiveAuthorEmail(
     await client.emails.send({
       from: fromEmail,
       to: toEmail,
-      cc: ADMIN_CC_EMAIL,
+      cc: adminEmail,
       subject: `[COLLECTIVE-LOG] Welcome to the Family, ${pseudonym}!`,
       html: `
         <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -484,7 +516,7 @@ export async function sendActiveAuthorEmail(
     });
     
     await logEmail('active_author', toEmail, firstName, 'sent', userId, applicationId);
-    console.log(`Active author email sent to ${toEmail} (CC: ${ADMIN_CC_EMAIL})`);
+    console.log(`Active author email sent to ${toEmail} (CC: ${adminEmail})`);
     return true;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -728,5 +760,58 @@ export async function sendTestEmailSamples(adminEmail: string): Promise<{ succes
     console.error('Failed to send test emails:', error);
     results.push(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     return { success: false, results };
+  }
+}
+
+export async function sendMentorContactEmail(
+  studentName: string,
+  studentEmail: string,
+  message: string,
+  userId?: string
+): Promise<boolean> {
+  try {
+    const { client, fromEmail } = await getResendClient();
+    const adminEmail = await getAdminEmail();
+
+    await client.emails.send({
+      from: fromEmail,
+      to: adminEmail,
+      replyTo: studentEmail,
+      subject: `[MENTOR REQUEST] Message from ${studentName}`,
+      html: `
+        <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background: #0F172A; padding: 30px; text-align: center;">
+            <h1 style="font-family: 'Playfair Display', Georgia, serif; color: white; font-size: 28px; margin: 0;">
+              The Indie Quill Collective
+            </h1>
+            <p style="color: #14b8a6; font-size: 12px; margin: 8px 0 0 0; letter-spacing: 1px;">MENTOR CONTACT REQUEST</p>
+          </div>
+          
+          <div style="background: #f8fafc; padding: 40px 30px;">
+            <div style="background: white; border-radius: 12px; padding: 30px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+              <div style="background: #f0fdf4; border-left: 4px solid #14b8a6; padding: 15px; margin-bottom: 20px; border-radius: 0 8px 8px 0;">
+                <p style="margin: 0; color: #166534; font-size: 14px;"><strong>From:</strong> ${studentName}</p>
+                <p style="margin: 4px 0 0 0; color: #166534; font-size: 14px;"><strong>Email:</strong> ${studentEmail}</p>
+              </div>
+              
+              <h3 style="color: #0F172A; margin: 0 0 10px 0;">Message:</h3>
+              <div style="background: #f8fafc; border-radius: 8px; padding: 20px; color: #374151; font-size: 15px; line-height: 1.8; white-space: pre-wrap;">${message}</div>
+            </div>
+          </div>
+          
+          <div style="background: #0F172A; padding: 20px; text-align: center;">
+            <p style="color: #9ca3af; font-size: 12px; margin: 0;">
+              Reply directly to this email to respond to ${studentName}.
+            </p>
+          </div>
+        </div>
+      `
+    });
+
+    console.log(`Mentor contact email sent from ${studentName} to ${adminEmail}`);
+    return true;
+  } catch (error) {
+    console.error('Failed to send mentor contact email:', error);
+    return false;
   }
 }

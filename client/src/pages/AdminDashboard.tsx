@@ -163,6 +163,10 @@ export default function AdminDashboard() {
   const [retryAllResult, setRetryAllResult] = useState<{ retried: number; succeeded: number; error?: string } | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [sendingTestEmails, setSendingTestEmails] = useState(false);
+  const [adminEmailSetting, setAdminEmailSetting] = useState("");
+  const [adminEmailInput, setAdminEmailInput] = useState("");
+  const [savingAdminEmail, setSavingAdminEmail] = useState(false);
+  const [adminEmailStatus, setAdminEmailStatus] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const [availableCohorts, setAvailableCohorts] = useState<Array<{ id: number; label: string; currentCount: number; capacity: number }>>([]);
   const [selectedCohortId, setSelectedCohortId] = useState<number | null>(null);
   const [deletingUserId, setDeletingUserId] = useState<number | null>(null);
@@ -187,7 +191,7 @@ export default function AdminDashboard() {
   const loadData = async () => {
     setError(null);
     try {
-      const [appsRes, statsRes, syncRes, usersRes, calendarRes, gcalStatusRes, emailLogsRes] = await Promise.all([
+      const [appsRes, statsRes, syncRes, usersRes, calendarRes, gcalStatusRes, emailLogsRes, emailSettingsRes] = await Promise.all([
         fetch("/api/applications"),
         fetch("/api/admin/stats"),
         fetch("/api/admin/sync-status"),
@@ -195,6 +199,7 @@ export default function AdminDashboard() {
         fetch("/api/board/calendar"),
         fetch("/api/board/calendar/sync-status"),
         fetch("/api/admin/email-logs"),
+        fetch("/api/admin/email-settings"),
       ]);
 
       const apps = appsRes.ok ? await appsRes.json() : [];
@@ -204,6 +209,7 @@ export default function AdminDashboard() {
       const calendarData = calendarRes.ok ? await calendarRes.json() : [];
       const gcalStatus = gcalStatusRes.ok ? await gcalStatusRes.json() : { connected: false };
       const emailLogsData = emailLogsRes.ok ? await emailLogsRes.json() : [];
+      const emailSettingsData = emailSettingsRes.ok ? await emailSettingsRes.json() : {};
 
       setApplications(Array.isArray(apps) ? apps : []);
       setStats(statsData);
@@ -211,6 +217,10 @@ export default function AdminDashboard() {
       setAllUsers(Array.isArray(usersData) ? usersData : []);
       setGoogleCalendarStatus(gcalStatus);
       setEmailLogs(Array.isArray(emailLogsData) ? emailLogsData : []);
+      if (emailSettingsData.adminEmail) {
+        setAdminEmailSetting(emailSettingsData.adminEmail);
+        setAdminEmailInput(emailSettingsData.adminEmail);
+      }
       const sortedCalendarEvents = Array.isArray(calendarData) 
         ? calendarData.sort((a: CalendarEvent, b: CalendarEvent) => 
             new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
@@ -1246,6 +1256,60 @@ export default function AdminDashboard() {
           <div className="space-y-8">
             <OperationsPanel />
             
+            {/* Email Settings Section */}
+            <div className="card mb-6">
+              <h3 className="font-display text-lg font-bold text-slate-800 flex items-center gap-2 mb-4">
+                <Mail className="w-5 h-5 text-teal-600" />
+                Email Settings
+              </h3>
+              <p className="text-sm text-gray-600 mb-4">
+                All platform emails (notifications, alerts, student messages) will be sent to this address.
+              </p>
+              <div className="flex items-center gap-3">
+                <input
+                  type="email"
+                  value={adminEmailInput}
+                  onChange={(e) => { setAdminEmailInput(e.target.value); setAdminEmailStatus(null); }}
+                  placeholder="admin@example.com"
+                  className="flex-1 max-w-md px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                />
+                <button
+                  onClick={async () => {
+                    setSavingAdminEmail(true);
+                    setAdminEmailStatus(null);
+                    try {
+                      const res = await fetch('/api/admin/email-settings', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({ adminEmail: adminEmailInput }),
+                      });
+                      const data = await res.json();
+                      if (res.ok) {
+                        setAdminEmailSetting(adminEmailInput);
+                        setAdminEmailStatus({ type: 'success', text: 'Admin email updated successfully' });
+                      } else {
+                        setAdminEmailStatus({ type: 'error', text: data.message || 'Failed to update' });
+                      }
+                    } catch {
+                      setAdminEmailStatus({ type: 'error', text: 'Network error' });
+                    } finally {
+                      setSavingAdminEmail(false);
+                    }
+                  }}
+                  disabled={savingAdminEmail || adminEmailInput === adminEmailSetting || !adminEmailInput.includes('@')}
+                  className="px-4 py-2 bg-teal-600 text-white text-sm rounded-lg hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {savingAdminEmail ? 'Saving...' : 'Save'}
+                </button>
+              </div>
+              {adminEmailStatus && (
+                <div className={`mt-3 text-sm ${adminEmailStatus.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
+                  {adminEmailStatus.text}
+                </div>
+              )}
+            </div>
+
             {/* Email Logs Section */}
             <div className="card">
               <div className="flex items-center justify-between mb-4">
@@ -1255,7 +1319,7 @@ export default function AdminDashboard() {
                 </h3>
                 <div className="flex items-center gap-4">
                   <span className="text-sm text-gray-500">
-                    All emails CC'd to jon@theindiequill.com
+                    All emails CC'd to {adminEmailSetting || 'admin email'}
                   </span>
                   <button
                     onClick={async () => {

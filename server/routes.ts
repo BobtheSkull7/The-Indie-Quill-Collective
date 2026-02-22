@@ -32,7 +32,7 @@ async function getUserByEmail(email: string): Promise<any | null> {
 }
 import { hash, compare } from "./auth";
 import { migrateAuthorToIndieQuill, retryFailedMigrations, sendApplicationToLLC, sendStatusUpdateToLLC, sendContractSignatureToLLC, sendUserRoleUpdateToLLC } from "./indie-quill-integration";
-import { sendApplicationReceivedEmail, sendApplicationAcceptedEmail, sendApplicationRejectedEmail, sendTestEmailSamples, sendWelcomeToCollectiveEmail, sendPasswordResetEmail } from "./email";
+import { sendApplicationReceivedEmail, sendApplicationAcceptedEmail, sendApplicationRejectedEmail, sendTestEmailSamples, sendWelcomeToCollectiveEmail, sendPasswordResetEmail, sendMentorContactEmail, getAdminEmail, clearAdminEmailCache } from "./email";
 import { logAuditEvent, logMinorDataAccess, getClientIp } from "./utils/auditLogger";
 import { syncCalendarEvents, getGoogleCalendarConnectionStatus, deleteGoogleCalendarEvent, updateGoogleCalendarEvent, pushSingleEventToGoogle } from "./google-calendar-sync";
 import { getAuthUrl, handleAuthCallback, disconnectGoogleCalendar, validateOAuthState } from "./google-calendar-client";
@@ -1732,7 +1732,7 @@ export async function registerRoutes(app: Express) {
     }
 
     try {
-      const adminEmail = "jon@theindiequill.com";
+      const adminEmail = await getAdminEmail();
       const result = await sendTestEmailSamples(adminEmail);
       
       if (result.success) {
@@ -1743,6 +1743,81 @@ export async function registerRoutes(app: Express) {
     } catch (error) {
       console.error("Send test emails error:", error);
       return res.status(500).json({ message: "Failed to send test emails" });
+    }
+  });
+
+  app.get("/api/admin/email-settings", async (req: Request, res: Response) => {
+    if (!req.session.userId || req.session.userRole !== "admin") {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    try {
+      const adminEmail = await getAdminEmail();
+      return res.json({ adminEmail });
+    } catch (error) {
+      console.error("Get email settings error:", error);
+      return res.status(500).json({ message: "Failed to get email settings" });
+    }
+  });
+
+  app.put("/api/admin/email-settings", async (req: Request, res: Response) => {
+    if (!req.session.userId || req.session.userRole !== "admin") {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    try {
+      const { adminEmail } = req.body;
+      if (!adminEmail || typeof adminEmail !== "string" || !adminEmail.includes("@")) {
+        return res.status(400).json({ message: "Valid email address is required" });
+      }
+
+      await db.execute(sql`
+        INSERT INTO system_settings (key, value, updated_at)
+        VALUES ('admin_email', ${adminEmail}, NOW())
+        ON CONFLICT (key) DO UPDATE SET value = ${adminEmail}, updated_at = NOW()
+      `);
+
+      clearAdminEmailCache();
+
+      return res.json({ message: "Admin email updated successfully", adminEmail });
+    } catch (error) {
+      console.error("Update email settings error:", error);
+      return res.status(500).json({ message: "Failed to update email settings" });
+    }
+  });
+
+  app.post("/api/contact-mentor", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    try {
+      const { message } = req.body;
+      if (!message || typeof message !== "string" || message.trim().length === 0) {
+        return res.status(400).json({ message: "Message is required" });
+      }
+
+      const user = await db.execute(sql`
+        SELECT first_name, last_name, email FROM users WHERE id = ${req.session.userId}
+      `);
+
+      if (!user.rows || user.rows.length === 0) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const { first_name, last_name, email } = user.rows[0] as any;
+      const studentName = `${first_name || ''} ${last_name || ''}`.trim() || 'A Student';
+
+      const sent = await sendMentorContactEmail(studentName, email, message.trim(), String(req.session.userId));
+
+      if (sent) {
+        return res.json({ message: "Your message has been sent to your mentor!" });
+      } else {
+        return res.status(500).json({ message: "Failed to send message. Please try again." });
+      }
+    } catch (error) {
+      console.error("Contact mentor error:", error);
+      return res.status(500).json({ message: "Failed to send message" });
     }
   });
 
