@@ -1,0 +1,72 @@
+Smart move. Getting all the "Wisdom" into the system now ensures the Curriculum Progress math has its full denominator.
+
+Here are the 12 Tomes for the remaining two decks: The Writer’s Polish (7 Tomes) and The Revision Lab (5 Tomes).
+
+🛠️ Step 2.1: The Writer’s Polish Tomes (Deck 2)
+Directive for Replit: > "Seed these 7 Tomes into The Writer’s Polish (Deck 2). These focus on 'Micro-Writing'—the art of the sentence and sensory immersion."
+
+1. The Five Senses
+To make a reader feel like they are inside your story, you have to use more than just your eyes. Most beginner writers only describe what things look like. But if you describe the smell of rain on hot pavement, the grit of sand in a sandwich, or the distant hum of a lawnmower, the scene becomes "3D."
+
+Pick one "anchor" sense for every scene. You don't need to list all five every time—that gets crowded. Instead, find the one smell or sound that defines the moment. If a character is nervous, maybe they notice the ticking of a clock sounds like a hammer. If they are happy, maybe the air tastes like peppermint.
+
+2. Show, Don’t Tell
+This is the most famous rule in writing. "Telling" is saying: "The boy was sad." "Showing" is saying: "The boy stared at his feet, his bottom lip trembling as he gripped his empty ice cream cone." Showing lets the reader figure out the emotion for themselves, which makes them feel like a detective.
+
+Look for "feeling" words like scared, angry, happy, or bored. Whenever you find one, delete it. Replace it with an action or a physical feeling. Instead of saying a room is "messy," describe the pile of dirty socks in the corner and the pizza box acting as a paperweight.
+
+3. Strong Verbs
+Verbs are the "engines" of your sentences. Many writers use weak verbs and then try to fix them with adverbs (words ending in -ly). For example: "He walked quickly." A stronger way to say that is: "He sprinted," "He dashed," or "He bolted." One strong verb is always better than a weak verb plus an adverb.
+
+Strong verbs create a clearer picture. "The wind blew" is okay, but "The wind howled" or "The wind whispered" tells us exactly what kind of wind it is. Go through your pages and look for the word "was" or "went." See if you can trade them for a verb that has more "muscle."
+
+4. The Active Voice
+Active voice means the person doing the action comes first in the sentence. "The dragon ate the knight" is active. "The knight was eaten by the dragon" is passive. Active voice feels faster, more exciting, and easier to read. It puts the reader right in the middle of the action.
+
+Passive voice often feels like a boring history report. It hides the "who" and focuses on the "what." As an author, you want your characters to be the stars. By using the active voice, you make your characters feel like they are in control of their own story, rather than just letting things happen to them.
+
+5. Dialogue Tags
+A dialogue tag is the little bit of text that tells us who is talking, like "he said" or "she asked." Beginners often try to make these fancy, like "he bellowed" or "she interrogated." But "said" and "asked" are actually invisible to readers. They act like punctuation marks that don't distract from the conversation.
+
+If your dialogue is written well, the reader should already know the emotion. You don't need "he said angrily" if the character just shouted "Get out!" Use "said" for 90% of your tags. If you want to show action, use a "beat" instead: "I'm leaving." John grabbed his coat. This shows us who is talking without using a tag at all.
+
+6. Word Spacing (Pacing)
+Pacing is the "speed" of your story. Short sentences feel fast. They make the reader's heart beat quicker. They are perfect for action scenes or scary moments. "He ran. He tripped. The door slammed." See how fast that feels? It creates a sense of urgency.
+
+Longer, flowing sentences feel slow and relaxing. They are great for describing a beautiful sunset or a character's deep thoughts. By mixing short and long sentences, you create a "rhythm" for your reader. If every sentence is the same length, the reader will get bored—it's like listening to a robot talk.
+
+7. Point of View (POV)
+POV is the "camera" through which the reader sees the story. If you write in "First Person" (using "I"), the reader is inside the character's head. If you use "Third Person" (using "He" or "She"), the reader is watching from nearby. Both are great, but you must be consistent.
+
+The most important rule is to not "head hop." If your story is about Sarah, don't suddenly tell us what the mailman is thinking in the middle of the scene. Stay with your main character. Let the reader discover the world alongside them. This creates a much stronger bond between the reader and the hero.
+
+🛠️ Step 2.2: The Revision Lab Tomes (Deck 3)
+Directive for Replit: > "Seed these 5 Tomes into The Revision Lab (Deck 3). These focus on the 'Architect’s Review' and the discipline of editing."
+
+1. The Cooling-Off Period
+The hardest part of editing is that you are too close to your own work. When you just finished writing, you remember what you meant to say, so you don't see what you actually wrote. The first step of revision is to put the book in a drawer and walk away for at least a week.
+
+When you come back, you will see it with "fresh eyes." You'll notice mistakes you missed before, and you'll find parts that are confusing. It's like looking at a drawing after a long time and realizing the perspective is a bit wobbly. Distance is the only way to become your own best editor.
+
+2. Cutting the Fat
+In your first draft, you probably wrote too much. This is normal! You were discovering the story. But now, you need to find the "dead weight." These are the scenes that don't move the plot forward or the paragraphs that repeat things the reader already knows.
+
+Every sentence should be "earning its keep." If a character walks to the fridge and it doesn't matter what they eat or how they feel, you can probably cut it. Be brave. Cutting 500 words of "fluff" makes the other 1,000 words twice as powerful. This is called "tightening" the prose.
+
+3. The Read-Aloud Test
+Your ears are often smarter than your eyes. When you read your work out loud, your tongue will trip over clunky sentences or repetitive words that your eyes skipped over. If you run out of breath in the middle of a sentence, it's too long. If a conversation sounds "stiff," it needs more work.
+
+Listen for the "music" of your writing. Does it flow? Or does it sound like a drum with only one beat? Reading aloud is the fastest way to find where the "pacing" is broken. If you get bored while reading your own story out loud, the reader definitely will too.
+
+4. Strengthening the "Why"
+During revision, ask yourself: "Why is this character doing this?" If the answer is "because the plot needs them to," you have a problem. Every action must come from the character's personality or their goals. If a character is suddenly brave when they've been a coward all book, you need to show the moment they changed.
+
+This is also the time to check your "Stakes" again. Is the problem still a big deal? Do the consequences still feel real? Make sure the character is "earning" their victory. If things are too easy for them, the ending won't feel satisfying. Make them work for it.
+
+5. The Final Polish (SPAG)
+SPAG stands for Spelling, Punctuation, and Grammar. This is the very last thing you do. Don't worry about spelling while you're still cutting scenes or changing characters—it's a waste of time! But once the story is "locked," you must make it professional.
+
+Check your "crutch words." Most writers have words they use too much, like "just," "very," or "really." Use a search tool to find them and delete as many as possible. Ensure your formatting is clean. This is the final coat of paint on your house before you invite people inside.
+
+🏁 Checkpoint
+All 20 Tomes (8 + 7 + 5) are now drafted. Once Replit confirms these are all seeded into their respective decks under the Published Writer Curriculum, your Curriculum Progress denominator will be fully set.
