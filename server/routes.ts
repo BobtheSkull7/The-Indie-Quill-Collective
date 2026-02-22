@@ -6046,7 +6046,7 @@ export async function registerDonationRoutes(app: Express) {
       if (deckIds.length > 0) {
         tomesResult = await db.execute(sql`
           SELECT t.*, (SELECT COUNT(*) FROM vibe_cards WHERE tome_id = t.id) as card_count
-          FROM tomes t WHERE t.deck_id = ANY(${deckIds}::int[])
+          FROM tomes t WHERE t.deck_id IN (${sql.join(deckIds.map(id => sql`${id}`), sql`, `)})
           ORDER BY t.order_index, t.id
         `);
       }
@@ -6318,7 +6318,7 @@ export async function registerDonationRoutes(app: Express) {
         let oathCardSubmitted = false;
         if (oathCardIds.length > 0 && oathAbsorbed) {
           const subCheck = await db.execute(sql`
-            SELECT id FROM card_submissions WHERE user_id = ${String(userId)} AND card_id = ANY(${oathCardIds})
+            SELECT id FROM card_submissions WHERE user_id = ${String(userId)} AND card_id IN (${sql.join(oathCardIds.map((id: number) => sql`${id}`), sql`, `)})
           `);
           oathCardSubmitted = subCheck.rows.length > 0;
         }
