@@ -35,6 +35,10 @@ args = "Start application"
 task = "workflow.run"
 args = "EAS Build (iOS Production)"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "EAS Submit (iOS App Store)"
+
 [[workflows.workflow]]
 name = "Start application"
 author = "agent"
@@ -57,6 +61,17 @@ outputType = "console"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "cd apps/mobile && npx eas build --platform ios --profile production --non-interactive"
+
+[[workflows.workflow]]
+name = "EAS Submit (iOS App Store)"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd apps/mobile && npx eas submit --platform ios --latest --non-interactive"
+
+[workflows.workflow.metadata]
+outputType = "console"
 
 [[ports]]
 localPort = 5000
