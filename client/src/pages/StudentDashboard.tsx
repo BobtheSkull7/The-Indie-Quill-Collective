@@ -7,9 +7,11 @@ import {
   Calendar, 
   Video, 
   TrendingUp, 
-  Award
+  Award,
+  Zap
 } from "lucide-react";
 import VibeDeckContainer from "../components/VibeDeckContainer";
+import { useActivityTracker } from "../hooks/useActivityTracker";
 
 interface Meeting {
   id: number;
@@ -35,9 +37,10 @@ interface TabeScore {
 interface StudentStats {
   totalHoursActive: number;
   totalWordCount: number;
-  overallProgress: number;
-  modulesCompleted: number;
-  totalModules: number;
+  curriculumProgress: number;
+  xpToNextLevel: number;
+  currentXp: number;
+  currentLevel: number;
 }
 
 export default function StudentDashboard() {
@@ -49,10 +52,13 @@ export default function StudentDashboard() {
   const [stats, setStats] = useState<StudentStats>({
     totalHoursActive: 0,
     totalWordCount: 0,
-    overallProgress: 0,
-    modulesCompleted: 0,
-    totalModules: 0
+    curriculumProgress: 0,
+    xpToNextLevel: 100,
+    currentXp: 0,
+    currentLevel: 1,
   });
+
+  useActivityTracker();
 
   useEffect(() => {
     if (!user) {
@@ -149,7 +155,7 @@ export default function StudentDashboard() {
               </div>
               <span className="text-sm text-gray-500">Hours Active</span>
             </div>
-            <p className="text-2xl font-bold text-slate-800">{stats.totalHoursActive}h</p>
+            <p className="text-2xl font-bold text-slate-800">{stats.totalHoursActive.toFixed(1)} hrs</p>
           </div>
 
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
@@ -167,19 +173,19 @@ export default function StudentDashboard() {
               <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
                 <TrendingUp className="w-5 h-5 text-green-600" />
               </div>
-              <span className="text-sm text-gray-500">Course Progress</span>
+              <span className="text-sm text-gray-500">Curriculum Progress</span>
             </div>
-            <p className="text-2xl font-bold text-slate-800">{stats.overallProgress}%</p>
+            <p className="text-2xl font-bold text-slate-800">{stats.curriculumProgress}%</p>
           </div>
 
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
             <div className="flex items-center gap-3 mb-2">
               <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
-                <Award className="w-5 h-5 text-purple-600" />
+                <Zap className="w-5 h-5 text-purple-600" />
               </div>
-              <span className="text-sm text-gray-500">Modules Done</span>
+              <span className="text-sm text-gray-500">XP to Level Up</span>
             </div>
-            <p className="text-2xl font-bold text-slate-800">{stats.modulesCompleted}/{stats.totalModules}</p>
+            <p className="text-2xl font-bold text-slate-800">{stats.xpToNextLevel} XP</p>
           </div>
         </div>
 

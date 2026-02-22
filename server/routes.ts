@@ -7063,50 +7063,116 @@ export async function registerDonationRoutes(app: Express) {
     }
 
     try {
-      // Get total hours active
-      const hoursResult = await db.execute(sql`
-        SELECT COALESCE(SUM(minutes_active), 0) / 60 as total_hours
-        FROM student_activity_logs
-        WHERE user_id = ${req.session.userId}
-      `);
+      const userId = req.session.userId;
 
-      // Get total word count from drafts
-      const wordCountResult = await db.execute(sql`
-        SELECT COALESCE(SUM(word_count), 0) as total_words
-        FROM drafting_documents
-        WHERE user_id = ${req.session.userId}
-      `);
+      const [hoursResult, wordCountResult, tomesAbsorbedResult, cardsCompletedResult, totalTomesResult, totalCardsResult, gameCharResult] = await Promise.all([
+        db.execute(sql`
+          SELECT COALESCE(SUM(minutes_active), 0) as total_minutes
+          FROM student_activity_logs
+          WHERE user_id = ${userId}
+        `),
+        db.execute(sql`
+          SELECT COALESCE(SUM(m.word_count), 0) as total_words
+          FROM card_submissions cs
+          LEFT JOIN manuscripts m ON m.id = cs.manuscript_id
+          WHERE cs.user_id = ${userId}
+        `),
+        db.execute(sql`
+          SELECT COUNT(DISTINCT ta.deck_id) as count
+          FROM tome_absorptions ta
+          JOIN vibe_decks vd ON vd.id = ta.deck_id
+          JOIN curriculums c ON c.id = vd.curriculum_id
+          WHERE ta.user_id = ${userId} AND vd.is_published = true AND c.is_published = true
+        `),
+        db.execute(sql`
+          SELECT COUNT(DISTINCT cs.card_id) as count
+          FROM card_submissions cs
+          JOIN vibe_cards vc ON vc.id = cs.card_id
+          JOIN vibe_decks vd ON vd.id = vc.deck_id
+          JOIN curriculums c ON c.id = vd.curriculum_id
+          WHERE cs.user_id = ${userId} AND vd.is_published = true AND c.is_published = true
+        `),
+        db.execute(sql`
+          SELECT COUNT(DISTINCT vd.id) as count
+          FROM vibe_decks vd
+          JOIN curriculums c ON c.id = vd.curriculum_id
+          WHERE vd.is_published = true AND c.is_published = true
+          AND vd.tome_content IS NOT NULL AND vd.tome_content != ''
+        `),
+        db.execute(sql`
+          SELECT COUNT(*) as count
+          FROM vibe_cards vc
+          JOIN vibe_decks vd ON vd.id = vc.deck_id
+          JOIN curriculums c ON c.id = vd.curriculum_id
+          WHERE vd.is_published = true AND c.is_published = true
+        `),
+        db.execute(sql`
+          SELECT xp, level FROM game_characters WHERE user_id = ${userId}
+        `),
+      ]);
 
-      const progressResult = await db.execute(sql`
-        SELECT 
-          COUNT(CASE WHEN completed_at IS NOT NULL THEN 1 END) as completed,
-          (SELECT COUNT(*) FROM vibe_decks d JOIN curriculums c ON c.id = d.curriculum_id WHERE d.is_published = true AND c.is_published = true) as total
-        FROM student_curriculum_progress
-        WHERE user_id = ${req.session.userId}
-      `);
+      const totalMinutes = Number((hoursResult.rows?.[0] as any)?.total_minutes) || 0;
+      const totalWords = Number((wordCountResult.rows?.[0] as any)?.total_words) || 0;
+      const tomesAbsorbed = Number((tomesAbsorbedResult.rows?.[0] as any)?.count) || 0;
+      const cardsCompleted = Number((cardsCompletedResult.rows?.[0] as any)?.count) || 0;
+      const totalTomes = Number((totalTomesResult.rows?.[0] as any)?.count) || 0;
+      const totalCards = Number((totalCardsResult.rows?.[0] as any)?.count) || 0;
 
-      // Calculate overall progress
-      const avgProgressResult = await db.execute(sql`
-        SELECT COALESCE(AVG(percent_complete), 0) as avg_progress
-        FROM student_curriculum_progress
-        WHERE user_id = ${req.session.userId}
-      `);
+      const denominator = totalTomes + totalCards;
+      const numerator = tomesAbsorbed + cardsCompleted;
+      const curriculumProgress = denominator > 0 ? Math.round((numerator / denominator) * 100) : 0;
 
-      const hours = hoursResult.rows?.[0] || { total_hours: 0 };
-      const words = wordCountResult.rows?.[0] || { total_words: 0 };
-      const progress = progressResult.rows?.[0] || { completed: 0, total: 0 };
-      const avgProgress = avgProgressResult.rows?.[0] || { avg_progress: 0 };
+      const LEVEL_THRESHOLDS = [0,100,250,500,800,1200,1700,2300,3000,3800,4700,5700,6800,8000,9300,10700,12200,13800,15500,17300,19200,21200,23300,25500];
+      const MAX_LEVEL = LEVEL_THRESHOLDS.length;
+      const gameChar = gameCharResult.rows?.[0] as any;
+      const currentXp = Number(gameChar?.xp) || 0;
+      const currentLevel = Number(gameChar?.level) || 1;
+      const isMaxLevel = currentLevel >= MAX_LEVEL;
+      const nextThreshold = isMaxLevel ? LEVEL_THRESHOLDS[MAX_LEVEL - 1] : LEVEL_THRESHOLDS[currentLevel];
+      const xpToNextLevel = isMaxLevel ? 0 : Math.max(0, nextThreshold - currentXp);
 
       res.json({
-        totalHoursActive: Math.round(Number(hours.total_hours) || 0),
-        totalWordCount: Number(words.total_words) || 0,
-        overallProgress: Math.round(Number(avgProgress.avg_progress) || 0),
-        modulesCompleted: Number(progress.completed) || 0,
-        totalModules: Number(progress.total) || 0
+        totalHoursActive: Math.round(totalMinutes / 6) / 10,
+        totalWordCount: totalWords,
+        curriculumProgress,
+        xpToNextLevel,
+        currentXp,
+        currentLevel,
       });
     } catch (error) {
       console.error("Error fetching student stats:", error);
       res.status(500).json({ message: "Failed to fetch stats" });
+    }
+  });
+
+  app.post("/api/student/activity-heartbeat", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    try {
+      const userId = req.session.userId;
+      const today = new Date().toISOString().split('T')[0];
+      const existing = await db.execute(sql`
+        SELECT id, minutes_active FROM student_activity_logs
+        WHERE user_id = ${userId} AND session_date::date = ${today}::date
+        LIMIT 1
+      `);
+      if (existing.rows && existing.rows.length > 0) {
+        const row = existing.rows[0] as any;
+        await db.execute(sql`
+          UPDATE student_activity_logs SET minutes_active = ${Number(row.minutes_active) + 1}
+          WHERE id = ${row.id}
+        `);
+      } else {
+        await db.execute(sql`
+          INSERT INTO student_activity_logs (user_id, session_date, minutes_active, created_at)
+          VALUES (${userId}, ${today}::date, 1, NOW())
+        `);
+      }
+      res.json({ ok: true });
+    } catch (error) {
+      console.error("Error logging activity heartbeat:", error);
+      res.status(500).json({ message: "Failed to log activity" });
     }
   });
 
