@@ -259,6 +259,10 @@ async function bootstrapFast() {
     ALTER TABLE vibe_decks ADD COLUMN IF NOT EXISTS tome_content TEXT;
   `);
   await dbPool.query(`
+    ALTER TABLE card_submissions ADD COLUMN IF NOT EXISTS paste_count INTEGER DEFAULT 0;
+    ALTER TABLE card_submissions ADD COLUMN IF NOT EXISTS is_flagged_for_review BOOLEAN DEFAULT false;
+  `);
+  await dbPool.query(`
     CREATE TABLE IF NOT EXISTS vibescribe_transcripts (
       id SERIAL PRIMARY KEY,
       user_id VARCHAR(255) NOT NULL,

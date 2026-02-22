@@ -49,6 +49,7 @@ export default function ManuscriptEditor({
   const [wordCount, setWordCount] = useState(0);
   const [loadingDraft, setLoadingDraft] = useState(true);
   const autoSaveTimer = useRef<NodeJS.Timeout | null>(null);
+  const pastedCharsRef = useRef<number>(0);
 
   const editor = useEditor({
     extensions: [
@@ -65,6 +66,13 @@ export default function ManuscriptEditor({
       attributes: {
         class:
           "prose prose-slate max-w-none focus:outline-none min-h-[300px] px-6 py-4 text-slate-800 leading-relaxed",
+      },
+      handlePaste: (_view, event) => {
+        const pastedText = event.clipboardData?.getData("text/plain") || "";
+        if (pastedText.length > 0) {
+          pastedCharsRef.current += pastedText.length;
+        }
+        return false;
       },
     },
     onUpdate: ({ editor }) => {
@@ -156,7 +164,7 @@ export default function ManuscriptEditor({
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reflection: "" }),
+        body: JSON.stringify({ reflection: "", pasteCount: pastedCharsRef.current }),
       });
       if (res.ok) {
         setSubmitted(true);
