@@ -1,0 +1,22 @@
+-- 1. Reset Table
+CREATE TABLE IF NOT EXISTS tomes (
+  id SERIAL PRIMARY KEY,
+  tome_number INTEGER NOT NULL,
+  title TEXT NOT NULL,
+  content TEXT NOT NULL,
+  category TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+TRUNCATE TABLE tomes;
+
+-- 2. Insert All 23 Tomes
+INSERT INTO tomes (tome_number, title, content, category) VALUES
+(1, 'Your Writing Journey', 'Welcome to Vibe Scribe! This Learning Schedule is your map. It will take you from your first idea to the finish line. We use Tomes to teach storytelling and Vibe Cards to practice. Every time you finish a card, you are closer to being an author.', 'Introduction'),
+(2, 'The Big Idea', 'Every book starts with a spark. You need a Main Character, a Goal, and Trouble. If a character gets what they want right away, the story is over! Trouble is the engine that keeps the reader turning pages.', 'Foundation'),
+(3, 'The Character’s Secret', 'Characters feel real when they have a "Ghost"—something from their past that makes them scared or sad today. To win the story, they must face this Ghost and grow.', 'Foundation'),
+(4, 'The Three Acts', 'Act 1 is the Beginning (leaving home). Act 2 is the Middle (the long journey). Act 3 is the Ending (the big win). This map keeps you from getting lost while you write.', 'Foundation'),
+(5, 'The World Around Us', 'Use your five senses to describe the Setting. Don''t just say it''s raining; describe how it smells and sounds. This makes the reader feel like they are standing in the story.', 'Foundation'),
+(6, 'Talking and Listening', 'Dialogue should show how a character feels without saying it directly. Keep it like a game of ping-pong: short sentences back and forth are better than long speeches.', 'Foundation'),
+(7, 'The "Why" of the Story', 'The Theme is the big lesson of your book. It''s the heart of your project. You don''t have to say it out loud; your character''s choices should show the message to the reader.', 'Foundation'),
+(8, 'The Normal World', 'Show us the hero''s life before the adventure starts. We need to see what they eat, who their friends are, and what is missing from their life so we care when things change.', 'Act One'),
+(9, 'The Big Change', 'This is the moment that knocks on the hero''s door and changes everything. It gives them a reason to leave home and starts the goal
