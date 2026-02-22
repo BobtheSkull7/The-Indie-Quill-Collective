@@ -6135,13 +6135,13 @@ export async function registerDonationRoutes(app: Express) {
       return res.status(403).json({ error: "Admin access required" });
     }
     try {
-      const { deckId, task, qualifications, xpValue } = req.body;
+      const { deckId, task, qualifications, xpValue, minWordCount } = req.body;
       if (!task?.trim() || !deckId) return res.status(400).json({ error: "Task and deckId are required" });
       const maxOrder = await db.execute(sql`SELECT COALESCE(MAX(order_index), 0) + 1 as next_order FROM vibe_cards WHERE deck_id = ${deckId}`);
       const nextOrder = (maxOrder.rows[0] as any).next_order;
       const result = await db.execute(sql`
-        INSERT INTO vibe_cards (deck_id, task, qualifications, xp_value, order_index, created_at, updated_at)
-        VALUES (${deckId}, ${task.trim()}, ${qualifications || null}, ${xpValue || 0}, ${nextOrder}, NOW(), NOW())
+        INSERT INTO vibe_cards (deck_id, task, qualifications, xp_value, min_word_count, order_index, created_at, updated_at)
+        VALUES (${deckId}, ${task.trim()}, ${qualifications || null}, ${xpValue || 0}, ${minWordCount || 10}, ${nextOrder}, NOW(), NOW())
         RETURNING *
       `);
       res.status(201).json(result.rows[0]);
@@ -6156,9 +6156,9 @@ export async function registerDonationRoutes(app: Express) {
       return res.status(403).json({ error: "Admin access required" });
     }
     try {
-      const { task, qualifications, xpValue } = req.body;
+      const { task, qualifications, xpValue, minWordCount } = req.body;
       const result = await db.execute(sql`
-        UPDATE vibe_cards SET task = ${task}, qualifications = ${qualifications || null}, xp_value = ${xpValue || 0}, updated_at = NOW()
+        UPDATE vibe_cards SET task = ${task}, qualifications = ${qualifications || null}, xp_value = ${xpValue || 0}, min_word_count = ${minWordCount || 10}, updated_at = NOW()
         WHERE id = ${Number(req.params.id)}
         RETURNING *
       `);
@@ -6324,26 +6324,21 @@ export async function registerDonationRoutes(app: Express) {
       }
 
       const cardResult = await db.execute(sql`
-        SELECT xp_value, qualifications FROM vibe_cards WHERE id = ${cardIdNum}
+        SELECT xp_value, min_word_count FROM vibe_cards WHERE id = ${cardIdNum}
       `);
       if (cardResult.rows.length === 0) {
         return res.status(404).json({ error: "Card not found" });
       }
       const xpValue = (cardResult.rows[0] as any).xp_value || 0;
-      const qualifications = (cardResult.rows[0] as any).qualifications || '';
+      const requiredWords = (cardResult.rows[0] as any).min_word_count || 10;
 
       const manuscriptResult = await db.execute(sql`
         SELECT id, word_count FROM manuscripts WHERE user_id = ${req.session.userId} AND card_id = ${cardIdNum}
       `);
 
-      const minWordsMatch = qualifications.match(/(?:min(?:imum)?)\s+(\d+)\s+words/i)
-        || qualifications.match(/(\d+)\s+words/i);
-      if (minWordsMatch) {
-        const requiredWords = parseInt(minWordsMatch[1], 10);
-        const actualWords = manuscriptResult.rows.length > 0 ? ((manuscriptResult.rows[0] as any).word_count || 0) : 0;
-        if (actualWords < requiredWords) {
-          return res.status(400).json({ error: `This card requires at least ${requiredWords} words. You have ${actualWords}.` });
-        }
+      const actualWords = manuscriptResult.rows.length > 0 ? ((manuscriptResult.rows[0] as any).word_count || 0) : 0;
+      if (actualWords < requiredWords) {
+        return res.status(400).json({ error: `This card requires at least ${requiredWords} words. You have ${actualWords}.` });
       }
       const manuscriptId = manuscriptResult.rows.length > 0 ? (manuscriptResult.rows[0] as any).id : null;
 

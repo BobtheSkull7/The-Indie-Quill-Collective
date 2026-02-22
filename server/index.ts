@@ -213,10 +213,12 @@ async function bootstrapFast() {
       task TEXT NOT NULL,
       qualifications TEXT,
       xp_value INTEGER NOT NULL DEFAULT 100,
+      min_word_count INTEGER NOT NULL DEFAULT 10,
       order_index INTEGER NOT NULL DEFAULT 0,
       created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
       updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
     );
+    ALTER TABLE vibe_cards ADD COLUMN IF NOT EXISTS min_word_count INTEGER NOT NULL DEFAULT 10;
   `);
   await dbPool.query(`
     CREATE TABLE IF NOT EXISTS tome_absorptions (

@@ -8,6 +8,7 @@ interface CardData {
   task: string;
   qualifications: string | null;
   xp_value: number;
+  min_word_count: number;
   deck_id: number;
 }
 
@@ -573,7 +574,7 @@ export default function VibeDeckContainer() {
           cardId={activeManuscript.id}
           cardTask={activeManuscript.task}
           cardXp={activeManuscript.xp_value}
-          cardQualifications={activeManuscript.qualifications || ''}
+          minWordCount={activeManuscript.min_word_count || 10}
           isCompleted={completedCards.has(activeManuscript.id)}
           onClose={() => setActiveManuscript(null)}
           onSubmitted={() => {

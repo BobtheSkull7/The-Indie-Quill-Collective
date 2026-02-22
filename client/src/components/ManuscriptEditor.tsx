@@ -26,32 +26,22 @@ interface ManuscriptEditorProps {
   cardId: number;
   cardTask: string;
   cardXp: number;
-  cardQualifications: string;
+  minWordCount: number;
   isCompleted: boolean;
   onClose: () => void;
   onSubmitted: () => void;
-}
-
-function parseMinWordCount(qualifications: string): number {
-  const match = qualifications.match(/(?:min(?:imum)?)\s+(\d+)\s+words/i);
-  if (match) return parseInt(match[1], 10);
-  const match2 = qualifications.match(/(\d+)\s+words/i);
-  if (match2) return parseInt(match2[1], 10);
-  const match3 = qualifications.match(/(\d+)\s+sentences/i);
-  if (match3) return parseInt(match3[1], 10) * 10;
-  return 10;
 }
 
 export default function ManuscriptEditor({
   cardId,
   cardTask,
   cardXp,
-  cardQualifications,
+  minWordCount,
   isCompleted,
   onClose,
   onSubmitted,
 }: ManuscriptEditorProps) {
-  const requiredWords = parseMinWordCount(cardQualifications);
+  const requiredWords = minWordCount || 10;
   const [saving, setSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [submitting, setSubmitting] = useState(false);
