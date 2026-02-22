@@ -29,6 +29,7 @@ const BUTTON_SIZE = Math.min(width * 0.5, 200);
 
 export default function RecorderScreen() {
   const [scribeId, setScribeId] = useState('');
+  const [isAuthChecked, setIsAuthChecked] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [isSending, setIsSending] = useState(false);
@@ -74,6 +75,7 @@ export default function RecorderScreen() {
       return;
     }
     setScribeId(id);
+    setIsAuthChecked(true);
   };
 
   const loadConsentStatus = async () => {
@@ -229,6 +231,10 @@ export default function RecorderScreen() {
     const s = seconds % 60;
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
+
+  if (!isAuthChecked) {
+    return <View style={styles.container} />;
+  }
 
   return (
     <View style={styles.container}>

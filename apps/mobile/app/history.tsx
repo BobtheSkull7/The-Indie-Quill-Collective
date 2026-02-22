@@ -34,7 +34,10 @@ export default function HistoryScreen() {
   const loadTranscripts = async () => {
     try {
       const scribeId = await SecureStore.getItemAsync('scribe_id');
-      if (!scribeId) return;
+      if (!scribeId) {
+        router.replace('/');
+        return;
+      }
 
       const result = await getTranscriptHistory(scribeId);
       if (result.success && result.transcripts) {
