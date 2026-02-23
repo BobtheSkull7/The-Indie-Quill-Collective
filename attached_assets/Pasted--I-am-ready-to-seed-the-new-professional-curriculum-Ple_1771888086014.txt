@@ -1,0 +1,29 @@
+"I am ready to seed the new professional curriculum. Please use this data to populate the vibe_decks (Catalogs) and tomes (Lessons) tables.
+
+Catalog 01: The Universal Core
+
+Description: The essential foundations of professional authorship, focusing on mindset, validation, and the VibeScribe workflow.
+
+Lessons for Catalog 01:
+
+Lesson 01: The Author’s Mindset
+
+Content: [Foundation: “The professional writer is an amateur who didn’t quit.” — Richard Bach]
+Jerry Jenkins teaches that the greatest hurdle to finishing a book isn’t a lack of talent, but a lack of a 'Sacred Schedule.' Writing is a gentle discipline of showing up. By opening the Indie Quill today, you’ve already taken the most important step: you’ve decided that your voice is worth the time.
+
+Your 'Writing Sanctum' doesn't have to be a fancy library; it is simply the space where distractions are barred so your creativity can breathe. As Kindlepreneur’s Dave Chesson advocates, creating a friction-free environment is key. Whether it’s a quiet corner or a few minutes with VibeScribe, this space signals to your brain that it’s time to create.
+
+Be kind to your first words by embracing the 'Discovery Draft.' Professional authors know that the first pass is just for you—it’s where you find the story. We remove the pressure of perfection, allowing you to play in the 'sandbox' of your imagination without the inner critic looking over your shoulder.
+
+You are here because you have a unique voice, and somewhere out there, a reader is waiting for a story only you can tell. Following the Jenkins model of 'Reader-First' writing, we focus on the joy of the process today, knowing that your consistency is building the bridge to your future audience.
+
+Lesson 02: The Big Idea Validation
+
+Content: [Foundation: “Don’t just write a book you want to read; write a book people want to buy.” — The Kindlepreneur Validation Method.]
+Your ideas are like seeds—delicate, full of potential, and worthy of care. Following Jenna Rainey’s 'Pitch-First' approach, we take a moment to sit with your 'What If?' to ensure it has the depth to sustain a full manuscript. Validation isn't a hurdle; it’s a way to ensure your creative energy is spent on a story that will truly flourish.
+
+A 'Big Idea' is a high-concept premise that stays with you. As Jerry Jenkins suggests, we look for that spark of internal conflict that keeps a reader turning pages. If an idea makes you wonder 'what happens next,' it already has the mechanical heart required to become a compelling book.
+
+We will gently shape your 'Elevator Pitch' early. This isn't just for marketing; it’s a tool for clarity. Distilling your story into a single, powerful sentence acts as a North Star, keeping you anchored to your core message when the middle of the book becomes complex.
+
+You don’t have to guess if your idea works. By looking at 'Comps' (Comparable Titles), as Kindlepreneur suggests, we find where your unique story fits into the current literary landscape. You aren't competing; you are finding the specific gap in the library that only your voice can fill.
