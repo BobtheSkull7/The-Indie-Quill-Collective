@@ -7383,7 +7383,7 @@ export async function registerDonationRoutes(app: Express) {
       const totalOutput = wordsSpoken + wordsWritten;
 
       const charResult = await db.execute(sql`
-        SELECT badges, author_path, active_title, unlocked_titles, display_name
+        SELECT badges, author_path, active_title, unlocked_titles, u.first_name
         FROM game_characters gc
         JOIN users u ON u.id = gc.user_id
         WHERE gc.user_id = ${userId}
@@ -7401,7 +7401,7 @@ export async function registerDonationRoutes(app: Express) {
         authorPath = row.author_path || null;
         activeTitle = row.active_title || "the Novice";
         unlockedTitles = Array.isArray(row.unlocked_titles) ? row.unlocked_titles : ["the Novice"];
-        displayName = row.display_name || "";
+        displayName = row.first_name || "";
       }
 
       const absorbedResult = await db.execute(sql`

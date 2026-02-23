@@ -1,8 +1,11 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "../App";
+import AuthorScorecard from "../components/AuthorScorecard";
 import { 
   Clock, 
+  Calendar, 
+  Video, 
   TrendingUp, 
   Award,
   Send,
@@ -55,7 +58,7 @@ export default function StudentDashboard() {
     totalWordCount: 0,
     curriculumProgress: 0,
   });
-
+  const [characterRefreshKey, setCharacterRefreshKey] = useState(0);
 
   useActivityTracker();
 
@@ -160,6 +163,7 @@ export default function StudentDashboard() {
 
   const baselineScore = getBaselineScore();
   const currentScore = getCurrentScore();
+  const upcomingMeetings = meetings.filter(m => new Date(m.startTime) > new Date()).slice(0, 3);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -217,7 +221,7 @@ export default function StudentDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
-              <VibeDeckContainer />
+              <VibeDeckContainer onMetricsChange={() => setCharacterRefreshKey(k => k + 1)} />
             </div>
 
             {(baselineScore || currentScore) && (
@@ -263,6 +267,56 @@ export default function StudentDashboard() {
           </div>
 
           <div className="space-y-6">
+            <AuthorScorecard refreshKey={characterRefreshKey} />
+
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <h2 className="font-display text-xl font-bold text-slate-800 flex items-center gap-2 mb-4">
+                <Calendar className="w-5 h-5 text-blue-500" />
+                Upcoming Sessions
+              </h2>
+
+              {upcomingMeetings.length === 0 ? (
+                <div className="text-center py-6 text-gray-500">
+                  <Video className="w-10 h-10 mx-auto mb-2 text-gray-300" />
+                  <p className="text-sm">No upcoming sessions scheduled</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {upcomingMeetings.map((meeting) => (
+                    <div key={meeting.id} className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                      <div className="flex items-start justify-between mb-2">
+                        <h3 className="font-medium text-slate-800">{meeting.title}</h3>
+                        <span className="text-xs bg-blue-200 text-blue-700 px-2 py-0.5 rounded-full">
+                          {meeting.meetingType}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-3">
+                        {new Date(meeting.startTime).toLocaleDateString('en-US', { 
+                          weekday: 'short', 
+                          month: 'short', 
+                          day: 'numeric' 
+                        })} at {new Date(meeting.startTime).toLocaleTimeString('en-US', { 
+                          hour: 'numeric', 
+                          minute: '2-digit' 
+                        })}
+                      </p>
+                      {meeting.joinUrl && (
+                        <a 
+                          href={meeting.joinUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                        >
+                          <Video className="w-4 h-4" />
+                          Join Session
+                        </a>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <div className="bg-gradient-to-br from-teal-500 to-blue-600 rounded-xl p-6 text-white">
               <h3 className="font-display text-lg font-bold mb-2">Need Help?</h3>
               <p className="text-teal-100 text-sm mb-4">
