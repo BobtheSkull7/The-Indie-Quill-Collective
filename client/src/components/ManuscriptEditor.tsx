@@ -125,8 +125,8 @@ export default function ManuscriptEditor({
   };
 
   const saveDraft = useCallback(
-    async (content: string, words: number) => {
-      if (submitted) return;
+    async (content: string, words: number): Promise<boolean> => {
+      if (submitted) return true;
       setSaving(true);
       try {
         const res = await fetch(`/api/student/manuscripts/${cardId}`, {
@@ -137,9 +137,12 @@ export default function ManuscriptEditor({
         });
         if (res.ok) {
           setLastSaved(new Date());
+          return true;
         }
+        return false;
       } catch (err) {
         console.error("Error saving draft:", err);
+        return false;
       } finally {
         setSaving(false);
       }
@@ -157,13 +160,18 @@ export default function ManuscriptEditor({
     setSubmitting(true);
     try {
       if (editor) {
-        await saveDraft(editor.getHTML(), wordCount);
+        const saved = await saveDraft(editor.getHTML(), wordCount);
+        if (!saved) {
+          alert("Failed to save your work. Please try again.");
+          setSubmitting(false);
+          return;
+        }
       }
       const res = await fetch(`/api/student/submissions/${cardId}`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reflection: "", pasteCount: pastedCharsRef.current }),
+        body: JSON.stringify({ reflection: "", pasteCount: pastedCharsRef.current, wordCount }),
       });
       if (res.ok) {
         setSubmitted(true);

@@ -6523,14 +6523,17 @@ export async function registerDonationRoutes(app: Express) {
         SELECT id, word_count, content FROM manuscripts WHERE user_id = ${req.session.userId} AND card_id = ${cardIdNum}
       `);
 
-      const actualWords = manuscriptResult.rows.length > 0 ? ((manuscriptResult.rows[0] as any).word_count || 0) : 0;
+      const manuscriptContent = manuscriptResult.rows.length > 0 ? ((manuscriptResult.rows[0] as any).content || '') : '';
+      const storedWordCount = manuscriptResult.rows.length > 0 ? ((manuscriptResult.rows[0] as any).word_count || 0) : 0;
+      const contentText = typeof manuscriptContent === 'string' ? manuscriptContent.replace(/<[^>]*>/g, '').trim() : '';
+      const countedWords = contentText.length > 0 ? contentText.split(/\s+/).filter((w: string) => w.length > 0).length : 0;
+      const actualWords = Math.max(storedWordCount, countedWords);
       if (requiredWords > 0 && actualWords < requiredWords) {
         return res.status(400).json({ error: `This card requires at least ${requiredWords} words. You have ${actualWords}.` });
       }
       const manuscriptId = manuscriptResult.rows.length > 0 ? (manuscriptResult.rows[0] as any).id : null;
 
-      const manuscriptContent = manuscriptResult.rows.length > 0 ? ((manuscriptResult.rows[0] as any).content || '') : '';
-      const totalChars = typeof manuscriptContent === 'string' ? manuscriptContent.replace(/<[^>]*>/g, '').length : 0;
+      const totalChars = contentText.length;
       const isFlagged = totalChars > 0 && pasteCountNum > (totalChars * 0.5);
 
       const result = await db.execute(sql`
