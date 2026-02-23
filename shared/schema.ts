@@ -1155,6 +1155,7 @@ export const vibeCards = pgTable("vibe_cards", {
   tomeId: integer("tome_id").references(() => tomes.id, { onDelete: "cascade" }).notNull(),
   task: text("task").notNull(),
   qualifications: text("qualifications"),
+  taskType: text("task_type").default("writing").notNull(),
   xpValue: integer("xp_value").default(0),
   minWordCount: integer("min_word_count").default(10),
   orderIndex: integer("order_index").default(0),

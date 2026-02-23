@@ -291,6 +291,7 @@ async function bootstrapFast() {
     { table: 'vibe_cards', column: 'qualifications', definition: 'TEXT' },
     { table: 'vibe_cards', column: 'xp_value', definition: 'INTEGER NOT NULL DEFAULT 100' },
     { table: 'vibe_cards', column: 'min_word_count', definition: 'INTEGER NOT NULL DEFAULT 10' },
+    { table: 'vibe_cards', column: 'task_type', definition: "TEXT NOT NULL DEFAULT 'writing'" },
     { table: 'vibe_cards', column: 'order_index', definition: 'INTEGER NOT NULL DEFAULT 0' },
     { table: 'vibe_cards', column: 'created_at', definition: 'TIMESTAMP WITH TIME ZONE DEFAULT NOW()' },
     { table: 'vibe_cards', column: 'updated_at', definition: 'TIMESTAMP WITH TIME ZONE DEFAULT NOW()' },

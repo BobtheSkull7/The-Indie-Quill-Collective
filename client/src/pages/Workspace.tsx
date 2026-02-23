@@ -476,7 +476,7 @@ export default function Workspace() {
                 }`}
               >
                 <FileText className="w-4 h-4 inline mr-1.5" />
-                Cards ({cards.length})
+                Tasks ({cards.length})
               </button>
               <button
                 onClick={() => setSidebarTab("transcripts")}
@@ -649,7 +649,7 @@ export default function Workspace() {
               <div>
                 <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                 <h2 className="text-xl font-bold text-slate-800 mb-2">Select a Task</h2>
-                <p className="text-gray-500">Choose a Vibe Card from the sidebar to start writing</p>
+                <p className="text-gray-500">Choose a Task from the sidebar to start writing</p>
               </div>
             </div>
           )}

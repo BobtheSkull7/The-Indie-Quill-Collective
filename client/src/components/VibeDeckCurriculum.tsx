@@ -308,7 +308,7 @@ export default function VibeDeckCurriculum() {
   };
 
   const handleDeleteCard = async (cardId: number, tomeId: number) => {
-    if (!confirm("Delete this Vibe Card?")) return;
+    if (!confirm("Delete this Task?")) return;
     try {
       const res = await fetch(`/api/admin/cards/${cardId}`, { method: "DELETE", credentials: "include" });
       if (res.ok) {
@@ -320,7 +320,7 @@ export default function VibeDeckCurriculum() {
   };
 
   const handleDeleteTome = async (tomeId: number, deckId: number) => {
-    if (!confirm("Delete this Tome and all its cards?")) return;
+    if (!confirm("Delete this Lesson and all its tasks?")) return;
     try {
       const res = await fetch(`/api/admin/tomes/${tomeId}`, { method: "DELETE", credentials: "include" });
       if (res.ok) {
@@ -332,7 +332,7 @@ export default function VibeDeckCurriculum() {
   };
 
   const handleDeleteDeck = async (deckId: number, curriculumId: number) => {
-    if (!confirm("Delete this Vibe Deck and all its tomes and cards?")) return;
+    if (!confirm("Delete this Catalog and all its lessons and tasks?")) return;
     try {
       const res = await fetch(`/api/admin/decks/${deckId}`, { method: "DELETE", credentials: "include" });
       if (res.ok) { await loadDecks(curriculumId); await loadCurriculums(); }
@@ -340,7 +340,7 @@ export default function VibeDeckCurriculum() {
   };
 
   const handleDeleteCurriculum = async (id: number) => {
-    if (!confirm("Delete this Curriculum and all its decks, tomes, and cards?")) return;
+    if (!confirm("Delete this Curriculum and all its catalogs, lessons, and tasks?")) return;
     try {
       const res = await fetch(`/api/admin/curriculums/${id}`, { method: "DELETE", credentials: "include" });
       if (res.ok) await loadCurriculums();
@@ -435,7 +435,7 @@ export default function VibeDeckCurriculum() {
       <div className="flex items-center justify-between mb-6">
         <h2 className="font-display text-xl font-bold text-slate-800 flex items-center gap-2">
           <Layers className="w-5 h-5 text-teal-500" />
-          Vibe Deck Builder
+          Curriculum Builder
         </h2>
         <button
           onClick={() => setAddingCurriculum(!addingCurriculum)}
@@ -447,7 +447,7 @@ export default function VibeDeckCurriculum() {
       </div>
 
       <p className="text-sm text-gray-500 mb-6">
-        Organize your training into Curricula &gt; Vibe Decks &gt; Tomes (lessons) &gt; Vibe Cards (tasks). Click to expand each level.
+        Organize your training into Curricula &gt; Catalogs &gt; Lessons &gt; Tasks. Click to expand each level.
       </p>
 
       {addingCurriculum && (
@@ -505,7 +505,7 @@ export default function VibeDeckCurriculum() {
                       </div>
                     </button>
                     <span className="text-xs bg-teal-100 text-teal-700 px-2 py-1 rounded-full font-medium">
-                      {curriculum.deck_count} {Number(curriculum.deck_count) === 1 ? "Deck" : "Decks"}
+                      {curriculum.deck_count} {Number(curriculum.deck_count) === 1 ? "Catalog" : "Catalogs"}
                     </span>
                     <button
                       onClick={(e) => { e.stopPropagation(); handleTogglePublish("curriculum", curriculum.id, curriculum.is_published); }}
@@ -527,7 +527,7 @@ export default function VibeDeckCurriculum() {
                         className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-teal-600 hover:text-teal-700 hover:bg-teal-50 rounded-md transition-colors"
                       >
                         <Plus className="w-3.5 h-3.5" />
-                        Add Vibe Deck
+                        Add Catalog
                       </button>
                     </div>
 
@@ -580,10 +580,10 @@ export default function VibeDeckCurriculum() {
                                   </div>
                                 </button>
                                 <span className="text-xs bg-amber-50 text-amber-600 px-2 py-0.5 rounded-full font-medium">
-                                  {deck.tome_count || 0} {Number(deck.tome_count || 0) === 1 ? "Tome" : "Tomes"}
+                                  {deck.tome_count || 0} {Number(deck.tome_count || 0) === 1 ? "Lesson" : "Lessons"}
                                 </span>
                                 <span className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-medium">
-                                  {deck.card_count} {Number(deck.card_count) === 1 ? "Card" : "Cards"}
+                                  {deck.card_count} {Number(deck.card_count) === 1 ? "Task" : "Tasks"}
                                 </span>
                                 <button
                                   onClick={(e) => { e.stopPropagation(); handleTogglePublish("deck", deck.id, deck.is_published, curriculum.id); }}
@@ -605,19 +605,19 @@ export default function VibeDeckCurriculum() {
                                     className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-amber-600 hover:text-amber-700 hover:bg-amber-50 rounded-md transition-colors"
                                   >
                                     <Plus className="w-3.5 h-3.5" />
-                                    Add Tome
+                                    Add Lesson
                                   </button>
                                 </div>
 
                                 {addingTomeFor === deck.id && (
                                   <div className="mx-4 mb-3 p-3 bg-amber-50 rounded-lg border border-amber-200">
                                     <div className="space-y-2">
-                                      <input type="text" value={newTomeTitle} onChange={(e) => setNewTomeTitle(e.target.value)} placeholder="Tome title" className="w-full px-3 py-2 border border-amber-300 rounded-lg text-sm focus:outline-none focus:border-amber-500 bg-white" autoFocus />
-                                      <textarea value={newTomeContent} onChange={(e) => setNewTomeContent(e.target.value)} placeholder="Write your wisdom here..." rows={6} className="w-full px-3 py-2 border border-amber-300 rounded-lg text-sm focus:outline-none focus:border-amber-500 bg-white resize-y" />
+                                      <input type="text" value={newTomeTitle} onChange={(e) => setNewTomeTitle(e.target.value)} placeholder="Lesson title" className="w-full px-3 py-2 border border-amber-300 rounded-lg text-sm focus:outline-none focus:border-amber-500 bg-white" autoFocus />
+                                      <textarea value={newTomeContent} onChange={(e) => setNewTomeContent(e.target.value)} placeholder="Write your lesson content here..." rows={6} className="w-full px-3 py-2 border border-amber-300 rounded-lg text-sm focus:outline-none focus:border-amber-500 bg-white resize-y" />
                                       <div className="flex justify-end gap-2">
                                         <button onClick={() => setAddingTomeFor(null)} className="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-xs transition-colors">Cancel</button>
                                         <button onClick={() => handleAddTome(deck.id)} disabled={saving || !newTomeTitle.trim()} className="flex items-center gap-1 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white rounded-lg text-xs font-medium transition-colors">
-                                          {saving ? "Adding..." : "Add Tome"}
+                                          {saving ? "Adding..." : "Add Lesson"}
                                         </button>
                                       </div>
                                     </div>
@@ -632,8 +632,8 @@ export default function VibeDeckCurriculum() {
                                         {editingTome === tome.id ? (
                                           <div className="px-4 py-2.5 bg-amber-50 border-b border-amber-200">
                                             <div className="space-y-2">
-                                              <input type="text" value={editTomeForm.title} onChange={(e) => setEditTomeForm({ ...editTomeForm, title: e.target.value })} className="w-full px-3 py-2 border border-amber-300 rounded-lg text-sm focus:outline-none focus:border-amber-500 bg-white" placeholder="Tome title" autoFocus />
-                                              <textarea value={editTomeForm.content} onChange={(e) => setEditTomeForm({ ...editTomeForm, content: e.target.value })} placeholder="Tome content..." rows={6} className="w-full px-3 py-2 border border-amber-300 rounded-lg text-sm focus:outline-none focus:border-amber-500 bg-white resize-y" />
+                                              <input type="text" value={editTomeForm.title} onChange={(e) => setEditTomeForm({ ...editTomeForm, title: e.target.value })} className="w-full px-3 py-2 border border-amber-300 rounded-lg text-sm focus:outline-none focus:border-amber-500 bg-white" placeholder="Lesson title" autoFocus />
+                                              <textarea value={editTomeForm.content} onChange={(e) => setEditTomeForm({ ...editTomeForm, content: e.target.value })} placeholder="Lesson content..." rows={6} className="w-full px-3 py-2 border border-amber-300 rounded-lg text-sm focus:outline-none focus:border-amber-500 bg-white resize-y" />
                                               <div className="flex justify-end gap-2">
                                                 <button onClick={() => setEditingTome(null)} className="p-1.5 text-gray-500 hover:text-gray-700 transition-colors"><X className="w-4 h-4" /></button>
                                                 <button onClick={() => handleSaveTome(tome.id, deck.id)} disabled={saving || !editTomeForm.title.trim()} className="flex items-center gap-1 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white rounded-lg text-xs font-medium transition-colors">
@@ -658,7 +658,7 @@ export default function VibeDeckCurriculum() {
                                               </div>
                                             </button>
                                             <span className="text-xs bg-purple-50 text-purple-600 px-2 py-0.5 rounded-full font-medium">
-                                              {tome.card_count} {Number(tome.card_count) === 1 ? "Card" : "Cards"}
+                                              {tome.card_count} {Number(tome.card_count) === 1 ? "Task" : "Tasks"}
                                             </span>
                                             <button onClick={() => startEditTome(tome)} className="p-1 text-gray-400 hover:text-amber-500 transition-colors"><Edit2 className="w-3.5 h-3.5" /></button>
                                             <button onClick={() => handleDeleteTome(tome.id, deck.id)} className="p-1 text-gray-400 hover:text-red-500 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
@@ -673,7 +673,7 @@ export default function VibeDeckCurriculum() {
                                                 className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded-md transition-colors"
                                               >
                                                 <Plus className="w-3.5 h-3.5" />
-                                                Add Vibe Card
+                                                Add Task
                                               </button>
                                             </div>
 
@@ -691,7 +691,7 @@ export default function VibeDeckCurriculum() {
                                                     <div className="flex-1" />
                                                     <button onClick={() => setAddingCardFor(null)} className="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-xs transition-colors">Cancel</button>
                                                     <button onClick={() => handleAddCard(tome.id)} disabled={saving || !newCardTask.trim()} className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white rounded-lg text-xs font-medium transition-colors">
-                                                      {saving ? "Adding..." : "Add Card"}
+                                                      {saving ? "Adding..." : "Add Task"}
                                                     </button>
                                                   </div>
                                                 </div>
@@ -742,7 +742,7 @@ export default function VibeDeckCurriculum() {
                                               ))}
                                               {(tome.cards || []).length === 0 && (
                                                 <div className="text-center py-4 text-gray-400 text-sm">
-                                                  No cards yet. Add your first Vibe Card above.
+                                                  No tasks yet. Add your first Task above.
                                                 </div>
                                               )}
                                             </div>
@@ -753,7 +753,7 @@ export default function VibeDeckCurriculum() {
                                   })}
                                   {(deck.tomes || []).length === 0 && (
                                     <div className="text-center py-4 text-gray-400 text-sm">
-                                      No tomes yet. Add your first Tome above.
+                                      No lessons yet. Add your first Lesson above.
                                     </div>
                                   )}
                                 </div>
@@ -764,7 +764,7 @@ export default function VibeDeckCurriculum() {
                       })}
                       {(curriculum.decks || []).length === 0 && (
                         <div className="text-center py-4 text-gray-400 text-sm">
-                          No decks yet. Add your first Vibe Deck above.
+                          No catalogs yet. Add your first Catalog above.
                         </div>
                       )}
                     </div>

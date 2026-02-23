@@ -208,7 +208,7 @@ export default function Dashboard() {
               
               <div className="py-4">
                 <p className="text-amber-900 text-lg leading-relaxed mb-6" style={{ textIndent: '2em' }}>
-                  While you wait, prepare your mind for the <em>Tomes of Wisdom</em> that await you. 
+                  While you wait, prepare your mind for the <em>Lessons</em> that await you. 
                   Within them lie the secrets to mastering your craft and unlocking your potential as an author.
                 </p>
 

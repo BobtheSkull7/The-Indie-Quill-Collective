@@ -265,7 +265,7 @@ export default function VibeDeckContainer({ onXpChange }: { onXpChange?: () => v
                   )}
                 </div>
                 <div className="flex items-center gap-4 flex-shrink-0">
-                  <span className="text-xs text-gray-500">{curriculumDecks.length} {curriculumDecks.length === 1 ? 'deck' : 'decks'} · {totalTomes} {totalTomes === 1 ? 'tome' : 'tomes'} · {totalCards} {totalCards === 1 ? 'task' : 'tasks'}</span>
+                  <span className="text-xs text-gray-500">{curriculumDecks.length} {curriculumDecks.length === 1 ? 'catalog' : 'catalogs'} · {totalTomes} {totalTomes === 1 ? 'lesson' : 'lessons'} · {totalCards} {totalCards === 1 ? 'task' : 'tasks'}</span>
                   {curriculumXP > 0 && (
                     <span className="text-xs font-medium text-amber-600">{curriculumXP} XP</span>
                   )}
@@ -276,7 +276,7 @@ export default function VibeDeckContainer({ onXpChange }: { onXpChange?: () => v
                 <div className="px-5 pb-5 border-t border-purple-100 bg-gradient-to-b from-purple-50/30 to-white">
                   {curriculumDecks.length === 0 ? (
                     <div className="text-center py-6 text-gray-400 text-sm">
-                      No decks available in this curriculum yet.
+                      No catalogs available in this curriculum yet.
                     </div>
                   ) : (
                     <div className="space-y-3 mt-4">
@@ -306,7 +306,7 @@ export default function VibeDeckContainer({ onXpChange }: { onXpChange?: () => v
                                 )}
                               </div>
                               <div className="flex items-center gap-3 flex-shrink-0">
-                                <span className="text-xs text-gray-500">{deck.tomes.length} {deck.tomes.length === 1 ? 'tome' : 'tomes'}</span>
+                                <span className="text-xs text-gray-500">{deck.tomes.length} {deck.tomes.length === 1 ? 'lesson' : 'lessons'}</span>
                                 {deckTotalXP > 0 && (
                                   <span className="text-xs font-medium text-amber-600">{deckTotalXP} XP</span>
                                 )}
@@ -317,7 +317,7 @@ export default function VibeDeckContainer({ onXpChange }: { onXpChange?: () => v
                               <div className="px-4 pb-4 pt-1 border-t border-gray-100 bg-gradient-to-b from-gray-50/50 to-white">
                                 {deck.tomes.length === 0 ? (
                                   <div className="text-center py-6 text-gray-400 text-sm">
-                                    No tomes available in this deck yet.
+                                    No lessons available in this catalog yet.
                                   </div>
                                 ) : (
                                   <div className="space-y-3 mt-3">
@@ -348,7 +348,7 @@ export default function VibeDeckContainer({ onXpChange }: { onXpChange?: () => v
                                               <div className="flex-1 text-left">
                                                 <h5 className="font-semibold text-slate-800 text-sm">{tome.title}</h5>
                                                 <p className="text-xs text-gray-500">
-                                                  {locked ? "Read & absorb to unlock cards" : `${tome.cards.length} ${tome.cards.length === 1 ? 'task' : 'tasks'}`}
+                                                  {locked ? "Read & complete to unlock tasks" : `${tome.cards.length} ${tome.cards.length === 1 ? 'task' : 'tasks'}`}
                                                 </p>
                                               </div>
                                             </button>
@@ -356,7 +356,7 @@ export default function VibeDeckContainer({ onXpChange }: { onXpChange?: () => v
                                               {tome.absorbed && (
                                                 <span className="flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full border border-green-200">
                                                   <ScrollText className="w-3 h-3" />
-                                                  Absorbed
+                                                  Completed
                                                 </span>
                                               )}
                                               {tomeXP > 0 && (
@@ -371,7 +371,7 @@ export default function VibeDeckContainer({ onXpChange }: { onXpChange?: () => v
                                                 }`}
                                               >
                                                 <ScrollText className="w-3 h-3" />
-                                                {locked ? "Read Tome" : "Re-read"}
+                                                {locked ? "Read Lesson" : "Re-read"}
                                               </button>
                                             </div>
                                           </div>
@@ -383,7 +383,7 @@ export default function VibeDeckContainer({ onXpChange }: { onXpChange?: () => v
                                                   <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
                                                     <div className="flex flex-col items-center gap-2 bg-white/80 backdrop-blur-sm px-6 py-4 rounded-xl border border-amber-200 shadow-lg">
                                                       <Lock className="w-8 h-8 text-amber-500" />
-                                                      <p className="text-sm font-medium text-amber-800">Absorb the Tome to unlock</p>
+                                                      <p className="text-sm font-medium text-amber-800">Complete the Lesson to unlock</p>
                                                     </div>
                                                   </div>
                                                   <div className="locked-cards">
@@ -404,7 +404,7 @@ export default function VibeDeckContainer({ onXpChange }: { onXpChange?: () => v
                                                 <>
                                                   {tome.cards.length === 0 ? (
                                                     <div className="text-center py-6 text-gray-400 text-sm">
-                                                      No tasks available in this tome yet.
+                                                      No tasks available in this lesson yet.
                                                     </div>
                                                   ) : (
                                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-3">
@@ -498,7 +498,7 @@ export default function VibeDeckContainer({ onXpChange }: { onXpChange?: () => v
                       {!tomeModal.absorbed ? (
                         <div className="space-y-3">
                           <p className="text-sm text-amber-800/60" style={{ fontFamily: "'EB Garamond', Georgia, serif" }}>
-                            By absorbing this wisdom, you unlock the tasks within this tome.
+                            By completing this lesson, you unlock the tasks within.
                           </p>
                           <button
                             onClick={() => handleAbsorbTome(tomeModal.id)}
@@ -509,13 +509,13 @@ export default function VibeDeckContainer({ onXpChange }: { onXpChange?: () => v
                             style={{ fontFamily: "'EB Garamond', Georgia, serif" }}
                           >
                             <BookOpen className="w-5 h-5" />
-                            {absorbing ? "Absorbing..." : "Absorb Wisdom"}
+                            {absorbing ? "Completing..." : "Complete Lesson"}
                           </button>
                         </div>
                       ) : (
                         <p className="text-sm text-green-700 font-medium flex items-center justify-center gap-2">
                           <ScrollText className="w-4 h-4" />
-                          Wisdom Absorbed
+                          Lesson Completed
                         </p>
                       )}
                     </div>

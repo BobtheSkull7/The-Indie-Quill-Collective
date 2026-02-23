@@ -184,7 +184,7 @@ export default function Community() {
               className="text-sm mb-6"
               style={{ fontFamily: "'EB Garamond', 'Georgia', serif", color: "#5a7a6a", lineHeight: "1.6" }}
             >
-              Published authors we are pursuing for mentorship and future guest Tomes.
+              Published authors we are pursuing for mentorship and future guest Lessons.
             </p>
             <ul className="space-y-5">
               {advisors.map((advisor, i) => (
