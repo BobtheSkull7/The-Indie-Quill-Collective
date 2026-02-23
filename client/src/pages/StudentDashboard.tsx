@@ -3,15 +3,10 @@ import { useLocation } from "wouter";
 import { useAuth } from "../App";
 import AuthorScorecard from "../components/AuthorScorecard";
 import { 
-  Clock, 
-  Calendar, 
-  Video, 
   TrendingUp, 
-  Award,
   Send,
   X,
   MessageCircle,
-  PenLine
 } from "lucide-react";
 import VibeDeckContainer from "../components/VibeDeckContainer";
 import { useActivityTracker } from "../hooks/useActivityTracker";
@@ -163,8 +158,6 @@ export default function StudentDashboard() {
 
   const baselineScore = getBaselineScore();
   const currentScore = getCurrentScore();
-  const upcomingMeetings = meetings.filter(m => new Date(m.startTime) > new Date()).slice(0, 3);
-
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 py-8">
@@ -174,49 +167,6 @@ export default function StudentDashboard() {
           </h1>
           <p className="text-gray-600 mt-1">Continue your journey in the Architecture of Authorship</p>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-lg bg-teal-100 flex items-center justify-center">
-                <Clock className="w-5 h-5 text-teal-600" />
-              </div>
-              <span className="text-sm text-gray-500">Hours Active</span>
-            </div>
-            <p className="text-2xl font-bold text-slate-800">{stats.totalHoursActive.toFixed(1)} hrs</p>
-          </div>
-
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                <Award className="w-5 h-5 text-blue-600" />
-              </div>
-              <span className="text-sm text-gray-500">Word Count</span>
-            </div>
-            <p className="text-2xl font-bold text-slate-800">{stats.totalWordCount.toLocaleString()}</p>
-          </div>
-
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
-                <TrendingUp className="w-5 h-5 text-green-600" />
-              </div>
-              <span className="text-sm text-gray-500">Curriculum Progress</span>
-            </div>
-            <p className="text-2xl font-bold text-slate-800">{stats.curriculumProgress}%</p>
-          </div>
-
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
-                <PenLine className="w-5 h-5 text-purple-600" />
-              </div>
-              <span className="text-sm text-gray-500">Total Output</span>
-            </div>
-            <p className="text-2xl font-bold text-slate-800">{stats.totalWordCount.toLocaleString()} words</p>
-          </div>
-        </div>
-
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
@@ -268,54 +218,6 @@ export default function StudentDashboard() {
 
           <div className="space-y-6">
             <AuthorScorecard refreshKey={characterRefreshKey} />
-
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-              <h2 className="font-display text-xl font-bold text-slate-800 flex items-center gap-2 mb-4">
-                <Calendar className="w-5 h-5 text-blue-500" />
-                Upcoming Sessions
-              </h2>
-
-              {upcomingMeetings.length === 0 ? (
-                <div className="text-center py-6 text-gray-500">
-                  <Video className="w-10 h-10 mx-auto mb-2 text-gray-300" />
-                  <p className="text-sm">No upcoming sessions scheduled</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {upcomingMeetings.map((meeting) => (
-                    <div key={meeting.id} className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                      <div className="flex items-start justify-between mb-2">
-                        <h3 className="font-medium text-slate-800">{meeting.title}</h3>
-                        <span className="text-xs bg-blue-200 text-blue-700 px-2 py-0.5 rounded-full">
-                          {meeting.meetingType}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-600 mb-3">
-                        {new Date(meeting.startTime).toLocaleDateString('en-US', { 
-                          weekday: 'short', 
-                          month: 'short', 
-                          day: 'numeric' 
-                        })} at {new Date(meeting.startTime).toLocaleTimeString('en-US', { 
-                          hour: 'numeric', 
-                          minute: '2-digit' 
-                        })}
-                      </p>
-                      {meeting.joinUrl && (
-                        <a 
-                          href={meeting.joinUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
-                        >
-                          <Video className="w-4 h-4" />
-                          Join Session
-                        </a>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
 
             <div className="bg-gradient-to-br from-teal-500 to-blue-600 rounded-xl p-6 text-white">
               <h3 className="font-display text-lg font-bold mb-2">Need Help?</h3>
