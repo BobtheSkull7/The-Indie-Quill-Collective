@@ -262,10 +262,80 @@ async function bootstrapFast() {
     DO $$ BEGIN
       IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'manuscripts' AND column_name = 'content'
+      ) THEN
+        ALTER TABLE manuscripts ADD COLUMN content TEXT NOT NULL DEFAULT '';
+      END IF;
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'manuscripts' AND column_name = 'word_count'
+      ) THEN
+        ALTER TABLE manuscripts ADD COLUMN word_count INTEGER NOT NULL DEFAULT 0;
+      END IF;
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'manuscripts' AND column_name = 'created_at'
+      ) THEN
+        ALTER TABLE manuscripts ADD COLUMN created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
+      END IF;
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'manuscripts' AND column_name = 'updated_at'
+      ) THEN
+        ALTER TABLE manuscripts ADD COLUMN updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
+      END IF;
+    END $$;
+  `);
+  await dbPool.query(`
+    DO $$ BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
         WHERE table_name = 'card_submissions' AND column_name = 'card_id'
       ) THEN
         ALTER TABLE card_submissions ADD COLUMN card_id INTEGER NOT NULL DEFAULT 0 REFERENCES vibe_cards(id) ON DELETE CASCADE;
         ALTER TABLE card_submissions ADD CONSTRAINT card_submissions_user_id_card_id_key UNIQUE (user_id, card_id);
+      END IF;
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'card_submissions' AND column_name = 'manuscript_id'
+      ) THEN
+        ALTER TABLE card_submissions ADD COLUMN manuscript_id INTEGER REFERENCES manuscripts(id) ON DELETE SET NULL;
+      END IF;
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'card_submissions' AND column_name = 'reflection'
+      ) THEN
+        ALTER TABLE card_submissions ADD COLUMN reflection TEXT NOT NULL DEFAULT '';
+      END IF;
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'card_submissions' AND column_name = 'xp_earned'
+      ) THEN
+        ALTER TABLE card_submissions ADD COLUMN xp_earned INTEGER NOT NULL DEFAULT 0;
+      END IF;
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'card_submissions' AND column_name = 'status'
+      ) THEN
+        ALTER TABLE card_submissions ADD COLUMN status VARCHAR(50) NOT NULL DEFAULT 'submitted';
+      END IF;
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'card_submissions' AND column_name = 'paste_count'
+      ) THEN
+        ALTER TABLE card_submissions ADD COLUMN paste_count INTEGER NOT NULL DEFAULT 0;
+      END IF;
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'card_submissions' AND column_name = 'is_flagged_for_review'
+      ) THEN
+        ALTER TABLE card_submissions ADD COLUMN is_flagged_for_review BOOLEAN NOT NULL DEFAULT false;
+      END IF;
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'card_submissions' AND column_name = 'submitted_at'
+      ) THEN
+        ALTER TABLE card_submissions ADD COLUMN submitted_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
       END IF;
     END $$;
   `);
