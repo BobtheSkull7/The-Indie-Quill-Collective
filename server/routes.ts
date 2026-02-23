@@ -6291,13 +6291,15 @@ export async function registerDonationRoutes(app: Express) {
       return res.status(403).json({ error: "Admin access required" });
     }
     try {
-      const { tomeId, task, qualifications, xpValue, minWordCount } = req.body;
+      const { tomeId, task, qualifications, xpValue, minWordCount, taskType } = req.body;
       if (!task?.trim() || !tomeId) return res.status(400).json({ error: "Task and tomeId are required" });
+      const validTaskTypes = ["writing", "speaking", "comprehension"];
+      const safeTaskType = validTaskTypes.includes(taskType) ? taskType : "writing";
       const maxOrder = await db.execute(sql`SELECT COALESCE(MAX(order_index), 0) + 1 as next_order FROM vibe_cards WHERE tome_id = ${tomeId}`);
       const nextOrder = (maxOrder.rows[0] as any).next_order;
       const result = await db.execute(sql`
-        INSERT INTO vibe_cards (tome_id, task, qualifications, xp_value, min_word_count, order_index, created_at, updated_at)
-        VALUES (${tomeId}, ${task.trim()}, ${qualifications || null}, ${xpValue || 0}, ${minWordCount || 10}, ${nextOrder}, NOW(), NOW())
+        INSERT INTO vibe_cards (tome_id, task, qualifications, xp_value, min_word_count, task_type, order_index, created_at, updated_at)
+        VALUES (${tomeId}, ${task.trim()}, ${qualifications || null}, ${xpValue || 0}, ${minWordCount || 10}, ${safeTaskType}, ${nextOrder}, NOW(), NOW())
         RETURNING *
       `);
       res.status(201).json(result.rows[0]);
@@ -6312,9 +6314,11 @@ export async function registerDonationRoutes(app: Express) {
       return res.status(403).json({ error: "Admin access required" });
     }
     try {
-      const { task, qualifications, xpValue, minWordCount } = req.body;
+      const { task, qualifications, xpValue, minWordCount, taskType } = req.body;
+      const validTaskTypes = ["writing", "speaking", "comprehension"];
+      const safeTaskType = validTaskTypes.includes(taskType) ? taskType : "writing";
       const result = await db.execute(sql`
-        UPDATE vibe_cards SET task = ${task}, qualifications = ${qualifications || null}, xp_value = ${xpValue || 0}, min_word_count = ${minWordCount || 10}, updated_at = NOW()
+        UPDATE vibe_cards SET task = ${task}, qualifications = ${qualifications || null}, xp_value = ${xpValue || 0}, min_word_count = ${minWordCount || 10}, task_type = ${safeTaskType}, updated_at = NOW()
         WHERE id = ${Number(req.params.id)}
         RETURNING *
       `);

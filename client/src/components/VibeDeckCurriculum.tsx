@@ -21,6 +21,7 @@ interface VibeCardData {
   tome_id: number;
   task: string;
   qualifications: string | null;
+  task_type: string;
   xp_value: number;
   order_index: number;
 }
@@ -65,7 +66,7 @@ export default function VibeDeckCurriculum() {
   const [expandedTomes, setExpandedTomes] = useState<Set<number>>(new Set());
 
   const [editingCard, setEditingCard] = useState<number | null>(null);
-  const [editForm, setEditForm] = useState({ task: "", qualifications: "", xpValue: 0 });
+  const [editForm, setEditForm] = useState({ task: "", qualifications: "", xpValue: 0, taskType: "writing" });
   const [editingCurriculum, setEditingCurriculum] = useState<number | null>(null);
   const [editCurrForm, setEditCurrForm] = useState({ title: "", description: "" });
   const [editingDeck, setEditingDeck] = useState<number | null>(null);
@@ -90,6 +91,7 @@ export default function VibeDeckCurriculum() {
   const [newCardTask, setNewCardTask] = useState("");
   const [newCardQuals, setNewCardQuals] = useState("");
   const [newCardXp, setNewCardXp] = useState(100);
+  const [newCardTaskType, setNewCardTaskType] = useState("writing");
 
   useEffect(() => {
     loadCurriculums();
@@ -272,7 +274,7 @@ export default function VibeDeckCurriculum() {
       const res = await fetch("/api/admin/cards", {
         method: "POST", credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tomeId, task: newCardTask, qualifications: newCardQuals, xpValue: newCardXp }),
+        body: JSON.stringify({ tomeId, task: newCardTask, qualifications: newCardQuals, xpValue: newCardXp, taskType: newCardTaskType }),
       });
       if (res.ok) {
         await loadCards(tomeId);
@@ -282,7 +284,7 @@ export default function VibeDeckCurriculum() {
           const deck = curriculums.flatMap(c => c.decks || []).find(d => d.id === tome.deck_id);
           if (deck) await loadDecks(deck.curriculum_id);
         }
-        setNewCardTask(""); setNewCardQuals(""); setNewCardXp(100); setAddingCardFor(null);
+        setNewCardTask(""); setNewCardQuals(""); setNewCardXp(100); setNewCardTaskType("writing"); setAddingCardFor(null);
       }
     } catch (err) { console.error("Error adding card:", err); }
     finally { setSaving(false); }
@@ -291,7 +293,7 @@ export default function VibeDeckCurriculum() {
   const startEditCard = (card: VibeCardData) => {
     setEditingCurriculum(null); setEditingDeck(null); setEditingTome(null);
     setEditingCard(card.id);
-    setEditForm({ task: card.task, qualifications: card.qualifications || "", xpValue: card.xp_value });
+    setEditForm({ task: card.task, qualifications: card.qualifications || "", xpValue: card.xp_value, taskType: card.task_type || "writing" });
   };
 
   const handleSaveCard = async (cardId: number, tomeId: number) => {
@@ -300,7 +302,7 @@ export default function VibeDeckCurriculum() {
       const res = await fetch(`/api/admin/cards/${cardId}`, {
         method: "PUT", credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ task: editForm.task, qualifications: editForm.qualifications, xpValue: editForm.xpValue }),
+        body: JSON.stringify({ task: editForm.task, qualifications: editForm.qualifications, xpValue: editForm.xpValue, taskType: editForm.taskType }),
       });
       if (res.ok) { await loadCards(tomeId); setEditingCard(null); }
     } catch (err) { console.error("Error updating card:", err); }
@@ -684,6 +686,14 @@ export default function VibeDeckCurriculum() {
                                                   <input type="text" value={newCardQuals} onChange={(e) => setNewCardQuals(e.target.value)} placeholder="Qualifications (optional)" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-purple-500" />
                                                   <div className="flex items-center gap-3">
                                                     <div className="flex items-center gap-2">
+                                                      <span className="text-xs text-gray-500 font-medium">Task Mode</span>
+                                                      <select value={newCardTaskType} onChange={(e) => setNewCardTaskType(e.target.value)} className="px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-purple-500 bg-white">
+                                                        <option value="writing">Writing</option>
+                                                        <option value="speaking">Speaking (VibeScribe)</option>
+                                                        <option value="comprehension">Comprehension (Logic/Check)</option>
+                                                      </select>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
                                                       <Star className="w-4 h-4 text-amber-400" />
                                                       <input type="number" value={newCardXp} onChange={(e) => setNewCardXp(Number(e.target.value) || 0)} min={0} className="w-20 px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-purple-500" />
                                                       <span className="text-xs text-gray-500">XP</span>
@@ -706,6 +716,14 @@ export default function VibeDeckCurriculum() {
                                                       <input type="text" value={editForm.task} onChange={(e) => setEditForm({ ...editForm, task: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-purple-500" placeholder="Task" />
                                                       <input type="text" value={editForm.qualifications} onChange={(e) => setEditForm({ ...editForm, qualifications: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-purple-500" placeholder="Qualifications" />
                                                       <div className="flex items-center gap-3">
+                                                        <div className="flex items-center gap-2">
+                                                          <span className="text-xs text-gray-500 font-medium">Task Mode</span>
+                                                          <select value={editForm.taskType} onChange={(e) => setEditForm({ ...editForm, taskType: e.target.value })} className="px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-purple-500 bg-white">
+                                                            <option value="writing">Writing</option>
+                                                            <option value="speaking">Speaking (VibeScribe)</option>
+                                                            <option value="comprehension">Comprehension (Logic/Check)</option>
+                                                          </select>
+                                                        </div>
                                                         <div className="flex items-center gap-2">
                                                           <Star className="w-4 h-4 text-amber-400" />
                                                           <input type="number" value={editForm.xpValue} onChange={(e) => setEditForm({ ...editForm, xpValue: Number(e.target.value) || 0 })} min={0} className="w-20 px-2 py-1.5 border border-gray-300 rounded-lg text-sm" />
@@ -730,6 +748,13 @@ export default function VibeDeckCurriculum() {
                                                         <p className="text-sm text-slate-700 truncate">{card.task}</p>
                                                         <p className="text-xs text-gray-400 truncate">{card.qualifications || "No qualifications set"}</p>
                                                       </div>
+                                                      <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full flex-shrink-0 ${
+                                                        card.task_type === "speaking" ? "bg-blue-100 text-blue-700" :
+                                                        card.task_type === "comprehension" ? "bg-orange-100 text-orange-700" :
+                                                        "bg-green-100 text-green-700"
+                                                      }`}>
+                                                        {card.task_type === "speaking" ? "Speaking" : card.task_type === "comprehension" ? "Comprehension" : "Writing"}
+                                                      </span>
                                                       <div className="flex items-center gap-1.5 flex-shrink-0">
                                                         <Star className="w-3.5 h-3.5 text-amber-400" />
                                                         <span className="text-xs font-bold text-amber-600">{card.xp_value} XP</span>
