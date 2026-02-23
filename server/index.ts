@@ -380,7 +380,7 @@ async function bootstrapFast() {
       console.warn(`[Migration]   ~ constraint ${c.constraint} skipped: ${e.message}`);
     }
   }
-  const serialTables = ['manuscripts', 'card_submissions', 'tome_absorptions', 'vibescribe_transcripts', 'master_manuscripts', 'game_characters'];
+  const serialTables = ['manuscripts', 'card_submissions', 'tome_absorptions', 'vibescribe_transcripts', 'master_manuscripts', 'game_characters', 'curriculum', 'lessons', 'user_progress', 'writing_sessions'];
   for (const tbl of serialTables) {
     try {
       const colCheck = await dbPool.query(
