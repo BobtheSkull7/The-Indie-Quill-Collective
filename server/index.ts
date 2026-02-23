@@ -338,6 +338,8 @@ async function bootstrapFast() {
     { table: 'game_characters', column: 'unlocked_titles', definition: `JSONB NOT NULL DEFAULT '["the Novice"]'` },
     { table: 'game_characters', column: 'equipped_items', definition: `JSONB NOT NULL DEFAULT '{"main_hand": null, "off_hand": null, "head": null, "body": null, "hands": null, "feet": null}'` },
     { table: 'game_characters', column: 'unlocked_items', definition: "JSONB NOT NULL DEFAULT '[]'" },
+    { table: 'game_characters', column: 'author_path', definition: "VARCHAR(50)" },
+    { table: 'game_characters', column: 'badges', definition: "JSONB NOT NULL DEFAULT '[]'" },
     { table: 'game_characters', column: 'created_at', definition: 'TIMESTAMP WITH TIME ZONE DEFAULT NOW()' },
     { table: 'game_characters', column: 'updated_at', definition: 'TIMESTAMP WITH TIME ZONE DEFAULT NOW()' },
   ];

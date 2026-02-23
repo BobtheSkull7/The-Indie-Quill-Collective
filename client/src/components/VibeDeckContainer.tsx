@@ -37,7 +37,7 @@ interface CurriculumData {
   description: string | null;
 }
 
-export default function VibeDeckContainer({ onXpChange }: { onXpChange?: () => void } = {}) {
+export default function VibeDeckContainer({ onMetricsChange }: { onMetricsChange?: () => void } = {}) {
   const [curriculums, setCurriculums] = useState<CurriculumData[]>([]);
   const [decks, setDecks] = useState<DeckData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -110,7 +110,7 @@ export default function VibeDeckContainer({ onXpChange }: { onXpChange?: () => v
             t.id === tomeId ? { ...t, absorbed: true } : t
           ),
         })));
-        onXpChange?.();
+        onMetricsChange?.();
         setTimeout(() => {
           setTomeModal(null);
         }, 800);
@@ -133,9 +133,6 @@ export default function VibeDeckContainer({ onXpChange }: { onXpChange?: () => v
   if (curriculums.length === 0) {
     return null;
   }
-
-  const allCards = decks.flatMap(d => d.tomes.flatMap(t => t.cards));
-  const totalXP = allCards.reduce((sum, c) => sum + c.xp_value, 0);
 
   return (
     <div className="space-y-6">
@@ -213,14 +210,9 @@ export default function VibeDeckContainer({ onXpChange }: { onXpChange?: () => v
           </div>
           <div>
             <h2 className="font-display text-xl font-bold text-slate-800">Curriculum</h2>
-            <p className="text-sm text-gray-500">Complete tasks to earn XP and level up</p>
+            <p className="text-sm text-gray-500">Complete tasks to build your author portfolio</p>
           </div>
         </div>
-        {totalXP > 0 && (
-          <div className="flex items-center gap-2 bg-amber-50 px-4 py-2 rounded-full border border-amber-200">
-            <span className="text-sm text-amber-700 font-medium">{totalXP} XP available</span>
-          </div>
-        )}
       </div>
 
       {!onboardingComplete && oathTomeId && (
@@ -242,7 +234,6 @@ export default function VibeDeckContainer({ onXpChange }: { onXpChange?: () => v
           const isCurriculumExpanded = expandedCurriculum === curriculum.id;
           const totalTomes = curriculumDecks.reduce((sum, d) => sum + d.tomes.length, 0);
           const totalCards = curriculumDecks.reduce((sum, d) => sum + d.tomes.reduce((ts, t) => ts + t.cards.length, 0), 0);
-          const curriculumXP = curriculumDecks.flatMap(d => d.tomes.flatMap(t => t.cards)).reduce((sum, c) => sum + c.xp_value, 0);
 
           return (
             <div key={curriculum.id} className="rounded-xl border border-purple-200 bg-white shadow-sm overflow-hidden">
@@ -266,9 +257,6 @@ export default function VibeDeckContainer({ onXpChange }: { onXpChange?: () => v
                 </div>
                 <div className="flex items-center gap-4 flex-shrink-0">
                   <span className="text-xs text-gray-500">{curriculumDecks.length} {curriculumDecks.length === 1 ? 'catalog' : 'catalogs'} · {totalTomes} {totalTomes === 1 ? 'lesson' : 'lessons'} · {totalCards} {totalCards === 1 ? 'task' : 'tasks'}</span>
-                  {curriculumXP > 0 && (
-                    <span className="text-xs font-medium text-amber-600">{curriculumXP} XP</span>
-                  )}
                 </div>
               </button>
 
@@ -282,8 +270,6 @@ export default function VibeDeckContainer({ onXpChange }: { onXpChange?: () => v
                     <div className="space-y-3 mt-4">
                       {curriculumDecks.map((deck) => {
                         const isDeckExpanded = expandedDeck === deck.id;
-                        const deckCards = deck.tomes.flatMap(t => t.cards);
-                        const deckTotalXP = deckCards.reduce((sum, c) => sum + c.xp_value, 0);
 
                         return (
                           <div key={deck.id} className="rounded-lg border border-gray-200 bg-white shadow-sm overflow-hidden">
@@ -307,9 +293,6 @@ export default function VibeDeckContainer({ onXpChange }: { onXpChange?: () => v
                               </div>
                               <div className="flex items-center gap-3 flex-shrink-0">
                                 <span className="text-xs text-gray-500">{deck.tomes.length} {deck.tomes.length === 1 ? 'lesson' : 'lessons'}</span>
-                                {deckTotalXP > 0 && (
-                                  <span className="text-xs font-medium text-amber-600">{deckTotalXP} XP</span>
-                                )}
                               </div>
                             </button>
 
@@ -324,7 +307,6 @@ export default function VibeDeckContainer({ onXpChange }: { onXpChange?: () => v
                                     {deck.tomes.map((tome) => {
                                       const isTomeExpanded = expandedTome === tome.id;
                                       const locked = !tome.absorbed;
-                                      const tomeXP = tome.cards.reduce((sum, c) => sum + c.xp_value, 0);
 
                                       return (
                                         <div key={tome.id} className="rounded-lg border border-amber-200/60 bg-gradient-to-b from-amber-50/30 to-white overflow-hidden">
@@ -358,9 +340,6 @@ export default function VibeDeckContainer({ onXpChange }: { onXpChange?: () => v
                                                   <ScrollText className="w-3 h-3" />
                                                   Completed
                                                 </span>
-                                              )}
-                                              {tomeXP > 0 && (
-                                                <span className="text-xs font-medium text-amber-600">{tomeXP} XP</span>
                                               )}
                                               <button
                                                 onClick={(e) => { e.stopPropagation(); setTomeModal(tome); }}
@@ -544,7 +523,7 @@ export default function VibeDeckContainer({ onXpChange }: { onXpChange?: () => v
           onSubmitted={(cardId) => {
             setCompletedCards(prev => new Set([...prev, cardId]));
             setActiveManuscript(null);
-            onXpChange?.();
+            onMetricsChange?.();
             if (!onboardingComplete) {
               loadVibeDecks();
             }

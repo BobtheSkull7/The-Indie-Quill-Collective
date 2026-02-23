@@ -322,7 +322,7 @@ export default function ManuscriptEditor({
             <div className="flex items-center justify-center gap-2 text-green-600">
               <CheckCircle className="w-5 h-5" />
               <span className="font-medium">
-                Submitted!{xpValue > 0 ? ` You earned ${xpValue} XP` : ''}
+                Submitted successfully!
               </span>
             </div>
           ) : (

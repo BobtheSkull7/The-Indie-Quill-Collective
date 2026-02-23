@@ -1,17 +1,17 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "../App";
-import CharacterCard from "../components/CharacterCard";
+import AuthorScorecard from "../components/AuthorScorecard";
 import { 
   Clock, 
   Calendar, 
   Video, 
   TrendingUp, 
   Award,
-  Zap,
   Send,
   X,
-  MessageCircle
+  MessageCircle,
+  PenLine
 } from "lucide-react";
 import VibeDeckContainer from "../components/VibeDeckContainer";
 import { useActivityTracker } from "../hooks/useActivityTracker";
@@ -41,9 +41,6 @@ interface StudentStats {
   totalHoursActive: number;
   totalWordCount: number;
   curriculumProgress: number;
-  xpToNextLevel: number;
-  currentXp: number;
-  currentLevel: number;
 }
 
 export default function StudentDashboard() {
@@ -60,9 +57,6 @@ export default function StudentDashboard() {
     totalHoursActive: 0,
     totalWordCount: 0,
     curriculumProgress: 0,
-    xpToNextLevel: 100,
-    currentXp: 0,
-    currentLevel: 1,
   });
 
   const [characterRefreshKey, setCharacterRefreshKey] = useState(0);
@@ -216,11 +210,11 @@ export default function StudentDashboard() {
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
             <div className="flex items-center gap-3 mb-2">
               <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
-                <Zap className="w-5 h-5 text-purple-600" />
+                <PenLine className="w-5 h-5 text-purple-600" />
               </div>
-              <span className="text-sm text-gray-500">XP to Level Up</span>
+              <span className="text-sm text-gray-500">Total Output</span>
             </div>
-            <p className="text-2xl font-bold text-slate-800">{stats.xpToNextLevel} XP</p>
+            <p className="text-2xl font-bold text-slate-800">{stats.totalWordCount.toLocaleString()} words</p>
           </div>
         </div>
 
@@ -228,7 +222,7 @@ export default function StudentDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
-              <VibeDeckContainer onXpChange={() => setCharacterRefreshKey(k => k + 1)} />
+              <VibeDeckContainer onMetricsChange={() => setCharacterRefreshKey(k => k + 1)} />
             </div>
 
             {(baselineScore || currentScore) && (
@@ -274,7 +268,7 @@ export default function StudentDashboard() {
           </div>
 
           <div className="space-y-6">
-            <CharacterCard className="w-full" refreshKey={characterRefreshKey} />
+            <AuthorScorecard refreshKey={characterRefreshKey} />
 
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">

@@ -1214,6 +1214,8 @@ export const gameCharacters = pgTable("game_characters", {
     main_hand: null, off_hand: null, head: null, body: null, hands: null, feet: null
   }).notNull(),
   unlockedItems: jsonb("unlocked_items").default([]).notNull(),
+  authorPath: varchar("author_path", { length: 50 }),
+  badges: jsonb("badges").default([]).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });

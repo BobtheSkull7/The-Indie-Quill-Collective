@@ -31,7 +31,6 @@ import {
   Loader2,
   CheckCircle,
   Clock,
-  Sparkles,
   ArrowDownToLine,
   Eye,
   X,
@@ -527,8 +526,6 @@ export default function Workspace() {
                             )}
                           </div>
                           <div className="flex items-center gap-2 mt-2 text-xs text-gray-400">
-                            <span className="text-purple-500 font-medium">{card.xp_value} XP</span>
-                            <span>·</span>
                             <span>{card.deck_title}</span>
                             {card.manuscript_word_count ? (
                               <>
@@ -632,7 +629,7 @@ export default function Workspace() {
             <div className="px-6 py-3 bg-purple-50 border-b border-purple-100 flex items-center justify-between">
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-purple-800 truncate">{activeCard.task}</p>
-                <p className="text-xs text-purple-500 mt-0.5">{activeCard.deck_title} · {activeCard.xp_value} XP</p>
+                <p className="text-xs text-purple-500 mt-0.5">{activeCard.deck_title}</p>
               </div>
               <button
                 onClick={handleMoveToMaster}
@@ -724,10 +721,6 @@ export default function Workspace() {
                 </div>
               )}
               <div className="flex items-center gap-4 text-sm text-gray-500">
-                <span className="flex items-center gap-1">
-                  <Sparkles className="w-4 h-4 text-purple-500" />
-                  {referenceCard.xp_value} XP
-                </span>
                 <span>{referenceCard.deck_title}</span>
                 <span>{referenceCard.curriculum_title}</span>
               </div>

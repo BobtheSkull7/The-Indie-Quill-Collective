@@ -1,15 +1,15 @@
 import { useState } from "react";
-import { Star, CheckCircle, Sparkles, PenLine } from "lucide-react";
+import { CheckCircle, Sparkles, PenLine } from "lucide-react";
 
 interface VibeDeckCardProps {
   task: string;
   qualifications: string;
-  xpValue: number;
+  xpValue?: number;
   isCompleted?: boolean;
   onStartWriting?: () => void;
 }
 
-export default function VibeDeckCard({ task, qualifications, xpValue, isCompleted = false, onStartWriting }: VibeDeckCardProps) {
+export default function VibeDeckCard({ task, qualifications, isCompleted = false, onStartWriting }: VibeDeckCardProps) {
   const [isFlipped, setIsFlipped] = useState(false);
 
   const handleCardClick = () => {
@@ -47,10 +47,6 @@ export default function VibeDeckCard({ task, qualifications, xpValue, isComplete
           </div>
           <div className="mt-3 flex items-center justify-between">
             <span className="text-xs text-gray-400 italic">Tap to flip</span>
-            <div className="flex items-center gap-1">
-              <Star className={`w-3.5 h-3.5 ${isCompleted ? "text-green-400 fill-green-400" : "text-amber-400 fill-amber-400"}`} />
-              <span className={`text-xs font-bold ${isCompleted ? "text-green-600" : "text-amber-600"}`}>{xpValue} XP</span>
-            </div>
           </div>
         </div>
 
@@ -94,10 +90,6 @@ export default function VibeDeckCard({ task, qualifications, xpValue, isComplete
 
           <div className="mt-2 pt-2 border-t border-white/20 flex items-center justify-between">
             <span className="text-xs text-teal-200 italic">Tap to flip back</span>
-            <div className="flex items-center gap-1.5 bg-amber-500/20 px-3 py-1.5 rounded-full">
-              <Star className="w-4 h-4 text-amber-300 fill-amber-300" />
-              <span className="text-sm font-bold text-amber-200">{xpValue} XP</span>
-            </div>
           </div>
         </div>
       </div>

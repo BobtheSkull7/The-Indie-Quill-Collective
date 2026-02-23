@@ -6432,16 +6432,7 @@ export async function registerDonationRoutes(app: Express) {
         ON CONFLICT (user_id, tome_id) DO NOTHING
       `);
 
-      let xpResult = null;
-      if (!alreadyAbsorbed) {
-        try {
-          xpResult = await awardXP(String(req.session.userId), TOME_XP_BONUS, `tome_absorption:${tomeId}`);
-        } catch (xpErr) {
-          console.error("[Game Engine] Failed to award XP on tome absorption:", xpErr);
-        }
-      }
-
-      res.json({ success: true, absorbed: true, xp_bonus: alreadyAbsorbed ? 0 : TOME_XP_BONUS, xp_result: xpResult });
+      res.json({ success: true, absorbed: true });
     } catch (error) {
       console.error("Error absorbing tome:", error);
       res.status(500).json({ error: "Failed to absorb tome" });
@@ -6546,16 +6537,7 @@ export async function registerDonationRoutes(app: Express) {
         RETURNING *
       `);
 
-      let xpResult = null;
-      if (xpValue > 0) {
-        try {
-          xpResult = await awardXP(String(req.session.userId), xpValue, `card_submission:${cardIdNum}`);
-        } catch (xpErr) {
-          console.error("[Game Engine] Failed to award XP on card submission:", xpErr);
-        }
-      }
-
-      res.json({ success: true, submission: result.rows[0], xp_earned: xpValue, xp_result: xpResult });
+      res.json({ success: true, submission: result.rows[0] });
     } catch (error) {
       console.error("Error submitting card:", error);
       res.status(500).json({ error: "Failed to submit" });
@@ -7376,6 +7358,145 @@ export async function registerDonationRoutes(app: Express) {
   });
 
   // Get student's game character data from native Game Engine
+  app.get("/api/student/author-metrics", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    try {
+      const userId = req.session.userId;
+
+      const spokenResult = await db.execute(sql`
+        SELECT COALESCE(SUM(
+          array_length(regexp_split_to_array(trim(content), '\s+'), 1)
+        ), 0) as total
+        FROM vibescribe_transcripts WHERE user_id = ${userId} AND content IS NOT NULL AND trim(content) != ''
+      `);
+      const wordsSpoken = Number((spokenResult.rows[0] as any)?.total) || 0;
+
+      const writtenResult = await db.execute(sql`
+        SELECT COALESCE(SUM(word_count), 0) as total FROM manuscripts WHERE user_id = ${userId}
+      `);
+      const masterResult = await db.execute(sql`
+        SELECT COALESCE(SUM(word_count), 0) as total FROM master_manuscripts WHERE user_id = ${userId}
+      `);
+      const wordsWritten = (Number((writtenResult.rows[0] as any)?.total) || 0) + (Number((masterResult.rows[0] as any)?.total) || 0);
+      const totalOutput = wordsSpoken + wordsWritten;
+
+      const charResult = await db.execute(sql`
+        SELECT badges, author_path, active_title, unlocked_titles, display_name
+        FROM game_characters gc
+        JOIN users u ON u.id = gc.user_id
+        WHERE gc.user_id = ${userId}
+      `);
+
+      let badges: string[] = [];
+      let authorPath: string | null = null;
+      let activeTitle = "the Novice";
+      let unlockedTitles: string[] = ["the Novice"];
+      let displayName = "";
+
+      if (charResult.rows.length > 0) {
+        const row = charResult.rows[0] as any;
+        badges = Array.isArray(row.badges) ? row.badges : [];
+        authorPath = row.author_path || null;
+        activeTitle = row.active_title || "the Novice";
+        unlockedTitles = Array.isArray(row.unlocked_titles) ? row.unlocked_titles : ["the Novice"];
+        displayName = row.display_name || "";
+      }
+
+      const absorbedResult = await db.execute(sql`
+        SELECT tome_id FROM tome_absorptions WHERE user_id = ${userId}
+      `);
+      const absorbedTomeIds = new Set((absorbedResult.rows as any[]).map(r => r.tome_id));
+
+      const catalog01Tomes = await db.execute(sql`
+        SELECT t.id FROM tomes t
+        JOIN vibe_decks vd ON vd.id = t.deck_id
+        JOIN curriculums c ON c.id = vd.curriculum_id
+        WHERE c.title = 'Published Writer' AND vd.order_index = 1
+      `);
+      const catalog01TomeIds = (catalog01Tomes.rows as any[]).map(r => r.id);
+      const catalog01Complete = catalog01TomeIds.length > 0 && catalog01TomeIds.every(id => absorbedTomeIds.has(id));
+
+      const lesson03Result = await db.execute(sql`
+        SELECT t.id FROM tomes t
+        JOIN vibe_decks vd ON vd.id = t.deck_id
+        JOIN curriculums c ON c.id = vd.curriculum_id
+        WHERE c.title = 'Published Writer' AND vd.order_index = 1 AND t.order_index = 3
+        LIMIT 1
+      `);
+      const lesson03Id = lesson03Result.rows.length > 0 ? (lesson03Result.rows[0] as any).id : null;
+      const lesson03Complete = lesson03Id ? absorbedTomeIds.has(lesson03Id) : false;
+
+      const allTomesResult = await db.execute(sql`
+        SELECT t.id FROM tomes t
+        JOIN vibe_decks vd ON vd.id = t.deck_id
+        JOIN curriculums c ON c.id = vd.curriculum_id
+        WHERE c.title = 'Published Writer'
+      `);
+      const allTomeIds = (allTomesResult.rows as any[]).map(r => r.id);
+      const allComplete = allTomeIds.length > 0 && allTomeIds.every(id => absorbedTomeIds.has(id));
+
+      const newBadges = [...badges];
+      const addBadge = (key: string, condition: boolean) => {
+        if (condition && !newBadges.includes(key)) newBadges.push(key);
+      };
+
+      addBadge("foundations_seal", catalog01Complete);
+      addBadge("voice_seal", wordsSpoken >= 1000);
+      addBadge("ink_seal", wordsWritten >= 1000);
+      addBadge("specialist_seal", authorPath !== null);
+      addBadge("5k_club", totalOutput >= 5000);
+      addBadge("10k_club", totalOutput >= 10000);
+      addBadge("structure_master", lesson03Complete);
+      addBadge("the_finisher", allComplete);
+      addBadge("published_scribe", allComplete && authorPath !== null);
+
+      if (newBadges.length !== badges.length) {
+        await db.execute(sql`
+          UPDATE game_characters SET badges = ${JSON.stringify(newBadges)}::jsonb, updated_at = NOW()
+          WHERE user_id = ${userId}
+        `);
+      }
+
+      res.json({
+        wordsSpoken,
+        wordsWritten,
+        totalOutput,
+        badges: newBadges,
+        authorPath,
+        activeTitle,
+        unlockedTitles,
+        displayName,
+        catalog01Complete,
+      });
+    } catch (error) {
+      console.error("Error fetching author metrics:", error);
+      res.status(500).json({ error: "Failed to fetch metrics" });
+    }
+  });
+
+  app.post("/api/student/author-path", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    try {
+      const { path } = req.body;
+      const validPaths = ["novelist", "authority", "poet", "storyteller"];
+      if (!validPaths.includes(path)) {
+        return res.status(400).json({ error: "Invalid path. Choose: novelist, authority, poet, or storyteller." });
+      }
+      await db.execute(sql`
+        UPDATE game_characters SET author_path = ${path}, updated_at = NOW()
+        WHERE user_id = ${req.session.userId}
+      `);
+      res.json({ success: true, path });
+    } catch (error) {
+      console.error("Error setting author path:", error);
+      res.status(500).json({ error: "Failed to set path" });
+    }
+  });
+
   app.get("/api/student/game-character", async (req: Request, res: Response) => {
     if (!req.session.userId) {
       return res.status(401).json({ message: "Not authenticated" });
