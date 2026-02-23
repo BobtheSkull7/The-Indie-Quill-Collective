@@ -230,107 +230,109 @@ export default function CharacterCard({ userId = 1, className = "", apiEndpoint 
             Character Sheet
           </h3>
           
-          {/* Writer's Studio */}
-          <div className="mb-5 rounded-xl border border-stone-300/50 bg-gradient-to-b from-[#F5F0E8] to-[#EDE6D8] p-4 relative overflow-hidden shadow-inner" style={{ height: 240 }}>
-            <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")" }} />
-
-            {currentLevel >= 6 && (
-              <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10" style={{ animation: "studio-fade-in 0.6s ease" }}>
-                <div className="bg-gradient-to-b from-amber-50 to-white border-2 border-amber-700/40 rounded px-4 py-2 shadow-md" style={{ boxShadow: "0 2px 8px rgba(120,80,20,0.15), inset 0 1px 0 rgba(255,255,255,0.8)" }}>
-                  <div className="flex items-center gap-2">
-                    <Award className="w-4 h-4 text-amber-700" />
-                    <span className="text-[11px] font-bold text-amber-900 tracking-wide uppercase" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>Published Author</span>
-                  </div>
-                </div>
-                <div className="w-px h-3 bg-amber-700/30 mx-auto" />
-              </div>
-            )}
-
-            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 w-[88%]">
-              <div className="relative" style={{ perspective: "400px" }}>
-                <div className="h-5 rounded-t-sm relative" style={{ background: "linear-gradient(180deg, #6B4423 0%, #5C3A1E 30%, #4A2E15 100%)", boxShadow: "0 -1px 3px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.08)" }}>
-                  <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-600/30 to-transparent" />
-                  <div className="absolute inset-x-2 bottom-0 h-px bg-black/10" />
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 w-1 h-1 rounded-full bg-amber-700/40" />
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 w-1 h-1 rounded-full bg-amber-700/40" />
-                </div>
-                <div className="h-2 relative" style={{ background: "linear-gradient(180deg, #4A2E15 0%, #3D2510 100%)", boxShadow: "0 4px 12px rgba(0,0,0,0.25)" }}>
-                  <div className="absolute inset-x-4 bottom-0 h-px bg-black/5" />
-                </div>
-              </div>
-              <div className="flex justify-between px-3">
-                <div className="w-3 h-12 rounded-b-sm" style={{ background: "linear-gradient(90deg, #5C3A1E 0%, #4A2E15 50%, #3D2510 100%)", boxShadow: "2px 2px 4px rgba(0,0,0,0.15)" }} />
-                <div className="w-3 h-12 rounded-b-sm" style={{ background: "linear-gradient(90deg, #3D2510 0%, #4A2E15 50%, #5C3A1E 100%)", boxShadow: "-2px 2px 4px rgba(0,0,0,0.15)" }} />
+          {/* Writer's Studio — Aerial Desk View */}
+          <div className="mb-5 rounded-xl overflow-hidden" style={{ boxShadow: "inset 0 2px 8px rgba(0,0,0,0.08)" }}>
+            <div className="relative" style={{ height: 260 }}>
+              <div className="absolute inset-0 rounded-xl" style={{ background: "linear-gradient(145deg, #5C3D2E 0%, #4A3122 40%, #3E2A1C 100%)" }}>
+                <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: "repeating-linear-gradient(90deg, transparent, transparent 18px, rgba(0,0,0,0.15) 18px, rgba(0,0,0,0.15) 19px), repeating-linear-gradient(0deg, transparent, transparent 80px, rgba(0,0,0,0.08) 80px, rgba(0,0,0,0.08) 81px)" }} />
+                <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: "repeating-linear-gradient(90deg, transparent, transparent 36px, rgba(255,255,255,0.1) 36px, rgba(255,255,255,0.1) 37px)" }} />
+                <div className="absolute top-0 left-0 right-0 h-16 bg-gradient-to-b from-black/10 to-transparent" />
+                <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-black/15 to-transparent" />
+                <div className="absolute top-0 left-0 bottom-0 w-8 bg-gradient-to-r from-black/8 to-transparent" />
+                <div className="absolute top-0 right-0 bottom-0 w-8 bg-gradient-to-l from-black/8 to-transparent" />
               </div>
 
               {currentLevel >= 1 && (
-                <div className="absolute -top-12 left-3" style={{ animation: "studio-fade-in 0.4s ease" }}>
+                <div className="absolute top-6 left-5 z-10" style={{ animation: "studio-pop 0.4s ease" }}>
                   <div className="relative">
-                    <div className="absolute -bottom-1 left-1 w-8 h-1 bg-black/5 rounded-full blur-sm" />
-                    <Book className="w-8 h-8 text-amber-800 drop-shadow-sm" strokeWidth={1.5} />
-                    <Pencil className="w-4 h-4 text-stone-500 absolute -right-2 bottom-0 rotate-[30deg] drop-shadow-sm" strokeWidth={1.5} />
+                    <div className="w-[72px] h-[92px] rounded-sm bg-gradient-to-br from-amber-100 to-amber-50 border border-amber-300/60" style={{ boxShadow: "2px 3px 8px rgba(0,0,0,0.3), inset 0 0 0 1px rgba(255,255,255,0.3)" }}>
+                      <div className="absolute top-2 left-2 right-2 space-y-1.5">
+                        <div className="h-[2px] bg-amber-300/40 rounded" />
+                        <div className="h-[2px] bg-amber-300/30 rounded w-[80%]" />
+                        <div className="h-[2px] bg-amber-300/40 rounded" />
+                        <div className="h-[2px] bg-amber-300/30 rounded w-[60%]" />
+                        <div className="h-[2px] bg-amber-300/40 rounded w-[90%]" />
+                      </div>
+                      <div className="absolute left-1 top-0 w-[3px] h-full bg-gradient-to-b from-red-400/60 to-red-500/40 rounded-r" />
+                    </div>
+                    <Pencil className="w-10 h-10 text-amber-600/80 absolute -bottom-3 -right-4 rotate-[135deg] drop-shadow-md" strokeWidth={1.2} />
                   </div>
                 </div>
               )}
 
               {currentLevel >= 2 && (
-                <div className="absolute -top-10 right-4" style={{ animation: "studio-fade-in 0.5s ease" }}>
+                <div className="absolute top-4 right-5 z-10" style={{ animation: "studio-pop 0.5s ease" }}>
                   <div className="relative">
-                    <div className="absolute -bottom-1 left-1 w-6 h-1 bg-black/5 rounded-full blur-sm" />
-                    <Coffee className="w-7 h-7 text-stone-700 drop-shadow-sm" strokeWidth={1.5} />
-                    <div className="absolute -top-2 left-1/2 -translate-x-1/2 flex gap-px">
-                      <div className="w-px h-2 bg-stone-400/40 rounded-full" style={{ animation: "steam 2s ease-in-out infinite" }} />
-                      <div className="w-px h-2.5 bg-stone-400/30 rounded-full" style={{ animation: "steam 2s ease-in-out 0.5s infinite" }} />
-                      <div className="w-px h-2 bg-stone-400/40 rounded-full" style={{ animation: "steam 2s ease-in-out 1s infinite" }} />
+                    <div className="w-9 h-9 rounded-full border-[3px] border-stone-200/80 bg-gradient-to-br from-stone-100 to-stone-200" style={{ boxShadow: "2px 3px 8px rgba(0,0,0,0.35), inset 0 -2px 4px rgba(0,0,0,0.1)" }}>
+                      <div className="absolute inset-[5px] rounded-full bg-gradient-to-br from-amber-800 to-amber-950" />
                     </div>
+                    <div className="absolute -right-1 top-1/2 -translate-y-1/2 w-3 h-4 rounded-r-full border-[2px] border-stone-200/80 border-l-0 bg-stone-100/50" />
                   </div>
                 </div>
               )}
 
               {currentLevel >= 3 && (
-                <div className="absolute -top-[72px] right-[25%]" style={{ animation: "studio-fade-in 0.5s ease" }}>
+                <div className="absolute bottom-10 right-6 z-10" style={{ animation: "studio-pop 0.5s ease" }}>
                   <div className="relative">
-                    <div className="absolute -inset-4 rounded-full blur-xl" style={{ background: "radial-gradient(circle, rgba(253,224,71,0.25) 0%, rgba(253,224,71,0.08) 50%, transparent 70%)" }} />
-                    <div className="absolute -inset-2 rounded-full blur-md" style={{ background: "radial-gradient(circle, rgba(253,224,71,0.3) 0%, transparent 60%)" }} />
-                    <Lamp className="w-9 h-9 text-amber-700 relative drop-shadow-sm" strokeWidth={1.5} />
+                    <div className="absolute -inset-6 rounded-full blur-2xl" style={{ background: "radial-gradient(circle, rgba(253,224,71,0.35) 0%, rgba(253,224,71,0.1) 50%, transparent 70%)" }} />
+                    <div className="absolute -inset-3 rounded-full blur-lg" style={{ background: "radial-gradient(circle, rgba(255,241,170,0.4) 0%, transparent 60%)" }} />
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-200 to-amber-300 flex items-center justify-center relative" style={{ boxShadow: "0 0 20px rgba(253,224,71,0.4), 2px 3px 6px rgba(0,0,0,0.3)" }}>
+                      <Lamp className="w-5 h-5 text-amber-800" strokeWidth={1.5} />
+                    </div>
                   </div>
                 </div>
               )}
 
               {currentLevel >= 4 && (
-                <div className="absolute -top-14 left-[32%]" style={{ animation: "studio-fade-in 0.5s ease" }}>
-                  <div className="relative">
-                    <div className="absolute -bottom-1 left-1 w-7 h-1 bg-black/5 rounded-full blur-sm" />
-                    <Library className="w-8 h-8 text-stone-700 drop-shadow-sm" strokeWidth={1.5} />
+                <div className="absolute top-[52px] right-[55px] z-10" style={{ animation: "studio-pop 0.5s ease" }}>
+                  <div className="flex gap-[2px]">
+                    {[
+                      { color: "from-red-800 to-red-900", h: "h-[52px]" },
+                      { color: "from-blue-800 to-blue-950", h: "h-[48px]" },
+                      { color: "from-green-800 to-green-900", h: "h-[50px]" },
+                      { color: "from-amber-700 to-amber-800", h: "h-[46px]" },
+                    ].map((book, i) => (
+                      <div key={i} className={`w-[10px] ${book.h} rounded-[1px] bg-gradient-to-r ${book.color} self-end`} style={{ boxShadow: "1px 2px 4px rgba(0,0,0,0.25)" }} />
+                    ))}
                   </div>
                 </div>
               )}
 
               {currentLevel >= 5 && (
-                <div className="absolute -top-9 left-[54%]" style={{ animation: "studio-fade-in 0.5s ease" }}>
+                <div className="absolute bottom-12 left-8 z-10" style={{ animation: "studio-pop 0.5s ease" }}>
                   <div className="relative">
-                    <div className="absolute -bottom-1 left-0 w-5 h-1 bg-black/5 rounded-full blur-sm" />
-                    <PenTool className="w-6 h-6 text-indigo-800 drop-shadow-sm rotate-[-15deg]" strokeWidth={1.5} />
+                    <div className="w-[6px] h-[100px] rounded-full bg-gradient-to-b from-stone-800 via-stone-700 to-stone-600 rotate-[25deg] origin-bottom" style={{ boxShadow: "2px 2px 6px rgba(0,0,0,0.3)" }}>
+                      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[4px] border-r-[4px] border-b-[10px] border-l-transparent border-r-transparent border-b-stone-800" style={{ transform: "translateY(-8px)" }} />
+                      <div className="absolute top-[10px] left-1/2 -translate-x-1/2 w-[2px] h-3 bg-gradient-to-b from-yellow-600 to-yellow-700" />
+                    </div>
                   </div>
                 </div>
               )}
-            </div>
 
-            <div className="absolute bottom-1.5 left-0 right-0 flex justify-center gap-2">
-              <span className="text-[10px] font-medium text-stone-400/80 tracking-wide uppercase" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>Level {currentLevel} Studio</span>
-              <span className="text-[10px] text-stone-300">|</span>
-              <span className="text-[10px] text-stone-400/70">{Math.min(currentLevel, 6)}/6</span>
+              {currentLevel >= 6 && (
+                <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-10" style={{ animation: "studio-pop 0.6s ease" }}>
+                  <div className="bg-gradient-to-br from-amber-100 to-amber-50 border-2 border-amber-600/40 rounded-sm px-5 py-2.5 relative" style={{ boxShadow: "2px 3px 10px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.6)" }}>
+                    <div className="absolute inset-[3px] border border-amber-400/30 rounded-sm pointer-events-none" />
+                    <div className="flex items-center gap-2">
+                      <Award className="w-4 h-4 text-amber-700" strokeWidth={1.5} />
+                      <span className="text-[10px] font-bold text-amber-900 tracking-widest uppercase" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>Published Author</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="absolute top-2 right-2 z-20 flex items-center gap-1 bg-black/30 backdrop-blur-sm rounded-full px-2.5 py-1">
+                <span className="text-[10px] font-medium text-amber-200/90 tracking-wide uppercase" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>Lvl {currentLevel}</span>
+                <span className="text-[10px] text-amber-200/50">·</span>
+                <span className="text-[10px] text-amber-200/60">{Math.min(currentLevel, 6)}/6</span>
+              </div>
             </div>
           </div>
 
           <style>{`
-            @keyframes studio-fade-in {
-              from { opacity: 0; transform: translateY(6px); }
-              to { opacity: 1; transform: translateY(0); }
-            }
-            @keyframes steam {
-              0%, 100% { opacity: 0; transform: translateY(0) scaleY(1); }
-              50% { opacity: 1; transform: translateY(-3px) scaleY(1.3); }
+            @keyframes studio-pop {
+              from { opacity: 0; transform: scale(0.85); }
+              to { opacity: 1; transform: scale(1); }
             }
           `}</style>
 
