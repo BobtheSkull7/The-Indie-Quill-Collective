@@ -18,15 +18,15 @@ interface AuthorScorecardProps {
 }
 
 const BADGE_DEFINITIONS: { key: string; label: string; icon: string }[] = [
-  { key: "foundations_seal", label: "Foundations", icon: "📜" },
+  { key: "entry_of_record", label: "The Entry of Record", icon: "📜" },
+  { key: "structural_integrity", label: "Structural Integrity", icon: "🏗️" },
+  { key: "readers_mark", label: "The Reader's Mark", icon: "🖋️" },
+  { key: "foundations_mastery", label: "Foundations Mastery", icon: "🏛️" },
   { key: "voice_seal", label: "Voice", icon: "🎙️" },
-  { key: "ink_seal", label: "Ink", icon: "🖋️" },
+  { key: "ink_seal", label: "Ink", icon: "✒️" },
   { key: "specialist_seal", label: "Specialist", icon: "🧭" },
   { key: "5k_club", label: "5K Club", icon: "⭐" },
   { key: "10k_club", label: "10K Club", icon: "🌟" },
-  { key: "structure_master", label: "Structure Master", icon: "🏗️" },
-  { key: "the_finisher", label: "The Finisher", icon: "🏁" },
-  { key: "published_scribe", label: "The Published Scribe", icon: "👑" },
 ];
 
 function NibIcon({ className = "" }: { className?: string }) {

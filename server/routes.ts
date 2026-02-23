@@ -7410,7 +7410,7 @@ export async function registerDonationRoutes(app: Express) {
       const absorbedTomeIds = new Set((absorbedResult.rows as any[]).map(r => r.tome_id));
 
       const catalog01Tomes = await db.execute(sql`
-        SELECT t.id FROM tomes t
+        SELECT t.id, t.order_index FROM tomes t
         JOIN vibe_decks vd ON vd.id = t.deck_id
         JOIN curriculums c ON c.id = vd.curriculum_id
         WHERE c.title = 'Published Writer' AND vd.order_index = 1
@@ -7418,39 +7418,29 @@ export async function registerDonationRoutes(app: Express) {
       const catalog01TomeIds = (catalog01Tomes.rows as any[]).map(r => r.id);
       const catalog01Complete = catalog01TomeIds.length > 0 && catalog01TomeIds.every(id => absorbedTomeIds.has(id));
 
-      const lesson03Result = await db.execute(sql`
-        SELECT t.id FROM tomes t
-        JOIN vibe_decks vd ON vd.id = t.deck_id
-        JOIN curriculums c ON c.id = vd.curriculum_id
-        WHERE c.title = 'Published Writer' AND vd.order_index = 1 AND t.order_index = 3
-        LIMIT 1
-      `);
-      const lesson03Id = lesson03Result.rows.length > 0 ? (lesson03Result.rows[0] as any).id : null;
+      const lesson01Id = (catalog01Tomes.rows as any[]).find(r => r.order_index === 1)?.id;
+      const lesson01Complete = lesson01Id ? absorbedTomeIds.has(lesson01Id) : false;
+
+      const lesson03Id = (catalog01Tomes.rows as any[]).find(r => r.order_index === 3)?.id;
       const lesson03Complete = lesson03Id ? absorbedTomeIds.has(lesson03Id) : false;
 
-      const allTomesResult = await db.execute(sql`
-        SELECT t.id FROM tomes t
-        JOIN vibe_decks vd ON vd.id = t.deck_id
-        JOIN curriculums c ON c.id = vd.curriculum_id
-        WHERE c.title = 'Published Writer'
-      `);
-      const allTomeIds = (allTomesResult.rows as any[]).map(r => r.id);
-      const allComplete = allTomeIds.length > 0 && allTomeIds.every(id => absorbedTomeIds.has(id));
+      const lesson05Id = (catalog01Tomes.rows as any[]).find(r => r.order_index === 5)?.id;
+      const lesson05Complete = lesson05Id ? absorbedTomeIds.has(lesson05Id) : false;
 
       const newBadges = [...badges];
       const addBadge = (key: string, condition: boolean) => {
         if (condition && !newBadges.includes(key)) newBadges.push(key);
       };
 
-      addBadge("foundations_seal", catalog01Complete);
+      addBadge("entry_of_record", lesson01Complete);
+      addBadge("structural_integrity", lesson03Complete);
+      addBadge("readers_mark", lesson05Complete);
+      addBadge("foundations_mastery", catalog01Complete);
       addBadge("voice_seal", wordsSpoken >= 1000);
       addBadge("ink_seal", wordsWritten >= 1000);
       addBadge("specialist_seal", authorPath !== null);
       addBadge("5k_club", totalOutput >= 5000);
       addBadge("10k_club", totalOutput >= 10000);
-      addBadge("structure_master", lesson03Complete);
-      addBadge("the_finisher", allComplete);
-      addBadge("published_scribe", allComplete && authorPath !== null);
 
       if (newBadges.length !== badges.length) {
         await db.execute(sql`
