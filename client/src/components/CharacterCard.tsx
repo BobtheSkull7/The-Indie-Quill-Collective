@@ -231,60 +231,95 @@ export default function CharacterCard({ userId = 1, className = "", apiEndpoint 
           </h3>
           
           {/* Writer's Studio */}
-          <div className="mb-5 rounded-xl border border-amber-200/60 bg-[#FDFBF7] p-4 relative overflow-hidden" style={{ height: 220 }}>
+          <div className="mb-5 rounded-xl border border-stone-300/50 bg-gradient-to-b from-[#F5F0E8] to-[#EDE6D8] p-4 relative overflow-hidden shadow-inner" style={{ height: 240 }}>
+            <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")" }} />
+
             {currentLevel >= 6 && (
-              <div className="absolute top-3 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-white border border-amber-300 rounded-lg px-3 py-1.5 shadow-sm" style={{ animation: "studio-fade-in 0.6s ease" }}>
-                <Award className="w-5 h-5 text-amber-600" />
-                <span className="text-[11px] font-semibold text-amber-800">Published Author</span>
+              <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10" style={{ animation: "studio-fade-in 0.6s ease" }}>
+                <div className="bg-gradient-to-b from-amber-50 to-white border-2 border-amber-700/40 rounded px-4 py-2 shadow-md" style={{ boxShadow: "0 2px 8px rgba(120,80,20,0.15), inset 0 1px 0 rgba(255,255,255,0.8)" }}>
+                  <div className="flex items-center gap-2">
+                    <Award className="w-4 h-4 text-amber-700" />
+                    <span className="text-[11px] font-bold text-amber-900 tracking-wide uppercase" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>Published Author</span>
+                  </div>
+                </div>
+                <div className="w-px h-3 bg-amber-700/30 mx-auto" />
               </div>
             )}
 
-            <div className="absolute bottom-12 left-1/2 -translate-x-1/2 w-[85%]">
-              <div className="relative h-3 bg-gradient-to-b from-amber-800 to-amber-900 rounded-t-sm" />
-              <div className="relative flex justify-between px-2">
-                <div className="w-2 h-10 bg-amber-800 rounded-b-sm" />
-                <div className="w-2 h-10 bg-amber-800 rounded-b-sm" />
+            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 w-[88%]">
+              <div className="relative" style={{ perspective: "400px" }}>
+                <div className="h-5 rounded-t-sm relative" style={{ background: "linear-gradient(180deg, #6B4423 0%, #5C3A1E 30%, #4A2E15 100%)", boxShadow: "0 -1px 3px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.08)" }}>
+                  <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-600/30 to-transparent" />
+                  <div className="absolute inset-x-2 bottom-0 h-px bg-black/10" />
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 w-1 h-1 rounded-full bg-amber-700/40" />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 w-1 h-1 rounded-full bg-amber-700/40" />
+                </div>
+                <div className="h-2 relative" style={{ background: "linear-gradient(180deg, #4A2E15 0%, #3D2510 100%)", boxShadow: "0 4px 12px rgba(0,0,0,0.25)" }}>
+                  <div className="absolute inset-x-4 bottom-0 h-px bg-black/5" />
+                </div>
+              </div>
+              <div className="flex justify-between px-3">
+                <div className="w-3 h-12 rounded-b-sm" style={{ background: "linear-gradient(90deg, #5C3A1E 0%, #4A2E15 50%, #3D2510 100%)", boxShadow: "2px 2px 4px rgba(0,0,0,0.15)" }} />
+                <div className="w-3 h-12 rounded-b-sm" style={{ background: "linear-gradient(90deg, #3D2510 0%, #4A2E15 50%, #5C3A1E 100%)", boxShadow: "-2px 2px 4px rgba(0,0,0,0.15)" }} />
               </div>
 
               {currentLevel >= 1 && (
-                <div className="absolute -top-10 left-4 flex items-end gap-1" style={{ animation: "studio-fade-in 0.4s ease" }}>
-                  <Book className="w-7 h-7 text-amber-700" />
-                  <Pencil className="w-4 h-4 text-gray-500 -mb-0.5 -ml-1" />
+                <div className="absolute -top-12 left-3" style={{ animation: "studio-fade-in 0.4s ease" }}>
+                  <div className="relative">
+                    <div className="absolute -bottom-1 left-1 w-8 h-1 bg-black/5 rounded-full blur-sm" />
+                    <Book className="w-8 h-8 text-amber-800 drop-shadow-sm" strokeWidth={1.5} />
+                    <Pencil className="w-4 h-4 text-stone-500 absolute -right-2 bottom-0 rotate-[30deg] drop-shadow-sm" strokeWidth={1.5} />
+                  </div>
                 </div>
               )}
 
               {currentLevel >= 2 && (
-                <div className="absolute -top-9 right-5" style={{ animation: "studio-fade-in 0.5s ease" }}>
-                  <Coffee className="w-6 h-6 text-amber-900/70" />
+                <div className="absolute -top-10 right-4" style={{ animation: "studio-fade-in 0.5s ease" }}>
+                  <div className="relative">
+                    <div className="absolute -bottom-1 left-1 w-6 h-1 bg-black/5 rounded-full blur-sm" />
+                    <Coffee className="w-7 h-7 text-stone-700 drop-shadow-sm" strokeWidth={1.5} />
+                    <div className="absolute -top-2 left-1/2 -translate-x-1/2 flex gap-px">
+                      <div className="w-px h-2 bg-stone-400/40 rounded-full" style={{ animation: "steam 2s ease-in-out infinite" }} />
+                      <div className="w-px h-2.5 bg-stone-400/30 rounded-full" style={{ animation: "steam 2s ease-in-out 0.5s infinite" }} />
+                      <div className="w-px h-2 bg-stone-400/40 rounded-full" style={{ animation: "steam 2s ease-in-out 1s infinite" }} />
+                    </div>
+                  </div>
                 </div>
               )}
 
               {currentLevel >= 3 && (
-                <div className="absolute -top-16 right-[30%]" style={{ animation: "studio-fade-in 0.5s ease" }}>
+                <div className="absolute -top-[72px] right-[25%]" style={{ animation: "studio-fade-in 0.5s ease" }}>
                   <div className="relative">
-                    <div className="absolute -inset-3 bg-yellow-300/20 rounded-full blur-md" />
-                    <Lamp className="w-8 h-8 text-amber-600 relative" />
+                    <div className="absolute -inset-4 rounded-full blur-xl" style={{ background: "radial-gradient(circle, rgba(253,224,71,0.25) 0%, rgba(253,224,71,0.08) 50%, transparent 70%)" }} />
+                    <div className="absolute -inset-2 rounded-full blur-md" style={{ background: "radial-gradient(circle, rgba(253,224,71,0.3) 0%, transparent 60%)" }} />
+                    <Lamp className="w-9 h-9 text-amber-700 relative drop-shadow-sm" strokeWidth={1.5} />
                   </div>
                 </div>
               )}
 
               {currentLevel >= 4 && (
-                <div className="absolute -top-12 left-[35%]" style={{ animation: "studio-fade-in 0.5s ease" }}>
-                  <Library className="w-7 h-7 text-stone-600" />
+                <div className="absolute -top-14 left-[32%]" style={{ animation: "studio-fade-in 0.5s ease" }}>
+                  <div className="relative">
+                    <div className="absolute -bottom-1 left-1 w-7 h-1 bg-black/5 rounded-full blur-sm" />
+                    <Library className="w-8 h-8 text-stone-700 drop-shadow-sm" strokeWidth={1.5} />
+                  </div>
                 </div>
               )}
 
               {currentLevel >= 5 && (
-                <div className="absolute -top-8 left-[55%]" style={{ animation: "studio-fade-in 0.5s ease" }}>
-                  <PenTool className="w-5 h-5 text-indigo-700" />
+                <div className="absolute -top-9 left-[54%]" style={{ animation: "studio-fade-in 0.5s ease" }}>
+                  <div className="relative">
+                    <div className="absolute -bottom-1 left-0 w-5 h-1 bg-black/5 rounded-full blur-sm" />
+                    <PenTool className="w-6 h-6 text-indigo-800 drop-shadow-sm rotate-[-15deg]" strokeWidth={1.5} />
+                  </div>
                 </div>
               )}
             </div>
 
-            <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-3 text-[10px] text-stone-400">
-              <span>Level {currentLevel} Studio</span>
-              <span>·</span>
-              <span>{Math.min(currentLevel, 6)} / 6 items</span>
+            <div className="absolute bottom-1.5 left-0 right-0 flex justify-center gap-2">
+              <span className="text-[10px] font-medium text-stone-400/80 tracking-wide uppercase" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>Level {currentLevel} Studio</span>
+              <span className="text-[10px] text-stone-300">|</span>
+              <span className="text-[10px] text-stone-400/70">{Math.min(currentLevel, 6)}/6</span>
             </div>
           </div>
 
@@ -292,6 +327,10 @@ export default function CharacterCard({ userId = 1, className = "", apiEndpoint 
             @keyframes studio-fade-in {
               from { opacity: 0; transform: translateY(6px); }
               to { opacity: 1; transform: translateY(0); }
+            }
+            @keyframes steam {
+              0%, 100% { opacity: 0; transform: translateY(0) scaleY(1); }
+              50% { opacity: 1; transform: translateY(-3px) scaleY(1.3); }
             }
           `}</style>
 
