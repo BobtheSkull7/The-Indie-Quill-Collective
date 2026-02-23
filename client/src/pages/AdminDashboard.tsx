@@ -1044,8 +1044,8 @@ export default function AdminDashboard() {
                               onClick={() => {
                                 setEditingUser(u);
                                 // Default to persona type from application if user is applicant
-                                const suggestedRole = (u.role === "applicant" && app?.personaType) 
-                                  ? app.personaType 
+                                const suggestedRole = (u.role === "applicant" && (app as any)?.personaType) 
+                                  ? (app as any).personaType 
                                   : u.role;
                                 setNewRole(suggestedRole);
                               }}
@@ -1083,7 +1083,7 @@ export default function AdminDashboard() {
                                 <FileText className="w-4 h-4" />
                               </button>
                             )}
-                            {app && !app.cohortId && (
+                            {app && !(app as any).cohortId && (
                               <button
                                 onClick={() => {
                                   setAssignCohortApp(app);
@@ -1787,7 +1787,7 @@ export default function AdminDashboard() {
                         <option value="">Auto-assign to first available</option>
                         {availableCohorts.map((cohort) => (
                           <option key={cohort.id} value={cohort.id}>
-                            {cohort.label} ({cohort.currentCount}/{cohort.capacity} slots){cohort.status === "closed" ? " - CLOSED" : ""}
+                            {cohort.label} ({cohort.currentCount}/{cohort.capacity} slots){(cohort as any).status === "closed" ? " - CLOSED" : ""}
                           </option>
                         ))}
                       </select>

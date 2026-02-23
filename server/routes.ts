@@ -78,8 +78,8 @@ async function generateAndStorePDF(contractId: number): Promise<Buffer | null> {
         },
         application: {
           pseudonym: application.pseudonym,
-          dateOfBirth: application.dateOfBirth,
-          isMinor: application.isMinor,
+          dateOfBirth: application.dateOfBirth ?? '',
+          isMinor: application.isMinor ?? false,
           guardianName: application.guardianName,
           guardianEmail: application.guardianEmail,
           guardianRelationship: application.guardianRelationship,
@@ -128,9 +128,11 @@ const contractSigningRateLimiter = rateLimit({
 
 declare module "express-session" {
   interface SessionData {
-    userId?: number;
+    userId?: string;
     userRole?: string;
     secondaryRole?: string | null;
+    googleOAuthRedirectUri?: string;
+    role?: string;
   }
 }
 
@@ -630,8 +632,8 @@ export async function registerRoutes(app: Express) {
         }
       }
 
-      const applicationData = {
-        userId: req.session.userId,
+      const applicationData: any = {
+        userId: req.session.userId!,
         status: "pending",
         pseudonym: pseudonym?.trim() || null,
         personaType,
@@ -999,7 +1001,7 @@ export async function registerRoutes(app: Express) {
           application.userId,
           applicantUser.lastName,
           applicantUser.firstName,
-          application.isMinor
+          application.isMinor ?? false
         );
 
         const [updated] = await db.update(applications)
@@ -1023,7 +1025,7 @@ export async function registerRoutes(app: Express) {
             userId: updated.userId,
             contractType: "publishing_agreement",
             contractContent: generateContract(updated),
-            requiresGuardian: updated.isMinor,
+            requiresGuardian: updated.isMinor ?? false,
             status: "pending_signature",
           });
         }
@@ -1356,8 +1358,8 @@ export async function registerRoutes(app: Express) {
               },
               application: {
                 pseudonym: application.pseudonym,
-                dateOfBirth: application.dateOfBirth,
-                isMinor: application.isMinor,
+                dateOfBirth: application.dateOfBirth ?? '',
+                isMinor: application.isMinor ?? false,
                 guardianName: application.guardianName,
                 guardianEmail: application.guardianEmail,
                 guardianRelationship: application.guardianRelationship,
@@ -1498,7 +1500,7 @@ export async function registerRoutes(app: Express) {
           .where(eq(applications.id, contract.applicationId));
 
         await db.update(users)
-          .set({ role: "student", updatedAt: new Date() })
+          .set({ role: "student" })
           .where(eq(users.id, contract.userId));
 
         if (req.session.userId === contract.userId) {
@@ -2099,7 +2101,7 @@ export async function registerRoutes(app: Express) {
                 app.userId,
                 user.lastName,
                 user.firstName,
-                app.isMinor
+                app.isMinor ?? false
               );
               console.log(`Generated internal ID for app ${app.id}: ${acceptanceResult.internalId}`);
               results.idsGenerated++;
@@ -2114,7 +2116,7 @@ export async function registerRoutes(app: Express) {
               const internalId = generateInternalId(
                 user.lastName,
                 user.firstName,
-                app.isMinor,
+                app.isMinor ?? false,
                 app.dateApproved || new Date()
               );
               await db.update(applications)
@@ -2582,10 +2584,10 @@ export async function registerRoutes(app: Express) {
 
       if (hasMinorApp) {
         await logMinorDataAccess(
-          req.session.userId,
+          req.session.userId!,
           "update",
           "users",
-          Number(userId),
+          userId,
           getClientIp(req),
           {
             actionType: "role_change",
@@ -2598,7 +2600,7 @@ export async function registerRoutes(app: Express) {
       }
 
       try {
-        await sendUserRoleUpdateToLLC(userId, existingUser.email, role);
+        await sendUserRoleUpdateToLLC(parseInt(userId) || 0, existingUser.email, role);
       } catch (syncError) {
         console.error("Failed to sync role update to LLC:", syncError);
       }
@@ -2708,9 +2710,9 @@ export async function registerRoutes(app: Express) {
       // Log COPPA-related deletion if minor data was involved
       if (hasMinorApp) {
         await logMinorDataAccess(
-          req.session.userId,
+          req.session.userId!,
           "delete",
-          "user",
+          "users",
           targetUserId,
           getClientIp(req),
           {
@@ -2863,7 +2865,7 @@ export async function registerRoutes(app: Express) {
         WHERE label LIKE ${`%${cohortYear}%`} OR created_at >= ${new Date(`${cohortYear}-01-01`).toISOString()}
         ORDER BY id DESC LIMIT 1
       `);
-      const activeCohort = cohortsResult.rows?.[0];
+      const activeCohort = cohortsResult.rows?.[0] as any;
 
       const tabeCountsResult = await db.execute(sql`
         SELECT 
@@ -2873,7 +2875,7 @@ export async function registerRoutes(app: Express) {
         FROM tabe_assessments
         WHERE test_date >= ${new Date(`${cohortYear}-01-01`).toISOString()}
       `);
-      const tabeStats = tabeCountsResult.rows?.[0] || {};
+      const tabeStats = (tabeCountsResult.rows?.[0] || {}) as any;
 
       const eflGainsResult = await db.execute(sql`
         WITH student_scores AS (
@@ -2895,7 +2897,7 @@ export async function registerRoutes(app: Express) {
           COUNT(*) FILTER (WHERE current_efl != baseline_efl) as students_with_efl_gain
         FROM student_scores
       `);
-      const eflStats = eflGainsResult.rows?.[0] || {};
+      const eflStats = (eflGainsResult.rows?.[0] || {}) as any;
       const studentsWithEflGain = parseInt(eflStats.students_with_efl_gain) || 0;
 
       const pactTimeResult = await db.execute(sql`
@@ -2907,7 +2909,7 @@ export async function registerRoutes(app: Express) {
         FROM pact_sessions
         WHERE start_time >= ${new Date(`${cohortYear}-01-01`).toISOString()}
       `);
-      const pactStats = pactTimeResult.rows?.[0] || {};
+      const pactStats = (pactTimeResult.rows?.[0] || {}) as any;
 
       const familyUnitsResult = await db.execute(sql`
         SELECT 
@@ -2927,7 +2929,7 @@ export async function registerRoutes(app: Express) {
         FROM student_curriculum_progress
         WHERE updated_at >= ${new Date(`${cohortYear}-01-01`).toISOString()}
       `);
-      const curriculumStats = curriculumProgressResult.rows?.[0] || {};
+      const curriculumStats = (curriculumProgressResult.rows?.[0] || {}) as any;
 
       const impactReport = {
         reportTitle: `DGLF Family Literacy Impact Report - ${cohortYear}`,
@@ -3725,7 +3727,7 @@ export async function registerRoutes(app: Express) {
       return res.json({
         recentActivity: statusLogs.slice(0, 20).map(log => ({
           action: log.action,
-          resource: log.resourceType,
+          resource: log.entityType,
           timestamp: log.createdAt,
         })),
         monthlyTrends: Object.entries(monthlyStats).map(([month, stats]) => ({
@@ -3815,9 +3817,9 @@ export async function registerRoutes(app: Express) {
       const auditSample = recentAuditLogs.map(log => ({
         id: log.id,
         action: log.action,
-        resourceType: log.resourceType,
+        resourceType: log.entityType,
         userId: log.userId,
-        ipAddress: log.ipAddress,
+        ipAddress: null as string | null,
         createdAt: log.createdAt.toISOString(),
       }));
 
@@ -3895,14 +3897,14 @@ export async function registerRoutes(app: Express) {
       );
 
       // Log audit event
-      await logAuditEvent(
-        req.session.userId,
-        "compliance_export",
-        "audit_logs",
-        0,
-        getClientIp(req),
-        { exportType: "compliance_report", recordCount: minorRecords.length }
-      );
+      await logAuditEvent({
+        userId: req.session.userId || '',
+        action: "compliance_export",
+        targetTable: "audit_logs",
+        targetId: 0,
+        ipAddress: getClientIp(req),
+        details: { exportType: "compliance_report", recordCount: minorRecords.length }
+      });
 
       const filename = `compliance-audit-${new Date().toISOString().split('T')[0]}.pdf`;
       res.setHeader("Content-Type", "application/pdf");
@@ -3952,7 +3954,7 @@ export async function registerRoutes(app: Express) {
               id: app.id,
               firstName: app.firstName,
               lastName: app.lastName,
-              isMinor: app.isMinor,
+              isMinor: app.isMinor ?? false,
               pseudonym: app.pseudonym,
             });
             return {
@@ -3960,7 +3962,7 @@ export async function registerRoutes(app: Express) {
               applicationId: app.id,
               displayName: sanitized.displayName,
               avatar: sanitized.avatar,
-              isMinor: app.isMinor,
+              isMinor: app.isMinor ?? false,
               status: app.status,
               joinedAt: app.dateApproved?.toISOString() || "",
             };
@@ -4418,14 +4420,14 @@ export function registerGrantRoutes(app: Express) {
 
       console.log(`[Foundations] Created foundation id=${newFoundation.id} name="${name}" by user=${req.session.userId}`);
 
-      await logAuditEvent(
-        req.session.userId,
-        "create_foundation",
-        "foundations",
-        newFoundation.id.toString(),
-        `Created foundation: ${name}`,
-        getClientIp(req),
-      );
+      await logAuditEvent({
+        userId: req.session.userId || '',
+        action: "create" as any,
+        targetTable: "applications" as any,
+        targetId: newFoundation.id.toString(),
+        ipAddress: getClientIp(req),
+        details: { description: `Created foundation: ${name}` }
+      });
 
       return res.status(201).json(newFoundation);
     } catch (error) {
@@ -4540,14 +4542,14 @@ export function registerGrantRoutes(app: Express) {
 
       console.log(`[Foundations] Deleted foundation id=${foundationId} name="${deleted.name}" by user=${req.session.userId}`);
 
-      await logAuditEvent(
-        req.session.userId,
-        "delete_foundation",
-        "foundations",
-        foundationId.toString(),
-        `Deleted foundation: ${deleted.name}`,
-        getClientIp(req),
-      );
+      await logAuditEvent({
+        userId: req.session.userId || '',
+        action: "delete" as any,
+        targetTable: "applications" as any,
+        targetId: foundationId.toString(),
+        ipAddress: getClientIp(req),
+        details: { description: `Deleted foundation: ${deleted.name}` }
+      });
 
       return res.json({ message: "Foundation deleted successfully" });
     } catch (error) {
@@ -4593,14 +4595,14 @@ export function registerGrantRoutes(app: Express) {
         .where(eq(foundationGrants.id, grantId))
         .returning();
 
-      await logAuditEvent(
-        req.session.userId,
-        "update_grant",
-        "foundation_grants",
-        grantId.toString(),
-        `Updated grant: amount=$${(amount / 100).toFixed(2)}, target=${targetAuthorCount}`,
-        getClientIp(req),
-      );
+      await logAuditEvent({
+        userId: req.session.userId || '',
+        action: "update" as any,
+        targetTable: "applications" as any,
+        targetId: grantId.toString(),
+        ipAddress: getClientIp(req),
+        details: { description: `Updated grant: amount=$${(amount / 100).toFixed(2)}, target=${targetAuthorCount}` }
+      });
 
       return res.json(updated);
     } catch (error) {
@@ -4637,14 +4639,14 @@ export function registerGrantRoutes(app: Express) {
 
       await db.delete(foundationGrants).where(eq(foundationGrants.id, grantId));
 
-      await logAuditEvent(
-        req.session.userId,
-        "delete_grant",
-        "foundation_grants",
-        grantId.toString(),
-        `Deleted grant of $${(existing.amount / 100).toFixed(2)} from foundation ${existing.foundationId}`,
-        getClientIp(req),
-      );
+      await logAuditEvent({
+        userId: req.session.userId || '',
+        action: "delete" as any,
+        targetTable: "applications" as any,
+        targetId: grantId.toString(),
+        ipAddress: getClientIp(req),
+        details: { description: `Deleted grant of $${(existing.amount / 100).toFixed(2)} from foundation ${existing.foundationId}` }
+      });
 
       return res.json({ message: "Grant deleted successfully" });
     } catch (error) {
@@ -4725,14 +4727,14 @@ export function registerGrantRoutes(app: Express) {
         notes,
       }).returning();
 
-      await logAuditEvent(
-        req.session.userId,
-        "log_solicitation",
-        "solicitation_logs",
-        newLog.id.toString(),
-        `Logged contact with foundation ${foundationId}: ${contactMethod}`,
-        getClientIp(req),
-      );
+      await logAuditEvent({
+        userId: req.session.userId || '',
+        action: "create" as any,
+        targetTable: "applications" as any,
+        targetId: newLog.id.toString(),
+        ipAddress: getClientIp(req),
+        details: { description: `Logged contact with foundation ${foundationId}: ${contactMethod}` }
+      });
 
       return res.status(201).json(newLog);
     } catch (error) {
@@ -4871,14 +4873,14 @@ export function registerGrantRoutes(app: Express) {
           )
         );
 
-      await logAuditEvent(
-        req.session.userId,
-        "record_grant",
-        "foundation_grants",
-        newGrant.id.toString(),
-        `Recorded grant of $${(amount / 100).toFixed(2)} from foundation ${foundationId} for ${targetAuthorCount} authors`,
-        getClientIp(req),
-      );
+      await logAuditEvent({
+        userId: req.session.userId || '',
+        action: "create" as any,
+        targetTable: "applications" as any,
+        targetId: newGrant.id.toString(),
+        ipAddress: getClientIp(req),
+        details: { description: `Recorded grant of $${(amount / 100).toFixed(2)} from foundation ${foundationId} for ${targetAuthorCount} authors` }
+      });
 
       return res.status(201).json(newGrant);
     } catch (error) {
@@ -4923,14 +4925,14 @@ export function registerGrantRoutes(app: Express) {
         .where(eq(foundationGrants.id, grantId))
         .returning();
 
-      await logAuditEvent(
-        req.session.userId,
-        "lock_grant_authors",
-        "foundation_grants",
-        grantId.toString(),
-        `Locked authors to grant for donor impact reporting`,
-        getClientIp(req),
-      );
+      await logAuditEvent({
+        userId: req.session.userId || '',
+        action: "update" as any,
+        targetTable: "applications" as any,
+        targetId: grantId.toString(),
+        ipAddress: getClientIp(req),
+        details: { description: `Locked authors to grant for donor impact reporting` }
+      });
 
       return res.json(updated);
     } catch (error) {
@@ -5156,14 +5158,14 @@ export function registerGrantRoutes(app: Express) {
         }
       }
 
-      await logAuditEvent(
-        req.session.userId,
-        "create_grant_program",
-        "grant_programs",
-        newProgram.id.toString(),
-        `Created grant program: ${programName}`,
-        getClientIp(req),
-      );
+      await logAuditEvent({
+        userId: req.session.userId || '',
+        action: "create" as any,
+        targetTable: "applications" as any,
+        targetId: newProgram.id.toString(),
+        ipAddress: getClientIp(req),
+        details: { description: `Created grant program: ${programName}` }
+      });
 
       return res.status(201).json(newProgram);
     } catch (error) {
@@ -5196,14 +5198,14 @@ export function registerGrantRoutes(app: Express) {
         .where(eq(grantPrograms.id, programId))
         .returning();
 
-      await logAuditEvent(
-        req.session.userId,
-        "update_grant_program_status",
-        "grant_programs",
-        programId.toString(),
-        `Updated program status to: ${applicationStatus}`,
-        getClientIp(req),
-      );
+      await logAuditEvent({
+        userId: req.session.userId || '',
+        action: "status_change" as any,
+        targetTable: "applications" as any,
+        targetId: programId.toString(),
+        ipAddress: getClientIp(req),
+        details: { description: `Updated program status to: ${applicationStatus}` }
+      });
 
       return res.json(updated);
     } catch (error) {
@@ -5382,14 +5384,14 @@ export function registerGrantRoutes(app: Express) {
         createdBy: req.session.userId,
       }).returning();
 
-      await logAuditEvent(
-        req.session.userId,
-        "add_credential",
-        "organization_credentials",
-        newCredential.id.toString(),
-        `Added ${credentialType} credential`,
-        getClientIp(req),
-      );
+      await logAuditEvent({
+        userId: req.session.userId || '',
+        action: "create" as any,
+        targetTable: "applications" as any,
+        targetId: newCredential.id.toString(),
+        ipAddress: getClientIp(req),
+        details: { description: `Added ${credentialType} credential` }
+      });
 
       return res.status(201).json({
         ...newCredential,
@@ -5549,14 +5551,14 @@ export function registerGrantRoutes(app: Express) {
         recordedBy: req.session.userId,
       }).returning();
 
-      await logAuditEvent(
-        req.session.userId,
-        "ledger_entry_created",
-        "pilot_ledger",
-        newEntry.id,
-        getClientIp(req),
-        { type, amount, description }
-      );
+      await logAuditEvent({
+        userId: req.session.userId || '',
+        action: "create" as any,
+        targetTable: "applications" as any,
+        targetId: newEntry.id,
+        ipAddress: getClientIp(req),
+        details: { type, amount, description }
+      });
 
       return res.json({ message: "Transaction recorded", entry: newEntry });
     } catch (error) {
@@ -6454,7 +6456,7 @@ export async function registerDonationRoutes(app: Express) {
           CASE WHEN cs.id IS NOT NULL THEN true ELSE false END as submitted
         FROM manuscripts m
         LEFT JOIN card_submissions cs ON cs.card_id = m.card_id AND cs.user_id = m.user_id
-        WHERE m.user_id = ${req.session.userId} AND m.card_id = ${parseInt(cardId)}
+        WHERE m.user_id = ${req.session.userId} AND m.card_id = ${cardId}
         LIMIT 1
       `);
       if (result.rows.length === 0) {

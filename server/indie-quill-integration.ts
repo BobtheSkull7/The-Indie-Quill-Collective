@@ -327,10 +327,10 @@ export async function migrateAuthorToIndieQuill(publishingUpdateId: number): Pro
       email: user.email,
       password: user.password,
       pseudonym,
-      cohortId: application.cohortId,
+      cohortId: application.cohortId ?? null,
       cohortLabel,
       minorAdultDesignation: application.isMinor ? "M" : "A",
-      expressionTypes: application.expressionTypes,
+      expressionTypes: application.expressionTypes ?? "",
       contractSignedAt: contract?.authorSignedAt || new Date(),
       role: "npo_author",
     };
@@ -360,8 +360,8 @@ export async function migrateAuthorToIndieQuill(publishingUpdateId: number): Pro
           user.email,
           user.firstName,
           pseudonym,
-          application.isMinor,
-          user.id,
+          application.isMinor ?? false,
+          user.id as any,
           application.id
         );
       } catch (emailError) {

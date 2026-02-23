@@ -111,7 +111,7 @@ function App() {
           <Route path="/admin/training" component={Training} />
           <Route path="/admin/publishing" component={Publishing} />
           <Route path="/admin/outcomes" component={Outcomes} />
-          <Route path="/admin/game-test" component={GameTest} />
+          <Route path="/admin/game-test">{() => <GameTest />}</Route>
           
           <Route path="/admin/cohorts">
             <Redirect to="/admin/intake" />

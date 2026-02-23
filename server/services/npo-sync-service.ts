@@ -79,8 +79,8 @@ export async function buildNPOAuthorPayload(applicationId: number): Promise<NPOA
     dateApproved: application.dateApproved?.toISOString() || new Date().toISOString(),
     dateMigrated: new Date().toISOString(),
     cohortLabel,
-    cohortId: application.cohortId,
-    expressionTypes: application.expressionTypes,
+    cohortId: application.cohortId ?? null,
+    expressionTypes: application.expressionTypes ?? "",
   };
 
   return payload;
@@ -488,8 +488,8 @@ export async function processSyncJob(jobId: number): Promise<{ success: boolean;
             user.email,
             user.firstName,
             pseudonym,
-            application.isMinor,
-            user.id,
+            application.isMinor ?? false,
+            user.id as any,
             application.id
           );
           console.log(`Active Author email sent to ${user.email} after successful sync`);

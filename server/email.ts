@@ -19,7 +19,7 @@ export async function getAdminEmail(): Promise<string> {
     const val = (result.rows[0] as any)?.value;
     cachedAdminEmail = val || DEFAULT_ADMIN_EMAIL;
     cacheTimestamp = now;
-    return cachedAdminEmail;
+    return cachedAdminEmail!;
   } catch {
     return DEFAULT_ADMIN_EMAIL;
   }
@@ -91,7 +91,7 @@ async function logEmail(
   recipientEmail: string,
   recipientName: string | null,
   status: 'sent' | 'failed',
-  userId?: number,
+  userId?: string | number,
   applicationId?: number,
   errorMessage?: string
 ) {
@@ -100,7 +100,7 @@ async function logEmail(
       emailType,
       recipientEmail,
       recipientName,
-      userId: userId || null,
+      userId: userId ? String(userId) : null,
       applicationId: applicationId || null,
       status,
       errorMessage: errorMessage || null,
@@ -459,7 +459,7 @@ export async function sendActiveAuthorEmail(
   firstName: string, 
   pseudonym: string, 
   isMinor: boolean,
-  userId?: number,
+  userId?: string | number,
   applicationId?: number
 ) {
   try {

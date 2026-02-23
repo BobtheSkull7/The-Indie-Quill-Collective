@@ -8,16 +8,18 @@ export type AuditAction =
   | "delete"
   | "sign"
   | "status_change"
-  | "export";
+  | "export"
+  | "compliance_export";
 
 export type AuditTargetTable = 
   | "applications"
   | "contracts"
   | "users"
-  | "publishing_updates";
+  | "publishing_updates"
+  | "audit_logs";
 
 interface AuditLogParams {
-  userId: number;
+  userId: string;
   action: AuditAction;
   targetTable: AuditTargetTable;
   targetId: string | number;
@@ -59,7 +61,7 @@ export async function logAuditEvent({
 }
 
 export async function logMinorDataAccess(
-  userId: number,
+  userId: string,
   action: AuditAction,
   targetTable: AuditTargetTable,
   targetId: string | number,
