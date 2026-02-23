@@ -380,6 +380,26 @@ async function bootstrapFast() {
       console.warn(`[Migration]   ~ constraint ${c.constraint} skipped: ${e.message}`);
     }
   }
+  const serialTables = ['manuscripts', 'card_submissions', 'tome_absorptions', 'vibescribe_transcripts', 'master_manuscripts', 'game_characters'];
+  for (const tbl of serialTables) {
+    try {
+      const colCheck = await dbPool.query(
+        `SELECT column_default FROM information_schema.columns WHERE table_name = $1 AND column_name = 'id'`, [tbl]
+      );
+      if (colCheck.rows.length > 0 && !colCheck.rows[0].column_default) {
+        const seqName = `${tbl}_id_seq`;
+        await dbPool.query(`CREATE SEQUENCE IF NOT EXISTS ${seqName}`);
+        const maxId = await dbPool.query(`SELECT COALESCE(MAX(id), 0) + 1 as next_val FROM ${tbl}`);
+        await dbPool.query(`SELECT setval('${seqName}', ${maxId.rows[0].next_val}, false)`);
+        await dbPool.query(`ALTER TABLE ${tbl} ALTER COLUMN id SET DEFAULT nextval('${seqName}')`);
+        await dbPool.query(`ALTER SEQUENCE ${seqName} OWNED BY ${tbl}.id`);
+        console.log(`[Migration]   + fixed serial default on ${tbl}.id`);
+      }
+    } catch (e: any) {
+      console.warn(`[Migration]   ~ serial check for ${tbl}.id skipped: ${e.message}`);
+    }
+  }
+
   await dbPool.query(`
     CREATE TABLE IF NOT EXISTS vibescribe_transcripts (
       id SERIAL PRIMARY KEY,
