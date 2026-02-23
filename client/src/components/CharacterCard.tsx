@@ -32,6 +32,7 @@ interface CharacterCardProps {
   userId?: number;
   className?: string;
   apiEndpoint?: string;
+  refreshKey?: number;
 }
 
 interface SlotConfig {
@@ -56,7 +57,7 @@ const PAPER_DOLL_SLOTS: SlotConfig[] = [
   { key: "feet", label: "Sneakers", icon: "👟", unlockLevel: 6 },
 ];
 
-export default function CharacterCard({ userId = 1, className = "", apiEndpoint = "/api/student/game-character" }: CharacterCardProps) {
+export default function CharacterCard({ userId = 1, className = "", apiEndpoint = "/api/student/game-character", refreshKey = 0 }: CharacterCardProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [character, setCharacter] = useState<CharacterData | null>(null);
@@ -111,7 +112,7 @@ export default function CharacterCard({ userId = 1, className = "", apiEndpoint 
 
   useEffect(() => {
     fetchCharacter();
-  }, [userId]);
+  }, [userId, refreshKey]);
 
   useEffect(() => {
     if (!dingData) return;

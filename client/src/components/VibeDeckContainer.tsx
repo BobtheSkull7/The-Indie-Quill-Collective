@@ -37,7 +37,7 @@ interface CurriculumData {
   description: string | null;
 }
 
-export default function VibeDeckContainer() {
+export default function VibeDeckContainer({ onXpChange }: { onXpChange?: () => void } = {}) {
   const [curriculums, setCurriculums] = useState<CurriculumData[]>([]);
   const [decks, setDecks] = useState<DeckData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -110,6 +110,7 @@ export default function VibeDeckContainer() {
             t.id === tomeId ? { ...t, absorbed: true } : t
           ),
         })));
+        onXpChange?.();
         setTimeout(() => {
           setTomeModal(null);
         }, 800);
@@ -543,6 +544,7 @@ export default function VibeDeckContainer() {
           onSubmitted={(cardId) => {
             setCompletedCards(prev => new Set([...prev, cardId]));
             setActiveManuscript(null);
+            onXpChange?.();
             if (!onboardingComplete) {
               loadVibeDecks();
             }

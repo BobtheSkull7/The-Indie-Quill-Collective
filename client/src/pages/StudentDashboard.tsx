@@ -65,6 +65,8 @@ export default function StudentDashboard() {
     currentLevel: 1,
   });
 
+  const [characterRefreshKey, setCharacterRefreshKey] = useState(0);
+
   useActivityTracker();
 
   useEffect(() => {
@@ -226,7 +228,7 @@ export default function StudentDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
-              <VibeDeckContainer />
+              <VibeDeckContainer onXpChange={() => setCharacterRefreshKey(k => k + 1)} />
             </div>
 
             {(baselineScore || currentScore) && (
@@ -272,7 +274,7 @@ export default function StudentDashboard() {
           </div>
 
           <div className="space-y-6">
-            <CharacterCard className="w-full" />
+            <CharacterCard className="w-full" refreshKey={characterRefreshKey} />
 
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
