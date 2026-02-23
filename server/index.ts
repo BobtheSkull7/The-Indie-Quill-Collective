@@ -248,6 +248,28 @@ async function bootstrapFast() {
     );
   `);
   await dbPool.query(`
+    DO $$ BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'manuscripts' AND column_name = 'card_id'
+      ) THEN
+        ALTER TABLE manuscripts ADD COLUMN card_id INTEGER NOT NULL DEFAULT 0 REFERENCES vibe_cards(id) ON DELETE CASCADE;
+        ALTER TABLE manuscripts ADD CONSTRAINT manuscripts_user_id_card_id_key UNIQUE (user_id, card_id);
+      END IF;
+    END $$;
+  `);
+  await dbPool.query(`
+    DO $$ BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'card_submissions' AND column_name = 'card_id'
+      ) THEN
+        ALTER TABLE card_submissions ADD COLUMN card_id INTEGER NOT NULL DEFAULT 0 REFERENCES vibe_cards(id) ON DELETE CASCADE;
+        ALTER TABLE card_submissions ADD CONSTRAINT card_submissions_user_id_card_id_key UNIQUE (user_id, card_id);
+      END IF;
+    END $$;
+  `);
+  await dbPool.query(`
     CREATE TABLE IF NOT EXISTS card_submissions (
       id SERIAL PRIMARY KEY,
       user_id VARCHAR(255) NOT NULL,
