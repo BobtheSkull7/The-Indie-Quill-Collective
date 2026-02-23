@@ -165,7 +165,6 @@ export default function StudentDashboard() {
           <h1 className="font-display text-3xl font-bold text-slate-800">
             Welcome back, {user?.firstName}
           </h1>
-          <p className="text-gray-600 mt-1">Continue your journey in the Architecture of Authorship</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
