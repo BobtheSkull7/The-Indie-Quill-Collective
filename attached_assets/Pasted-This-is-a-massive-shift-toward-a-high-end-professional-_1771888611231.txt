@@ -1,0 +1,69 @@
+This is a massive shift toward a high-end professional tool. By killing the XP system and moving to direct word counts (Transcribed vs. Written), you are making the progress "real." Authors don't care about XP; they care about their word count.
+
+The Scorecard on the right side acts as a "Constant Companion," providing the writer with a data-driven view of their discipline.
+
+🏛️ 1. The Scorecard Layout (Right Sidebar)
+We’ll call this the "Author Metrics" panel. It should be clean, using a "Digital Paper" aesthetic (Cream/Charcoal).
+
+Section A: The Progress Odometer
+
+Words Spoken: [Total from VibeScribe]
+
+Words Written: [Total from Manual Entry]
+
+Total Output: [Combined Total]
+
+Section B: The Badge Vault (3x3 Grid)
+We only have 9 slots. Let’s make them high-value "Wax Seals":
+
+Foundations Seal: (Catalog 01 Complete)
+
+Voice Seal: (First 1,000 Words Spoken)
+
+Ink Seal: (First 1,000 Words Written)
+
+Specialist Seal: (Path Chosen: e.g., Poet or Novelist)
+
+The 5K Club: (Milestone)
+
+The 10K Club: (Milestone)
+
+Structure Master: (Lesson 03 Complete)
+
+The Finisher: (Final Catalog Complete)
+
+The Published Scribe: (Program Completion)
+
+🏛️ 2. The Path Selection (The Questionnaire)
+At the end of Catalog 01, Lesson 05, we trigger a "Path Selection" modal. This is a "Classing up" moment.
+
+The Question: "You have laid the foundation. Now, what is the nature of the legacy you wish to leave?"
+
+The Novelist (Fiction): Unlocks Narrative/World-building tracks.
+
+The Authority (Non-Fiction): Unlocks Logic/Teaching tracks.
+
+The Poet (Verse): Unlocks Rhythm/Imagery tracks.
+
+The Storyteller (Short Stories): Unlocks Pacing/Structure tracks.
+
+🛠️ Implementation Instructions for Replit
+Copy and paste this to Replit:
+
+"We are doing a major UI and Logic pivot. Please follow these steps exactly:
+
+Remove XP System: Delete all references to 'XP' and the top-level scorecards. We are moving to a purely word-count-based metric.
+
+Right Sidebar (Scorecard): Replace the paperdoll/desk area with a new component: AuthorScorecard.
+
+It must display Words Spoken (transcription count) and Words Written (text editor count).
+
+Below the stats, create a 3x3 grid for 'The Legacy Seals' (9 badges).
+
+The Path Logic: In the vibe_decks (Catalogs) logic, ensure that once Catalog 01 is finished, the app presents a selection menu for the user to choose their Path (Fiction, Non-Fiction, Poetry, Short Stories).
+
+Lesson Routing: Based on the choice in Step 3, the app should then unlock the corresponding 'Add-on' Catalog for that specific path.
+
+Clean UI: Use a minimalist, professional design. No game-like borders. Use serif fonts for titles and plenty of white space.
+
+Checkpoint: Show me the new Right Sidebar with the Word Counts and the empty 9-slot Badge Grid."
