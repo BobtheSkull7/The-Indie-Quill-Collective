@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { RefreshCw, X } from "lucide-react";
+import { RefreshCw, X, Book, Pencil, Coffee, Lamp, Library, PenTool, Award } from "lucide-react";
 
 interface EquippedItems {
   main_hand: string | null;
@@ -35,27 +35,12 @@ interface CharacterCardProps {
   refreshKey?: number;
 }
 
-interface SlotConfig {
-  key: keyof EquippedItems;
-  label: string;
-  icon: string;
-  unlockLevel: number;
-}
-
 interface DingData {
   message: string;
   unlocked_item?: string | null;
   new_titles?: string[] | null;
 }
 
-const PAPER_DOLL_SLOTS: SlotConfig[] = [
-  { key: "head", label: "Graduation Cap", icon: "🎓", unlockLevel: 1 },
-  { key: "off_hand", label: "Briefcase", icon: "💼", unlockLevel: 2 },
-  { key: "main_hand", label: "Quill", icon: "🪶", unlockLevel: 3 },
-  { key: "body", label: "Shirt", icon: "👕", unlockLevel: 4 },
-  { key: "hands", label: "Pants", icon: "👖", unlockLevel: 5 },
-  { key: "feet", label: "Sneakers", icon: "👟", unlockLevel: 6 },
-];
 
 export default function CharacterCard({ userId = 1, className = "", apiEndpoint = "/api/student/game-character", refreshKey = 0 }: CharacterCardProps) {
   const [loading, setLoading] = useState(true);
@@ -245,103 +230,70 @@ export default function CharacterCard({ userId = 1, className = "", apiEndpoint 
             Character Sheet
           </h3>
           
-          {/* Paper Doll - Humanoid Layout */}
-          <div className="mb-5">
-            {/* Row 1: Graduation Cap (top center) */}
-            <div className="flex justify-center mb-2">
-              {(() => {
-                const slot = PAPER_DOLL_SLOTS[0];
-                const isUnlocked = currentLevel >= slot.unlockLevel;
-                return (
-                  <div
-                    className={`w-14 h-14 rounded-lg flex flex-col items-center justify-center transition-all relative ${
-                      isUnlocked 
-                        ? "bg-gradient-to-br from-green-500 to-emerald-600 shadow-lg shadow-green-500/30" 
-                        : "bg-[#3a3a4a]"
-                    }`}
-                    title={isUnlocked ? slot.label : `Unlocks at Level ${slot.unlockLevel}`}
-                  >
-                    <span className={`text-2xl ${!isUnlocked ? "grayscale opacity-40" : ""}`}>{slot.icon}</span>
-                    {!isUnlocked && <span className="absolute -bottom-1 -right-1 text-xs">🔒</span>}
-                  </div>
-                );
-              })()}
-            </div>
-            
-            {/* Row 2: Briefcase | Face Oval | Quill */}
-            <div className="flex justify-center items-center gap-2 mb-2">
-              {/* Briefcase (off_hand) */}
-              {(() => {
-                const slot = PAPER_DOLL_SLOTS[1];
-                const isUnlocked = currentLevel >= slot.unlockLevel;
-                return (
-                  <div
-                    className={`w-12 h-12 rounded-lg flex flex-col items-center justify-center transition-all relative ${
-                      isUnlocked 
-                        ? "bg-gradient-to-br from-green-500 to-emerald-600 shadow-lg shadow-green-500/30" 
-                        : "bg-[#3a3a4a]"
-                    }`}
-                    title={isUnlocked ? slot.label : `Unlocks at Level ${slot.unlockLevel}`}
-                  >
-                    <span className={`text-xl ${!isUnlocked ? "grayscale opacity-40" : ""}`}>{slot.icon}</span>
-                    {!isUnlocked && <span className="absolute -bottom-1 -right-1 text-xs">🔒</span>}
-                  </div>
-                );
-              })()}
-              
-              {/* Face Oval (Student Picture placeholder) */}
-              <div className="w-16 h-20 rounded-full bg-gradient-to-b from-[#3a3a5e] to-[#252542] border-2 border-[#4a4a6e] flex items-center justify-center">
-                <span className="text-3xl">👤</span>
+          {/* Writer's Studio */}
+          <div className="mb-5 rounded-xl border border-amber-200/60 bg-[#FDFBF7] p-4 relative overflow-hidden" style={{ height: 220 }}>
+            {currentLevel >= 6 && (
+              <div className="absolute top-3 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-white border border-amber-300 rounded-lg px-3 py-1.5 shadow-sm" style={{ animation: "studio-fade-in 0.6s ease" }}>
+                <Award className="w-5 h-5 text-amber-600" />
+                <span className="text-[11px] font-semibold text-amber-800">Published Author</span>
               </div>
-              
-              {/* Quill (main_hand) */}
-              {(() => {
-                const slot = PAPER_DOLL_SLOTS[2];
-                const isUnlocked = currentLevel >= slot.unlockLevel;
-                return (
-                  <div
-                    className={`w-12 h-12 rounded-lg flex flex-col items-center justify-center transition-all relative ${
-                      isUnlocked 
-                        ? "bg-gradient-to-br from-green-500 to-emerald-600 shadow-lg shadow-green-500/30" 
-                        : "bg-[#3a3a4a]"
-                    }`}
-                    title={isUnlocked ? slot.label : `Unlocks at Level ${slot.unlockLevel}`}
-                  >
-                    <span className={`text-xl ${!isUnlocked ? "grayscale opacity-40" : ""}`}>{slot.icon}</span>
-                    {!isUnlocked && <span className="absolute -bottom-1 -right-1 text-xs">🔒</span>}
+            )}
+
+            <div className="absolute bottom-12 left-1/2 -translate-x-1/2 w-[85%]">
+              <div className="relative h-3 bg-gradient-to-b from-amber-800 to-amber-900 rounded-t-sm" />
+              <div className="relative flex justify-between px-2">
+                <div className="w-2 h-10 bg-amber-800 rounded-b-sm" />
+                <div className="w-2 h-10 bg-amber-800 rounded-b-sm" />
+              </div>
+
+              {currentLevel >= 1 && (
+                <div className="absolute -top-10 left-4 flex items-end gap-1" style={{ animation: "studio-fade-in 0.4s ease" }}>
+                  <Book className="w-7 h-7 text-amber-700" />
+                  <Pencil className="w-4 h-4 text-gray-500 -mb-0.5 -ml-1" />
+                </div>
+              )}
+
+              {currentLevel >= 2 && (
+                <div className="absolute -top-9 right-5" style={{ animation: "studio-fade-in 0.5s ease" }}>
+                  <Coffee className="w-6 h-6 text-amber-900/70" />
+                </div>
+              )}
+
+              {currentLevel >= 3 && (
+                <div className="absolute -top-16 right-[30%]" style={{ animation: "studio-fade-in 0.5s ease" }}>
+                  <div className="relative">
+                    <div className="absolute -inset-3 bg-yellow-300/20 rounded-full blur-md" />
+                    <Lamp className="w-8 h-8 text-amber-600 relative" />
                   </div>
-                );
-              })()}
+                </div>
+              )}
+
+              {currentLevel >= 4 && (
+                <div className="absolute -top-12 left-[35%]" style={{ animation: "studio-fade-in 0.5s ease" }}>
+                  <Library className="w-7 h-7 text-stone-600" />
+                </div>
+              )}
+
+              {currentLevel >= 5 && (
+                <div className="absolute -top-8 left-[55%]" style={{ animation: "studio-fade-in 0.5s ease" }}>
+                  <PenTool className="w-5 h-5 text-indigo-700" />
+                </div>
+              )}
             </div>
-            
-            {/* Row 3: Shirt | Pants | Sneakers */}
-            <div className="flex justify-center gap-2">
-              {PAPER_DOLL_SLOTS.slice(3).map((slot) => {
-                const isUnlocked = currentLevel >= slot.unlockLevel;
-                return (
-                  <div
-                    key={slot.key}
-                    className={`w-12 h-12 rounded-lg flex flex-col items-center justify-center transition-all relative ${
-                      isUnlocked 
-                        ? "bg-gradient-to-br from-green-500 to-emerald-600 shadow-lg shadow-green-500/30" 
-                        : "bg-[#3a3a4a]"
-                    }`}
-                    title={isUnlocked ? slot.label : `Unlocks at Level ${slot.unlockLevel}`}
-                  >
-                    <span className={`text-xl ${!isUnlocked ? "grayscale opacity-40" : ""}`}>{slot.icon}</span>
-                    {!isUnlocked && <span className="absolute -bottom-1 -right-1 text-xs">🔒</span>}
-                  </div>
-                );
-              })}
-            </div>
-            
-            {/* Legend */}
-            <div className="flex justify-center gap-4 mt-3 text-xs text-gray-500">
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-green-500"></span> Equipped</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded border border-dashed border-gray-500"></span> Empty</span>
-              <span className="flex items-center gap-1">🔒 Locked</span>
+
+            <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-3 text-[10px] text-stone-400">
+              <span>Level {currentLevel} Studio</span>
+              <span>·</span>
+              <span>{Math.min(currentLevel, 6)} / 6 items</span>
             </div>
           </div>
+
+          <style>{`
+            @keyframes studio-fade-in {
+              from { opacity: 0; transform: translateY(6px); }
+              to { opacity: 1; transform: translateY(0); }
+            }
+          `}</style>
 
           {/* Stats */}
           <div className="space-y-3 text-sm">
