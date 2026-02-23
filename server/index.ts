@@ -248,98 +248,6 @@ async function bootstrapFast() {
     );
   `);
   await dbPool.query(`
-    DO $$ BEGIN
-      IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns 
-        WHERE table_name = 'manuscripts' AND column_name = 'card_id'
-      ) THEN
-        ALTER TABLE manuscripts ADD COLUMN card_id INTEGER NOT NULL DEFAULT 0 REFERENCES vibe_cards(id) ON DELETE CASCADE;
-        ALTER TABLE manuscripts ADD CONSTRAINT manuscripts_user_id_card_id_key UNIQUE (user_id, card_id);
-      END IF;
-    END $$;
-  `);
-  await dbPool.query(`
-    DO $$ BEGIN
-      IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns 
-        WHERE table_name = 'manuscripts' AND column_name = 'content'
-      ) THEN
-        ALTER TABLE manuscripts ADD COLUMN content TEXT NOT NULL DEFAULT '';
-      END IF;
-      IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns 
-        WHERE table_name = 'manuscripts' AND column_name = 'word_count'
-      ) THEN
-        ALTER TABLE manuscripts ADD COLUMN word_count INTEGER NOT NULL DEFAULT 0;
-      END IF;
-      IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns 
-        WHERE table_name = 'manuscripts' AND column_name = 'created_at'
-      ) THEN
-        ALTER TABLE manuscripts ADD COLUMN created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
-      END IF;
-      IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns 
-        WHERE table_name = 'manuscripts' AND column_name = 'updated_at'
-      ) THEN
-        ALTER TABLE manuscripts ADD COLUMN updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
-      END IF;
-    END $$;
-  `);
-  await dbPool.query(`
-    DO $$ BEGIN
-      IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns 
-        WHERE table_name = 'card_submissions' AND column_name = 'card_id'
-      ) THEN
-        ALTER TABLE card_submissions ADD COLUMN card_id INTEGER NOT NULL DEFAULT 0 REFERENCES vibe_cards(id) ON DELETE CASCADE;
-        ALTER TABLE card_submissions ADD CONSTRAINT card_submissions_user_id_card_id_key UNIQUE (user_id, card_id);
-      END IF;
-      IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns 
-        WHERE table_name = 'card_submissions' AND column_name = 'manuscript_id'
-      ) THEN
-        ALTER TABLE card_submissions ADD COLUMN manuscript_id INTEGER REFERENCES manuscripts(id) ON DELETE SET NULL;
-      END IF;
-      IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns 
-        WHERE table_name = 'card_submissions' AND column_name = 'reflection'
-      ) THEN
-        ALTER TABLE card_submissions ADD COLUMN reflection TEXT NOT NULL DEFAULT '';
-      END IF;
-      IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns 
-        WHERE table_name = 'card_submissions' AND column_name = 'xp_earned'
-      ) THEN
-        ALTER TABLE card_submissions ADD COLUMN xp_earned INTEGER NOT NULL DEFAULT 0;
-      END IF;
-      IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns 
-        WHERE table_name = 'card_submissions' AND column_name = 'status'
-      ) THEN
-        ALTER TABLE card_submissions ADD COLUMN status VARCHAR(50) NOT NULL DEFAULT 'submitted';
-      END IF;
-      IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns 
-        WHERE table_name = 'card_submissions' AND column_name = 'paste_count'
-      ) THEN
-        ALTER TABLE card_submissions ADD COLUMN paste_count INTEGER NOT NULL DEFAULT 0;
-      END IF;
-      IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns 
-        WHERE table_name = 'card_submissions' AND column_name = 'is_flagged_for_review'
-      ) THEN
-        ALTER TABLE card_submissions ADD COLUMN is_flagged_for_review BOOLEAN NOT NULL DEFAULT false;
-      END IF;
-      IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns 
-        WHERE table_name = 'card_submissions' AND column_name = 'submitted_at'
-      ) THEN
-        ALTER TABLE card_submissions ADD COLUMN submitted_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
-      END IF;
-    END $$;
-  `);
-  await dbPool.query(`
     CREATE TABLE IF NOT EXISTS card_submissions (
       id SERIAL PRIMARY KEY,
       user_id VARCHAR(255) NOT NULL,
@@ -354,26 +262,124 @@ async function bootstrapFast() {
       UNIQUE(user_id, card_id)
     );
   `);
-  // Migrate: create tomes table if needed, add tome_id to vibe_cards if migrating from old schema
-  await dbPool.query(`
-    DO $$ BEGIN
-      IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'tomes') THEN
-        CREATE TABLE tomes (
-          id SERIAL PRIMARY KEY,
-          deck_id INTEGER NOT NULL REFERENCES vibe_decks(id) ON DELETE CASCADE,
-          title VARCHAR(255) NOT NULL,
-          content TEXT NOT NULL,
-          order_index INTEGER NOT NULL DEFAULT 0,
-          created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-          updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-        );
-      END IF;
-    END $$;
+
+  const columnMigrations: Array<{table: string, column: string, definition: string}> = [
+    { table: 'curriculums', column: 'title', definition: "VARCHAR(255) NOT NULL DEFAULT ''" },
+    { table: 'curriculums', column: 'description', definition: 'TEXT' },
+    { table: 'curriculums', column: 'order_index', definition: 'INTEGER NOT NULL DEFAULT 0' },
+    { table: 'curriculums', column: 'is_published', definition: 'BOOLEAN NOT NULL DEFAULT false' },
+    { table: 'curriculums', column: 'created_at', definition: 'TIMESTAMP WITH TIME ZONE DEFAULT NOW()' },
+    { table: 'curriculums', column: 'updated_at', definition: 'TIMESTAMP WITH TIME ZONE DEFAULT NOW()' },
+
+    { table: 'vibe_decks', column: 'curriculum_id', definition: 'INTEGER NOT NULL DEFAULT 0 REFERENCES curriculums(id) ON DELETE CASCADE' },
+    { table: 'vibe_decks', column: 'title', definition: "VARCHAR(255) NOT NULL DEFAULT ''" },
+    { table: 'vibe_decks', column: 'description', definition: 'TEXT' },
+    { table: 'vibe_decks', column: 'order_index', definition: 'INTEGER NOT NULL DEFAULT 0' },
+    { table: 'vibe_decks', column: 'is_published', definition: 'BOOLEAN NOT NULL DEFAULT false' },
+    { table: 'vibe_decks', column: 'created_at', definition: 'TIMESTAMP WITH TIME ZONE DEFAULT NOW()' },
+    { table: 'vibe_decks', column: 'updated_at', definition: 'TIMESTAMP WITH TIME ZONE DEFAULT NOW()' },
+
+    { table: 'tomes', column: 'deck_id', definition: 'INTEGER NOT NULL DEFAULT 0 REFERENCES vibe_decks(id) ON DELETE CASCADE' },
+    { table: 'tomes', column: 'title', definition: "VARCHAR(255) NOT NULL DEFAULT ''" },
+    { table: 'tomes', column: 'content', definition: "TEXT NOT NULL DEFAULT ''" },
+    { table: 'tomes', column: 'order_index', definition: 'INTEGER NOT NULL DEFAULT 0' },
+    { table: 'tomes', column: 'created_at', definition: 'TIMESTAMP WITH TIME ZONE DEFAULT NOW()' },
+    { table: 'tomes', column: 'updated_at', definition: 'TIMESTAMP WITH TIME ZONE DEFAULT NOW()' },
+
+    { table: 'vibe_cards', column: 'tome_id', definition: 'INTEGER NOT NULL DEFAULT 0 REFERENCES tomes(id) ON DELETE CASCADE' },
+    { table: 'vibe_cards', column: 'task', definition: "TEXT NOT NULL DEFAULT ''" },
+    { table: 'vibe_cards', column: 'qualifications', definition: 'TEXT' },
+    { table: 'vibe_cards', column: 'xp_value', definition: 'INTEGER NOT NULL DEFAULT 100' },
+    { table: 'vibe_cards', column: 'min_word_count', definition: 'INTEGER NOT NULL DEFAULT 10' },
+    { table: 'vibe_cards', column: 'order_index', definition: 'INTEGER NOT NULL DEFAULT 0' },
+    { table: 'vibe_cards', column: 'created_at', definition: 'TIMESTAMP WITH TIME ZONE DEFAULT NOW()' },
+    { table: 'vibe_cards', column: 'updated_at', definition: 'TIMESTAMP WITH TIME ZONE DEFAULT NOW()' },
+
+    { table: 'tome_absorptions', column: 'user_id', definition: "VARCHAR(255) NOT NULL DEFAULT ''" },
+    { table: 'tome_absorptions', column: 'tome_id', definition: 'INTEGER NOT NULL DEFAULT 0 REFERENCES tomes(id) ON DELETE CASCADE' },
+    { table: 'tome_absorptions', column: 'absorbed_at', definition: 'TIMESTAMP WITH TIME ZONE DEFAULT NOW()' },
+
+    { table: 'manuscripts', column: 'user_id', definition: "VARCHAR(255) NOT NULL DEFAULT ''" },
+    { table: 'manuscripts', column: 'card_id', definition: 'INTEGER NOT NULL DEFAULT 0 REFERENCES vibe_cards(id) ON DELETE CASCADE' },
+    { table: 'manuscripts', column: 'content', definition: "TEXT NOT NULL DEFAULT ''" },
+    { table: 'manuscripts', column: 'word_count', definition: 'INTEGER NOT NULL DEFAULT 0' },
+    { table: 'manuscripts', column: 'created_at', definition: 'TIMESTAMP WITH TIME ZONE DEFAULT NOW()' },
+    { table: 'manuscripts', column: 'updated_at', definition: 'TIMESTAMP WITH TIME ZONE DEFAULT NOW()' },
+
+    { table: 'card_submissions', column: 'user_id', definition: "VARCHAR(255) NOT NULL DEFAULT ''" },
+    { table: 'card_submissions', column: 'card_id', definition: 'INTEGER NOT NULL DEFAULT 0 REFERENCES vibe_cards(id) ON DELETE CASCADE' },
+    { table: 'card_submissions', column: 'manuscript_id', definition: 'INTEGER REFERENCES manuscripts(id) ON DELETE SET NULL' },
+    { table: 'card_submissions', column: 'reflection', definition: "TEXT NOT NULL DEFAULT ''" },
+    { table: 'card_submissions', column: 'xp_earned', definition: 'INTEGER NOT NULL DEFAULT 0' },
+    { table: 'card_submissions', column: 'status', definition: "VARCHAR(50) NOT NULL DEFAULT 'submitted'" },
+    { table: 'card_submissions', column: 'paste_count', definition: 'INTEGER NOT NULL DEFAULT 0' },
+    { table: 'card_submissions', column: 'is_flagged_for_review', definition: 'BOOLEAN NOT NULL DEFAULT false' },
+    { table: 'card_submissions', column: 'submitted_at', definition: 'TIMESTAMP WITH TIME ZONE DEFAULT NOW()' },
+
+    { table: 'vibescribe_transcripts', column: 'user_id', definition: "VARCHAR(255) NOT NULL DEFAULT ''" },
+    { table: 'vibescribe_transcripts', column: 'vibescribe_id', definition: 'VARCHAR(50)' },
+    { table: 'vibescribe_transcripts', column: 'content', definition: "TEXT NOT NULL DEFAULT ''" },
+    { table: 'vibescribe_transcripts', column: 'source_type', definition: "VARCHAR(50) NOT NULL DEFAULT 'voice'" },
+    { table: 'vibescribe_transcripts', column: 'is_used', definition: 'BOOLEAN NOT NULL DEFAULT false' },
+    { table: 'vibescribe_transcripts', column: 'created_at', definition: 'TIMESTAMP WITH TIME ZONE DEFAULT NOW()' },
+
+    { table: 'master_manuscripts', column: 'user_id', definition: "VARCHAR(255) NOT NULL DEFAULT ''" },
+    { table: 'master_manuscripts', column: 'title', definition: "VARCHAR(500) NOT NULL DEFAULT 'My Master Manuscript'" },
+    { table: 'master_manuscripts', column: 'content', definition: "JSONB NOT NULL DEFAULT '{}'" },
+    { table: 'master_manuscripts', column: 'word_count', definition: 'INTEGER NOT NULL DEFAULT 0' },
+    { table: 'master_manuscripts', column: 'created_at', definition: 'TIMESTAMP WITH TIME ZONE DEFAULT NOW()' },
+    { table: 'master_manuscripts', column: 'updated_at', definition: 'TIMESTAMP WITH TIME ZONE DEFAULT NOW()' },
+
+    { table: 'game_characters', column: 'user_id', definition: "VARCHAR(255) NOT NULL DEFAULT ''" },
+    { table: 'game_characters', column: 'xp', definition: 'INTEGER NOT NULL DEFAULT 0' },
+    { table: 'game_characters', column: 'level', definition: 'INTEGER NOT NULL DEFAULT 1' },
+    { table: 'game_characters', column: 'active_title', definition: "VARCHAR(255) DEFAULT 'the Novice'" },
+    { table: 'game_characters', column: 'unlocked_titles', definition: `JSONB NOT NULL DEFAULT '["the Novice"]'` },
+    { table: 'game_characters', column: 'equipped_items', definition: `JSONB NOT NULL DEFAULT '{"main_hand": null, "off_hand": null, "head": null, "body": null, "hands": null, "feet": null}'` },
+    { table: 'game_characters', column: 'unlocked_items', definition: "JSONB NOT NULL DEFAULT '[]'" },
+    { table: 'game_characters', column: 'created_at', definition: 'TIMESTAMP WITH TIME ZONE DEFAULT NOW()' },
+    { table: 'game_characters', column: 'updated_at', definition: 'TIMESTAMP WITH TIME ZONE DEFAULT NOW()' },
+  ];
+
+  const existingCols = await dbPool.query(`
+    SELECT table_name, column_name FROM information_schema.columns 
+    WHERE table_schema = 'public' AND table_name IN (
+      'curriculums','vibe_decks','tomes','vibe_cards','tome_absorptions',
+      'manuscripts','card_submissions','vibescribe_transcripts',
+      'master_manuscripts','game_characters'
+    )
   `);
-  await dbPool.query(`
-    ALTER TABLE card_submissions ADD COLUMN IF NOT EXISTS paste_count INTEGER NOT NULL DEFAULT 0;
-    ALTER TABLE card_submissions ADD COLUMN IF NOT EXISTS is_flagged_for_review BOOLEAN NOT NULL DEFAULT false;
-  `);
+  const existingSet = new Set(existingCols.rows.map((r: any) => `${r.table_name}.${r.column_name}`));
+
+  const missing = columnMigrations.filter(m => !existingSet.has(`${m.table}.${m.column}`));
+  if (missing.length > 0) {
+    console.log(`[Migration] Adding ${missing.length} missing column(s):`);
+    for (const m of missing) {
+      try {
+        await dbPool.query(`ALTER TABLE ${m.table} ADD COLUMN ${m.column} ${m.definition}`);
+        console.log(`[Migration]   + ${m.table}.${m.column}`);
+      } catch (e: any) {
+        console.warn(`[Migration]   ~ ${m.table}.${m.column} skipped: ${e.message}`);
+      }
+    }
+  }
+
+  const constraintMigrations = [
+    { table: 'manuscripts', constraint: 'manuscripts_user_id_card_id_key', definition: 'UNIQUE (user_id, card_id)' },
+    { table: 'card_submissions', constraint: 'card_submissions_user_id_card_id_key', definition: 'UNIQUE (user_id, card_id)' },
+    { table: 'tome_absorptions', constraint: 'tome_absorptions_user_id_tome_id_key', definition: 'UNIQUE (user_id, tome_id)' },
+  ];
+  for (const c of constraintMigrations) {
+    try {
+      const check = await dbPool.query(`SELECT 1 FROM information_schema.table_constraints WHERE table_name = $1 AND constraint_name = $2`, [c.table, c.constraint]);
+      if (check.rows.length === 0) {
+        await dbPool.query(`ALTER TABLE ${c.table} ADD CONSTRAINT ${c.constraint} ${c.definition}`);
+        console.log(`[Migration]   + constraint ${c.constraint}`);
+      }
+    } catch (e: any) {
+      console.warn(`[Migration]   ~ constraint ${c.constraint} skipped: ${e.message}`);
+    }
+  }
   await dbPool.query(`
     CREATE TABLE IF NOT EXISTS vibescribe_transcripts (
       id SERIAL PRIMARY KEY,
