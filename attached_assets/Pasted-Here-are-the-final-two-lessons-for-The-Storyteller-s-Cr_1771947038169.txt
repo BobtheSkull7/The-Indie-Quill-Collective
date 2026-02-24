@@ -1,0 +1,44 @@
+Here are the final two lessons for The Storyteller’s Craft (Catalog 04). These focus on the "payoff"—how to leave a lasting mark on the reader with very few words.
+
+Lesson 04: The Sharp Twist
+Content: [Foundation: “A great twist isn't a trick; it's a new way of seeing the truth.”]
+In short stories, we often use a Twist. This is a moment near the end where something happens that the reader didn't expect. But a good twist isn't just a random surprise. It should make the reader look back at the whole story and say, "Oh! Now I understand everything!"
+
+We call this the Hidden Hint. Throughout the story, you drop tiny clues that the reader might not notice at first. When the twist happens, those clues finally make sense. This makes the reader feel smart for figuring it out, and it makes your story feel "tight" and well-planned.
+
+Using VibeScribe is a great way to test your twist. Try telling your story out loud to yourself. If the ending makes you smile or gives you a little chill, you’ve found the right moment. The twist is the "Firecracker" finally going off.
+
+Tasks for L04:
+
+Speaking: The Surprise — "What is the 'Twist' in your story? What is the one thing the reader thinks they know, but is actually different at the end?"
+
+Comprehension: The Hidden Hint — "Why is it important to drop tiny clues before the twist actually happens?"
+
+Writing: The Clue — "Write one sentence that could be a 'hidden hint' in your story—something that seems normal at first but becomes important later."
+
+Lesson 05: The Echo
+Content: [Foundation: “The best stories don't end on the page; they end in the reader's mind.”]
+The last sentence of a short story is the most important one. We call this the Echo. It is the final thought or image that "rings" in the reader’s head after they finish. In short form writing, you don't need to wrap everything up in a neat bow. Sometimes, leaving a little bit of mystery is even better.
+
+We aim for Resonance. This is a big word that just means the story stays with the reader. You achieve this by ending on a strong Visual Image or a powerful line of dialogue. You want the reader to sit in silence for a moment after they close the "Folio."
+
+Finishing a short story is a masterclass in discipline. You’ve learned how to be fast, how to be sharp, and how to make every word count. You are now a Storyteller, capable of capturing lightning in a bottle.
+
+Tasks for L05:
+
+Speaking: The Final Ring — "Speak the very last sentence of your story out loud. How does it make you feel to say it?"
+
+Comprehension: The Mystery — "In a short story, why is it sometimes better to leave a little mystery instead of explaining every single detail at the end?"
+
+Writing: The Echo — "Type the final image you want your reader to see (for example: 'An empty swing still moving,' or 'A single light turning off')."
+
+🛠️ Instructions for Replit (Full Catalog 04 Seed)
+"Please seed Catalog 04: The Storyteller’s Craft on both DEV and PROD.
+
+Mapping: Associate this catalog with the author_path = 'storyteller'.
+
+Logic: Ensure completion of Lesson 05 triggers the 'Specialist' seal for Storyteller users.
+
+Content: (Insert all 5 lessons provided today).
+
+Filtering: Confirm that the dashboard correctly filters to show only Catalog 01 + Catalog 04 for users who choose this path."
