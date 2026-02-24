@@ -7413,7 +7413,7 @@ export async function registerDonationRoutes(app: Express) {
         SELECT t.id, t.order_index FROM tomes t
         JOIN vibe_decks vd ON vd.id = t.deck_id
         JOIN curriculums c ON c.id = vd.curriculum_id
-        WHERE c.title = 'Published Writer' AND vd.order_index = 1
+        WHERE c.title = 'The Art of Storytelling' AND vd.order_index = 1
       `);
       const catalog01TomeIds = (catalog01Tomes.rows as any[]).map(r => r.id);
       const catalog01Complete = catalog01TomeIds.length > 0 && catalog01TomeIds.every(id => absorbedTomeIds.has(id));

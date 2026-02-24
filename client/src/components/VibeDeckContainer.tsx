@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Layers, ChevronDown, ChevronRight, Sparkles, BookOpen, FileText, Lock, X } from "lucide-react";
 import VibeDeckCard from "./VibeDeckCard";
 import ManuscriptEditor from "./ManuscriptEditor";
+import PathSelectionModal from "./PathSelectionModal";
 
 interface CardData {
   id: number;
@@ -26,6 +27,7 @@ interface DeckData {
   id: number;
   title: string;
   description: string | null;
+  specialization: string | null;
   curriculum_id: number;
   curriculum_title: string;
   tomes: TomeData[];
@@ -51,9 +53,12 @@ export default function VibeDeckContainer({ onMetricsChange }: { onMetricsChange
   const [activeManuscript, setActiveManuscript] = useState<CardData | null>(null);
   const [onboardingComplete, setOnboardingComplete] = useState(true);
   const [oathTomeId, setOathTomeId] = useState<number | null>(null);
+  const [showPathModal, setShowPathModal] = useState(false);
+  const [authorPath, setAuthorPath] = useState<string | null>(null);
 
   useEffect(() => {
     loadVibeDecks();
+    checkPathEligibility();
   }, []);
 
   useEffect(() => {
@@ -94,6 +99,29 @@ export default function VibeDeckContainer({ onMetricsChange }: { onMetricsChange
     }
   };
 
+  const checkPathEligibility = async () => {
+    try {
+      const res = await fetch(`/api/student/author-metrics?_t=${Date.now()}`, { credentials: "include" });
+      if (res.ok) {
+        const data = await res.json();
+        const badges: string[] = data.badges || [];
+        if (badges.includes("foundations_mastery") && !data.authorPath) {
+          setShowPathModal(true);
+        }
+        setAuthorPath(data.authorPath || null);
+      }
+    } catch (err) {
+      console.error("Error checking path eligibility:", err);
+    }
+  };
+
+  const handlePathSelected = (path: string) => {
+    setShowPathModal(false);
+    setAuthorPath(path);
+    onMetricsChange?.();
+    loadVibeDecks();
+  };
+
   const handleAbsorbTome = async (tomeId: number) => {
     setAbsorbing(true);
     try {
@@ -111,6 +139,7 @@ export default function VibeDeckContainer({ onMetricsChange }: { onMetricsChange
           ),
         })));
         onMetricsChange?.();
+        checkPathEligibility();
         setTimeout(() => {
           setTomeModal(null);
         }, 800);
@@ -135,6 +164,10 @@ export default function VibeDeckContainer({ onMetricsChange }: { onMetricsChange
   }
 
   return (
+    <>
+    {showPathModal && (
+      <PathSelectionModal onPathSelected={handlePathSelected} />
+    )}
     <div className="space-y-6">
       <style>{`
         @keyframes folioBackdropIn { 0% { opacity: 0; } 100% { opacity: 1; } }
@@ -212,7 +245,11 @@ export default function VibeDeckContainer({ onMetricsChange }: { onMetricsChange
       <div className="space-y-5">
         {curriculums.map((curriculum) => {
           const allCurriculumDecks = decks.filter(d => d.curriculum_id === curriculum.id);
-          const curriculumDecks = allCurriculumDecks;
+          const curriculumDecks = allCurriculumDecks.filter(d => {
+            if (!d.specialization) return true;
+            if (!authorPath) return false;
+            return d.specialization === authorPath;
+          });
           const isCurriculumExpanded = expandedCurriculum === curriculum.id;
           const totalTomes = curriculumDecks.reduce((sum, d) => sum + d.tomes.length, 0);
           const totalCards = curriculumDecks.reduce((sum, d) => sum + d.tomes.reduce((ts, t) => ts + t.cards.length, 0), 0);
@@ -502,5 +539,6 @@ export default function VibeDeckContainer({ onMetricsChange }: { onMetricsChange
         />
       )}
     </div>
+    </>
   );
 }
