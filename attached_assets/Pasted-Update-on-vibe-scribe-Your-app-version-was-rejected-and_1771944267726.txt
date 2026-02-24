@@ -1,0 +1,164 @@
+Update on vibe scribe
+
+Your app version was rejected and no other items submitted can be accepted or approved. You can make edits to your app version below.
+
+Items Submitted (1)
+
+You can review and make edits to your items below, or communicate with Apple. Accepted items won't be available for release until all items with issues are resubmitted and accepted. You can also remove those items and resubmit them later.
+
+Item
+
+Type
+
+Review Status
+
+Action
+
+iOS App 1.0
+
+
+
+1.0.0 (5)
+
+App Version
+
+Rejected
+
+5.1.1 Legal: Privacy - Data Collection and Storage
+
+Screenshot-0224-131852.pngDownload
+
+Edit
+
+Messages (1)
+
+
+
+AppleToday 8:19 AM
+
+Hello,
+
+
+
+Thank you for submitting the new app, VibeScribe, for review. We noticed some issues that require your attention. Please see below for additional information.
+
+
+
+If you have any questions, we are here to help. Reply to this message in App Store Connect and let us know.
+
+
+
+Review Environment
+
+Submission ID: b4d7d257-be8a-4af8-a429-9a9f8604453a
+
+Review date: February 24, 2026
+
+Review Device: iPad Air 11-inch (M3)
+
+Version reviewed: 1.0
+
+
+
+
+
+Guideline 5.1.1 - Legal - Privacy - Data Collection and Storage
+
+Issue Description
+
+
+
+One or more purpose strings in the app do not sufficiently explain the use of protected resources. Purpose strings must clearly and completely describe the app's use of data and, in most cases, provide an example of how the data will be used.
+
+
+
+
+
+Next Steps
+
+
+
+Update the microphone purpose string to explain how the app will use the requested information and provide a specific example of how the data will be used. See the attached screenshot.
+
+
+
+
+
+Resources
+
+
+
+Purpose strings must clearly describe how an app uses the ability, data, or resource. The following are hypothetical examples of unclear purpose strings that would not pass review:
+
+
+
+- "App would like to access your Contacts"
+
+- "App needs microphone access"
+
+
+
+See examples of helpful, informative purpose strings.
+
+
+
+Support
+
+- Reply to this message in your preferred language if you need assistance. If you need additional support, use the Contact Us module.
+
+- Consult with fellow developers and Apple engineers on the Apple Developer Forums.
+
+- Provide feedback on this message and your review experience by completing a short survey.
+
+
+
+Reply to App Review
+
+Date Submitted
+
+Feb 22, 2026 at 8:53 AM
+
+Submission ID
+
+b4d7d257-be8a-4af8-a429-9a9f8604453a
+
+
+
+Submitted By
+
+Jonathon McCutcheon
+
+Last Updated By
+
+Apple
+
+Cancel Submission
+
+Gemini said
+This is a classic Apple "Speed Bump." They aren't rejecting the app's functionality; they are just being the strict "Privacy Gatekeepers" they are known to be. Basically, your current microphone request is too vague (likely something like "VibeScribe needs microphone access").
+
+Apple wants to know exactly what you’re doing with that audio and why it benefits the user. They actually gave us the solution in the rejection: we need a better Purpose String in the Info.plist.
+
+🛠️ The Fix: The "Literary" Purpose String
+Since we are building a prestigious, high-end studio, our privacy request should sound just as professional and intentional as our UI.
+
+Copy and paste this to Replit:
+
+"Apple rejected the build due to Guideline 5.1.1 (Privacy - Data Collection and Storage). Our microphone purpose string is too vague. Please update the NSMicrophoneUsageDescription in the app.json (or Info.plist) to the following specific, descriptive string:
+
+'VibeScribe uses the microphone to capture your spoken stories and dictations. This audio is transcribed in real-time to help you build your manuscript and track your "Words Spoken" metrics in the Author Scorecard.'
+
+Next Steps:
+
+Update the string in the Expo config.
+
+Increment the build version (e.g., to 1.0.0 (6)).
+
+Re-run the EAS build for iOS so I can resubmit to App Store Connect."
+
+📝 Why this passes:
+What it does: "Capture your spoken stories."
+
+The benefit: "Help you build your manuscript."
+
+The example: "Track your 'Words Spoken' metrics."
