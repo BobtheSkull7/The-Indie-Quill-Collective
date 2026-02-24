@@ -13,7 +13,6 @@ import {
   Check,
   X,
   Loader2,
-  ScrollText,
 } from "lucide-react";
 
 interface VibeCardData {
@@ -652,7 +651,7 @@ export default function VibeDeckCurriculum() {
                                             <button onClick={() => toggleTome(tome.id)} className="flex items-center gap-3 flex-1 text-left">
                                               {isTomeExpanded ? <ChevronDown className="w-4 h-4 text-amber-500 flex-shrink-0" /> : <ChevronRight className="w-4 h-4 text-amber-400 flex-shrink-0" />}
                                               <div className="w-7 h-7 rounded-md bg-amber-100 flex items-center justify-center flex-shrink-0">
-                                                <ScrollText className="w-3.5 h-3.5 text-amber-600" />
+                                                <BookOpen className="w-3.5 h-3.5 text-amber-600" />
                                               </div>
                                               <div className="flex-1">
                                                 <h5 className="font-medium text-slate-700 text-sm">{tome.title}</h5>

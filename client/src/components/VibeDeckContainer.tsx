@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Layers, ChevronDown, ChevronRight, Sparkles, BookOpen, ScrollText, Lock, X } from "lucide-react";
+import { Layers, ChevronDown, ChevronRight, Sparkles, BookOpen, FileText, Lock, X } from "lucide-react";
 import VibeDeckCard from "./VibeDeckCard";
 import ManuscriptEditor from "./ManuscriptEditor";
 
@@ -46,7 +46,7 @@ export default function VibeDeckContainer({ onMetricsChange }: { onMetricsChange
   const [expandedTome, setExpandedTome] = useState<number | null>(null);
   const [tomeModal, setTomeModal] = useState<TomeData | null>(null);
   const [absorbing, setAbsorbing] = useState(false);
-  const [showScrollContent, setShowScrollContent] = useState(false);
+  const [showFolioContent, setShowFolioContent] = useState(false);
   const [completedCards, setCompletedCards] = useState<Set<number>>(new Set());
   const [activeManuscript, setActiveManuscript] = useState<CardData | null>(null);
   const [onboardingComplete, setOnboardingComplete] = useState(true);
@@ -58,8 +58,8 @@ export default function VibeDeckContainer({ onMetricsChange }: { onMetricsChange
 
   useEffect(() => {
     if (tomeModal) {
-      setShowScrollContent(false);
-      const timer = setTimeout(() => setShowScrollContent(true), 600);
+      setShowFolioContent(false);
+      const timer = setTimeout(() => setShowFolioContent(true), 100);
       return () => clearTimeout(timer);
     }
   }, [tomeModal]);
@@ -137,69 +137,51 @@ export default function VibeDeckContainer({ onMetricsChange }: { onMetricsChange
   return (
     <div className="space-y-6">
       <style>{`
-        @keyframes scrollUnrollCenter {
-          0% { clip-path: inset(50% 0 50% 0); opacity: 0; }
-          20% { opacity: 1; }
-          100% { clip-path: inset(0% 0 0% 0); opacity: 1; }
+        @keyframes folioBackdropIn { 0% { opacity: 0; } 100% { opacity: 1; } }
+        @keyframes folioSlideUp {
+          0% { opacity: 0; transform: translateY(20px); }
+          100% { opacity: 1; transform: translateY(0); }
         }
-        @keyframes dowelTop { 0% { top: 50%; } 100% { top: 0%; } }
-        @keyframes dowelBottom { 0% { bottom: 50%; } 100% { bottom: 0%; } }
-        @keyframes fadeInContent { 0% { opacity: 0; } 100% { opacity: 1; } }
-        @keyframes backdropFadeIn { 0% { opacity: 0; } 100% { opacity: 1; } }
-        @keyframes candleFlicker {
-          0%   { box-shadow: 0 0 15px 3px rgba(217, 164, 65, 0.25), 0 0 40px 8px rgba(217, 164, 65, 0.10), inset 0 0 20px rgba(180, 130, 50, 0.05); }
-          15%  { box-shadow: 0 0 20px 5px rgba(230, 170, 60, 0.30), 0 0 50px 12px rgba(230, 170, 60, 0.12), inset 0 0 25px rgba(180, 130, 50, 0.07); }
-          30%  { box-shadow: 0 0 12px 2px rgba(200, 150, 55, 0.20), 0 0 35px 6px rgba(200, 150, 55, 0.08), inset 0 0 18px rgba(180, 130, 50, 0.04); }
-          50%  { box-shadow: 0 0 22px 6px rgba(240, 180, 70, 0.32), 0 0 55px 14px rgba(240, 180, 70, 0.14), inset 0 0 28px rgba(180, 130, 50, 0.08); }
-          70%  { box-shadow: 0 0 14px 3px rgba(210, 155, 58, 0.22), 0 0 38px 7px rgba(210, 155, 58, 0.09), inset 0 0 20px rgba(180, 130, 50, 0.05); }
-          85%  { box-shadow: 0 0 18px 4px rgba(225, 168, 62, 0.28), 0 0 45px 10px rgba(225, 168, 62, 0.11), inset 0 0 22px rgba(180, 130, 50, 0.06); }
-          100% { box-shadow: 0 0 15px 3px rgba(217, 164, 65, 0.25), 0 0 40px 8px rgba(217, 164, 65, 0.10), inset 0 0 20px rgba(180, 130, 50, 0.05); }
+        @keyframes folioRuleLine {
+          0% { width: 0%; opacity: 0; }
+          100% { width: 100%; opacity: 1; }
         }
-        .scroll-backdrop { animation: backdropFadeIn 0.4s ease-out forwards; background: rgba(10, 15, 40, 0.85); backdrop-filter: blur(6px); }
-        .scroll-container { animation: scrollUnrollCenter 0.8s cubic-bezier(0.22, 0.61, 0.36, 1) forwards; position: relative; }
-        .scroll-candlelight { animation: candleFlicker 3s ease-in-out infinite; animation-delay: 0.8s; }
-        .dowel {
-          position: absolute; left: -8px; right: -8px; height: 20px; z-index: 20; border-radius: 10px;
-          background: linear-gradient(180deg, #8B6914 0%, #c9a227 20%, #dbb84d 40%, #c9a227 60%, #a07d1a 80%, #8B6914 100%);
-          box-shadow: 0 2px 8px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.2);
+        @keyframes folioInkIn {
+          0% { opacity: 0; transform: translateY(8px); }
+          100% { opacity: 1; transform: translateY(0); }
         }
-        .dowel::before, .dowel::after {
-          content: ''; position: absolute; top: 2px; bottom: 2px; width: 24px; border-radius: 8px;
-          background: linear-gradient(180deg, #7a5c10 0%, #b8921f 30%, #d4ac35 50%, #b8921f 70%, #7a5c10 100%);
-          box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+        .folio-backdrop {
+          animation: folioBackdropIn 0.3s ease-out forwards;
+          background: rgba(10, 15, 40, 0.7);
+          backdrop-filter: blur(8px);
         }
-        .dowel::before { left: -4px; }
-        .dowel::after { right: -4px; }
-        .dowel-top { animation: dowelTop 0.8s cubic-bezier(0.22, 0.61, 0.36, 1) forwards; }
-        .dowel-bottom { animation: dowelBottom 0.8s cubic-bezier(0.22, 0.61, 0.36, 1) forwards; }
-        .scroll-parchment {
-          background-color: #f2e8cf;
-          background-image:
-            radial-gradient(ellipse at 20% 50%, rgba(180, 150, 100, 0.08) 0%, transparent 50%),
-            radial-gradient(ellipse at 80% 20%, rgba(160, 130, 80, 0.06) 0%, transparent 50%),
-            radial-gradient(ellipse at 50% 80%, rgba(170, 140, 90, 0.07) 0%, transparent 50%),
-            linear-gradient(180deg, rgba(139, 105, 20, 0.06) 0%, transparent 5%, transparent 95%, rgba(139, 105, 20, 0.06) 100%);
+        .folio-container {
+          animation: folioSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
-        .scroll-parchment::before {
-          content: ''; position: absolute; inset: 0;
-          background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
-          pointer-events: none; border-radius: inherit;
+        .folio-paper {
+          background-color: #FDFBF7;
+          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+          background-size: 200px 200px;
+          border: 1px solid rgba(51, 51, 51, 0.15);
         }
-        .scroll-edge-left, .scroll-edge-right { position: absolute; top: 20px; bottom: 20px; width: 12px; z-index: 5; pointer-events: none; }
-        .scroll-edge-left { left: 0; background: linear-gradient(to right, rgba(139, 105, 20, 0.12), transparent); border-left: 1px solid rgba(139, 105, 20, 0.15); }
-        .scroll-edge-right { right: 0; background: linear-gradient(to left, rgba(139, 105, 20, 0.12), transparent); border-right: 1px solid rgba(139, 105, 20, 0.15); }
-        .scroll-content-reveal { animation: fadeInContent 0.5s ease-out 0.6s both; }
-        .tome-drop-cap::first-letter {
+        .folio-rule-line {
+          animation: folioRuleLine 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
+        }
+        .folio-content-ink {
+          animation: folioInkIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
+        }
+        .folio-drop-cap::first-letter {
           float: left; font-family: 'Playfair Display', 'Georgia', serif;
-          font-size: 4.2rem; line-height: 0.8; font-weight: 700; color: #6b4c11;
-          margin-right: 8px; margin-top: 6px; text-shadow: 1px 1px 2px rgba(107, 76, 17, 0.2);
+          font-size: 3.8rem; line-height: 0.85; font-weight: 700; color: #2C2C2C;
+          margin-right: 8px; margin-top: 4px;
         }
         .locked-cards { filter: blur(4px); opacity: 0.5; pointer-events: none; user-select: none; }
         @media (prefers-reduced-motion: reduce) {
-          .scroll-container, .dowel-top, .dowel-bottom, .scroll-content-reveal, .scroll-backdrop, .scroll-candlelight { animation: none !important; }
-          .scroll-container { clip-path: none; opacity: 1; }
-          .dowel-top { top: 0%; } .dowel-bottom { bottom: 0%; }
-          .scroll-content-reveal { opacity: 1; } .scroll-backdrop { opacity: 1; }
+          .folio-container, .folio-backdrop, .folio-rule-line, .folio-content-ink { animation: none !important; }
+          .folio-container { opacity: 1; transform: none; }
+          .folio-backdrop { opacity: 1; }
+          .folio-rule-line { width: 100%; opacity: 1; }
+          .folio-content-ink { opacity: 1; transform: none; }
         }
       `}</style>
 
@@ -218,7 +200,7 @@ export default function VibeDeckContainer({ onMetricsChange }: { onMetricsChange
       {!onboardingComplete && oathTomeId && (
         <div className="rounded-xl border-2 border-amber-300 bg-gradient-to-b from-amber-50 to-white p-6 text-center space-y-3">
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-amber-100 mb-2">
-            <ScrollText className="w-6 h-6 text-amber-700" />
+            <BookOpen className="w-6 h-6 text-amber-700" />
           </div>
           <h3 className="font-display text-lg font-bold text-amber-900">Begin Your Journey</h3>
           <p className="text-sm text-amber-700 max-w-md mx-auto">
@@ -324,7 +306,7 @@ export default function VibeDeckContainer({ onMetricsChange }: { onMetricsChange
                                                 {locked ? (
                                                   <Lock className="w-4 h-4 text-amber-600" />
                                                 ) : (
-                                                  <ScrollText className="w-4 h-4 text-green-600" />
+                                                  <BookOpen className="w-4 h-4 text-green-600" />
                                                 )}
                                               </div>
                                               <div className="flex-1 text-left">
@@ -337,7 +319,7 @@ export default function VibeDeckContainer({ onMetricsChange }: { onMetricsChange
                                             <div className="flex items-center gap-2 flex-shrink-0">
                                               {tome.absorbed && (
                                                 <span className="flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full border border-green-200">
-                                                  <ScrollText className="w-3 h-3" />
+                                                  <BookOpen className="w-3 h-3" />
                                                   Completed
                                                 </span>
                                               )}
@@ -349,7 +331,7 @@ export default function VibeDeckContainer({ onMetricsChange }: { onMetricsChange
                                                     : "border-green-200 bg-green-50 text-green-700 hover:bg-green-100"
                                                 }`}
                                               >
-                                                <ScrollText className="w-3 h-3" />
+                                                <BookOpen className="w-3 h-3" />
                                                 {locked ? "Read Lesson" : "Re-read"}
                                               </button>
                                             </div>
@@ -424,67 +406,56 @@ export default function VibeDeckContainer({ onMetricsChange }: { onMetricsChange
 
       {tomeModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-8" onClick={() => setTomeModal(null)}>
-          <div className="absolute inset-0 scroll-backdrop" />
+          <div className="absolute inset-0 folio-backdrop" />
 
           <div
-            className="relative w-full max-w-2xl scroll-container"
+            className="relative w-full max-w-2xl folio-container"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="dowel dowel-top" />
-            <div className="dowel dowel-bottom" />
-
-            <div className="relative scroll-parchment rounded-sm overflow-hidden scroll-candlelight" style={{ margin: '10px 0' }}>
-              <div className="scroll-edge-left" />
-              <div className="scroll-edge-right" />
-
-              <div className="absolute top-3 right-3 z-30">
+            <div className="folio-paper rounded-xl overflow-hidden shadow-2xl shadow-black/20">
+              <div className="absolute top-4 right-4 z-30">
                 <button
                   onClick={() => setTomeModal(null)}
-                  className="p-2 rounded-full bg-amber-800/20 hover:bg-amber-800/40 text-amber-900/60 hover:text-amber-900 transition-colors"
+                  className="p-2 rounded-full bg-[#2C2C2C]/5 hover:bg-[#2C2C2C]/10 text-[#2C2C2C]/40 hover:text-[#2C2C2C]/70 transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
               <div className="relative px-8 py-10 sm:px-14 sm:py-14 max-h-[80vh] overflow-y-auto">
-                {showScrollContent ? (
-                  <div className="scroll-content-reveal">
-                    <div className="text-center mb-10">
-                      <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-amber-800/10 mb-5">
-                        <ScrollText className="w-7 h-7 text-amber-800/70" />
-                      </div>
+                {showFolioContent ? (
+                  <div>
+                    <div className="text-center mb-8 folio-content-ink">
                       <h2
-                        className="text-2xl sm:text-3xl font-bold text-amber-900/90 mb-3"
-                        style={{ fontFamily: "'EB Garamond', 'Playfair Display', Georgia, serif" }}
+                        className="text-2xl sm:text-3xl font-semibold text-[#2C2C2C] tracking-tight mb-4"
+                        style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
                       >
                         {tomeModal.title}
                       </h2>
-                      <div className="flex items-center justify-center gap-3">
-                        <div className="h-px w-20 bg-gradient-to-r from-amber-700/30 to-transparent" />
-                        <ScrollText className="w-4 h-4 text-amber-700/30" />
-                        <div className="h-px w-20 bg-gradient-to-r from-transparent to-amber-700/30" />
+                      <div className="flex justify-center">
+                        <div className="h-px bg-[#2C2C2C]/15 folio-rule-line" />
                       </div>
                     </div>
 
                     <div
-                      className="tome-drop-cap text-amber-900/80 leading-[1.9] text-base sm:text-lg whitespace-pre-wrap"
-                      style={{ fontFamily: "'EB Garamond', 'Playfair Display', Georgia, serif" }}
+                      className="folio-drop-cap folio-content-ink text-[#2C2C2C]/80 leading-[1.9] text-base sm:text-lg whitespace-pre-wrap"
+                      style={{ fontFamily: "'EB Garamond', Georgia, serif", animationDelay: '0.4s' }}
                     >
                       {tomeModal.content}
                     </div>
 
-                    <div className="mt-10 pt-6 border-t border-amber-800/10 text-center">
+                    <div className="mt-10 pt-6 border-t border-[#33333319] text-center folio-content-ink" style={{ animationDelay: '0.5s' }}>
                       {!tomeModal.absorbed ? (
                         <div className="space-y-3">
-                          <p className="text-sm text-amber-800/60" style={{ fontFamily: "'EB Garamond', Georgia, serif" }}>
+                          <p className="text-sm text-[#2C2C2C]/50" style={{ fontFamily: "'EB Garamond', Georgia, serif" }}>
                             By completing this lesson, you unlock the tasks within.
                           </p>
                           <button
                             onClick={() => handleAbsorbTome(tomeModal.id)}
                             disabled={absorbing}
-                            className="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-amber-700 to-amber-800 text-amber-50 rounded-lg
-                              font-semibold hover:from-amber-800 hover:to-amber-900 transition-all shadow-lg shadow-amber-900/20
-                              disabled:opacity-50 transform hover:scale-[1.03] active:scale-[0.98]"
+                            className="inline-flex items-center gap-2 px-8 py-3 bg-[#2C2C2C] text-[#FDFBF7] rounded-lg
+                              font-semibold hover:bg-[#1a1a1a] transition-all shadow-lg shadow-black/10
+                              disabled:opacity-50 transform hover:scale-[1.02] active:scale-[0.98]"
                             style={{ fontFamily: "'EB Garamond', Georgia, serif" }}
                           >
                             <BookOpen className="w-5 h-5" />
@@ -493,7 +464,7 @@ export default function VibeDeckContainer({ onMetricsChange }: { onMetricsChange
                         </div>
                       ) : (
                         <p className="text-sm text-green-700 font-medium flex items-center justify-center gap-2">
-                          <ScrollText className="w-4 h-4" />
+                          <BookOpen className="w-4 h-4" />
                           Lesson Completed
                         </p>
                       )}
@@ -501,8 +472,8 @@ export default function VibeDeckContainer({ onMetricsChange }: { onMetricsChange
                   </div>
                 ) : (
                   <div className="flex items-center justify-center py-20">
-                    <div className="animate-pulse text-amber-700/30">
-                      <ScrollText className="w-8 h-8" />
+                    <div className="animate-pulse text-[#2C2C2C]/20">
+                      <FileText className="w-8 h-8" />
                     </div>
                   </div>
                 )}
