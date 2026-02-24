@@ -1,0 +1,45 @@
+Gemini said
+Here is the seed script to finish Catalog 03: The Authority's Framework. This will complete the journey for your non-fiction writers, taking them from a "Subject Matter Expert" to a "Published Leader."
+
+Copy and paste this to Replit:
+
+"Please add the final two lessons to Catalog 03: The Authority's Framework on both DEV and PROD.
+
+Lesson 04: The Teacher's Voice
+Content: [Foundation: “Speak to your reader as a friend, not as a professor.”]
+When you write as an Authority, it can be tempting to use big, fancy words to sound smart. But the best teachers know that the most powerful voice is a Simple Voice. Your goal is to be helpful, not to be impressive. We want the reader to feel like they are sitting across from you having a cup of coffee.
+
+We use a technique called Active Teaching. Instead of saying 'One might consider doing this,' you say 'Try this today.' This gives the reader confidence. It makes them feel like they can actually do what you are teaching. Your voice should be encouraging and clear, like a coach on the sidelines. If you wouldn't say a sentence out loud to a friend, you shouldn't put it in your book. Your 'Voice' is what makes the reader trust you.
+
+Tasks for L04:
+
+Speaking: The Coffee Chat — "Imagine your reader is sitting right in front of you. Give them one piece of advice in 60 seconds using the simplest words you can find."
+
+Comprehension: The Coach — "Why is it better to sound like a 'friendly coach' than a 'fancy professor' when you are teaching someone something new?"
+
+Writing: The Clear Cut — "Take a 'fancy' sentence like 'One must utilize the proper implements' and rewrite it to be as simple as possible (e.g., 'Use the right tools')."
+
+Lesson 05: The Call to Action
+Content: [Foundation: “A book is finished when the reader knows exactly what to do next.”]
+The end of a non-fiction book isn't just a goodbye; it is a Call to Action. This is the moment where you tell the reader exactly how to use the knowledge you’ve shared. You’ve built the bridge, and now it’s time for the reader to walk across it and change their life.
+
+A great ending gives the reader a Quick Win. This is a small, easy task they can do right now to see a result. When the reader sees that your advice works in a small way, they will believe it can work in a big way. Finally, look at the Legacy of the Lesson. How will the reader's life be different a year from now because they read your book? By painting a picture of their future success, you leave them feeling inspired and ready to go.
+
+Tasks for L05:
+
+Speaking: The Quick Win — "What is one small thing your reader can do in less than 10 minutes to start solving their 'Big Problem'?"
+
+Comprehension: The Next Step — "Why is it important to give the reader a specific 'Call to Action' at the end of your book?"
+
+Writing: The Future Self — "Write a 'Congratulations' sentence to your reader, describing how much better their life will be after they follow your advice."
+
+Badge Trigger: Completion of this lesson (Lesson 05) must trigger the 'Specialist' seal in the Author Registry for users on the Authority path."
+
+🏁 Status Check
+With this, two out of the four specialized paths are 100% complete.
+
+Catalog 01: Universal Core (5/5) ✅
+
+Catalog 02: The Novelist (5/5) ✅
+
+Catalog 03: The Authority (5/5) ✅

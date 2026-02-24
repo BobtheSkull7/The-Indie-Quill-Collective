@@ -130,6 +130,38 @@ We also use Analogies. An analogy is just a way of explaining something hard by 
           { title: "The Analogy", type: "writing", task: "Pick a hard part of your topic and explain it using an analogy (e.g., 'Learning this skill is like learning to ride a bike because...')." },
         ],
       },
+      {
+        title: "The Teacher's Voice",
+        order_index: 4,
+        content: `[Foundation: "Speak to your reader as a friend, not as a professor."]
+
+When you write as an Authority, it can be tempting to use big, fancy words to sound smart. But the best teachers know that the most powerful voice is a Simple Voice. Your goal is to be helpful, not to be impressive. We want the reader to feel like they are sitting across from you having a cup of coffee.
+
+We use a technique called Active Teaching. Instead of saying 'One might consider doing this,' you say 'Try this today.' This gives the reader confidence. It makes them feel like they can actually do what you are teaching.
+
+Your voice should be encouraging and clear, like a coach on the sidelines. If you wouldn't say a sentence out loud to a friend, you shouldn't put it in your book. Your 'Voice' is what makes the reader trust you.`,
+        tasks: [
+          { title: "The Coffee Chat", type: "speaking", task: "Imagine your reader is sitting right in front of you. Give them one piece of advice in 60 seconds using the simplest words you can find." },
+          { title: "The Coach", type: "comprehension", task: "Why is it better to sound like a 'friendly coach' than a 'fancy professor' when you are teaching someone something new?" },
+          { title: "The Clear Cut", type: "writing", task: "Take a 'fancy' sentence like 'One must utilize the proper implements' and rewrite it to be as simple as possible (e.g., 'Use the right tools')." },
+        ],
+      },
+      {
+        title: "The Call to Action",
+        order_index: 5,
+        content: `[Foundation: "A book is finished when the reader knows exactly what to do next."]
+
+The end of a non-fiction book isn't just a goodbye; it is a Call to Action. This is the moment where you tell the reader exactly how to use the knowledge you've shared. You've built the bridge, and now it's time for the reader to walk across it and change their life.
+
+A great ending gives the reader a Quick Win. This is a small, easy task they can do right now to see a result. When the reader sees that your advice works in a small way, they will believe it can work in a big way.
+
+Finally, look at the Legacy of the Lesson. How will the reader's life be different a year from now because they read your book? By painting a picture of their future success, you leave them feeling inspired and ready to go.`,
+        tasks: [
+          { title: "The Quick Win", type: "speaking", task: "What is one small thing your reader can do in less than 10 minutes to start solving their 'Big Problem'?" },
+          { title: "The Next Step", type: "comprehension", task: "Why is it important to give the reader a specific 'Call to Action' at the end of your book?" },
+          { title: "The Future Self", type: "writing", task: "Write a 'Congratulations' sentence to your reader, describing how much better their life will be after they follow your advice." },
+        ],
+      },
     ];
 
     for (const lesson of lessons) {
@@ -155,7 +187,7 @@ We also use Analogies. An analogy is just a way of explaining something hard by 
     }
 
     await client.query('COMMIT');
-    console.log(`[${label}] Catalog 03 seed complete: 3 lessons, 9 tasks.`);
+    console.log(`[${label}] Catalog 03 seed complete: 5 lessons, 15 tasks.`);
   } catch (err) {
     await client.query('ROLLBACK');
     console.error(`[${label}] Seed failed:`, err);
