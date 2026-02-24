@@ -20,7 +20,7 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.theindiequill.vibescribe",
       "infoPlist": {
-        "NSMicrophoneUsageDescription": "VibeScribe needs access to your microphone to record your voice and transcribe your stories.",
+        "NSMicrophoneUsageDescription": "VibeScribe uses the microphone to capture your spoken stories and dictations. This audio is transcribed in real-time to help you build your manuscript and track your 'Words Spoken' metrics in the Author Scorecard.",
         "ITSAppUsesNonExemptEncryption": false
       }
     },
@@ -41,7 +41,7 @@
       [
         "expo-av",
         {
-          "microphonePermission": "VibeScribe needs your microphone to record your voice."
+          "microphonePermission": "VibeScribe uses the microphone to capture your spoken stories and dictations. This audio is transcribed in real-time to help you build your manuscript and track your 'Words Spoken' metrics in the Author Scorecard."
         }
       ],
       "expo-asset",
