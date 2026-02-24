@@ -1,26 +1,27 @@
 import { Link } from "wouter";
-import { BookOpen, Heart, Feather, ArrowLeft, Mail } from "lucide-react";
+import { BookOpen, Heart, Feather, ArrowLeft, Mail, Users } from "lucide-react";
 
-const masters = [
+const lineage = [
   { name: "Joseph Campbell", work: "The Hero with a Thousand Faces", concept: "The Hero's Journey" },
-  { name: "Blake Snyder", work: "Save the Cat!", concept: "The Narrative Beat Sheet" },
-  { name: "Strunk & White", work: "The Elements of Style", concept: "The Rules of Prose" },
-  { name: "Robert McKee", work: "Story", concept: "The Principles of Substance" },
-  { name: "K.M. Weiland", work: "Structuring Your Novel", concept: "The Architecture of Conflict" },
+  { name: "Jerry Jenkins", work: "The Left Behind Series", concept: "The 21-Point Check" },
+  { name: "James Michener", work: "Hawaii & The Source", concept: "The Sense of Place" },
+  { name: "Jenna Rainey", work: "The Creative Entrepreneur", concept: "Visual Storytelling" },
+  { name: "The Novelry", work: "The Golden Hour", concept: "Structural Physics" },
 ];
 
-const pillars = [
+const partners = [
   { name: "The Indie Quill Collective", role: "Founding Visionary" },
-  { name: "The Founding 25", role: "Honoring our first cohort of student-donors" },
-  { name: "Digital Infrastructure Grant", role: "Future funding partner" },
-  { name: "The Community Heartbeat", role: "Recognizing our local neighborhood partners" },
+  { name: "The Founding 25", role: "Members who joined during our inaugural season." },
+  { name: "The Open Ledger", role: "Transparency in our mission and funding." },
 ];
 
-const advisors = [
-  { name: "To Be Announced", genre: "Speculative Fiction Advisor", status: "Invited" },
-  { name: "To Be Announced", genre: "Non-Fiction & Memoir Mentor", status: "Invited" },
-  { name: "To Be Announced", genre: "Poetry & Verse Consultant", status: "Invited" },
+const council = [
+  { name: "Fiction Lead", status: "Vacant - Applications Open", badge: "Recruiting" },
+  { name: "Non-Fiction Lead", status: "Vacant - Applications Open", badge: "Recruiting" },
+  { name: "Poetry Consultant", status: "Vacant - Applications Open", badge: "Recruiting" },
 ];
+
+const paperGrainBg = `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E")`;
 
 export default function Community() {
 
@@ -32,15 +33,14 @@ export default function Community() {
             className="text-4xl sm:text-5xl font-bold mb-4"
             style={{ fontFamily: "'Playfair Display', serif", color: "#2c1810" }}
           >
-            The Fellowship of the Quill
+            The Quill Collective
           </h1>
           <div className="w-24 h-0.5 bg-amber-700 mx-auto mb-6 opacity-60" />
           <p
             className="text-base sm:text-lg max-w-2xl mx-auto leading-relaxed"
             style={{ fontFamily: "'EB Garamond', 'Georgia', serif", color: "#5c4a3a" }}
           >
-            No story is written in isolation. We celebrate the masters who taught us, the patrons
-            who fund us, and the authors who inspire us.
+            Where community supports the voices of tomorrow.
           </p>
         </div>
 
@@ -48,7 +48,9 @@ export default function Community() {
           <section
             className="rounded-2xl p-6 sm:p-8 border"
             style={{
-              background: "linear-gradient(135deg, #fffbf5 0%, #faf3e8 100%)",
+              backgroundColor: "#FDFBF7",
+              backgroundImage: paperGrainBg,
+              backgroundSize: "200px 200px",
               borderColor: "#d4c4a8",
               boxShadow: "0 4px 24px rgba(44, 24, 16, 0.08)",
             }}
@@ -64,17 +66,17 @@ export default function Community() {
                 className="text-xl font-bold"
                 style={{ fontFamily: "'Playfair Display', serif", color: "#3a2a1a" }}
               >
-                The Masters of Craft
+                The Lineage
               </h2>
             </div>
             <p
               className="text-sm mb-6"
               style={{ fontFamily: "'EB Garamond', 'Georgia', serif", color: "#7a6a5a", lineHeight: "1.6" }}
             >
-              The literary giants whose wisdom forms the bedrock of our curriculum.
+              The voices that guide our curriculum and inspire our standards.
             </p>
             <ul className="space-y-5">
-              {masters.map((master, i) => (
+              {lineage.map((master, i) => (
                 <li key={i} className="border-b pb-4" style={{ borderColor: "#e8d5b7" }}>
                   <p
                     className="text-base font-semibold"
@@ -99,7 +101,9 @@ export default function Community() {
           <section
             className="rounded-2xl p-6 sm:p-8 border"
             style={{
-              background: "linear-gradient(135deg, #f8f5ff 0%, #f0ebfa 100%)",
+              backgroundColor: "#FDFBF7",
+              backgroundImage: paperGrainBg,
+              backgroundSize: "200px 200px",
               borderColor: "#c8b8d8",
               boxShadow: "0 4px 24px rgba(44, 24, 16, 0.08)",
             }}
@@ -115,7 +119,7 @@ export default function Community() {
                 className="text-xl font-bold"
                 style={{ fontFamily: "'Playfair Display', serif", color: "#3a2a4a" }}
               >
-                Our Pillars
+                Our Partners
               </h2>
             </div>
             <p
@@ -125,19 +129,19 @@ export default function Community() {
               The donors and foundations whose generosity makes our mission possible.
             </p>
             <ul className="space-y-5">
-              {pillars.map((pillar, i) => (
+              {partners.map((partner, i) => (
                 <li key={i} className="border-b pb-4" style={{ borderColor: "#dcd0e8" }}>
                   <p
                     className="text-base font-semibold"
                     style={{ fontFamily: "'Playfair Display', serif", color: "#2c1830" }}
                   >
-                    {pillar.name}
+                    {partner.name}
                   </p>
                   <p
                     className="text-sm"
                     style={{ fontFamily: "'EB Garamond', 'Georgia', serif", color: "#8a7a9a" }}
                   >
-                    {pillar.role}
+                    {partner.role}
                   </p>
                 </li>
               ))}
@@ -153,7 +157,7 @@ export default function Community() {
                 }}
               >
                 <Heart className="w-4 h-4" />
-                Support Our Mission
+                Become a Patron
               </Link>
             </div>
           </section>
@@ -161,67 +165,69 @@ export default function Community() {
           <section
             className="rounded-2xl p-6 sm:p-8 border"
             style={{
-              background: "linear-gradient(135deg, #f0f8f5 0%, #e6f3ee 100%)",
-              borderColor: "#a8d4c0",
+              backgroundColor: "#FDFBF7",
+              backgroundImage: paperGrainBg,
+              backgroundSize: "200px 200px",
+              borderColor: "#a8b8d4",
               boxShadow: "0 4px 24px rgba(44, 24, 16, 0.08)",
             }}
           >
             <div className="flex items-center gap-3 mb-6">
               <div
                 className="w-10 h-10 rounded-full flex items-center justify-center"
-                style={{ background: "#c0e8d8" }}
+                style={{ background: "#c0d0e8" }}
               >
-                <Feather className="w-5 h-5" style={{ color: "#2a6b4c" }} />
+                <Users className="w-5 h-5" style={{ color: "#2a4c6b" }} />
               </div>
               <h2
                 className="text-xl font-bold"
-                style={{ fontFamily: "'Playfair Display', serif", color: "#1a3a2a" }}
+                style={{ fontFamily: "'Playfair Display', serif", color: "#1a2a3a" }}
               >
-                The Author Advisory
+                The Writer's Council
               </h2>
             </div>
             <p
               className="text-sm mb-6"
-              style={{ fontFamily: "'EB Garamond', 'Georgia', serif", color: "#5a7a6a", lineHeight: "1.6" }}
+              style={{ fontFamily: "'EB Garamond', 'Georgia', serif", color: "#5a6a7a", lineHeight: "1.6" }}
             >
-              Published authors we are pursuing for mentorship and future guest Lessons.
+              Active leadership roles shaping the future of our literary community.
             </p>
             <ul className="space-y-5">
-              {advisors.map((advisor, i) => (
-                <li key={i} className="border-b pb-4" style={{ borderColor: "#c0e0d0" }}>
+              {council.map((member, i) => (
+                <li key={i} className="border-b pb-4" style={{ borderColor: "#c0d0e0" }}>
                   <p
                     className="text-base font-semibold"
-                    style={{ fontFamily: "'Playfair Display', serif", color: "#1a3020" }}
+                    style={{ fontFamily: "'Playfair Display', serif", color: "#1a2030" }}
                   >
-                    {advisor.name}
+                    {member.name}
                   </p>
                   <p
                     className="text-sm"
-                    style={{ fontFamily: "'EB Garamond', 'Georgia', serif", color: "#6a8a7a" }}
+                    style={{ fontFamily: "'EB Garamond', 'Georgia', serif", color: "#6a7a8a" }}
                   >
-                    {advisor.genre}
+                    {member.status}
                   </p>
                   <span
                     className="inline-block mt-1 text-xs px-2.5 py-0.5 rounded-full"
-                    style={{ background: "#d0f0e0", color: "#2a6b4c", fontWeight: 600 }}
+                    style={{ background: "#d0e0f0", color: "#2a4c6b", fontWeight: 600 }}
                   >
-                    {advisor.status}
+                    {member.badge}
                   </span>
                 </li>
               ))}
             </ul>
-            <div className="mt-6 pt-4 border-t" style={{ borderColor: "#c0e0d0" }}>
+            <div className="mt-6 pt-4 border-t" style={{ borderColor: "#c0d0e0" }}>
               <a
                 href="mailto:community@theindiequillcollective.org"
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all"
                 style={{
-                  background: "linear-gradient(135deg, #3a8a6a 0%, #2a6b4c 100%)",
+                  background: "linear-gradient(135deg, #3a5a8a 0%, #2a4c6b 100%)",
                   color: "#fff",
-                  boxShadow: "0 2px 8px rgba(42, 107, 76, 0.3)",
+                  boxShadow: "0 2px 8px rgba(42, 76, 107, 0.3)",
                 }}
               >
                 <Mail className="w-4 h-4" />
-                Join the Advisory
+                Apply for the Council
               </a>
             </div>
           </section>
