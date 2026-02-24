@@ -1,0 +1,73 @@
+The layout of "The Fellowship" already has a great foundation, but it definitely feels a bit "static." To move from a static list to a Community-Focused Participation hub, we need to inject more "life" into these columns.
+
+Here is the plan to clean up the names and pivot the energy toward active membership in the Community Page.
+
+
+
+🏛️ The Visual Cleanup Plan
+
+1. The Header Change
+
+
+
+Old: "The Fellowship of the Quill"
+
+New: "The Quill Collective" 
+
+Sub-headline: "Where community supports the voices of tomorrow."
+
+2. Updating the Names - change the Masters of Craft to (The Professionals of Writing)
+
+
+
+
+
+Joseph Campbell → (Keep)
+
+Jerry Jenkins → The Left Behind Series | The 21-Point Check
+
+James Michener → Hawaii & The Source | The Sense of Place
+
+Jenna Rainey → The Creative Entrepreneur | Visual Storytelling
+
+The Novelry → The Golden Hour | Structural Physics
+
+🛠️ Instructions for Replit (The Participation Pivot)
+
+"Please update the /community page with a more active, participatory layout. Follow these specific changes:
+
+Column 1: The Lineage (Rename from Masters of Craft)
+
+
+
+Update the list to: Joseph Campbell, Jerry Jenkins, James Michener, Jenna Rainey, and The Novelry.
+
+Change the description to: 'The voices that guide our curriculum and inspire our standards.'
+
+Column 2: Our Partners (Rename from Our Pillars)
+
+
+
+The Indie Quill Collective: Keep as 'Founding Visionary.'
+
+The Founding 25: Change description to: 'Members who joined during our inaugural season.'
+
+Add Item: 'The Open Ledger' — 'Transparency in our mission and funding.'
+
+Action Button: Change text to 'Become a Patron'.
+
+Column 3: The Writer's Council (Rename from Author Advisory)
+
+
+
+Instead of 'To Be Announced,' let's use Active Roles to encourage participation:
+
+Fiction Lead: 'Vacant - Applications Open' (Badge: Recruiting)
+
+Non-Fiction Lead: 'Vacant - Applications Open' (Badge: Recruiting)
+
+Poetry Consultant: 'Vacant - Applications Open' (Badge: Recruiting)
+
+Action Button: Change text to 'Apply for the Council' and change the color to a deep 'Academy Blue' or stay with the current green.
+
+Styling Tweak: Ensure the cards use the same FDFBF7 paper grain background as the Folios to keep the app cohesive."
