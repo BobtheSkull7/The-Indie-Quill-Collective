@@ -815,3 +815,68 @@ export async function sendMentorContactEmail(
     return false;
   }
 }
+
+export async function sendContactUsEmail(
+  senderEmail: string,
+  message: string,
+  source: string
+): Promise<boolean> {
+  try {
+    const { client, fromEmail } = await getResendClient();
+    const adminEmail = await getAdminEmail();
+
+    await client.emails.send({
+      from: fromEmail,
+      to: adminEmail,
+      replyTo: senderEmail,
+      subject: `[Contact] ${source}`,
+      html: `
+        <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background: #0F172A; padding: 30px; text-align: center;">
+            <h1 style="font-family: 'Playfair Display', Georgia, serif; color: white; font-size: 28px; margin: 0;">
+              The Indie Quill Collective
+            </h1>
+            <p style="color: #14b8a6; font-size: 12px; margin: 8px 0 0 0; letter-spacing: 1px;">CONTACT FORM SUBMISSION</p>
+          </div>
+          
+          <div style="background: #f8fafc; padding: 40px 30px;">
+            <div style="background: white; border-radius: 12px; padding: 30px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+              <div style="background: #f0fdf4; border-left: 4px solid #14b8a6; padding: 15px; margin-bottom: 20px; border-radius: 0 8px 8px 0;">
+                <p style="margin: 0; color: #166534; font-size: 14px;"><strong>From:</strong> ${senderEmail}</p>
+                <p style="margin: 4px 0 0 0; color: #166534; font-size: 14px;"><strong>Page:</strong> ${source}</p>
+              </div>
+              
+              <h2 style="font-family: 'Playfair Display', Georgia, serif; color: #1e293b; font-size: 20px; margin: 0 0 15px 0;">
+                Message
+              </h2>
+              <div style="background: #fafafa; border-radius: 8px; padding: 20px; border: 1px solid #e5e7eb;">
+                <p style="margin: 0; color: #374151; font-size: 15px; line-height: 1.7; white-space: pre-wrap;">${message.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>
+              </div>
+              
+              <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e5e7eb;">
+                <p style="margin: 0; color: #9ca3af; font-size: 12px;">
+                  Reply directly to this email to respond to ${senderEmail}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      `,
+    });
+
+    try {
+      await db.insert(emailLogs).values({
+        recipientEmail: adminEmail,
+        emailType: 'contact_form',
+        subject: `[Contact] ${source}`,
+        status: 'sent',
+      });
+    } catch {}
+
+    console.log(`Contact form email sent from ${senderEmail} (${source}) to ${adminEmail}`);
+    return true;
+  } catch (error) {
+    console.error('Failed to send contact form email:', error);
+    return false;
+  }
+}

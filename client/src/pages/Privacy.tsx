@@ -160,10 +160,10 @@ export default function Privacy() {
               For questions about this Privacy Policy, to exercise your data rights, or to report
               a privacy concern, please contact us at{" "}
               <a
-                href="mailto:privacy@theindiequillcollective.com"
+                href="mailto:jon@theindiequill.com"
                 className="text-teal-600 hover:text-teal-700 underline"
               >
-                privacy@theindiequillcollective.com
+                jon@theindiequill.com
               </a>
             </p>
           </section>

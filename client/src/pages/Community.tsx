@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { Link } from "wouter";
 import { BookOpen, Heart, Feather, ArrowLeft, Mail, Users } from "lucide-react";
+import ContactModal from "../components/ContactModal";
 
 const lineage = [
   { name: "Joseph Campbell", work: "The Hero with a Thousand Faces", concept: "The Hero's Journey" },
@@ -24,6 +26,7 @@ const council = [
 const paperGrainBg = `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E")`;
 
 export default function Community() {
+  const [showContactModal, setShowContactModal] = useState(false);
 
   return (
     <div className="min-h-screen" style={{ background: "linear-gradient(180deg, #faf6f0 0%, #f5efe6 40%, #ede4d6 100%)" }}>
@@ -217,9 +220,9 @@ export default function Community() {
               ))}
             </ul>
             <div className="mt-6 pt-4 border-t" style={{ borderColor: "#c0d0e0" }}>
-              <a
-                href="mailto:community@theindiequillcollective.org"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all"
+              <button
+                onClick={() => setShowContactModal(true)}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer"
                 style={{
                   background: "linear-gradient(135deg, #3a5a8a 0%, #2a4c6b 100%)",
                   color: "#fff",
@@ -228,7 +231,7 @@ export default function Community() {
               >
                 <Mail className="w-4 h-4" />
                 Apply for the Council
-              </a>
+              </button>
             </div>
           </section>
         </div>
@@ -244,6 +247,12 @@ export default function Community() {
           </Link>
         </div>
       </div>
+
+      <ContactModal
+        isOpen={showContactModal}
+        onClose={() => setShowContactModal(false)}
+        pageSource="Community Page — Writer's Council Application"
+      />
     </div>
   );
 }

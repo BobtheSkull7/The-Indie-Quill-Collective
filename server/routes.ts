@@ -32,7 +32,7 @@ async function getUserByEmail(email: string): Promise<any | null> {
 }
 import { hash, compare } from "./auth";
 import { migrateAuthorToIndieQuill, retryFailedMigrations, sendApplicationToLLC, sendStatusUpdateToLLC, sendContractSignatureToLLC, sendUserRoleUpdateToLLC } from "./indie-quill-integration";
-import { sendApplicationReceivedEmail, sendApplicationAcceptedEmail, sendApplicationRejectedEmail, sendTestEmailSamples, sendWelcomeToCollectiveEmail, sendPasswordResetEmail, sendMentorContactEmail, getAdminEmail, clearAdminEmailCache } from "./email";
+import { sendApplicationReceivedEmail, sendApplicationAcceptedEmail, sendApplicationRejectedEmail, sendTestEmailSamples, sendWelcomeToCollectiveEmail, sendPasswordResetEmail, sendMentorContactEmail, sendContactUsEmail, getAdminEmail, clearAdminEmailCache } from "./email";
 import { logAuditEvent, logMinorDataAccess, getClientIp } from "./utils/auditLogger";
 import { syncCalendarEvents, getGoogleCalendarConnectionStatus, deleteGoogleCalendarEvent, updateGoogleCalendarEvent, pushSingleEventToGoogle } from "./google-calendar-sync";
 import { getAuthUrl, handleAuthCallback, disconnectGoogleCalendar, validateOAuthState } from "./google-calendar-client";
@@ -1820,6 +1820,43 @@ export async function registerRoutes(app: Express) {
     } catch (error) {
       console.error("Contact mentor error:", error);
       return res.status(500).json({ message: "Failed to send message" });
+    }
+  });
+
+  const contactUsLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 3,
+    message: { message: "Too many messages sent. Please try again later." },
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+
+  app.post("/api/contact-us", contactUsLimiter, async (req: Request, res: Response) => {
+    try {
+      const { email, message, source } = req.body;
+
+      if (!email || typeof email !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+        return res.status(400).json({ message: "A valid email address is required." });
+      }
+      if (!message || typeof message !== "string" || message.trim().length === 0) {
+        return res.status(400).json({ message: "A message is required." });
+      }
+      if (message.trim().length > 5000) {
+        return res.status(400).json({ message: "Message is too long (max 5000 characters)." });
+      }
+
+      const pageSource = (source && typeof source === "string") ? source.trim().substring(0, 200) : "Unknown Page";
+
+      const sent = await sendContactUsEmail(email.trim(), message.trim(), pageSource);
+
+      if (sent) {
+        return res.json({ message: "Your message has been sent. We'll get back to you soon!" });
+      } else {
+        return res.status(500).json({ message: "Failed to send message. Please try again." });
+      }
+    } catch (error) {
+      console.error("Contact us error:", error);
+      return res.status(500).json({ message: "Failed to send message." });
     }
   });
 

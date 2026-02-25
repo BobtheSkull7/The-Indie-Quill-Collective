@@ -2,10 +2,9 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "../App";
 import AuthorScorecard from "../components/AuthorScorecard";
+import ContactModal from "../components/ContactModal";
 import { 
   TrendingUp, 
-  Send,
-  X,
   MessageCircle,
 } from "lucide-react";
 import VibeDeckContainer from "../components/VibeDeckContainer";
@@ -44,10 +43,7 @@ export default function StudentDashboard() {
   const [loading, setLoading] = useState(true);
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [tabeScores, setTabeScores] = useState<TabeScore[]>([]);
-  const [showMentorModal, setShowMentorModal] = useState(false);
-  const [mentorMessage, setMentorMessage] = useState("");
-  const [sendingMessage, setSendingMessage] = useState(false);
-  const [mentorMessageStatus, setMentorMessageStatus] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [showContactModal, setShowContactModal] = useState(false);
   const [stats, setStats] = useState<StudentStats>({
     totalHoursActive: 0,
     totalWordCount: 0,
@@ -122,31 +118,6 @@ export default function StudentDashboard() {
     new Date(b.testDate).getTime() - new Date(a.testDate).getTime()
   )[0];
 
-  const handleSendMentorMessage = async () => {
-    if (!mentorMessage.trim()) return;
-    setSendingMessage(true);
-    setMentorMessageStatus(null);
-    try {
-      const res = await fetch("/api/contact-mentor", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ message: mentorMessage }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setMentorMessageStatus({ type: 'success', text: data.message });
-        setMentorMessage("");
-        setTimeout(() => { setShowMentorModal(false); setMentorMessageStatus(null); }, 2000);
-      } else {
-        setMentorMessageStatus({ type: 'error', text: data.message || "Failed to send message" });
-      }
-    } catch {
-      setMentorMessageStatus({ type: 'error', text: "Network error. Please try again." });
-    } finally {
-      setSendingMessage(false);
-    }
-  };
 
   if (loading) {
     return (
@@ -224,7 +195,7 @@ export default function StudentDashboard() {
                 Your Legacy Mentors are here to support you on your writing journey.
               </p>
               <button 
-                onClick={() => { setShowMentorModal(true); setMentorMessageStatus(null); }}
+                onClick={() => setShowContactModal(true)}
                 className="w-full py-2 bg-white/20 hover:bg-white/30 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
               >
                 <MessageCircle className="w-4 h-4" />
@@ -235,56 +206,11 @@ export default function StudentDashboard() {
         </div>
       </div>
 
-      {showMentorModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
-            <div className="flex items-center justify-between p-6 border-b">
-              <h3 className="text-lg font-bold text-gray-900">Contact Your Mentor</h3>
-              <button onClick={() => setShowMentorModal(false)} className="text-gray-400 hover:text-gray-600">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="p-6">
-              <p className="text-sm text-gray-600 mb-4">
-                Send a message to your mentor. They'll receive your email and get back to you as soon as possible.
-              </p>
-              <textarea
-                value={mentorMessage}
-                onChange={(e) => setMentorMessage(e.target.value)}
-                placeholder="Write your message here..."
-                className="w-full h-32 p-3 border rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                disabled={sendingMessage}
-              />
-              {mentorMessageStatus && (
-                <div className={`mt-3 p-3 rounded-lg text-sm ${
-                  mentorMessageStatus.type === 'success' 
-                    ? 'bg-green-50 text-green-700 border border-green-200' 
-                    : 'bg-red-50 text-red-700 border border-red-200'
-                }`}>
-                  {mentorMessageStatus.text}
-                </div>
-              )}
-            </div>
-            <div className="flex justify-end gap-3 p-6 border-t">
-              <button 
-                onClick={() => setShowMentorModal(false)}
-                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
-                disabled={sendingMessage}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSendMentorMessage}
-                disabled={sendingMessage || !mentorMessage.trim()}
-                className="px-4 py-2 bg-teal-600 text-white rounded-lg text-sm font-medium hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-              >
-                <Send className="w-4 h-4" />
-                {sendingMessage ? "Sending..." : "Send Message"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ContactModal
+        isOpen={showContactModal}
+        onClose={() => setShowContactModal(false)}
+        pageSource="Student Dashboard — Mentor Contact"
+      />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Heart, BookOpen, Users, Star, ArrowLeft, Gift, Sparkles, DollarSign, Loader2, RefreshCw } from "lucide-react";
+import ContactModal from "../components/ContactModal";
 
 const DONATION_TIERS = [
   {
@@ -59,6 +60,7 @@ export default function Donations() {
   const [isRecurring, setIsRecurring] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showContactModal, setShowContactModal] = useState(false);
   const [, setLocation] = useLocation();
 
   const selectedTierData = DONATION_TIERS.find(t => t.id === selectedTier);
@@ -369,16 +371,22 @@ export default function Donations() {
 
         <div className="mt-12 text-center">
           <p className="text-gray-500 text-sm">
-            Questions? Reach out to{" "}
-            <a
-              href="mailto:Jon@theindiequill.com?subject=Donation Inquiry"
-              className="text-teal-600 hover:text-teal-700 underline"
+            Questions?{" "}
+            <button
+              onClick={() => setShowContactModal(true)}
+              className="text-teal-600 hover:text-teal-700 underline cursor-pointer"
             >
-              Jon@theindiequill.com
-            </a>
+              Reach out to us
+            </button>
           </p>
         </div>
       </div>
+
+      <ContactModal
+        isOpen={showContactModal}
+        onClose={() => setShowContactModal(false)}
+        pageSource="Donations Page"
+      />
     </div>
   );
 }
