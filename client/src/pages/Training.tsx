@@ -7,8 +7,7 @@ import StudentsContent from "../components/tabs/StudentsContent";
 import MentorsContent from "../components/tabs/MentorsContent";
 import FamiliesContent from "../components/tabs/FamiliesContent";
 import QuizContent from "../components/tabs/QuizContent";
-import GameTest from "./GameTest";
-import { BookOpen, Users, UserCheck, Heart, Zap, AlertTriangle, Wrench } from "lucide-react";
+import { BookOpen, Users, UserCheck, Heart, Zap, AlertTriangle } from "lucide-react";
 
 class TrainingErrorBoundary extends Component<
   { children: ReactNode },
@@ -104,13 +103,6 @@ export default function Training() {
       label: "Quiz",
       icon: <Zap className="w-4 h-4" />,
       component: <QuizContent />,
-      allowedRoles: ["admin"],
-    },
-    {
-      id: "diagnostics",
-      label: "Diagnostics",
-      icon: <Wrench className="w-4 h-4" />,
-      component: <GameTest embedded />,
       allowedRoles: ["admin"],
     },
   ];
