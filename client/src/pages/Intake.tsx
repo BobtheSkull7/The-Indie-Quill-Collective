@@ -4,9 +4,7 @@ import { useAuth } from "../App";
 import TabbedPillar from "../components/TabbedPillar";
 import ApplicantsContent from "../components/tabs/ApplicantsContent";
 import CohortsContent from "../components/tabs/CohortsContent";
-import VaultContent from "../components/tabs/VaultContent";
-import CharacterCard from "../components/CharacterCard";
-import { Users, FolderOpen, Shield, Gamepad2 } from "lucide-react";
+import { Users, FolderOpen } from "lucide-react";
 
 export default function Intake() {
   const { user } = useAuth();
@@ -40,28 +38,6 @@ export default function Intake() {
       label: "Cohorts",
       icon: <FolderOpen className="w-4 h-4" />,
       component: <CohortsContent />,
-      allowedRoles: ["admin"],
-    },
-    {
-      id: "vault",
-      label: "Vault",
-      icon: <Shield className="w-4 h-4" />,
-      component: <VaultContent />,
-      allowedRoles: ["admin"],
-    },
-    {
-      id: "game",
-      label: "Game Engine",
-      icon: <Gamepad2 className="w-4 h-4" />,
-      component: (
-        <div className="space-y-4">
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold text-slate-800">Game Engine Integration Test</h3>
-            <p className="text-sm text-gray-500">Live character data from the external Game Engine API</p>
-          </div>
-          <CharacterCard apiEndpoint="/api/admin/game-character" />
-        </div>
-      ),
       allowedRoles: ["admin"],
     },
   ];
