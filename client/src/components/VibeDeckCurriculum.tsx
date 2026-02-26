@@ -7,7 +7,7 @@ import {
   Sparkles,
   Plus,
   GripVertical,
-  Star,
+
   Edit2,
   Trash2,
   Check,
@@ -21,7 +21,6 @@ interface VibeCardData {
   task: string;
   qualifications: string | null;
   task_type: string;
-  xp_value: number;
   order_index: number;
 }
 
@@ -65,7 +64,7 @@ export default function VibeDeckCurriculum() {
   const [expandedTomes, setExpandedTomes] = useState<Set<number>>(new Set());
 
   const [editingCard, setEditingCard] = useState<number | null>(null);
-  const [editForm, setEditForm] = useState({ task: "", qualifications: "", xpValue: 0, taskType: "writing" });
+  const [editForm, setEditForm] = useState({ task: "", qualifications: "", taskType: "writing" });
   const [editingCurriculum, setEditingCurriculum] = useState<number | null>(null);
   const [editCurrForm, setEditCurrForm] = useState({ title: "", description: "" });
   const [editingDeck, setEditingDeck] = useState<number | null>(null);
@@ -89,7 +88,6 @@ export default function VibeDeckCurriculum() {
   const [addingCardFor, setAddingCardFor] = useState<number | null>(null);
   const [newCardTask, setNewCardTask] = useState("");
   const [newCardQuals, setNewCardQuals] = useState("");
-  const [newCardXp, setNewCardXp] = useState(100);
   const [newCardTaskType, setNewCardTaskType] = useState("writing");
 
   useEffect(() => {
@@ -273,7 +271,7 @@ export default function VibeDeckCurriculum() {
       const res = await fetch("/api/admin/cards", {
         method: "POST", credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tomeId, task: newCardTask, qualifications: newCardQuals, xpValue: newCardXp, taskType: newCardTaskType }),
+        body: JSON.stringify({ tomeId, task: newCardTask, qualifications: newCardQuals, taskType: newCardTaskType }),
       });
       if (res.ok) {
         await loadCards(tomeId);
@@ -292,7 +290,7 @@ export default function VibeDeckCurriculum() {
   const startEditCard = (card: VibeCardData) => {
     setEditingCurriculum(null); setEditingDeck(null); setEditingTome(null);
     setEditingCard(card.id);
-    setEditForm({ task: card.task, qualifications: card.qualifications || "", xpValue: card.xp_value, taskType: card.task_type || "writing" });
+    setEditForm({ task: card.task, qualifications: card.qualifications || "", taskType: card.task_type || "writing" });
   };
 
   const handleSaveCard = async (cardId: number, tomeId: number) => {
@@ -301,7 +299,7 @@ export default function VibeDeckCurriculum() {
       const res = await fetch(`/api/admin/cards/${cardId}`, {
         method: "PUT", credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ task: editForm.task, qualifications: editForm.qualifications, xpValue: editForm.xpValue, taskType: editForm.taskType }),
+        body: JSON.stringify({ task: editForm.task, qualifications: editForm.qualifications, taskType: editForm.taskType }),
       });
       if (res.ok) { await loadCards(tomeId); setEditingCard(null); }
     } catch (err) { console.error("Error updating card:", err); }
@@ -692,11 +690,6 @@ export default function VibeDeckCurriculum() {
                                                         <option value="comprehension">Comprehension (Logic/Check)</option>
                                                       </select>
                                                     </div>
-                                                    <div className="flex items-center gap-2">
-                                                      <Star className="w-4 h-4 text-amber-400" />
-                                                      <input type="number" value={newCardXp} onChange={(e) => setNewCardXp(Number(e.target.value) || 0)} min={0} className="w-20 px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-purple-500" />
-                                                      <span className="text-xs text-gray-500">XP</span>
-                                                    </div>
                                                     <div className="flex-1" />
                                                     <button onClick={() => setAddingCardFor(null)} className="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-xs transition-colors">Cancel</button>
                                                     <button onClick={() => handleAddCard(tome.id)} disabled={saving || !newCardTask.trim()} className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white rounded-lg text-xs font-medium transition-colors">
@@ -722,11 +715,6 @@ export default function VibeDeckCurriculum() {
                                                             <option value="speaking">Speaking (VibeScribe)</option>
                                                             <option value="comprehension">Comprehension (Logic/Check)</option>
                                                           </select>
-                                                        </div>
-                                                        <div className="flex items-center gap-2">
-                                                          <Star className="w-4 h-4 text-amber-400" />
-                                                          <input type="number" value={editForm.xpValue} onChange={(e) => setEditForm({ ...editForm, xpValue: Number(e.target.value) || 0 })} min={0} className="w-20 px-2 py-1.5 border border-gray-300 rounded-lg text-sm" />
-                                                          <span className="text-xs text-gray-500">XP</span>
                                                         </div>
                                                         <div className="flex-1" />
                                                         <button onClick={() => setEditingCard(null)} className="p-1.5 text-gray-500 hover:text-gray-700 transition-colors"><X className="w-4 h-4" /></button>
@@ -754,10 +742,6 @@ export default function VibeDeckCurriculum() {
                                                       }`}>
                                                         {card.task_type === "speaking" ? "Speaking" : card.task_type === "comprehension" ? "Comprehension" : "Writing"}
                                                       </span>
-                                                      <div className="flex items-center gap-1.5 flex-shrink-0">
-                                                        <Star className="w-3.5 h-3.5 text-amber-400" />
-                                                        <span className="text-xs font-bold text-amber-600">{card.xp_value} XP</span>
-                                                      </div>
                                                       <button onClick={() => startEditCard(card)} className="p-1.5 text-gray-400 hover:text-blue-500 transition-colors"><Edit2 className="w-3.5 h-3.5" /></button>
                                                       <button onClick={() => handleDeleteCard(card.id, tome.id)} className="p-1.5 text-gray-400 hover:text-red-500 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
                                                     </div>
