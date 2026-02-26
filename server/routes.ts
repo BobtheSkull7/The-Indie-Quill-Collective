@@ -357,6 +357,13 @@ export async function registerRoutes(app: Express) {
         return res.status(401).json({ message: "User not found" });
       }
 
+      if (req.session.userRole !== user.role) {
+        req.session.userRole = user.role;
+      }
+      if (user.secondaryRole && req.session.secondaryRole !== user.secondaryRole) {
+        req.session.secondaryRole = user.secondaryRole;
+      }
+
       return res.json({ 
         user: { 
           id: user.id, 
