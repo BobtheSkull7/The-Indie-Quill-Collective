@@ -1854,7 +1854,7 @@ function SubmissionsPanel() {
     <div className="card">
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-display text-xl font-semibold text-slate-800">
-          Card Submissions
+          Student Task Submissions
           <span className="text-sm font-normal text-gray-500 ml-2">({submissions.length} total)</span>
         </h2>
         <div className="flex items-center space-x-2">
