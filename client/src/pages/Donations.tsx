@@ -100,11 +100,13 @@ export default function Donations() {
 
       if (response.ok && data.url) {
         window.location.href = data.url;
+      } else if (response.status === 400) {
+        setError(data.message || "Please check your donation details and try again.");
       } else {
-        setError(data.message || "Failed to create checkout session");
+        setError("Donations are temporarily unavailable. Please try again later.");
       }
     } catch (err) {
-      setError("Something went wrong. Please try again.");
+      setError("Donations are temporarily unavailable. Please try again later.");
     } finally {
       setLoading(false);
     }

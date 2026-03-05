@@ -383,7 +383,7 @@ export const foundationGrants = pgTable("foundation_grants", {
   grantDate: timestamp("grant_date").notNull(),
   grantPurpose: text("grant_purpose"),
   donorLockedAt: timestamp("donor_locked_at"), // When authors are locked to this grant for reporting
-  recordedBy: varchar("recorded_by", { length: 36 }).references(() => users.id).notNull(),
+  createdBy: varchar("recorded_by", { length: 36 }).references(() => users.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -418,8 +418,8 @@ export const foundationGrantsRelations = relations(foundationGrants, ({ one }) =
     fields: [foundationGrants.assignedCohortId],
     references: [cohorts.id],
   }),
-  recorder: one(users, {
-    fields: [foundationGrants.recordedBy],
+  creator: one(users, {
+    fields: [foundationGrants.createdBy],
     references: [users.id],
   }),
 }));

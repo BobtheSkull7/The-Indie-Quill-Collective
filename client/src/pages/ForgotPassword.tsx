@@ -50,8 +50,11 @@ export default function ForgotPassword() {
             <div className="text-center py-6">
               <CheckCircle className="w-16 h-16 text-teal-500 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-slate-800 mb-2">Check Your Email</h3>
-              <p className="text-gray-600 mb-6">
+              <p className="text-gray-600 mb-4">
                 If an account exists with <strong>{email}</strong>, you'll receive a password reset link shortly. The link expires in 1 hour.
+              </p>
+              <p className="text-sm text-gray-500 mb-6">
+                Don't see it? Check your spam or junk folder. If you still don't receive it, contact us for help.
               </p>
               <Link href="/login" className="text-teal-600 font-medium hover:underline">
                 Back to Sign In

@@ -29,6 +29,7 @@ import Initiation from "./pages/Initiation";
 import Workspace from "./pages/Workspace";
 import Privacy from "./pages/Privacy";
 import Community from "./pages/Community";
+import Board from "./pages/Board";
 import Navbar from "./components/Navbar";
 
 interface User {
@@ -129,6 +130,8 @@ function App() {
           <Route path="/auditor">
             <Redirect to="/admin/outcomes" />
           </Route>
+          
+          <Route path="/board" component={Board} />
           
           <Route path="/contracts" component={Contracts} />
           <Route path="/contracts/:id" component={ContractSign} />

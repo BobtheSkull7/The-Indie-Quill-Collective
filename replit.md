@@ -53,6 +53,11 @@ The project utilizes a client-server architecture. The frontend is built with Re
 ## App Store Compliance Notes
 - **Issue 90725 (SDK Version):** Starting April 28, 2026, all iOS and iPadOS apps must be built with the iOS 26 SDK or later (included in Xcode 26 or later) to be uploaded to App Store Connect or submitted for distribution. Current builds use iOS 18.2 SDK — must upgrade before that deadline.
 
+## Database Schema Notes
+- **foundation_grants table:** DB column is `recorded_by` (not `created_by`). Drizzle schema maps it as `createdBy: varchar("recorded_by")`. Routes use `createdBy: req.session.userId` for inserts.
+- **Board member routing:** `/board` route registered in App.tsx, Board.tsx page with stats, calendar, fundraising views.
+- **Auditor/Board access:** `/api/auditor/metrics` and `/api/auditor/dglf-impact-report` allow `auditor`, `admin`, and `board_member` roles.
+
 ## External Dependencies
 - **Supabase:** PostgreSQL database services.
 - **Google Calendar API:** For two-way event synchronization.

@@ -1953,8 +1953,39 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  app.get("/api/admin/pipeline", async (req: Request, res: Response) => {
+    if (!req.session.userId || !hasRole(req.session, "admin")) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    try {
+      const result = await db.execute(sql`
+        SELECT 
+          pu.id,
+          pu.application_id as "applicationId",
+          pu.user_id as "userId",
+          pu.status as "stage",
+          pu.status_message as "statusMessage",
+          pu.updated_at as "updatedAt",
+          a.pseudonym as "authorPseudonym",
+          a.manuscript_title as "manuscriptTitle",
+          a.manuscript_word_count as "manuscriptWordCount",
+          u.first_name as "firstName",
+          u.last_name as "lastName"
+        FROM publishing_updates pu
+        JOIN applications a ON pu.application_id = a.id
+        JOIN users u ON pu.user_id = u.id
+        ORDER BY pu.updated_at DESC
+      `);
+      return res.json(result.rows || []);
+    } catch (error) {
+      console.error("Fetch pipeline error:", error);
+      return res.status(500).json({ message: "Failed to fetch pipeline data" });
+    }
+  });
+
   app.put("/api/admin/publishing-status/:id", async (req: Request, res: Response) => {
-    if (!req.session.userId || req.session.userRole !== "admin") {
+    if (!req.session.userId || !hasRole(req.session, "admin")) {
       return res.status(403).json({ message: "Not authorized" });
     }
 
@@ -1962,7 +1993,7 @@ export async function registerRoutes(app: Express) {
       const updateId = parseInt(req.params.id);
       const { status } = req.body;
 
-      const validStatuses = ['agreement', 'creation', 'editing', 'review', 'modifications', 'published', 'marketing'];
+      const validStatuses = ['not_started', 'manuscript_received', 'cover_design', 'formatting', 'agreement', 'creation', 'editing', 'review', 'modifications', 'published', 'marketing'];
       if (!validStatuses.includes(status)) {
         return res.status(400).json({ message: "Invalid status" });
       }
@@ -2783,8 +2814,7 @@ export async function registerRoutes(app: Express) {
       return res.status(401).json({ message: "Not authenticated" });
     }
 
-    // Only auditors and admins can access this endpoint
-    if (!hasRole(req.session, "auditor", "admin")) {
+    if (!hasRole(req.session, "auditor", "admin", "board_member")) {
       return res.status(403).json({ message: "Not authorized - Auditor access required" });
     }
 
@@ -2897,7 +2927,7 @@ export async function registerRoutes(app: Express) {
       return res.status(401).json({ message: "Not authenticated" });
     }
 
-    if (!hasRole(req.session, "auditor", "admin")) {
+    if (!hasRole(req.session, "auditor", "admin", "board_member")) {
       return res.status(403).json({ message: "Not authorized - Auditor access required" });
     }
 
@@ -4901,7 +4931,7 @@ export function registerGrantRoutes(app: Express) {
         assignedCohortId: assignedCohortId || null,
         grantDate: new Date(grantDate),
         grantPurpose,
-        recordedBy: req.session.userId,
+        createdBy: req.session.userId,
       }).returning();
 
       // Update solicitation log to "funded" if there's a recent one
@@ -5697,7 +5727,11 @@ export async function registerDonationRoutes(app: Express) {
       return res.json({ url: session.url, sessionId: session.id });
     } catch (error: any) {
       console.error("Failed to create checkout session:", error);
-      return res.status(500).json({ message: error.message || "Failed to create checkout session" });
+      const isStripeConfig = error.message?.includes('not configured') || error.message?.includes('connection not found') || error.type === 'StripeAuthenticationError';
+      const safeMessage = isStripeConfig
+        ? "Donations are temporarily unavailable. Please try again later."
+        : "Failed to create checkout session. Please try again.";
+      return res.status(500).json({ message: safeMessage });
     }
   });
 
@@ -5774,7 +5808,11 @@ export async function registerDonationRoutes(app: Express) {
       return res.json({ url: session.url, sessionId: session.id });
     } catch (error: any) {
       console.error("Failed to create subscription session:", error);
-      return res.status(500).json({ message: error.message || "Failed to create subscription" });
+      const isStripeConfig = error.message?.includes('not configured') || error.message?.includes('connection not found') || error.type === 'StripeAuthenticationError';
+      const safeMessage = isStripeConfig
+        ? "Donations are temporarily unavailable. Please try again later."
+        : "Failed to create subscription. Please try again.";
+      return res.status(500).json({ message: safeMessage });
     }
   });
 
@@ -7031,6 +7069,79 @@ export async function registerDonationRoutes(app: Express) {
     } catch (error) {
       console.error("Error fetching mentor stats:", error);
       res.status(500).json({ error: "Failed to fetch mentor stats" });
+    }
+  });
+
+  app.get("/api/admin/mentor-assignments", async (req: Request, res: Response) => {
+    if (!req.session.userId || !hasRole(req.session, "admin")) {
+      return res.status(403).json({ error: "Not authorized" });
+    }
+
+    try {
+      const result = await db.execute(sql`
+        SELECT msa.id, msa.mentor_id as "mentorId", msa.student_id as "studentId",
+          msa.assigned_at as "assignedAt", msa.is_active as "isActive",
+          mu.first_name || ' ' || mu.last_name as "mentorName",
+          su.first_name || ' ' || su.last_name as "studentName",
+          su.email as "studentEmail"
+        FROM mentor_student_assignments msa
+        JOIN users mu ON mu.id = msa.mentor_id
+        JOIN users su ON su.id = msa.student_id
+        ORDER BY msa.assigned_at DESC
+      `);
+      res.json(result.rows || []);
+    } catch (error) {
+      console.error("Error fetching mentor assignments:", error);
+      res.status(500).json({ error: "Failed to fetch mentor assignments" });
+    }
+  });
+
+  app.post("/api/admin/mentor-assignments", async (req: Request, res: Response) => {
+    if (!req.session.userId || !hasRole(req.session, "admin")) {
+      return res.status(403).json({ error: "Not authorized" });
+    }
+
+    try {
+      const { mentorId, studentId } = req.body;
+      if (!mentorId || !studentId) {
+        return res.status(400).json({ error: "mentorId and studentId are required" });
+      }
+
+      const existing = await db.execute(sql`
+        SELECT id FROM mentor_student_assignments
+        WHERE mentor_id = ${mentorId} AND student_id = ${studentId}
+      `);
+      if (existing.rows.length > 0) {
+        return res.status(400).json({ error: "This student is already assigned to this mentor" });
+      }
+
+      const result = await db.execute(sql`
+        INSERT INTO mentor_student_assignments (mentor_id, student_id, assigned_at, is_active)
+        VALUES (${mentorId}, ${studentId}, NOW(), true)
+        RETURNING id, mentor_id as "mentorId", student_id as "studentId", assigned_at as "assignedAt", is_active as "isActive"
+      `);
+
+      res.json(result.rows[0]);
+    } catch (error) {
+      console.error("Error creating mentor assignment:", error);
+      res.status(500).json({ error: "Failed to create mentor assignment" });
+    }
+  });
+
+  app.delete("/api/admin/mentor-assignments/:id", async (req: Request, res: Response) => {
+    if (!req.session.userId || !hasRole(req.session, "admin")) {
+      return res.status(403).json({ error: "Not authorized" });
+    }
+
+    try {
+      const assignmentId = parseInt(req.params.id);
+      await db.execute(sql`
+        DELETE FROM mentor_student_assignments WHERE id = ${assignmentId}
+      `);
+      res.json({ message: "Assignment removed" });
+    } catch (error) {
+      console.error("Error removing mentor assignment:", error);
+      res.status(500).json({ error: "Failed to remove mentor assignment" });
     }
   });
 

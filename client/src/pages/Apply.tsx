@@ -11,6 +11,8 @@ export default function Apply() {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
   const [formData, setFormData] = useState({
     pseudonym: "",
     personaType: "" as "" | "writer" | "adult_student" | "family_student",
@@ -44,6 +46,48 @@ export default function Apply() {
   const handleDateChange = (dob: string) => {
     const isMinor = calculateAge(dob) < 18;
     setFormData({ ...formData, dateOfBirth: dob, isMinor });
+    if (fieldErrors.dateOfBirth) {
+      setFieldErrors(prev => ({ ...prev, dateOfBirth: "" }));
+    }
+  };
+
+  const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const isValidPhone = (phone: string) => /^[\d\s()\-+.]{7,20}$/.test(phone);
+
+  const validateStep1 = (): boolean => {
+    const errors: Record<string, string> = {};
+
+    if (!formData.personaType) {
+      errors.personaType = "Please select how you are joining us";
+    }
+    if (!formData.pseudonym.trim()) {
+      errors.pseudonym = "Pseudonym is required";
+    }
+    if (!formData.dateOfBirth) {
+      errors.dateOfBirth = "Date of birth is required";
+    }
+
+    if (formData.isMinor) {
+      if (!formData.guardianName.trim()) {
+        errors.guardianName = "Guardian name is required";
+      }
+      if (!formData.guardianEmail.trim()) {
+        errors.guardianEmail = "Guardian email is required";
+      } else if (!isValidEmail(formData.guardianEmail)) {
+        errors.guardianEmail = "Please enter a valid email address";
+      }
+      if (!formData.guardianPhone.trim()) {
+        errors.guardianPhone = "Guardian phone is required";
+      } else if (!isValidPhone(formData.guardianPhone)) {
+        errors.guardianPhone = "Please enter a valid phone number (digits, dashes, and parentheses only)";
+      }
+      if (!formData.guardianRelationship) {
+        errors.guardianRelationship = "Please select a relationship";
+      }
+    }
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -244,6 +288,7 @@ export default function Apply() {
                       <span className="text-xs text-gray-500 text-center mt-1">My family is learning together</span>
                     </label>
                   </div>
+                  {fieldErrors.personaType && <p className="text-red-500 text-sm mt-2">{fieldErrors.personaType}</p>}
                 </div>
 
                 <div>
@@ -257,6 +302,7 @@ export default function Apply() {
                     onChange={(e) => setFormData({ ...formData, pseudonym: e.target.value })}
                   />
                   <p className="text-xs text-gray-500 mt-1">This is how your name will appear on published works. Your legal name remains private.</p>
+                  {fieldErrors.pseudonym && <p className="text-red-500 text-sm mt-1">{fieldErrors.pseudonym}</p>}
                 </div>
 
                 <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
@@ -309,6 +355,7 @@ export default function Apply() {
                     value={formData.dateOfBirth}
                     onChange={(e) => handleDateChange(e.target.value)}
                   />
+                  {fieldErrors.dateOfBirth && <p className="text-red-500 text-sm mt-1">{fieldErrors.dateOfBirth}</p>}
                 </div>
 
                 {formData.isMinor && (
@@ -334,6 +381,7 @@ export default function Apply() {
                           value={formData.guardianName}
                           onChange={(e) => setFormData({ ...formData, guardianName: e.target.value })}
                         />
+                        {fieldErrors.guardianName && <p className="text-red-500 text-sm mt-1">{fieldErrors.guardianName}</p>}
                       </div>
 
                       <div>
@@ -346,6 +394,7 @@ export default function Apply() {
                           value={formData.guardianEmail}
                           onChange={(e) => setFormData({ ...formData, guardianEmail: e.target.value })}
                         />
+                        {fieldErrors.guardianEmail && <p className="text-red-500 text-sm mt-1">{fieldErrors.guardianEmail}</p>}
                       </div>
 
                       <div>
@@ -358,6 +407,7 @@ export default function Apply() {
                           value={formData.guardianPhone}
                           onChange={(e) => setFormData({ ...formData, guardianPhone: e.target.value })}
                         />
+                        {fieldErrors.guardianPhone && <p className="text-red-500 text-sm mt-1">{fieldErrors.guardianPhone}</p>}
                       </div>
 
                       <div>
@@ -374,6 +424,7 @@ export default function Apply() {
                           <option value="grandparent">Grandparent</option>
                           <option value="other">Other Legal Guardian</option>
                         </select>
+                        {fieldErrors.guardianRelationship && <p className="text-red-500 text-sm mt-1">{fieldErrors.guardianRelationship}</p>}
                       </div>
                     </div>
                   </div>
@@ -383,7 +434,7 @@ export default function Apply() {
                   <button type="button" onClick={() => setLocation("/")} className="btn-secondary">
                     Back to Home
                   </button>
-                  <button type="button" onClick={() => setStep(2)} className="btn-primary">
+                  <button type="button" onClick={() => { if (validateStep1()) { setStep(2); setError(""); } }} className="btn-primary">
                     Next: Your Story
                   </button>
                 </div>

@@ -90,9 +90,12 @@ export default function OperationsPanel() {
         a.click();
         window.URL.revokeObjectURL(url);
         a.remove();
+      } else {
+        alert('Failed to generate compliance report. Please try again.');
       }
     } catch (error) {
       console.error('Failed to export compliance report:', error);
+      alert('Failed to generate compliance report. Please try again.');
     } finally {
       setExportingCompliance(false);
     }

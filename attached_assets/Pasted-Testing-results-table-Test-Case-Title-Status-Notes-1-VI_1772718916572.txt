@@ -1,0 +1,1015 @@
+Testing results table:
+
+Test Case #
+Title
+Status
+Notes
+1. VISITOR (Unauthenticated)
+1.1
+
+Home page loads
+
+
+
+
+1.2
+About page
+
+
+
+
+1.3
+Sign In page
+
+
+
+
+1.4
+Join Us / Apply
+
+
+
+
+1.5
+Public donations
+
+
+
+
+2. APPLICANT Flow (New User → Application → Awaiting Review)
+2.1
+Register account
+
+
+
+
+2.2
+Submit application
+
+
+
+
+2.3
+Minor applicant
+
+
+
+
+2.4
+Identity choice
+
+
+
+
+2.5
+View application status
+
+
+
+
+2.6
+Rescind application
+
+
+
+
+3. ADMIN Flow (Application Review & Management)
+3a
+Application Management
+
+
+
+
+3b
+Cohort Management
+
+
+
+
+3c
+Contract Management
+
+
+
+
+3d
+Grant & Donor Management
+
+
+
+
+3e
+Ledger & Operations
+
+
+
+
+3f
+Wiki & Vault
+
+
+
+
+3g
+ Email & Settings
+
+
+
+
+3h
+Compliance
+
+
+
+
+3i
+Calendar Integration
+
+
+
+
+3j
+Curriculum Builder (Admin)
+
+
+
+
+3k
+Submissions Review
+
+
+
+
+4. STUDENT Flow (The Core Learning & Writing Journey)
+4a
+ Dashboard & Character
+
+
+
+
+4b
+Contracts
+
+
+
+
+4c
+Curriculum & Vibe Decks
+
+
+
+
+4d
+Manuscript Editor (Legacy Card Writing)
+
+
+
+
+4e
+Scribe's Sanctum (Workspace)
+
+
+
+
+4f
+RPG Progression
+
+
+
+
+4g
+Community & Contact
+
+
+
+
+5. DUAL-ROLE USERS
+5.1
+Admin + Board Member
+
+
+
+
+5.2
+Role-based guards
+
+
+
+
+5.3
+Try student pages as admin
+
+
+
+
+6. SECURITY & EDGE CASES
+6.1
+Rate limiting
+
+
+
+
+6.2
+Contract signing rate limit
+
+
+
+
+6.3
+Session security
+
+
+
+
+6.4
+Unauthenticated API
+
+
+
+
+6.5
+SQL injection
+
+
+
+
+6.6
+Password reset
+
+
+
+
+6.7
+Helmet headers
+
+
+
+
+7. DONATIONS (Stripe)
+7.1
+Donation page
+
+
+
+
+7.2
+Process donation
+
+
+
+
+8. VIBESCRIBE MOBILE APP (If Testing iOS)
+8.1
+Keypad login
+
+
+
+
+8.2
+Record audio
+
+
+
+
+8.3
+Transcription
+
+
+
+
+8.4
+Playback
+
+
+
+
+8.5
+Send to Workspace
+
+
+
+
+8.6
+History
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Bug Reports:
+Bug Report: Missing Required Field Validation on Application Form
+
+The "Personal Information" section of the application form identifies several fields as mandatory using an asterisk (*). However, the system allows the user to click the "Next: Your Story" button and proceed to the next step without entering any data into these fields or displaying an error message.
+
+Steps to Reproduce
+Navigate to the application URL.
+Leave the "Pseudonym (Creative Identity)" field blank.
+Leave the "Date of Birth" field blank.
+Scroll to the bottom and click the "Next: Your Story" button.
+Expected Result
+The form should prevent navigation. Inline error messages (e.g., "This field is required") should appear in red below the empty mandatory fields, and the focus should jump to the first missing entry.
+Actual Result
+The system ignores the "required" status and attempts to load the next section of the form despite the missing information.
+
+
+
+Bug Report: Forgot Password link isn’t working
+
+As a user I clicked the forgot your  password link and entered my email address then wait some time, but no email message was received.
+
+Bug Report: "Export Compliance PDF" Button Inactive
+The "Export Compliance PDF" button on the Operations Dashboard is currently non-functional. Clicking the button results in no action: no PDF is generated, no download is triggered, and no error message is displayed to the user.
+Steps to Reproduce
+Log in to the The Indie Quill Collective portal as an Admin.
+Navigate to the Dashboard in the top navigation bar.
+Select the Operations tab within the Admin Dashboard.
+Click the green "Export Compliance PDF" button located in the top-right of the Operations section.
+
+
+
+
+
+
+
+Bug Report: Missing Input Validation on Guardian Contact Fields
+The Guardian Email and Guardian Phone fields lack proper input validation. Users are currently able to submit or enter invalid data formats (such as non-numeric characters in the phone field and non-email strings in the email field) without triggering an error message or restriction.
+Steps to Reproduce
+Navigate to the intake form where "Guardian Information" is required (triggered by a Date of Birth indicating a minor).
+In the Guardian Email field, enter a string that does not follow standard email formatting (e.g., "rt34554few").
+In the Guardian Phone field, enter an excessively long string containing both numbers and letters (e.g., "12323432...nghjhgjgjk").
+Observe that the fields do not display validation errors or block the invalid input.
+
+
+
+Bug Report: "Advance" Action Does Not Persist After Refresh
+When a user clicks the "Advance" action on a manuscript in the Publishing Pipeline, the "Stage" status updates visually in the UI. However, this change is not being persisted to the database. Upon clicking the "Refresh" button or reloading the page, the manuscript reverts to its previous stage.
+Steps to Reproduce
+Navigate to the Publishing tab and ensure the Pipeline sub-tab is selected.
+Identify a manuscript (e.g., "Legacy Work #2" currently in the Editing stage).
+Click the "Advance >" link in the Action column.
+Observe the Stage label change visually (e.g., from Editing to Vaulted).
+Click the "Refresh" button located at the top right of the Publishing Pipeline section.
+Observe the manuscript's stage.
+
+
+Bug Report: Student Role Permissions Not Enforced
+Users assigned the Student role are not being restricted to the appropriate student-facing interface. Despite being marked as an "Applicant" in the backend, the user's view includes navigation items and pages intended for advanced or internal use, rather than a restricted intake or student dashboard.
+Steps to Reproduce
+Log in to the Admin Dashboard and verify a user (e.g., "Miia Student") is assigned the Role: Applicant.
+Log in as that specific student user ("Miia").
+Observe the top navigation bar and accessible pages.
+
+
+
+
+Bug Report: Missing Client-Side Validation for "Date of Birth" on Step 1
+The Date of Birth field is marked as obligatory (asterisk present), but the form allows the user to proceed to the next steps even if the field is left empty. The error is only caught by the server upon final submission, forcing the user to navigate back to the first step to correct it.
+Steps to Reproduce
+Open the Intake Form.
+On the first page ("Personal Information"), fill in the "How are you joining us?" and "Pseudonym" fields.
+Leave the Date of Birth field empty (mm/dd/yyyy).
+Click the "Next: Your Story" button.
+Complete all subsequent steps of the intake form.
+Click the final submission button.
+
+
+
+Bug Report: Grant Creation Failure in Grant
+An error occurs when attempting to record a new grant for a foundation within the Outcomes module. Despite filling in required fields such as Amount ($), Target Authors, and Grant Date, the system returns a "Failed to create grant" error message.
+Steps to Reproduce
+Log in to The Indie Quill Collective portal.
+Navigate to the Outcomes tab and select the Grants sub-section.
+Locate an active foundation (e.g., "Test Charity") and click the + Add Grant button.
+Enter valid data into the following fields:
+Amount ($): 10000
+Target Authors: 10
+Grant Date: 03/05/2026
+Click the Record Grant button.
+
+
+
+Bug Report: Auditor Metrics Fetch Failure
+When a user (e.g., Board Member) navigates to the Auditor section within the Outcomes module, the system fails to load the expected data. Instead of displaying financial or impact metrics, a central error message is shown.
+Steps to Reproduce
+Log in to The Indie Quill Collective portal.
+Navigate to the Outcomes tab in the top navigation bar.
+Click on the Auditor sub-tab.
+Observe the main content area.
+
+
+Bug Report: 404 Error on Board Member Path
+Users logged in with Board Member permissions are unable to access the board-specific dashboard. Navigating to the /board URL results in a "Page Not Found" error instead of the intended content.
+Steps to Reproduce
+Log in to The Indie Quill Collective portal with a user account assigned the Board Member role.
+Navigate to the board URL: theindiequillcollective.com/board.
+Observe the page content.
+
+
+Bug Report: Payment Processing Failure - Stripe Credentials Unconfigured
+The donation payment system is non-functional because the required Stripe integration keys are missing from the environment configuration. When a user attempts to complete a donation, a technical error message is displayed to the end-user, revealing internal configuration details.
+Steps to Reproduce
+Navigate to the "Complete Your Donation" section on the website.
+Enter a valid donation amount (e.g., $10).
+Fill in the Email (for receipt) field.
+Observe the error banner located above the "Donate $10.00" button.
+
+
+Bug Report: Impact Report Generation Failure
+The "Generate DGLF Impact Report" button in the Auditor Analytics Command Center is non-functional. Clicking the button triggers an error message instead of generating and downloading the expected report.
+Steps to Reproduce
+Log in to The Indie Quill Collective portal with appropriate permissions (e.g., Board Member/Auditor).
+Navigate to the Outcomes tab and select the Auditor sub-tab.
+Click the green "Generate DGLF Impact Report" button located in the Analytics Command Center.
+Observe the interface reaction.
+
+
+
+Bug Report: Mentor Unable to Select Students for Sessions
+A user logged in with the Mentor role is unable to schedule a session because the "Student" dropdown menu within the Schedule Session modal does not populate with available students. The user reports that 2 students are currently assigned/presented in their roster, but the dropdown remains empty.
+Steps to Reproduce
+Log in to The Indie Quill Collective portal as a Mentor (e.g., user "Miia").
+Navigate to the Mentor Dashboard (My Students tab).
+Click on the "Schedule Session" button under Quick Actions.
+Click the "Student" dropdown menu.
+Observe the available options.
+
+
+
+
+
+
+
+
+Revised Test Cases as of 02/25/2026
+End-to-End Test Cases — The Indie Quill Collective
+1. Authentication & Account Management
+#
+Test Case
+Steps
+Expected Result
+1.1
+New user registration
+Go to /register, fill in name, email, password, confirm password
+Account created with applicant role, redirected to applicant dashboard
+1.2
+Login with valid credentials
+Go to /login, enter valid email/password
+Logged in, redirected to role-appropriate dashboard
+1.3
+Login with invalid credentials
+Enter wrong email or password
+Error message shown, no session created
+1.4
+Session persistence
+Log in, close tab, reopen app
+Still logged in (session lasts 24 hours)
+1.5
+Logout
+Click Sign Out from any authenticated page
+Session cleared, redirected to home
+1.6
+Forgot password flow
+Click "Forgot Password," enter registered email
+Reset email sent via Resend, link works, password updated successfully
+1.7
+GDPR data export
+Logged-in user requests data export
+JSON file downloaded with all personal data
+1.8
+GDPR account deletion
+Logged-in user requests account deletion
+Account and all related data cascade-deleted
+
+
+2. Role-Based Access & Routing
+#
+Test Case
+Steps
+Expected Result
+2.1
+Applicant routing
+Log in as applicant
+Redirected to /dashboard (application tracker)
+2.2
+Student routing
+Log in as student (Bob)
+Redirected to /student (student dashboard)
+2.3
+Admin routing
+Log in as admin (Jon)
+Redirected to /admin/intake
+2.4
+Student cannot access admin
+Log in as student, navigate to /admin
+Access denied or redirected
+2.5
+Applicant cannot access student pages
+Log in as applicant, navigate to /student
+Access denied or redirected
+2.6
+Unauthenticated access blocked
+Navigate to /student/workspace without logging in
+Redirected to /login
+
+
+3. Application & Onboarding ("The Ritual of Initiation")
+#
+Test Case
+Steps
+Expected Result
+3.1
+Submit application
+Log in as applicant, go to /apply, fill form, submit
+Application created with "pending" status
+3.2
+Initiation flow — full
+Go to /initiation, complete Account → Identity → Covenant → Pledge steps
+Application and contract created, persona/pseudonym saved
+3.3
+Minor author COPPA flow
+Register as under-18, complete initiation
+Guardian details required, guardian signature field on contract
+3.4
+Application status tracking
+Log in as applicant with submitted application
+See current application status on dashboard
+
+
+4. Admin — Applicant Management
+#
+Test Case
+Steps
+Expected Result
+4.1
+View applicants
+Log in as admin, go to Applicants tab
+See list of all applications with status filters
+4.2
+Review application
+Click on an applicant, view full details
+Application details, review notes field visible
+4.3
+Accept application
+Change application status to "Accepted"
+User promoted to student/writer, Short ID generated, contract generated, cohort assigned
+4.4
+Reject application
+Change application status to "Rejected"
+User notified, status updated
+
+
+5. Contract Management
+#
+Test Case
+Steps
+Expected Result
+5.1
+Contract generated on acceptance
+Admin accepts an application
+Contract auto-created with correct applicant details
+5.2
+Author signs contract
+Author logs in, views contract, signs with e-signature
+Signature recorded with forensic metadata (timestamp, IP)
+5.3
+Guardian signs (minor)
+Guardian receives and signs contract
+Guardian signature saved alongside author signature
+5.4
+Download signed PDF
+Click "Download PDF" on a signed contract
+PDF generated with all signatures, legal formatting intact
+
+
+6. Curriculum — Student View
+#
+Test Case
+Steps
+Expected Result
+6.1
+View curriculum (no path selected)
+Log in as student with no author_path
+See only "The Universal Core" catalog with 5 lessons
+6.2
+Expand catalog to see lessons
+Click on The Universal Core
+5 lessons visible: Author's Mindset, Big Idea Validation, Narrative Blueprint, VibeScribe Flow, Reader's Promise
+6.3
+Expand lesson to see tasks
+Click on a lesson
+3 tasks visible per lesson (speaking, comprehension, writing)
+6.4
+Lesson absorption ("Folio Reveal")
+Click to read a lesson
+Folio Reveal animation plays — paper-grain backdrop, slide-up card, ink-in content
+6.5
+Mark lesson as absorbed
+Read lesson content, click "I've absorbed this"
+tome_absorptions row created, tasks unlocked
+6.6
+Tasks gated by lesson absorption
+Try to start a task before absorbing its lesson
+Task locked or prompt to complete lesson first
+6.7
+Curriculum filtering after path selection
+Student selects "Novelist" path
+Sees Universal Core + The Novelist's Craft; does NOT see Poet, Authority, or Storyteller catalogs
+
+
+7. Path Selection ("The Induction")
+#
+Test Case
+Steps
+Expected Result
+7.1
+Modal appears after Catalog 01 complete
+Complete all 5 Universal Core lessons (as Bob)
+PathSelectionModal appears automatically with 4 path cards
+7.2
+Modal cannot be dismissed
+Try clicking outside or pressing Escape
+Modal stays open — must choose a path
+7.3
+Select Novelist path
+Click Novelist card, confirm
+author_path set to "novelist," specialist_seal badge earned, curriculum shows Novelist's Craft catalog
+7.4
+Select Poet path
+Click Poet card, confirm
+author_path set to "poet," curriculum shows Poet's Voice catalog (5 lessons, 15 tasks)
+7.5
+Select Authority path
+Click Authority card, confirm
+author_path set to "authority," curriculum shows Authority's Framework catalog
+7.6
+Select Storyteller path
+Click Storyteller card, confirm
+author_path set to "storyteller," curriculum shows Storyteller's Art catalog
+
+
+8. Scribe's Sanctum (Workspace)
+#
+Test Case
+Steps
+Expected Result
+8.1
+Load workspace
+Navigate to /student/workspace
+Three-pane layout loads: sidebar, editor, bottom bar
+8.2
+Master Manuscript mode
+Switch to "Project View"
+TipTap editor loads master manuscript content (JSONB)
+8.3
+Task View mode
+Switch to "Task View," select a task
+Editor loads task-specific draft
+8.4
+Rich text toolbar
+Use Bold, Italic, H1, H2, bullet list, blockquote, alignment
+All formatting applied correctly in editor
+8.5
+Auto-save
+Type content, wait 2 seconds
+Draft saved automatically (no save button needed)
+8.6
+Word count & reading time
+Type content in editor
+Bottom bar updates word count and estimated reading time
+8.7
+Move to Master Manuscript
+Complete a task, click "Move to Master Manuscript"
+Task content appended to master manuscript
+8.8
+VibeScribe injection
+Have a transcript in the Voice tab, click "Inject"
+Transcript text inserted at cursor position in editor
+8.9
+Transcript polling
+Record a new VibeScribe note from mobile
+Transcript appears in workspace Voice tab within 10 seconds
+8.10
+Task reference modal
+Click to view task instructions while writing
+Modal shows full Vibe Card prompt text
+
+
+9. Task Submission & Integrity
+#
+Test Case
+Steps
+Expected Result
+9.1
+Submit a writing task
+Write manuscript, click "Submit for Review," enter reflection
+card_submissions row created, card shows completed (green) state
+9.2
+Reflection required
+Try to submit without reflection text
+Submission blocked, prompt for reflection
+9.3
+Paste detection — clean
+Write entirely by typing
+is_flagged_for_review = false, clear integrity badge
+9.4
+Paste detection — flagged
+Paste >50% of content into editor, submit
+is_flagged_for_review = true, flagged integrity badge
+9.5
+Admin sees flagged submissions
+Log in as admin, go to Submissions tab
+Flagged submissions show integrity warning badge
+
+
+10. Author Metrics & Legacy Seals
+#
+Test Case
+Steps
+Expected Result
+10.1
+Scorecard loads
+Log in as student, view sidebar
+AuthorScorecard shows Words Spoken, Words Written, Total Output
+10.2
+Badge: Entry of Record
+Absorb Lesson 01 (The Author's Mindset)
+"The Entry of Record" seal illuminates in badge grid
+10.3
+Badge: Structural Integrity
+Absorb Lesson 03 (The Narrative Blueprint)
+"Structural Integrity" seal illuminates
+10.4
+Badge: The Reader's Mark
+Absorb Lesson 05 (The Reader's Promise)
+"The Reader's Mark" seal illuminates
+10.5
+Badge: Foundations Mastery
+Absorb all 5 lessons in Catalog 01
+"Foundations Mastery" seal illuminates
+10.6
+Badge: Voice
+Accumulate 1,000+ spoken words via VibeScribe
+"Voice" seal illuminates
+10.7
+Badge: Ink
+Accumulate 1,000+ written words in manuscripts
+"Ink" seal illuminates
+10.8
+Badge: Specialist
+Choose an author path
+"Specialist" seal illuminates
+10.9
+Badge: 5K Club
+Reach 5,000 total words (spoken + written)
+"5K Club" seal illuminates
+10.10
+Badge: 10K Club
+Reach 10,000 total words
+"10K Club" seal illuminates
+10.11
+Unclaimed badge appearance
+View badge grid before earning badges
+Unclaimed seals show nib icon with muted styling
+
+
+11. VibeScribe Mobile App
+#
+Test Case
+Steps
+Expected Result
+11.1
+Keypad login
+Open mobile app, enter 6-digit Scribe ID
+Authenticated, shown record screen
+11.2
+Invalid Scribe ID
+Enter wrong Scribe ID
+Error message, stays on login
+11.3
+Record audio
+Tap giant record button, speak, stop
+Audio captured via expo-av
+11.4
+Transcription
+After recording, audio sent to server
+OpenAI Whisper transcription returned, displayed on screen
+11.5
+Text-to-speech playback
+Tap play on a transcript
+expo-speech reads text aloud
+11.6
+Send to Workspace
+Tap "Send to Workspace" on a transcript
+Draft saved via /api/vibe/save-draft, appears in web workspace
+11.7
+Transcript history
+View history tab
+Previous recordings listed via /api/vibe/history
+11.8
+Session clearing on launch
+Close and reopen app
+Session cleared, forced back to login keypad
+
+
+12. Community Page ("The Quill Collective")
+#
+Test Case
+Steps
+Expected Result
+12.1
+Page loads
+Navigate to /student/community
+"The Quill Collective" title, three-column layout
+12.2
+The Lineage column
+View left column
+Campbell, Jenkins, Michener, Rainey, The Novelry listed with works and concepts
+12.3
+Our Partners column
+View center column
+Founding Visionary, Founding 25, Open Ledger listed
+12.4
+Become a Patron button
+Click "Become a Patron"
+Navigates to /donations
+12.5
+Writer's Council column
+View right column
+Fiction Lead, Non-Fiction Lead, Poetry Consultant — all "Recruiting"
+12.6
+Apply for the Council
+Click "Apply for the Council"
+Opens mailto: to community@theindiequillcollective.org
+12.7
+Paper grain aesthetic
+Inspect card backgrounds
+#FDFBF7 with SVG noise texture on all three cards
+
+
+13. Admin — Curriculum Builder
+#
+Test Case
+Steps
+Expected Result
+13.1
+View curriculum tree
+Log in as admin, open Curriculum Builder
+See hierarchy: Curricula > Catalogs > Lessons > Tasks
+13.2
+Create new lesson
+Add a lesson under a catalog
+Lesson created with title, content, order_index
+13.3
+Create new task
+Add a task under a lesson
+Task created with task_type, prompt, order_index
+13.4
+Edit inline
+Click to edit a lesson title or task prompt
+Inline editing works, changes saved
+13.5
+Delete content
+Delete a task or lesson
+Content removed, order re-evaluated
+
+
+14. Admin — Operations & Email
+#
+Test Case
+Steps
+Expected Result
+14.1
+View dashboard stats
+Log in as admin, view Operations tab
+High-level metrics displayed (users, applications, cohorts)
+14.2
+Update admin email
+Go to Email Settings, change admin email
+system_settings updated, future emails sent to new address
+14.3
+Contact mentor (student side)
+Student clicks "Contact your mentor"
+Email sent to configured admin email via /api/contact-mentor
+14.4
+Email log
+View email log in admin
+All sent emails listed with recipient, type, status
+
+
+15. Donations (Stripe)
+#
+Test Case
+Steps
+Expected Result
+15.1
+Donation page loads
+Navigate to /donations
+Donation form/Stripe integration visible
+15.2
+Complete donation
+Submit a test donation
+Payment processed, redirected to /donations/success
+
+
+16. Admin — Publishing Pipeline
+#
+Test Case
+Steps
+Expected Result
+16.1
+View pipeline
+Admin goes to Publishing tab
+See manuscripts at various stages
+16.2
+Update publishing status
+Move a manuscript from "Editing" to "Review"
+Status updated, visible in pipeline
+
+
+17. Admin — Grants, Donors & Ledger
+#
+Test Case
+Steps
+Expected Result
+17.1
+Add a foundation
+Create a new foundation record
+Foundation saved with contact info, mission alignment
+17.2
+Record a grant
+Log a grant with amount and target author count
+Grant recorded, appears in ledger
+17.3
+Record operating cost
+Add an expense entry
+Cost recorded, "Cost per Author" metric recalculated
+17.4
+Ledger accuracy
+Review ledger totals
+Donations minus costs equals balance; efficiency metrics correct
+
+
+18. Google Calendar Integration
+#
+Test Case
+Steps
+Expected Result
+18.1
+Connect Google Calendar
+Admin authenticates via OAuth
+Calendar connected, events synced
+18.2
+Create event
+Admin creates a board meeting event
+Event appears on both platform calendar and Google Calendar
+18.3
+Two-way sync
+Edit event in Google Calendar
+Change reflected in platform calendar
+
+
+19. Data Integrity & Seeded Content Verification
+#
+Test Case
+Steps
+Expected Result
+19.1
+Catalog 01 content
+Query DEV and PROD
+5 lessons, 15 tasks (3 per lesson: speaking/comprehension/writing)
+19.2
+Catalog 02 (Novelist)
+Query databases
+5 lessons, 15 tasks
+19.3
+Catalog 03 (Authority)
+Query databases
+5 lessons, 15 tasks
+19.4
+Catalog 04 (Storyteller)
+Query databases
+5 lessons, 15 tasks
+19.5
+Catalog 05 (Poet)
+Query databases
+5 lessons, 15 tasks (including L04/L05 comprehension tasks)
+19.6
+Specialization filtering
+Check vibe_decks.specialization values
+NULL for Universal Core; correct path value for each specialized catalog
+19.7
+Apple demo account intact
+Query PROD for Scribe ID 123-456
+
+
+
+
