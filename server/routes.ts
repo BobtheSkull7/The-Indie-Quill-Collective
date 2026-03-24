@@ -215,8 +215,8 @@ export async function registerRoutes(app: Express) {
           `);
           if (profileCheck.rows.length === 0) {
             await db.execute(sql`
-              INSERT INTO student_profiles (user_id, accessibility_mode, preferred_language, is_active, enrolled_at, created_at, updated_at)
-              VALUES (${user.id}, 'standard', 'en', true, NOW(), NOW(), NOW())
+              INSERT INTO student_profiles (user_id, accessibility_mode, enrolled_at, created_at)
+              VALUES (${user.id}, 'standard', NOW(), NOW())
             `);
             console.log(`[Auto-Profile] Created student_profile for user ${user.id} (${user.email})`);
           }
@@ -2630,13 +2630,13 @@ export async function registerRoutes(app: Express) {
           `);
           if (existingProfile.rows.length > 0) {
             await db.execute(sql`
-              UPDATE student_profiles SET cohort_id = ${cohortId}, updated_at = NOW()
+              UPDATE student_profiles SET cohort_id = ${cohortId}
               WHERE user_id = ${userId}
             `);
           } else {
             await db.execute(sql`
-              INSERT INTO student_profiles (user_id, cohort_id, enrolled_at, is_active, created_at, updated_at)
-              VALUES (${userId}, ${cohortId}, NOW(), true, NOW(), NOW())
+              INSERT INTO student_profiles (user_id, cohort_id, enrolled_at, created_at)
+              VALUES (${userId}, ${cohortId}, NOW(), NOW())
             `);
           }
           console.log(`[Admin] Synced cohort_id=${cohortId} to student_profiles for user ${userId}`);
