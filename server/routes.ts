@@ -2939,84 +2939,115 @@ export async function registerRoutes(app: Express) {
 
     try {
       const cohortYear = new Date().getFullYear();
-      
-      const cohortsResult = await db.execute(sql`
-        SELECT id, label, current_count FROM cohorts 
-        WHERE label LIKE ${`%${cohortYear}%`} OR created_at >= ${new Date(`${cohortYear}-01-01`).toISOString()}
-        ORDER BY id DESC LIMIT 1
-      `);
-      const activeCohort = cohortsResult.rows?.[0] as any;
 
-      const tabeCountsResult = await db.execute(sql`
-        SELECT 
-          COUNT(DISTINCT user_id) as students_with_tabe,
-          COUNT(*) FILTER (WHERE NOT is_baseline) as post_tests_count,
-          COUNT(*) FILTER (WHERE is_baseline) as baseline_tests_count
-        FROM tabe_assessments
-        WHERE test_date >= ${new Date(`${cohortYear}-01-01`).toISOString()}
-      `);
-      const tabeStats = (tabeCountsResult.rows?.[0] || {}) as any;
+      // cohorts table is a core table — safe to query directly
+      let activeCohort: any = null;
+      try {
+        const cohortsResult = await db.execute(sql`
+          SELECT id, label, current_count FROM cohorts 
+          WHERE label LIKE ${`%${cohortYear}%`} OR created_at >= ${new Date(`${cohortYear}-01-01`).toISOString()}
+          ORDER BY id DESC LIMIT 1
+        `);
+        activeCohort = cohortsResult.rows?.[0] || null;
+      } catch (e: any) {
+        console.warn("DGLF: cohorts query failed:", e.message);
+      }
 
-      const eflGainsResult = await db.execute(sql`
-        WITH student_scores AS (
+      // tabe_assessments may not exist on all environments
+      let tabeStats: any = {};
+      let studentsWithEflGain = 0;
+      try {
+        const tabeCountsResult = await db.execute(sql`
           SELECT 
-            user_id,
-            MIN(CASE WHEN is_baseline THEN scale_score END) as baseline_score,
-            MAX(CASE WHEN NOT is_baseline THEN scale_score END) as current_score,
-            MIN(CASE WHEN is_baseline THEN efl_level END) as baseline_efl,
-            MAX(CASE WHEN NOT is_baseline THEN efl_level END) as current_efl
+            COUNT(DISTINCT user_id) as students_with_tabe,
+            COUNT(*) FILTER (WHERE NOT is_baseline) as post_tests_count,
+            COUNT(*) FILTER (WHERE is_baseline) as baseline_tests_count
           FROM tabe_assessments
           WHERE test_date >= ${new Date(`${cohortYear}-01-01`).toISOString()}
-          GROUP BY user_id
-          HAVING COUNT(CASE WHEN is_baseline THEN 1 END) > 0 
-             AND COUNT(CASE WHEN NOT is_baseline THEN 1 END) > 0
-        )
-        SELECT 
-          COUNT(*) as students_with_both_tests,
-          COALESCE(AVG(current_score - baseline_score), 0) as avg_scale_score_gain,
-          COUNT(*) FILTER (WHERE current_efl != baseline_efl) as students_with_efl_gain
-        FROM student_scores
-      `);
-      const eflStats = (eflGainsResult.rows?.[0] || {}) as any;
-      const studentsWithEflGain = parseInt(eflStats.students_with_efl_gain) || 0;
+        `);
+        tabeStats = (tabeCountsResult.rows?.[0] || {}) as any;
 
-      const pactTimeResult = await db.execute(sql`
-        SELECT 
-          COUNT(DISTINCT family_unit_id) as families_participating,
-          SUM(duration_minutes) as total_pact_minutes,
-          AVG(duration_minutes) as avg_session_duration,
-          COUNT(*) as total_sessions
-        FROM pact_sessions
-        WHERE start_time >= ${new Date(`${cohortYear}-01-01`).toISOString()}
-      `);
-      const pactStats = (pactTimeResult.rows?.[0] || {}) as any;
+        const eflGainsResult = await db.execute(sql`
+          WITH student_scores AS (
+            SELECT 
+              user_id,
+              MIN(CASE WHEN is_baseline THEN scale_score END) as baseline_score,
+              MAX(CASE WHEN NOT is_baseline THEN scale_score END) as current_score,
+              MIN(CASE WHEN is_baseline THEN efl_level END) as baseline_efl,
+              MAX(CASE WHEN NOT is_baseline THEN efl_level END) as current_efl
+            FROM tabe_assessments
+            WHERE test_date >= ${new Date(`${cohortYear}-01-01`).toISOString()}
+            GROUP BY user_id
+            HAVING COUNT(CASE WHEN is_baseline THEN 1 END) > 0 
+               AND COUNT(CASE WHEN NOT is_baseline THEN 1 END) > 0
+          )
+          SELECT 
+            COUNT(*) as students_with_both_tests,
+            COALESCE(AVG(current_score - baseline_score), 0) as avg_scale_score_gain,
+            COUNT(*) FILTER (WHERE current_efl != baseline_efl) as students_with_efl_gain
+          FROM student_scores
+        `);
+        const eflStats = (eflGainsResult.rows?.[0] || {}) as any;
+        studentsWithEflGain = parseInt(eflStats.students_with_efl_gain) || 0;
+      } catch (e: any) {
+        console.warn("DGLF: tabe_assessments table not available, using zeros:", e.message);
+      }
 
-      const familyUnitsResult = await db.execute(sql`
-        SELECT 
-          id, family_name, total_pact_minutes, target_pact_hours,
-          ROUND((total_pact_minutes::numeric / NULLIF(target_pact_hours * 60, 0)) * 100, 1) as pact_completion_percent
-        FROM family_units
-        WHERE is_active = true
-        ORDER BY total_pact_minutes DESC
-      `);
-      const familyProgress = familyUnitsResult.rows || [];
+      // pact_sessions may not exist on all environments
+      let pactStats: any = {};
+      try {
+        const pactTimeResult = await db.execute(sql`
+          SELECT 
+            COUNT(DISTINCT family_unit_id) as families_participating,
+            SUM(duration_minutes) as total_pact_minutes,
+            AVG(duration_minutes) as avg_session_duration,
+            COUNT(*) as total_sessions
+          FROM pact_sessions
+          WHERE start_time >= ${new Date(`${cohortYear}-01-01`).toISOString()}
+        `);
+        pactStats = (pactTimeResult.rows?.[0] || {}) as any;
+      } catch (e: any) {
+        console.warn("DGLF: pact_sessions table not available, using zeros:", e.message);
+      }
 
-      const curriculumProgressResult = await db.execute(sql`
-        SELECT 
-          COUNT(DISTINCT user_id) as students_active,
-          AVG(percent_complete) as avg_module_completion,
-          SUM(hours_spent) as total_instruction_hours
-        FROM student_curriculum_progress
-        WHERE updated_at >= ${new Date(`${cohortYear}-01-01`).toISOString()}
-      `);
-      const curriculumStats = (curriculumProgressResult.rows?.[0] || {}) as any;
+      // family_units may not exist on all environments
+      let familyProgress: any[] = [];
+      try {
+        const familyUnitsResult = await db.execute(sql`
+          SELECT 
+            id, family_name, total_pact_minutes, target_pact_hours,
+            ROUND((total_pact_minutes::numeric / NULLIF(target_pact_hours * 60, 0)) * 100, 1) as pact_completion_percent
+          FROM family_units
+          WHERE is_active = true
+          ORDER BY total_pact_minutes DESC
+        `);
+        familyProgress = familyUnitsResult.rows || [];
+      } catch (e: any) {
+        console.warn("DGLF: family_units table not available, using empty array:", e.message);
+      }
+
+      // student_curriculum_progress may not exist on all environments
+      let curriculumStats: any = {};
+      try {
+        const curriculumProgressResult = await db.execute(sql`
+          SELECT 
+            COUNT(DISTINCT user_id) as students_active,
+            AVG(percent_complete) as avg_module_completion,
+            SUM(hours_spent) as total_instruction_hours
+          FROM student_curriculum_progress
+          WHERE updated_at >= ${new Date(`${cohortYear}-01-01`).toISOString()}
+        `);
+        curriculumStats = (curriculumProgressResult.rows?.[0] || {}) as any;
+      } catch (e: any) {
+        console.warn("DGLF: student_curriculum_progress table not available, using zeros:", e.message);
+      }
 
       const impactReport = {
         reportTitle: `DGLF Family Literacy Impact Report - ${cohortYear}`,
         generatedAt: new Date().toISOString(),
         cohortInfo: {
-          label: activeCohort?.label || `${cohortYear} Cohort`,
-          studentCount: activeCohort?.current_count || 0,
+          label: (activeCohort as any)?.label || `${cohortYear} Cohort`,
+          studentCount: (activeCohort as any)?.current_count || 0,
         },
         tabeAssessments: {
           studentsWithTabe: parseInt(tabeStats.students_with_tabe) || 0,
@@ -3838,134 +3869,197 @@ export async function registerRoutes(app: Express) {
       // Get admin user info
       const adminUser = await getUserById(req.session.userId);
 
-      // Get all applications with minor data
-      const allApps = await db.select().from(applications);
+      // Use raw SQL for applications so we can safely COALESCE optional COPPA columns
+      // that may not exist on all environments (e.g. is_minor, guardian_consent_*)
+      let allApps: any[] = [];
+      try {
+        const appsResult = await db.execute(sql`
+          SELECT
+            id,
+            user_id     AS "userId",
+            status,
+            cohort_id   AS "cohortId",
+            pseudonym,
+            guardian_name  AS "guardianName",
+            guardian_email AS "guardianEmail",
+            COALESCE(is_minor, false)                  AS "isMinor",
+            guardian_consent_method                    AS "guardianConsentMethod",
+            COALESCE(guardian_consent_verified, false)  AS "guardianConsentVerified",
+            data_retention_until                       AS "dataRetentionUntil",
+            created_at  AS "createdAt"
+          FROM applications
+        `);
+        allApps = appsResult.rows as any[];
+      } catch (e: any) {
+        console.error("Compliance PDF: applications query failed:", e.message);
+      }
       const minorApps = allApps.filter(a => a.isMinor);
 
-      // Get all contracts with forensic data
-      const allContracts = await db.select().from(contracts);
-      const signedContracts = allContracts.filter(c => c.status === 'signed');
+      // contracts — core table, safe to query via Drizzle
+      let allContracts: any[] = [];
+      let signedContracts: any[] = [];
+      try {
+        allContracts = await db.select().from(contracts);
+        signedContracts = allContracts.filter(c => c.status === 'signed');
+      } catch (e: any) {
+        console.error("Compliance PDF: contracts query failed:", e.message);
+      }
 
-      // Get recent audit logs
-      const recentAuditLogs = await db.select().from(auditLogs)
-        .orderBy(desc(auditLogs.createdAt))
-        .limit(20);
+      // audit_logs — core table, safe to query via Drizzle
+      let recentAuditLogs: any[] = [];
+      try {
+        recentAuditLogs = await db.select().from(auditLogs)
+          .orderBy(desc(auditLogs.createdAt))
+          .limit(20);
+      } catch (e: any) {
+        console.error("Compliance PDF: audit_logs query failed:", e.message);
+      }
 
-      // Get user info for display names using raw SQL to avoid column issues
-      const userIds = [...new Set(allApps.map(a => a.userId))];
+      // Get user display names
+      const userIds = [...new Set(allApps.map((a: any) => a.userId).filter(Boolean))];
       let appUsers: any[] = [];
       if (userIds.length > 0) {
-        const usersResult = await db.execute(sql`
-          SELECT id, email, first_name as "firstName", last_name as "lastName", role
-          FROM public.users WHERE id = ANY(${userIds})
-        `);
-        appUsers = usersResult.rows as any[];
+        try {
+          const usersResult = await db.execute(sql`
+            SELECT id, email, first_name as "firstName", last_name as "lastName", role
+            FROM public.users WHERE id = ANY(${userIds})
+          `);
+          appUsers = usersResult.rows as any[];
+        } catch (e: any) {
+          console.error("Compliance PDF: users query failed:", e.message);
+        }
       }
-      const userMap = new Map(appUsers.map(u => [u.id, u]));
+      const userMap = new Map(appUsers.map(u => [(u as any).id, u]));
 
       // Prepare minor records (sanitized)
-      const minorRecords = minorApps.map(app => {
-        const user = userMap.get(app.userId);
+      const minorRecords = minorApps.map((app: any) => {
+        const user = userMap.get(app.userId) as any;
         return {
           id: app.id,
           displayName: user ? truncateName(user.firstName, user.lastName) : `Author ${app.id}`,
-          guardianName: app.guardianName,
-          guardianEmail: app.guardianEmail,
-          consentMethod: app.guardianConsentMethod,
+          guardianName: app.guardianName || null,
+          guardianEmail: app.guardianEmail || null,
+          consentMethod: app.guardianConsentMethod || null,
           consentVerified: app.guardianConsentVerified || false,
-          dataRetentionUntil: app.dataRetentionUntil?.toISOString() || null,
-          createdAt: app.createdAt.toISOString(),
+          dataRetentionUntil: app.dataRetentionUntil ? new Date(app.dataRetentionUntil).toISOString() : null,
+          createdAt: app.createdAt ? new Date(app.createdAt).toISOString() : new Date().toISOString(),
         };
       });
 
       // Prepare contract forensics
-      const contractForensics = signedContracts.map(contract => {
-        const app = allApps.find(a => a.id === contract.applicationId);
-        const user = app ? userMap.get(app.userId) : null;
+      const contractForensics = signedContracts.map((contract: any) => {
+        const app = allApps.find((a: any) => a.id === contract.applicationId);
+        const user = app ? userMap.get((app as any).userId) as any : null;
         return {
           id: contract.id,
           displayName: user ? truncateName(user.firstName, user.lastName) : `Contract ${contract.id}`,
-          signedAt: contract.authorSignedAt?.toISOString() || null,
-          signatureIp: contract.authorSignatureIp,
+          signedAt: contract.authorSignedAt ? new Date(contract.authorSignedAt).toISOString() : null,
+          signatureIp: contract.authorSignatureIp || null,
           signatureUserAgent: contract.authorSignatureUserAgent?.substring(0, 50) || null,
-          guardianSignedAt: contract.guardianSignedAt?.toISOString() || null,
-          guardianSignatureIp: contract.guardianSignatureIp,
+          guardianSignedAt: contract.guardianSignedAt ? new Date(contract.guardianSignedAt).toISOString() : null,
+          guardianSignatureIp: contract.guardianSignatureIp || null,
         };
       });
 
       // Prepare audit sample
-      const auditSample = recentAuditLogs.map(log => ({
+      const auditSample = recentAuditLogs.map((log: any) => ({
         id: log.id,
-        action: log.action,
-        resourceType: log.entityType,
-        userId: log.userId,
+        action: log.action || "unknown",
+        resourceType: log.entityType || log.entity_type || "unknown",
+        userId: String(log.userId || log.user_id || ""),
         ipAddress: null as string | null,
-        createdAt: log.createdAt.toISOString(),
+        createdAt: log.createdAt ? new Date(log.createdAt).toISOString() : new Date().toISOString(),
       }));
 
-      // Prepare donor impact data
-      const lockedGrants = await db.select()
-        .from(foundationGrants)
-        .where(sql`${foundationGrants.donorLockedAt} IS NOT NULL`);
+      // Donor impact data — use raw SQL to guard against optional columns
+      // (donor_locked_at may not exist on all PROD environments)
+      let donorImpacts: any[] = [];
+      try {
+        const lockedGrantsResult = await db.execute(sql`
+          SELECT id, foundation_id AS "foundationId", amount,
+                 target_author_count AS "targetAuthorCount",
+                 assigned_cohort_id  AS "assignedCohortId"
+          FROM foundation_grants
+          WHERE donor_locked_at IS NOT NULL
+        `);
+        const lockedGrants = lockedGrantsResult.rows as any[];
 
-      const donorImpacts = await Promise.all(
-        lockedGrants.map(async (grant) => {
-          const [foundation] = await db.select().from(foundations).where(eq(foundations.id, grant.foundationId));
-          
-          let authorsImpacted: { displayName: string; status: string }[] = [];
-          let actualAuthors = 0;
-          
-          if (grant.assignedCohortId) {
-            const cohortApps = await db.select({
-              firstName: users.firstName,
-              status: applications.status,
-            })
-            .from(applications)
-            .leftJoin(users, eq(applications.userId, users.id))
-            .where(eq(applications.cohortId, grant.assignedCohortId));
-            
-            actualAuthors = cohortApps.length;
-            const emojis = ["✍️", "📚", "🌟", "📖", "🎭", "🖋️", "💫", "📝", "🎨", "🚀"];
-            authorsImpacted = cohortApps.map((app, idx) => ({
-              displayName: `${app.firstName?.charAt(0) || "A"}. ${emojis[idx % emojis.length]}`,
-              status: app.status || "active",
-            }));
-          }
-
-          // Calculate potential authors based on cost efficiency
+        // Fetch operating costs once (table may not exist)
+        let costPerAuthor = 0;
+        try {
           const latestCost = await db.select()
             .from(operatingCosts)
             .orderBy(desc(operatingCosts.year), desc(operatingCosts.quarterNum))
             .limit(1);
+          const totalAuthors = allApps.filter((a: any) => a.status === "accepted").length || 1;
+          const totalCost = (latestCost[0] as any)?.totalCost || 0;
+          costPerAuthor = totalAuthors > 0 ? Math.round(totalCost / totalAuthors) : 0;
+        } catch (e: any) {
+          console.warn("Compliance PDF: operating_costs table not available:", e.message);
+        }
 
-          const totalAuthors = allApps.filter(a => a.status === "accepted").length || 1;
-          const totalCost = latestCost[0]?.totalCost || 0;
-          const costPerAuthor = totalAuthors > 0 ? Math.round(totalCost / totalAuthors) : 0;
-          const potentialAuthors = costPerAuthor > 0 
-            ? Math.floor(grant.amount / costPerAuthor) 
-            : grant.targetAuthorCount;
+        donorImpacts = await Promise.all(
+          lockedGrants.map(async (grant: any) => {
+            let foundationName = "Unknown Foundation";
+            try {
+              const [foundation] = await db.select().from(foundations).where(eq(foundations.id, grant.foundationId));
+              foundationName = (foundation as any)?.name || "Unknown Foundation";
+            } catch (e: any) {
+              console.warn("Compliance PDF: foundations query failed for grant:", grant.id, e.message);
+            }
 
-          return {
-            foundationName: foundation?.name || "Unknown Foundation",
-            grantAmount: grant.amount,
-            targetAuthors: grant.targetAuthorCount,
-            actualAuthors,
-            potentialAuthors,
-            exceededExpectations: actualAuthors > grant.targetAuthorCount,
-            authorsImpacted,
-          };
-        })
-      );
+            let authorsImpacted: { displayName: string; status: string }[] = [];
+            let actualAuthors = 0;
+            if (grant.assignedCohortId) {
+              try {
+                const cohortAppsResult = await db.execute(sql`
+                  SELECT u.first_name AS "firstName", a.status
+                  FROM applications a
+                  LEFT JOIN users u ON a.user_id = u.id
+                  WHERE a.cohort_id = ${grant.assignedCohortId}
+                `);
+                const cohortApps = cohortAppsResult.rows as any[];
+                actualAuthors = cohortApps.length;
+                const emojis = ["✍️", "📚", "🌟", "📖", "🎭", "🖋️", "💫", "📝", "🎨", "🚀"];
+                authorsImpacted = cohortApps.map((app: any, idx: number) => ({
+                  displayName: `${app.firstName?.charAt(0) || "A"}. ${emojis[idx % emojis.length]}`,
+                  status: app.status || "active",
+                }));
+              } catch (e: any) {
+                console.warn("Compliance PDF: cohort apps query failed:", e.message);
+              }
+            }
 
-      // Generate PDF
+            const potentialAuthors = costPerAuthor > 0
+              ? Math.floor(grant.amount / costPerAuthor)
+              : grant.targetAuthorCount;
+
+            return {
+              foundationName,
+              grantAmount: grant.amount,
+              targetAuthors: grant.targetAuthorCount,
+              actualAuthors,
+              potentialAuthors,
+              exceededExpectations: actualAuthors > grant.targetAuthorCount,
+              authorsImpacted,
+            };
+          })
+        );
+      } catch (e: any) {
+        console.warn("Compliance PDF: donor impact section failed, skipping:", e.message);
+        donorImpacts = [];
+      }
+
+      // Generate PDF — log data shape before rendering for easier debugging
+      console.log(`[Compliance PDF] Rendering: ${minorRecords.length} minors, ${contractForensics.length} contracts, ${auditSample.length} audit logs, ${donorImpacts.length} donor impacts`);
       const pdfBuffer = await renderToBuffer(
         ComplianceReport({
           generatedAt: new Date().toISOString(),
           generatedBy: adminUser ? `${adminUser.firstName} ${adminUser.lastName}` : 'Admin',
           stats: {
-            totalMinors: minorApps.length,
-            verifiedConsent: minorApps.filter(a => a.guardianConsentVerified).length,
-            pendingConsent: minorApps.filter(a => !a.guardianConsentVerified).length,
+            totalMinors: minorRecords.length,
+            verifiedConsent: minorRecords.filter((r: any) => r.consentVerified).length,
+            pendingConsent: minorRecords.filter((r: any) => !r.consentVerified).length,
             totalContracts: allContracts.length,
             signedContracts: signedContracts.length,
           },

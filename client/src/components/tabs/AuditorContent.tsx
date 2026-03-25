@@ -65,6 +65,7 @@ export default function AuditorContent() {
   const [showReport, setShowReport] = useState(false);
   const [report, setReport] = useState<DGLFImpactReport | null>(null);
   const [reportLoading, setReportLoading] = useState(false);
+  const [reportError, setReportError] = useState("");
 
   useEffect(() => {
     fetch("/api/auditor/metrics", { credentials: "include" })
@@ -79,14 +80,19 @@ export default function AuditorContent() {
 
   const generateImpactReport = async () => {
     setReportLoading(true);
+    setReportError("");
     try {
       const res = await fetch("/api/auditor/dglf-impact-report", { credentials: "include" });
-      if (!res.ok) throw new Error("Failed to generate report");
+      if (!res.ok) {
+        let msg = "Failed to generate report";
+        try { const d = await res.json(); msg = d.message || msg; } catch {}
+        throw new Error(msg);
+      }
       const data = await res.json();
       setReport(data);
       setShowReport(true);
     } catch (err: any) {
-      setError(err.message);
+      setReportError(err.message || "Failed to generate impact report. Please try again.");
     } finally {
       setReportLoading(false);
     }
@@ -125,19 +131,27 @@ export default function AuditorContent() {
             Zero-PII oversight dashboard for NPO health monitoring
           </p>
         </div>
-        <div className="flex items-center gap-4">
-          <button
-            onClick={generateImpactReport}
-            disabled={reportLoading}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-teal-500 text-white rounded-lg font-medium hover:from-green-600 hover:to-teal-600 transition-all disabled:opacity-50"
-          >
-            <FileText className="w-4 h-4" />
-            {reportLoading ? "Generating..." : "Generate DGLF Impact Report"}
-          </button>
-          {metrics?.lastUpdated && (
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <Clock className="w-4 h-4" />
-              Last updated: {new Date(metrics.lastUpdated).toLocaleString()}
+        <div className="flex flex-col items-end gap-2">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={generateImpactReport}
+              disabled={reportLoading}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-teal-500 text-white rounded-lg font-medium hover:from-green-600 hover:to-teal-600 transition-all disabled:opacity-50"
+            >
+              <FileText className="w-4 h-4" />
+              {reportLoading ? "Generating..." : "Generate DGLF Impact Report"}
+            </button>
+            {metrics?.lastUpdated && (
+              <div className="flex items-center gap-2 text-sm text-gray-500">
+                <Clock className="w-4 h-4" />
+                Last updated: {new Date(metrics.lastUpdated).toLocaleString()}
+              </div>
+            )}
+          </div>
+          {reportError && (
+            <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-1.5">
+              <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+              <span>{reportError}</span>
             </div>
           )}
         </div>
