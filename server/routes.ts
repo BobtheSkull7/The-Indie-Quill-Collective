@@ -1968,13 +1968,19 @@ export async function registerRoutes(app: Express) {
           pu.status_message as "statusMessage",
           pu.updated_at as "updatedAt",
           a.pseudonym as "authorPseudonym",
-          a.manuscript_title as "manuscriptTitle",
-          a.manuscript_word_count as "manuscriptWordCount",
+          NULL::text as "manuscriptTitle",
+          COALESCE(ms.total_words, 0) as "manuscriptWordCount",
           u.first_name as "firstName",
           u.last_name as "lastName"
         FROM publishing_updates pu
         JOIN applications a ON pu.application_id = a.id
         JOIN users u ON pu.user_id = u.id
+        LEFT JOIN (
+          SELECT user_id::integer as user_id_int, SUM(word_count) as total_words
+          FROM manuscripts
+          WHERE user_id ~ '^\d+$'
+          GROUP BY user_id_int
+        ) ms ON ms.user_id_int = pu.user_id
         ORDER BY pu.updated_at DESC
       `);
       return res.json(result.rows || []);
@@ -6992,9 +6998,10 @@ export async function registerDonationRoutes(app: Express) {
           u.last_name as "lastName",
           u.email,
           u.role,
+          u.vibe_scribe_id as "shortId",
           sp.training_path as "trainingPath",
           sp.enrolled_at as "enrolledAt",
-          COALESCE(dd.total_words, 0) as "wordCount",
+          COALESCE(dd.total_words, 0) + COALESCE(ms.ms_words, 0) as "wordCount",
           COALESCE(sal.total_hours, 0) as "hoursActive",
           COALESCE(scp.avg_progress, 0) as "courseProgress",
           COALESCE(scp.modules_completed, 0) as "modulesCompleted",
@@ -7004,6 +7011,12 @@ export async function registerDonationRoutes(app: Express) {
         LEFT JOIN (
           SELECT user_id, SUM(word_count) as total_words FROM drafting_documents GROUP BY user_id
         ) dd ON dd.user_id = u.id
+        LEFT JOIN (
+          SELECT user_id::integer as uid, SUM(word_count) as ms_words
+          FROM manuscripts
+          WHERE user_id ~ '^\d+$'
+          GROUP BY uid
+        ) ms ON ms.uid = u.id
         LEFT JOIN (
           SELECT user_id, ROUND(SUM(minutes_active) / 60.0, 1) as total_hours
           FROM student_activity_logs GROUP BY user_id
@@ -7080,7 +7093,7 @@ export async function registerDonationRoutes(app: Express) {
     try {
       const result = await db.execute(sql`
         SELECT msa.id, msa.mentor_id as "mentorId", msa.student_id as "studentId",
-          msa.assigned_at as "assignedAt", msa.is_active as "isActive",
+          msa.assigned_at as "assignedAt", true as "isActive",
           mu.first_name || ' ' || mu.last_name as "mentorName",
           su.first_name || ' ' || su.last_name as "studentName",
           su.email as "studentEmail"
@@ -7116,9 +7129,9 @@ export async function registerDonationRoutes(app: Express) {
       }
 
       const result = await db.execute(sql`
-        INSERT INTO mentor_student_assignments (mentor_id, student_id, assigned_at, is_active)
-        VALUES (${mentorId}, ${studentId}, NOW(), true)
-        RETURNING id, mentor_id as "mentorId", student_id as "studentId", assigned_at as "assignedAt", is_active as "isActive"
+        INSERT INTO mentor_student_assignments (mentor_id, student_id, assigned_at)
+        VALUES (${mentorId}, ${studentId}, NOW())
+        RETURNING id, mentor_id as "mentorId", student_id as "studentId", assigned_at as "assignedAt"
       `);
 
       res.json(result.rows[0]);
@@ -7212,7 +7225,7 @@ export async function registerDonationRoutes(app: Express) {
           u.id, u.first_name as "firstName", u.last_name as "lastName", u.email,
           sp.enrolled_at as "enrolledAt",
           COALESCE(sal.total_hours, 0) as "hoursActive",
-          COALESCE(dd.total_words, 0) as "wordCount",
+          COALESCE(dd.total_words, 0) + COALESCE(ms.ms_words, 0) as "wordCount",
           COALESCE(scp.avg_progress, 0) as "courseProgress",
           sal.last_activity as "lastActivity"
         FROM mentor_student_assignments msa
@@ -7225,6 +7238,12 @@ export async function registerDonationRoutes(app: Express) {
         LEFT JOIN (
           SELECT user_id, SUM(word_count) as total_words FROM drafting_documents GROUP BY user_id
         ) dd ON dd.user_id = u.id
+        LEFT JOIN (
+          SELECT user_id::integer as uid, SUM(word_count) as ms_words
+          FROM manuscripts
+          WHERE user_id ~ '^\d+$'
+          GROUP BY uid
+        ) ms ON ms.uid = u.id
         LEFT JOIN (
           SELECT user_id, AVG(percent_complete) as avg_progress FROM student_curriculum_progress GROUP BY user_id
         ) scp ON scp.user_id = u.id
