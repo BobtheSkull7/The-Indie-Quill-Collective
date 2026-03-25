@@ -3076,6 +3076,148 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  // DGLF Impact Report — PDF download version
+  app.get("/api/auditor/dglf-impact-report/pdf", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    if (!hasRole(req.session, "auditor", "admin", "board_member")) {
+      return res.status(403).json({ message: "Not authorized - Auditor access required" });
+    }
+
+    try {
+      const { DGLFReport } = await import("./pdf-templates/DGLFReport");
+      const cohortYear = new Date().getFullYear();
+
+      let activeCohort: any = null;
+      try {
+        const r = await db.execute(sql`
+          SELECT id, label, current_count FROM cohorts
+          WHERE label LIKE ${`%${cohortYear}%`} OR created_at >= ${new Date(`${cohortYear}-01-01`).toISOString()}
+          ORDER BY id DESC LIMIT 1
+        `);
+        activeCohort = r.rows?.[0] || null;
+      } catch (e: any) {
+        console.warn("DGLF PDF: cohorts query failed:", e.message);
+      }
+
+      let tabeStats: any = {};
+      let studentsWithEflGain = 0;
+      try {
+        const tc = await db.execute(sql`
+          SELECT COUNT(DISTINCT user_id) as students_with_tabe,
+                 COUNT(*) FILTER (WHERE NOT is_baseline) as post_tests_count,
+                 COUNT(*) FILTER (WHERE is_baseline) as baseline_tests_count
+          FROM tabe_assessments
+          WHERE test_date >= ${new Date(`${cohortYear}-01-01`).toISOString()}
+        `);
+        tabeStats = (tc.rows?.[0] || {}) as any;
+        const eg = await db.execute(sql`
+          WITH ss AS (
+            SELECT user_id,
+              MIN(CASE WHEN is_baseline THEN efl_level END) as baseline_efl,
+              MAX(CASE WHEN NOT is_baseline THEN efl_level END) as current_efl
+            FROM tabe_assessments
+            WHERE test_date >= ${new Date(`${cohortYear}-01-01`).toISOString()}
+            GROUP BY user_id
+            HAVING COUNT(CASE WHEN is_baseline THEN 1 END) > 0
+               AND COUNT(CASE WHEN NOT is_baseline THEN 1 END) > 0
+          )
+          SELECT COUNT(*) FILTER (WHERE current_efl != baseline_efl) as students_with_efl_gain FROM ss
+        `);
+        studentsWithEflGain = parseInt((eg.rows?.[0] as any)?.students_with_efl_gain) || 0;
+      } catch (e: any) {
+        console.warn("DGLF PDF: tabe_assessments not available:", e.message);
+      }
+
+      let pactStats: any = {};
+      try {
+        const ps = await db.execute(sql`
+          SELECT COUNT(DISTINCT family_unit_id) as families_participating,
+                 SUM(duration_minutes) as total_pact_minutes,
+                 AVG(duration_minutes) as avg_session_duration,
+                 COUNT(*) as total_sessions
+          FROM pact_sessions
+          WHERE start_time >= ${new Date(`${cohortYear}-01-01`).toISOString()}
+        `);
+        pactStats = (ps.rows?.[0] || {}) as any;
+      } catch (e: any) {
+        console.warn("DGLF PDF: pact_sessions not available:", e.message);
+      }
+
+      let familyProgress: any[] = [];
+      try {
+        const fu = await db.execute(sql`
+          SELECT id, family_name, total_pact_minutes, target_pact_hours,
+            ROUND((total_pact_minutes::numeric / NULLIF(target_pact_hours * 60, 0)) * 100, 1) as pact_completion_percent
+          FROM family_units WHERE is_active = true ORDER BY total_pact_minutes DESC
+        `);
+        familyProgress = fu.rows || [];
+      } catch (e: any) {
+        console.warn("DGLF PDF: family_units not available:", e.message);
+      }
+
+      let curriculumStats: any = {};
+      try {
+        const cp = await db.execute(sql`
+          SELECT COUNT(DISTINCT user_id) as students_active,
+                 AVG(percent_complete) as avg_module_completion,
+                 SUM(hours_spent) as total_instruction_hours
+          FROM student_curriculum_progress
+          WHERE updated_at >= ${new Date(`${cohortYear}-01-01`).toISOString()}
+        `);
+        curriculumStats = (cp.rows?.[0] || {}) as any;
+      } catch (e: any) {
+        console.warn("DGLF PDF: student_curriculum_progress not available:", e.message);
+      }
+
+      const reportData = {
+        reportTitle: `DGLF Family Literacy Impact Report - ${cohortYear}`,
+        generatedAt: new Date().toISOString(),
+        cohortInfo: {
+          label: (activeCohort as any)?.label || `${cohortYear} Cohort`,
+          studentCount: (activeCohort as any)?.current_count || 0,
+        },
+        tabeAssessments: {
+          studentsWithTabe: parseInt(tabeStats.students_with_tabe) || 0,
+          baselineTestsCompleted: parseInt(tabeStats.baseline_tests_count) || 0,
+          postTestsCompleted: parseInt(tabeStats.post_tests_count) || 0,
+          studentsShowingEflGain: studentsWithEflGain,
+        },
+        pactTime: {
+          familiesParticipating: parseInt(pactStats.families_participating) || 0,
+          totalPactHours: Math.round((parseInt(pactStats.total_pact_minutes) || 0) / 60 * 10) / 10,
+          totalSessions: parseInt(pactStats.total_sessions) || 0,
+          avgSessionMinutes: Math.round(parseFloat(pactStats.avg_session_duration) || 0),
+          familyProgress: familyProgress.slice(0, 10),
+        },
+        curriculumProgress: {
+          studentsActive: parseInt(curriculumStats.students_active) || 0,
+          totalInstructionHours: Math.round(parseInt(curriculumStats.total_instruction_hours) || 0),
+          avgModuleCompletion: Math.round(parseFloat(curriculumStats.avg_module_completion) || 0),
+        },
+      };
+
+      console.log(`[DGLF PDF] Rendering report for cohort: ${reportData.cohortInfo.label}`);
+      let pdfBuffer: Buffer;
+      try {
+        pdfBuffer = await renderToBuffer(DGLFReport(reportData));
+      } catch (renderError: any) {
+        console.error("DGLF PDF: renderToBuffer failed:", renderError.message, renderError.stack);
+        return res.status(500).json({ message: "Failed to render DGLF PDF: " + renderError.message });
+      }
+
+      const filename = `dglf-impact-report-${cohortYear}.pdf`;
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+      res.setHeader("Content-Length", pdfBuffer.length);
+      return res.send(pdfBuffer);
+    } catch (error: any) {
+      console.error("DGLF PDF generation error:", error);
+      return res.status(500).json({ message: "Failed to generate DGLF Impact PDF" });
+    }
+  });
+
   app.get("/api/board/stats", async (req: Request, res: Response) => {
     if (!req.session.userId || !hasRole(req.session, "board_member", "admin")) {
       return res.status(403).json({ message: "Not authorized" });
@@ -4052,23 +4194,29 @@ export async function registerRoutes(app: Express) {
 
       // Generate PDF — log data shape before rendering for easier debugging
       console.log(`[Compliance PDF] Rendering: ${minorRecords.length} minors, ${contractForensics.length} contracts, ${auditSample.length} audit logs, ${donorImpacts.length} donor impacts`);
-      const pdfBuffer = await renderToBuffer(
-        ComplianceReport({
-          generatedAt: new Date().toISOString(),
-          generatedBy: adminUser ? `${adminUser.firstName} ${adminUser.lastName}` : 'Admin',
-          stats: {
-            totalMinors: minorRecords.length,
-            verifiedConsent: minorRecords.filter((r: any) => r.consentVerified).length,
-            pendingConsent: minorRecords.filter((r: any) => !r.consentVerified).length,
-            totalContracts: allContracts.length,
-            signedContracts: signedContracts.length,
-          },
-          minorRecords,
-          contractForensics,
-          auditSample,
-          donorImpacts,
-        })
-      );
+      let pdfBuffer: Buffer;
+      try {
+        pdfBuffer = await renderToBuffer(
+          ComplianceReport({
+            generatedAt: new Date().toISOString(),
+            generatedBy: adminUser ? `${(adminUser as any).firstName} ${(adminUser as any).lastName}` : 'Admin',
+            stats: {
+              totalMinors: minorRecords.length,
+              verifiedConsent: minorRecords.filter((r: any) => r.consentVerified).length,
+              pendingConsent: minorRecords.filter((r: any) => !r.consentVerified).length,
+              totalContracts: allContracts.length,
+              signedContracts: signedContracts.length,
+            },
+            minorRecords,
+            contractForensics,
+            auditSample,
+            donorImpacts,
+          })
+        );
+      } catch (renderError: any) {
+        console.error("Compliance PDF: renderToBuffer failed:", renderError.message, renderError.stack);
+        return res.status(500).json({ message: "Failed to render compliance report PDF: " + renderError.message });
+      }
 
       // Log audit event
       await logAuditEvent({

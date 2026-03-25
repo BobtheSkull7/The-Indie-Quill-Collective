@@ -49,6 +49,13 @@ const styles = StyleSheet.create({
     fontFamily: "Helvetica-Bold",
     color: "#475569",
   },
+  emptyRow: {
+    paddingVertical: 8,
+  },
+  emptyText: {
+    fontSize: 9,
+    color: "#94a3b8",
+  },
   badge: {
     backgroundColor: "#dcfce7",
     color: "#166534",
@@ -156,16 +163,50 @@ interface ComplianceReportProps {
   donorImpacts?: DonorImpact[];
 }
 
+function safeDate(dateStr: string | null | undefined, fallback = "-"): string {
+  if (!dateStr) return fallback;
+  try {
+    return new Date(dateStr).toLocaleDateString();
+  } catch {
+    return fallback;
+  }
+}
+
+function safeDatetime(dateStr: string | null | undefined, fallback = "-"): string {
+  if (!dateStr) return fallback;
+  try {
+    return new Date(dateStr).toLocaleString();
+  } catch {
+    return fallback;
+  }
+}
+
+function formatCurrency(cents: number): string {
+  const amount = typeof cents === "number" ? cents : 0;
+  return `$${(amount / 100).toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
+}
+
 export function ComplianceReport({
   generatedAt,
   generatedBy,
   stats,
-  minorRecords,
-  contractForensics,
-  auditSample,
+  minorRecords = [],
+  contractForensics = [],
+  auditSample = [],
   donorImpacts = [],
 }: ComplianceReportProps) {
-  const formatCurrency = (cents: number) => `$${(cents / 100).toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
+  const safeStats = {
+    totalMinors: stats?.totalMinors ?? 0,
+    verifiedConsent: stats?.verifiedConsent ?? 0,
+    pendingConsent: stats?.pendingConsent ?? 0,
+    totalContracts: stats?.totalContracts ?? 0,
+    signedContracts: stats?.signedContracts ?? 0,
+  };
+  const safeMinors = minorRecords || [];
+  const safeContracts = contractForensics || [];
+  const safeAudit = auditSample || [];
+  const safeDonors = donorImpacts || [];
+
   return (
     <Document>
       <Page size="A4" style={styles.page}>
@@ -175,21 +216,21 @@ export function ComplianceReport({
             The Indie Quill Collective - 501(c)(3) Non-Profit Organization
           </Text>
           <Text style={styles.metaInfo}>
-            Generated: {new Date(generatedAt).toLocaleString()} | By: {generatedBy}
+            Generated: {safeDatetime(generatedAt)} | By: {generatedBy || "Admin"}
           </Text>
         </View>
 
         <View style={styles.statsGrid}>
           <View style={styles.statBox}>
-            <Text style={styles.statNumber}>{stats.totalMinors}</Text>
+            <Text style={styles.statNumber}>{safeStats.totalMinors}</Text>
             <Text style={styles.statLabel}>Youth Authors</Text>
           </View>
           <View style={styles.statBox}>
-            <Text style={styles.statNumber}>{stats.verifiedConsent}</Text>
+            <Text style={styles.statNumber}>{safeStats.verifiedConsent}</Text>
             <Text style={styles.statLabel}>Verified Consent</Text>
           </View>
           <View style={styles.statBox}>
-            <Text style={styles.statNumber}>{stats.signedContracts}</Text>
+            <Text style={styles.statNumber}>{safeStats.signedContracts}</Text>
             <Text style={styles.statLabel}>Signed Contracts</Text>
           </View>
           <View style={{ ...styles.statBox, marginRight: 0 }}>
@@ -207,23 +248,21 @@ export function ComplianceReport({
             <Text style={styles.cellHeader}>Status</Text>
             <Text style={styles.cellHeader}>Retention Until</Text>
           </View>
-          {minorRecords.length === 0 ? (
-            <View style={styles.row}>
-              <Text style={styles.cell}>No minor authors in system</Text>
+          {safeMinors.length === 0 ? (
+            <View style={styles.emptyRow}>
+              <Text style={styles.emptyText}>No minor authors in system</Text>
             </View>
           ) : (
-            minorRecords.slice(0, 10).map((record) => (
+            safeMinors.slice(0, 10).map((record) => (
               <View key={record.id} style={styles.row}>
-                <Text style={styles.cell}>{record.displayName}</Text>
+                <Text style={styles.cell}>{record.displayName || "-"}</Text>
                 <Text style={styles.cell}>{record.guardianName || "-"}</Text>
                 <Text style={styles.cell}>{record.consentMethod || "-"}</Text>
                 <Text style={styles.cell}>
                   {record.consentVerified ? "Verified" : "Pending"}
                 </Text>
                 <Text style={styles.cell}>
-                  {record.dataRetentionUntil
-                    ? new Date(record.dataRetentionUntil).toLocaleDateString()
-                    : "N/A"}
+                  {safeDate(record.dataRetentionUntil, "N/A")}
                 </Text>
               </View>
             ))
@@ -238,25 +277,17 @@ export function ComplianceReport({
             <Text style={styles.cellHeader}>IP Address</Text>
             <Text style={styles.cellHeader}>Guardian Signed</Text>
           </View>
-          {contractForensics.length === 0 ? (
-            <View style={styles.row}>
-              <Text style={styles.cell}>No signed contracts</Text>
+          {safeContracts.length === 0 ? (
+            <View style={styles.emptyRow}>
+              <Text style={styles.emptyText}>No signed contracts</Text>
             </View>
           ) : (
-            contractForensics.slice(0, 10).map((contract) => (
+            safeContracts.slice(0, 10).map((contract) => (
               <View key={contract.id} style={styles.row}>
-                <Text style={styles.cell}>{contract.displayName}</Text>
-                <Text style={styles.cell}>
-                  {contract.signedAt
-                    ? new Date(contract.signedAt).toLocaleDateString()
-                    : "-"}
-                </Text>
+                <Text style={styles.cell}>{contract.displayName || "-"}</Text>
+                <Text style={styles.cell}>{safeDate(contract.signedAt)}</Text>
                 <Text style={styles.cell}>{contract.signatureIp || "-"}</Text>
-                <Text style={styles.cell}>
-                  {contract.guardianSignedAt
-                    ? new Date(contract.guardianSignedAt).toLocaleDateString()
-                    : "N/A"}
-                </Text>
+                <Text style={styles.cell}>{safeDate(contract.guardianSignedAt, "N/A")}</Text>
               </View>
             ))
           )}
@@ -270,16 +301,20 @@ export function ComplianceReport({
             <Text style={styles.cellHeader}>IP Address</Text>
             <Text style={styles.cellHeader}>Timestamp</Text>
           </View>
-          {auditSample.slice(0, 8).map((log) => (
-            <View key={log.id} style={styles.row}>
-              <Text style={styles.cell}>{log.action}</Text>
-              <Text style={styles.cell}>{log.resourceType}</Text>
-              <Text style={styles.cell}>{log.ipAddress || "-"}</Text>
-              <Text style={styles.cell}>
-                {new Date(log.createdAt).toLocaleString()}
-              </Text>
+          {safeAudit.length === 0 ? (
+            <View style={styles.emptyRow}>
+              <Text style={styles.emptyText}>No audit log entries available</Text>
             </View>
-          ))}
+          ) : (
+            safeAudit.slice(0, 8).map((log) => (
+              <View key={log.id} style={styles.row}>
+                <Text style={styles.cell}>{log.action || "-"}</Text>
+                <Text style={styles.cell}>{log.resourceType || "-"}</Text>
+                <Text style={styles.cell}>{log.ipAddress || "-"}</Text>
+                <Text style={styles.cell}>{safeDatetime(log.createdAt)}</Text>
+              </View>
+            ))
+          )}
         </View>
 
         <Text style={styles.footer}>
@@ -289,7 +324,7 @@ export function ComplianceReport({
         </Text>
       </Page>
 
-      {donorImpacts.length > 0 && (
+      {safeDonors.length > 0 && (
         <Page size="A4" style={styles.page}>
           <View style={styles.header}>
             <Text style={styles.title}>Donor Impact Report</Text>
@@ -297,32 +332,34 @@ export function ComplianceReport({
               Grant Efficiency & Author Outcomes - The Indie Quill Collective
             </Text>
             <Text style={styles.metaInfo}>
-              Generated: {new Date(generatedAt).toLocaleString()}
+              Generated: {safeDatetime(generatedAt)}
             </Text>
           </View>
 
-          {donorImpacts.map((impact, index) => (
+          {safeDonors.map((impact, index) => (
             <View key={index} style={styles.section}>
-              <Text style={styles.sectionTitle}>{impact.foundationName}</Text>
-              
+              <Text style={styles.sectionTitle}>{impact.foundationName || "Unknown Foundation"}</Text>
+
               <View style={styles.statsGrid}>
                 <View style={styles.statBox}>
-                  <Text style={styles.statNumber}>{formatCurrency(impact.grantAmount)}</Text>
+                  <Text style={styles.statNumber}>{formatCurrency(impact.grantAmount ?? 0)}</Text>
                   <Text style={styles.statLabel}>Grant Amount</Text>
                 </View>
                 <View style={styles.statBox}>
-                  <Text style={styles.statNumber}>{impact.targetAuthors}</Text>
+                  <Text style={styles.statNumber}>{impact.targetAuthors ?? 0}</Text>
                   <Text style={styles.statLabel}>Target Authors</Text>
                 </View>
                 <View style={styles.statBox}>
                   <Text style={{ ...styles.statNumber, color: impact.exceededExpectations ? "#16a34a" : "#1e293b" }}>
-                    {impact.actualAuthors}
+                    {impact.actualAuthors ?? 0}
                   </Text>
                   <Text style={styles.statLabel}>Actual Authors</Text>
                 </View>
                 <View style={{ ...styles.statBox, marginRight: 0 }}>
                   <Text style={{ ...styles.statNumber, color: "#16a34a" }}>
-                    {impact.potentialAuthors > impact.targetAuthors ? `+${impact.potentialAuthors - impact.targetAuthors}` : "0"}
+                    {(impact.potentialAuthors ?? 0) > (impact.targetAuthors ?? 0)
+                      ? `+${(impact.potentialAuthors ?? 0) - (impact.targetAuthors ?? 0)}`
+                      : "0"}
                   </Text>
                   <Text style={styles.statLabel}>Surplus Impact</Text>
                 </View>
@@ -331,7 +368,7 @@ export function ComplianceReport({
               {impact.exceededExpectations && (
                 <View style={{ backgroundColor: "#dcfce7", padding: 10, marginBottom: 10, borderRadius: 4 }}>
                   <Text style={{ fontSize: 10, color: "#166534", fontFamily: "Helvetica-Bold" }}>
-                    Exceeded Expectations: Target {impact.targetAuthors}, Delivered {impact.actualAuthors} authors
+                    Exceeded Expectations: Target {impact.targetAuthors ?? 0}, Delivered {impact.actualAuthors ?? 0} authors
                   </Text>
                 </View>
               )}
@@ -339,21 +376,29 @@ export function ComplianceReport({
               <Text style={{ fontSize: 11, fontFamily: "Helvetica-Bold", marginBottom: 6, color: "#475569" }}>
                 Authors Empowered by This Grant:
               </Text>
-              <View style={styles.row}>
-                <Text style={styles.cellHeader}>Author</Text>
-                <Text style={styles.cellHeader}>Status</Text>
-              </View>
-              {impact.authorsImpacted.map((author, authorIndex) => (
-                <View key={authorIndex} style={styles.row}>
-                  <Text style={styles.cell}>{author.displayName}</Text>
-                  <Text style={styles.cell}>{author.status}</Text>
+              {(impact.authorsImpacted || []).length === 0 ? (
+                <View style={styles.emptyRow}>
+                  <Text style={styles.emptyText}>No author data linked to this grant</Text>
                 </View>
-              ))}
+              ) : (
+                <>
+                  <View style={styles.row}>
+                    <Text style={styles.cellHeader}>Author</Text>
+                    <Text style={styles.cellHeader}>Status</Text>
+                  </View>
+                  {(impact.authorsImpacted || []).map((author, authorIndex) => (
+                    <View key={authorIndex} style={styles.row}>
+                      <Text style={styles.cell}>{author.displayName || "-"}</Text>
+                      <Text style={styles.cell}>{author.status || "-"}</Text>
+                    </View>
+                  ))}
+                </>
+              )}
             </View>
           ))}
 
           <Text style={styles.footer}>
-            This Donor Impact Report demonstrates your contribution to literacy empowerment. 
+            This Donor Impact Report demonstrates your contribution to literacy empowerment.
             Cost efficiency allows us to serve more authors with your generous support.
           </Text>
         </Page>

@@ -82,9 +82,40 @@ export default function AuditorContent() {
     setReportLoading(true);
     setReportError("");
     try {
-      const res = await fetch("/api/auditor/dglf-impact-report", { credentials: "include" });
+      const res = await fetch("/api/auditor/dglf-impact-report/pdf", { credentials: "include" });
       if (!res.ok) {
         let msg = "Failed to generate report";
+        try { const d = await res.json(); msg = d.message || msg; } catch {}
+        throw new Error(msg);
+      }
+      const contentType = res.headers.get("content-type") || "";
+      if (contentType.includes("application/pdf")) {
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.style.display = "none";
+        a.href = url;
+        a.download = `dglf-impact-report-${new Date().getFullYear()}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => { window.URL.revokeObjectURL(url); document.body.removeChild(a); }, 100);
+      } else {
+        throw new Error("Server did not return a PDF. Please try again.");
+      }
+    } catch (err: any) {
+      setReportError(err.message || "Failed to generate impact report. Please try again.");
+    } finally {
+      setReportLoading(false);
+    }
+  };
+
+  const viewImpactReport = async () => {
+    setReportLoading(true);
+    setReportError("");
+    try {
+      const res = await fetch("/api/auditor/dglf-impact-report", { credentials: "include" });
+      if (!res.ok) {
+        let msg = "Failed to load report data";
         try { const d = await res.json(); msg = d.message || msg; } catch {}
         throw new Error(msg);
       }
@@ -92,7 +123,7 @@ export default function AuditorContent() {
       setReport(data);
       setShowReport(true);
     } catch (err: any) {
-      setReportError(err.message || "Failed to generate impact report. Please try again.");
+      setReportError(err.message || "Failed to load report data. Please try again.");
     } finally {
       setReportLoading(false);
     }
@@ -132,19 +163,29 @@ export default function AuditorContent() {
           </p>
         </div>
         <div className="flex flex-col items-end gap-2">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <button
               onClick={generateImpactReport}
               disabled={reportLoading}
               className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-teal-500 text-white rounded-lg font-medium hover:from-green-600 hover:to-teal-600 transition-all disabled:opacity-50"
+              title="Download a PDF version of the DGLF impact report"
+            >
+              <Download className="w-4 h-4" />
+              {reportLoading ? "Generating..." : "Download DGLF Report PDF"}
+            </button>
+            <button
+              onClick={viewImpactReport}
+              disabled={reportLoading}
+              className="flex items-center gap-2 px-4 py-2 bg-white border border-teal-300 text-teal-700 rounded-lg font-medium hover:bg-teal-50 transition-all disabled:opacity-50"
+              title="View a summary of the DGLF impact data in browser"
             >
               <FileText className="w-4 h-4" />
-              {reportLoading ? "Generating..." : "Generate DGLF Impact Report"}
+              View Report
             </button>
             {metrics?.lastUpdated && (
               <div className="flex items-center gap-2 text-sm text-gray-500">
                 <Clock className="w-4 h-4" />
-                Last updated: {new Date(metrics.lastUpdated).toLocaleString()}
+                {new Date(metrics.lastUpdated).toLocaleString()}
               </div>
             )}
           </div>

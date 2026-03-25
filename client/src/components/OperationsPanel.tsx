@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { 
   BarChart3, Users, FileCheck, Activity, TrendingUp, Shield, 
-  Download, RefreshCw, Clock, Zap, AlertTriangle, CheckCircle
+  Download, RefreshCw, Clock, Zap, AlertTriangle, CheckCircle, X
 } from "lucide-react";
 
 
@@ -51,6 +51,7 @@ export default function OperationsPanel() {
   const [metrics, setMetrics] = useState<OperationsMetrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [exportingCompliance, setExportingCompliance] = useState(false);
+  const [exportError, setExportError] = useState("");
 
   useEffect(() => {
     fetchMetrics();
@@ -75,6 +76,7 @@ export default function OperationsPanel() {
 
   const exportComplianceReport = async () => {
     setExportingCompliance(true);
+    setExportError("");
     try {
       const response = await fetch('/api/admin/compliance/export', {
         method: 'GET',
@@ -96,20 +98,18 @@ export default function OperationsPanel() {
             document.body.removeChild(a);
           }, 100);
         } else {
-          const data = await response.json();
-          alert(data.message || 'Failed to generate compliance report. Please try again.');
+          let msg = 'Failed to generate compliance report. Please try again.';
+          try { const data = await response.json(); msg = data.message || msg; } catch {}
+          setExportError(msg);
         }
       } else {
         let errorMsg = 'Failed to generate compliance report. Please try again.';
-        try {
-          const data = await response.json();
-          errorMsg = data.message || errorMsg;
-        } catch {}
-        alert(errorMsg);
+        try { const data = await response.json(); errorMsg = data.message || errorMsg; } catch {}
+        setExportError(errorMsg);
       }
     } catch (error) {
       console.error('Failed to export compliance report:', error);
-      alert('Failed to generate compliance report. Please check your connection and try again.');
+      setExportError('Failed to generate compliance report. Please check your connection and try again.');
     } finally {
       setExportingCompliance(false);
     }
@@ -145,22 +145,33 @@ export default function OperationsPanel() {
           <h2 className="font-display text-2xl font-bold text-slate-800">Operations Dashboard</h2>
           <p className="text-gray-500">Program Director Metrics & Grant Readiness</p>
         </div>
-        <div className="flex space-x-3">
-          <button
-            onClick={fetchMetrics}
-            className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center space-x-2"
-          >
-            <RefreshCw className="w-4 h-4" />
-            <span>Refresh</span>
-          </button>
-          <button
-            onClick={exportComplianceReport}
-            disabled={exportingCompliance}
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center space-x-2"
-          >
-            <Download className={`w-4 h-4 ${exportingCompliance ? 'animate-spin' : ''}`} />
-            <span>{exportingCompliance ? 'Exporting...' : 'Export Compliance PDF'}</span>
-          </button>
+        <div className="flex flex-col items-end gap-2">
+          <div className="flex space-x-3">
+            <button
+              onClick={fetchMetrics}
+              className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center space-x-2"
+            >
+              <RefreshCw className="w-4 h-4" />
+              <span>Refresh</span>
+            </button>
+            <button
+              onClick={exportComplianceReport}
+              disabled={exportingCompliance}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center space-x-2 disabled:opacity-60"
+            >
+              <Download className={`w-4 h-4 ${exportingCompliance ? 'animate-bounce' : ''}`} />
+              <span>{exportingCompliance ? 'Generating PDF...' : 'Export Compliance PDF'}</span>
+            </button>
+          </div>
+          {exportError && (
+            <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-1.5 max-w-sm">
+              <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+              <span className="flex-1">{exportError}</span>
+              <button onClick={() => setExportError("")} className="text-red-400 hover:text-red-600">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
