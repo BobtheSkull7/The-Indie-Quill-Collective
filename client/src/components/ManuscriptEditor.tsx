@@ -110,7 +110,11 @@ export default function ManuscriptEditor({
         const data = await res.json();
         if (data.content && editor) {
           editor.commands.setContent(data.content);
-          setWordCount(data.word_count || 0);
+          // Recalculate from actual editor text so the submit button
+          // reflects the real loaded content rather than a stale DB value.
+          const text = editor.getText();
+          const words = text.trim().split(/\s+/).filter((w) => w.length > 0).length;
+          setWordCount(words > 0 ? words : (data.word_count || 0));
           if (data.updated_at) setLastSaved(new Date(data.updated_at));
         }
         if (data.submitted) {

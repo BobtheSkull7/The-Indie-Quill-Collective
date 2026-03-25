@@ -83,6 +83,7 @@ export default function Workspace() {
   const [taskSaving, setTaskSaving] = useState(false);
   const [taskLastSaved, setTaskLastSaved] = useState<Date | null>(null);
 
+  const [moveToMasterWarning, setMoveToMasterWarning] = useState(false);
   const [referenceCard, setReferenceCard] = useState<VibeCard | null>(null);
   const [sidebarTab, setSidebarTab] = useState<"transcripts" | "tasks">("tasks");
   const [leftPanelOpen, setLeftPanelOpen] = useState(true);
@@ -126,7 +127,7 @@ export default function Workspace() {
   const taskEditor = useEditor({
     extensions: [
       StarterKit.configure({
-        heading: { levels: [2, 3] },
+        heading: { levels: [1, 2, 3] },
       }),
       Placeholder.configure({
         placeholder: "Write your response to this task...",
@@ -316,6 +317,12 @@ export default function Workspace() {
 
   const handleMoveToMaster = () => {
     if (!taskEditor || !masterEditor) return;
+    if (taskWordCount === 0) {
+      setMoveToMasterWarning(true);
+      setTimeout(() => setMoveToMasterWarning(false), 3000);
+      return;
+    }
+    setMoveToMasterWarning(false);
     const taskJson = taskEditor.getJSON();
     if (!taskJson.content || taskJson.content.length === 0) return;
 
@@ -527,12 +534,18 @@ export default function Workspace() {
                           </div>
                           <div className="flex items-center gap-2 mt-2 text-xs text-gray-400">
                             <span>{card.deck_title}</span>
-                            {card.manuscript_word_count ? (
-                              <>
-                                <span>·</span>
-                                <span>{card.manuscript_word_count} words</span>
-                              </>
-                            ) : null}
+                            {(() => {
+                              const isActive = activeCardId === card.id && viewMode === "task";
+                              const wc = isActive ? taskWordCount : (card.manuscript_word_count || 0);
+                              return wc > 0 ? (
+                                <>
+                                  <span>·</span>
+                                  <span className={isActive ? "text-purple-500 font-medium" : ""}>
+                                    {wc.toLocaleString()} words
+                                  </span>
+                                </>
+                              ) : null;
+                            })()}
                           </div>
                         </div>
                         <div className="flex border-t border-gray-100">
@@ -626,18 +639,26 @@ export default function Workspace() {
           )}
 
           {viewMode === "task" && activeCard && (
-            <div className="px-6 py-3 bg-purple-50 border-b border-purple-100 flex items-center justify-between">
+            <div className="px-6 py-3 bg-purple-50 border-b border-purple-100 flex items-center justify-between gap-4">
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-purple-800 truncate">{activeCard.task}</p>
                 <p className="text-xs text-purple-500 mt-0.5">{activeCard.deck_title}</p>
               </div>
-              <button
-                onClick={handleMoveToMaster}
-                className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700 transition-colors shadow-sm shrink-0 ml-4"
-              >
-                <ArrowDownToLine className="w-4 h-4" />
-                Move to Master
-              </button>
+              <div className="flex items-center gap-3 shrink-0">
+                {moveToMasterWarning && (
+                  <span className="text-xs text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded-md">
+                    Write something first before moving to Master.
+                  </span>
+                )}
+                <button
+                  onClick={handleMoveToMaster}
+                  disabled={taskWordCount === 0}
+                  className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm"
+                >
+                  <ArrowDownToLine className="w-4 h-4" />
+                  Move to Master
+                </button>
+              </div>
             </div>
           )}
 
