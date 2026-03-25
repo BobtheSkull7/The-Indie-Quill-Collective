@@ -1961,7 +1961,7 @@ export async function registerRoutes(app: Express) {
     try {
       const result = await db.execute(sql`
         SELECT 
-          pu.id,
+          pu.id as "id",
           pu.application_id as "applicationId",
           pu.user_id as "userId",
           pu.status as "stage",
@@ -7001,7 +7001,7 @@ export async function registerDonationRoutes(app: Express) {
           u.vibe_scribe_id as "shortId",
           sp.training_path as "trainingPath",
           sp.enrolled_at as "enrolledAt",
-          COALESCE(dd.total_words, 0) + COALESCE(ms.ms_words, 0) as "wordCount",
+          COALESCE(dd.total_words, 0) + COALESCE(ms.ms_words, 0) + COALESCE(mm.mm_words, 0) as "wordCount",
           COALESCE(sal.total_hours, 0) as "hoursActive",
           COALESCE(scp.avg_progress, 0) as "courseProgress",
           COALESCE(scp.modules_completed, 0) as "modulesCompleted",
@@ -7017,6 +7017,12 @@ export async function registerDonationRoutes(app: Express) {
           WHERE user_id ~ '^\d+$'
           GROUP BY uid
         ) ms ON ms.uid = u.id
+        LEFT JOIN (
+          SELECT user_id::integer as uid, SUM(word_count) as mm_words
+          FROM master_manuscripts
+          WHERE user_id ~ '^\d+$'
+          GROUP BY uid
+        ) mm ON mm.uid = u.id
         LEFT JOIN (
           SELECT user_id, ROUND(SUM(minutes_active) / 60.0, 1) as total_hours
           FROM student_activity_logs GROUP BY user_id
@@ -7225,7 +7231,7 @@ export async function registerDonationRoutes(app: Express) {
           u.id, u.first_name as "firstName", u.last_name as "lastName", u.email,
           sp.enrolled_at as "enrolledAt",
           COALESCE(sal.total_hours, 0) as "hoursActive",
-          COALESCE(dd.total_words, 0) + COALESCE(ms.ms_words, 0) as "wordCount",
+          COALESCE(dd.total_words, 0) + COALESCE(ms.ms_words, 0) + COALESCE(mm.mm_words, 0) as "wordCount",
           COALESCE(scp.avg_progress, 0) as "courseProgress",
           sal.last_activity as "lastActivity"
         FROM mentor_student_assignments msa
@@ -7244,6 +7250,12 @@ export async function registerDonationRoutes(app: Express) {
           WHERE user_id ~ '^\d+$'
           GROUP BY uid
         ) ms ON ms.uid = u.id
+        LEFT JOIN (
+          SELECT user_id::integer as uid, SUM(word_count) as mm_words
+          FROM master_manuscripts
+          WHERE user_id ~ '^\d+$'
+          GROUP BY uid
+        ) mm ON mm.uid = u.id
         LEFT JOIN (
           SELECT user_id, AVG(percent_complete) as avg_progress FROM student_curriculum_progress GROUP BY user_id
         ) scp ON scp.user_id = u.id
