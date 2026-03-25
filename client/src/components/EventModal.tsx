@@ -284,7 +284,7 @@ export default function EventModal({
                   onClick={() => setConfirmDelete(false)}
                   className="text-sm text-gray-500 hover:text-gray-700"
                 >
-                  Cancel
+                  Keep Event
                 </button>
               )}
             </div>

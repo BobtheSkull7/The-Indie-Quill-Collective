@@ -274,7 +274,7 @@ export default function VibeDeckContainer({ onMetricsChange }: { onMetricsChange
                     <p className="text-sm text-gray-500 mt-0.5">{curriculum.description}</p>
                   )}
                 </div>
-                <div className="flex items-center gap-4 flex-shrink-0">
+                <div className="hidden sm:flex items-center gap-4 flex-shrink-0">
                   <span className="text-xs text-gray-500">{curriculumDecks.length} {curriculumDecks.length === 1 ? 'catalog' : 'catalogs'} · {totalTomes} {totalTomes === 1 ? 'lesson' : 'lessons'} · {totalCards} {totalCards === 1 ? 'task' : 'tasks'}</span>
                 </div>
               </button>
@@ -310,7 +310,7 @@ export default function VibeDeckContainer({ onMetricsChange }: { onMetricsChange
                                   <p className="text-xs text-gray-500">{deck.description}</p>
                                 )}
                               </div>
-                              <div className="flex items-center gap-3 flex-shrink-0">
+                              <div className="hidden sm:flex items-center gap-3 flex-shrink-0">
                                 <span className="text-xs text-gray-500">{deck.tomes.length} {deck.tomes.length === 1 ? 'lesson' : 'lessons'}</span>
                               </div>
                             </button>
@@ -355,7 +355,7 @@ export default function VibeDeckContainer({ onMetricsChange }: { onMetricsChange
                                             </button>
                                             <div className="flex items-center gap-2 flex-shrink-0">
                                               {tome.absorbed && (
-                                                <span className="flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full border border-green-200">
+                                                <span className="hidden sm:flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full border border-green-200">
                                                   <BookOpen className="w-3 h-3" />
                                                   Completed
                                                 </span>

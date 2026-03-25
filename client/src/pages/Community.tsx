@@ -1,7 +1,8 @@
-import { useState } from "react";
-import { Link } from "wouter";
+import { useState, useEffect } from "react";
+import { Link, useLocation } from "wouter";
 import { BookOpen, Heart, Feather, ArrowLeft, Mail, Users } from "lucide-react";
 import ContactModal from "../components/ContactModal";
+import { useAuth } from "../App";
 
 const lineage = [
   { name: "Joseph Campbell", work: "The Hero with a Thousand Faces", concept: "The Hero's Journey" },
@@ -25,8 +26,18 @@ const council = [
 
 const paperGrainBg = `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E")`;
 
+const ALLOWED_ROLES = ["student", "writer", "admin", "board_member", "auditor", "mentor"];
+
 export default function Community() {
+  const { user } = useAuth();
+  const [, setLocation] = useLocation();
   const [showContactModal, setShowContactModal] = useState(false);
+
+  useEffect(() => {
+    if (user !== null && !ALLOWED_ROLES.includes(user.role)) {
+      setLocation("/dashboard");
+    }
+  }, [user, setLocation]);
 
   return (
     <div className="min-h-screen" style={{ background: "linear-gradient(180deg, #faf6f0 0%, #f5efe6 40%, #ede4d6 100%)" }}>

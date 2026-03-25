@@ -19,7 +19,7 @@ export default function VibeDeckCard({ task, qualifications, isCompleted = false
   return (
     <div
       className="vibe-deck-card-container cursor-pointer"
-      style={{ perspective: "1000px", height: "260px" }}
+      style={{ perspective: "1000px", minHeight: "260px", height: "260px" }}
       onClick={handleCardClick}
     >
       <div
@@ -42,11 +42,11 @@ export default function VibeDeckCard({ task, qualifications, isCompleted = false
               <span className="text-xs font-medium text-green-600 bg-green-100 px-2 py-0.5 rounded-full">Done</span>
             )}
           </div>
-          <div className="flex-1 flex items-center">
-            <p className="text-slate-800 font-medium text-sm leading-relaxed">{task}</p>
+          <div className="flex-1 flex items-start">
+            <p className="text-left text-slate-800 font-medium text-sm leading-relaxed w-full">{task}</p>
           </div>
           <div className="mt-3 flex items-center justify-between">
-            <span className="text-xs text-gray-400 italic">Tap to flip</span>
+            <span className="text-left text-xs text-gray-400 italic">Tap to flip</span>
           </div>
         </div>
 
@@ -59,13 +59,13 @@ export default function VibeDeckCard({ task, qualifications, isCompleted = false
           }}
         >
           <div className="flex items-center justify-between mb-3">
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-teal-200">Your Assignment</h4>
+            <h4 className="text-left text-xs font-semibold uppercase tracking-wider text-teal-200">Your Assignment</h4>
             {isCompleted && (
               <CheckCircle className="w-5 h-5 text-green-400" />
             )}
           </div>
-          <div className="flex-1 flex items-center">
-            <p className="text-white/90 text-sm leading-relaxed">{qualifications}</p>
+          <div className="flex-1 flex items-start">
+            <p className="text-left text-white/90 text-sm leading-relaxed w-full">{qualifications}</p>
           </div>
 
           {onStartWriting && !isCompleted && (
