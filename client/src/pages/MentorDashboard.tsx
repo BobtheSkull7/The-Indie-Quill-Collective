@@ -342,6 +342,22 @@ export default function MentorDashboard() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl p-6 w-full max-w-md">
             <h2 className="font-display text-xl font-bold text-slate-800 mb-4">Schedule Session</h2>
+            {students.length === 0 ? (
+              <div className="text-center py-6">
+                <AlertCircle className="w-12 h-12 mx-auto mb-3 text-amber-400" />
+                <p className="font-medium text-slate-800 mb-1">No students assigned yet</p>
+                <p className="text-sm text-gray-500 mb-4">
+                  An administrator needs to assign students to your account before you can schedule sessions.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowScheduleModal(false)}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            ) : (
             <form onSubmit={scheduleMeeting} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Student</label>
@@ -419,6 +435,7 @@ export default function MentorDashboard() {
                 </button>
               </div>
             </form>
+            )}
           </div>
         </div>
       )}

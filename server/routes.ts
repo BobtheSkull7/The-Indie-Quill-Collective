@@ -2825,7 +2825,22 @@ export async function registerRoutes(app: Express) {
     }
 
     try {
-      const allApps = await db.select().from(applications);
+      // Use raw SQL to avoid failure on PROD where some schema columns may not yet exist
+      const appsResult = await db.execute(sql`
+        SELECT
+          id,
+          status,
+          cohort_id as "cohortId",
+          date_of_birth as "dateOfBirth",
+          pseudonym,
+          COALESCE(public_identity_enabled, false) as "publicIdentityEnabled"
+        FROM applications
+      `);
+      const allApps = appsResult.rows as Array<{
+        id: number; status: string; cohortId: number | null;
+        dateOfBirth: string | null; pseudonym: string | null; publicIdentityEnabled: boolean;
+      }>;
+
       const allContracts = await db.select().from(contracts);
       const allCohorts = await db.select().from(cohorts);
 
@@ -2881,8 +2896,12 @@ export async function registerRoutes(app: Express) {
       // For minors or when pseudonym looks like a legal name, show masked identifier
       const contractForensics = await Promise.all(
         signedContracts.slice(0, 10).map(async (contract) => {
-          const [app] = await db.select().from(applications)
-            .where(eq(applications.id, contract.applicationId));
+          const appResult = await db.execute(sql`
+            SELECT id, pseudonym, date_of_birth as "dateOfBirth",
+              COALESCE(public_identity_enabled, false) as "publicIdentityEnabled"
+            FROM applications WHERE id = ${contract.applicationId}
+          `);
+          const app = appResult.rows[0] as { pseudonym: string | null; dateOfBirth: string | null; publicIdentityEnabled: boolean } | undefined;
           
           // Determine if we should mask the identity
           // Mask if: no pseudonym set, or author is a minor (under 18), or pseudonym contains spaces (likely a legal name)
@@ -3224,10 +3243,14 @@ export async function registerRoutes(app: Express) {
     }
 
     try {
-      const allApps = await db.select().from(applications);
-      const allContracts = await db.select().from(contracts);
-      const allUpdates = await db.select().from(publishingUpdates);
-      
+      // Use raw SQL to avoid failure on PROD where some schema columns may not yet exist
+      const [appsResult, allContracts, allUpdates] = await Promise.all([
+        db.execute(sql`SELECT id, status FROM applications`),
+        db.select({ status: contracts.status }).from(contracts),
+        db.select({ syncStatus: publishingUpdates.syncStatus }).from(publishingUpdates),
+      ]);
+      const allApps = appsResult.rows as Array<{ id: number; status: string }>;
+
       const stats = {
         totalApplications: allApps.length,
         pendingApplications: allApps.filter(a => a.status === "pending" || a.status === "under_review").length,
@@ -3845,7 +3868,19 @@ export async function registerRoutes(app: Express) {
     }
 
     try {
-      const allApps = await db.select().from(applications);
+      // Raw SQL for applications — PROD table may be missing newer columns (is_minor, guardian_consent_verified, etc.)
+      const appsResult = await db.execute(sql`
+        SELECT
+          id,
+          user_id        AS "userId",
+          status,
+          cohort_id      AS "cohortId",
+          COALESCE(is_minor, false)                 AS "isMinor",
+          COALESCE(guardian_consent_verified, false) AS "guardianConsentVerified"
+        FROM applications
+      `);
+      const allApps: any[] = appsResult.rows as any[];
+
       const allUpdates = await db.select().from(publishingUpdates);
       const allContracts = await db.select().from(contracts);
       const allCohorts = await db.select().from(cohorts);
@@ -3858,9 +3893,9 @@ export async function registerRoutes(app: Express) {
       let actualCohortCount = 0;
       let cohortSigned = 0;
       if (activeCohort) {
-        const cohortApps = allApps.filter(a => a.cohortId === activeCohort.id);
+        const cohortApps = allApps.filter((a: any) => a.cohortId === activeCohort.id);
         actualCohortCount = cohortApps.length;
-        cohortSigned = cohortApps.filter(a => {
+        cohortSigned = cohortApps.filter((a: any) => {
           const contract = allContracts.find(c => c.applicationId === a.id);
           return contract && contract.status === 'signed';
         }).length;
@@ -3869,17 +3904,17 @@ export async function registerRoutes(app: Express) {
       }
 
       // Scale Indicator: Total Active Authors Managed
-      const totalActiveAuthors = allApps.filter(a => 
+      const totalActiveAuthors = allApps.filter((a: any) => 
         a.status !== 'rejected' && a.status !== 'pending'
       ).length;
 
       // Status distribution for throughput analysis
       const statusDistribution = {
-        pending: allApps.filter(a => a.status === 'pending').length,
-        under_review: allApps.filter(a => a.status === 'under_review').length,
-        accepted: allApps.filter(a => a.status === 'accepted').length,
-        migrated: allApps.filter(a => a.status === 'migrated').length,
-        rejected: allApps.filter(a => a.status === 'rejected').length,
+        pending: allApps.filter((a: any) => a.status === 'pending').length,
+        under_review: allApps.filter((a: any) => a.status === 'under_review').length,
+        accepted: allApps.filter((a: any) => a.status === 'accepted').length,
+        migrated: allApps.filter((a: any) => a.status === 'migrated').length,
+        rejected: allApps.filter((a: any) => a.status === 'rejected').length,
       };
 
       // Publishing pipeline status - New Chevron Path stages
@@ -3895,9 +3930,9 @@ export async function registerRoutes(app: Express) {
 
       // Minor authors stats
       const minorStats = {
-        total: allApps.filter(a => a.isMinor).length,
-        withGuardianConsent: allApps.filter(a => a.isMinor && a.guardianConsentVerified).length,
-        pendingConsent: allApps.filter(a => a.isMinor && !a.guardianConsentVerified).length,
+        total: allApps.filter((a: any) => a.isMinor).length,
+        withGuardianConsent: allApps.filter((a: any) => a.isMinor && a.guardianConsentVerified).length,
+        pendingConsent: allApps.filter((a: any) => a.isMinor && !a.guardianConsentVerified).length,
       };
 
       // Sync health
@@ -3907,9 +3942,14 @@ export async function registerRoutes(app: Express) {
         failed: allUpdates.filter(u => u.syncStatus === 'failed').length,
       };
 
-      // Flywheel Efficiency Metrics
-      const allCosts = await db.select().from(operatingCosts);
-      const totalOperatingCosts = allCosts.reduce((sum, c) => sum + c.totalCost, 0);
+      // Flywheel Efficiency Metrics — operating_costs may not exist on all envs
+      let totalOperatingCosts = 0;
+      try {
+        const allCosts = await db.select().from(operatingCosts);
+        totalOperatingCosts = allCosts.reduce((sum, c) => sum + c.totalCost, 0);
+      } catch (e: any) {
+        console.warn("Operations metrics: operating_costs not available:", e.message);
+      }
       const efficiencyRatio = totalActiveAuthors > 0 ? totalOperatingCosts / totalActiveAuthors / 100 : 0;
 
       // Quarterly throughput
@@ -5183,17 +5223,22 @@ export function registerGrantRoutes(app: Express) {
       }).returning();
 
       // Update solicitation log to "funded" if there's a recent one
-      await db.update(solicitationLogs)
-        .set({ 
-          response: "funded",
-          responseDate: new Date(),
-        })
-        .where(
-          and(
-            eq(solicitationLogs.foundationId, foundationId),
-            eq(solicitationLogs.response, "interested")
-          )
-        );
+      // Wrapped in try/catch since solicitation_logs may have schema differences on PROD
+      try {
+        await db.update(solicitationLogs)
+          .set({ 
+            response: "funded",
+            responseDate: new Date(),
+          })
+          .where(
+            and(
+              eq(solicitationLogs.foundationId, foundationId),
+              eq(solicitationLogs.response, "interested")
+            )
+          );
+      } catch (solicitationErr) {
+        console.warn("[Grant] Could not update solicitation log (non-fatal):", solicitationErr);
+      }
 
       await logAuditEvent({
         userId: req.session.userId || '',

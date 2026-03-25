@@ -87,7 +87,14 @@ export default function Apply() {
     }
 
     setFieldErrors(errors);
-    return Object.keys(errors).length === 0;
+
+    if (Object.keys(errors).length > 0) {
+      // Scroll to the top of the form so the user can see the validation messages
+      setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 50);
+      return false;
+    }
+
+    return true;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

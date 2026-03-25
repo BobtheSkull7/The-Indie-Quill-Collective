@@ -1,69 +1,44 @@
 # The Indie Quill Collective
 
 ## Overview
-The Indie Quill Collective is a 501(c)(3) non-profit platform designed to support emerging authors from application through publishing. It integrates author management, contract handling (including provisions for minor authors), and professional publishing services with The Indie Quill LLC. The platform ensures legal compliance (COPPA, GDPR) and includes modules for grant and donor logistics, board management, and a virtual classroom for literacy education, aiming to nurture new literary talent comprehensively.
+The Indie Quill Collective is a 501(c)(3) non-profit platform supporting emerging authors from application through publishing, in partnership with The Indie Quill LLC. It integrates author management, legally compliant contract handling (including for minors), and professional publishing services. The platform also features modules for grant and donor logistics, board management, and a virtual classroom for literacy education, aiming to comprehensively nurture new literary talent. The project's vision is to foster a new generation of diverse literary voices.
 
 ## User Preferences
 I prefer clear, concise explanations and a direct communication style. For coding tasks, I value modularity and well-structured code. When making changes, please prioritize security, compliance, and maintainability. Always ask for confirmation before implementing major architectural changes or significant code refactoring. I prefer an iterative development approach, with regular updates and opportunities for feedback.
 
 ## System Architecture
-The project utilizes a client-server architecture. The frontend is built with React 19, Vite, and TailwindCSS 3, while the backend uses Express.js with TypeScript. Data is managed in a PostgreSQL database provided by Supabase, accessed via Drizzle ORM. Client-side routing is handled by Wouter.
+The application employs a client-server architecture. The frontend is developed using React 19, Vite, and TailwindCSS 3, while the backend is an Express.js server written in TypeScript. Data persistence is handled by a PostgreSQL database provided by Supabase, accessed via Drizzle ORM. Client-side navigation is managed by Wouter.
 
 **UI/UX Decisions:**
 - **Typography:** Playfair Display for headings and Inter for body text.
-- **Color Scheme:** Teal and blue.
-- **Styling:** Standard Tailwind CSS classes.
-
-**Security Features:**
-- **HTTP Security:** Helmet.js for HTTP header protection.
-- **Rate Limiting:** `express-rate-limit` on critical endpoints.
-- **Secure Sessions:** `httpOnly` and `sameSite="strict"` session cookies.
-- **Password Security:** `crypto.scrypt` with random salt for hashing.
-- **Database Security:** Drizzle ORM for SQL injection protection.
-- **Compliance:** COPPA audit logging for minor data, PII firewall for external syncs.
-- **Access Control:** Role-based guards for protected pages, supporting dual roles.
-- **Signature Gate:** Enterprise sync requires all necessary contract signatures.
+- **Color Scheme:** Teal and blue palette.
+- **Styling:** Primarily uses standard Tailwind CSS classes.
+- **Lesson Content Display:** "Folio Reveal" transition for lessons, featuring a fade-in backdrop, slide-up paper card with texture, expanding rule line, and staggered content reveal.
+- **Author Path Selection:** Full-screen "Induction" modal with paper grain and custom SVG press marks for path selection.
 
 **Technical Implementations:**
-- **Author Application & Contracts:** Multi-step application, contract generation on acceptance, forensic metadata for e-signatures, PDF download.
-- **Compliance:** COPPA guardian consent tracking, GDPR data export and cascading account deletion.
-- **Integrations:** Automatic syncing with The Indie Quill LLC (HMAC-SHA256 signed), Google Calendar two-way sync, Stripe for donations.
-- **Admin Features:** Comprehensive dashboard for user, application, cohort, board, grant, and ledger management.
-- **VibeScribe Mobile App:** Native iOS/Android app built with Expo/React Native in `apps/mobile/`. Monorepo structure. Features: 6-digit Scribe ID keypad login, giant record button with audio capture (expo-av), OpenAI Whisper transcription via `/api/vibe/transcribe`, text-to-speech playback (expo-speech), "Send to Workspace" saves drafts via `/api/vibe/save-draft`, transcript history via `/api/vibe/history`. Dark theme (navy/teal). No embedded API keys - uses Scribe ID-based auth. Expo Go QR code on port 8080.
-- **Curriculum System (rebranded):** 4-tier hierarchy: Curriculum > Catalog > Lesson > Task. UI labels use Catalog/Lesson/Task; database tables retain original names (`vibe_decks`, `tomes`, `vibe_cards`). `curriculums` table (role-based paths: Published Writer, Adult Student, Family of Students), `vibe_decks` table (catalogs within a curriculum), `tomes` table (lessons within a catalog - id, deck_id, title, content, order_index), `vibe_cards` table (individual tasks within a lesson - references tome_id, not deck_id; includes `task_type` column: 'writing'|'speaking'|'comprehension', default 'writing'). Admin Curriculum Builder with full CRUD at all 4 levels, inline editing, and nested accordion UI. Student view shows published curricula with expandable catalogs > lessons > tasks.
-- **Lessons (formerly Tomes of Wisdom):** Lesson-level educational content that gates task access. Each lesson is a separate entity under a catalog with its own title and content. Students must complete each lesson individually to unlock its tasks. "Folio Reveal" transition: fade-in backdrop, slide-up paper card with paper-grain texture (#FDFBF7 + SVG noise), expanding rule line, staggered ink-in content reveal. Playfair Display headings, EB Garamond body text, charcoal drop cap. Tables: `tomes` (deck_id, title, content, order_index), `tome_absorptions` (user_id VARCHAR, tome_id, absorbed_at).
-- **Scribe's Sanctum (Workspace):** Full-page writer's workspace at `/student/workspace`. Three-pane layout: left sidebar (Task List + VibeScribe Inspiration Feed), center (TipTap rich text editor), bottom (word count + reading time). Two modes: "Project View" (Master Manuscript - the book) and "Task View" (individual Vibe Card writing). Full Word-style toolbar: Bold, Italic, Underline, Strikethrough, H1/H2/H3, Bullet/Ordered Lists, Blockquote, Text Alignment (left/center/right), Undo/Redo. Master Manuscript stored as TipTap JSON in JSONB column. "Move to Master Manuscript" button appends task content to master. Voice snippet injection at cursor position. Reference modal for viewing card instructions while writing. Auto-save every 2 seconds. Transcript polling every 10 seconds. Tables: `master_manuscripts` (user_id UNIQUE, title, content JSONB, word_count), `vibescribe_transcripts` (user_id, vibescribe_id, content, source_type, is_used). API: `POST /api/integration/vibescribe` (API key auth for VibeScribe voice app), `GET /api/student/vibescribe-transcripts`, `GET/PUT /api/student/master-manuscript`, `GET /api/student/workspace-cards`.
-- **Manuscript Editor (Legacy):** TipTap-based rich text editor modal opens from "Start Writing" button on Vibe Card back. Auto-saves drafts every 2 seconds. Tables: `manuscripts` (user_id VARCHAR, card_id, content, word_count).
-- **Card Submission Flow:** Self-report submission with brief reflection. Student writes manuscript, clicks "Submit for Review," provides reflection text. Card visually changes to completed state (green). Tables: `card_submissions` (user_id VARCHAR, card_id, manuscript_id, reflection, xp_earned, status, paste_count INTEGER, is_flagged_for_review BOOLEAN).
-- **Soft Integrity Layer:** Tracks copy-paste behavior during manuscript writing sessions. TipTap's handlePaste captures pasted character count. On submission, if pasted characters exceed 50% of total manuscript content, `is_flagged_for_review` is auto-set to true. Admin Submissions tab shows all submissions with integrity badges (flagged/clear). AI review utility in `server/services/integrity-context.ts` provides prompt context for flagged submissions.
-- **Author Metrics System (replaced XP):** Word-count-based progression replaces the old RPG/XP system. `AuthorScorecard` component in right sidebar shows Words Spoken (VibeScribe transcripts), Words Written (manuscripts + master manuscripts), and Total Output. 3x3 "Legacy Seals" badge grid with curriculum-milestone and word-count badges. Final 9 badges: `entry_of_record` ("The Entry of Record" — L01 complete), `structural_integrity` ("Structural Integrity" — L03 complete), `readers_mark` ("The Reader's Mark" — L05 complete), `foundations_mastery` ("Foundations Mastery" — all Catalog 01 complete), `voice_seal` ("Voice" — 1K spoken), `ink_seal` ("Ink" — 1K written), `specialist_seal` ("Specialist" — path chosen), `5k_club` ("5K Club" — 5K total), `10k_club` ("10K Club" — 10K total). Badges auto-evaluate on each `/api/student/author-metrics` fetch. Badge query uses curriculum title `'Published Writer'` and `vd.order_index = 1` to find Catalog 01 tomes. `game_characters` table extended with `author_path` (VARCHAR) and `badges` (JSONB). Old game-engine.ts file retained but awardXP() no longer called from submission/absorption flows. XP removed from all student-facing UI.
-- **Catalog 01 Seeded:** "The Universal Core" contains 5 lessons with 3 tasks each (15 total). Each lesson has one speaking, one comprehension, and one writing task. Lessons: The Author's Mindset, The Big Idea Validation, The Narrative Blueprint, Mastering the VibeScribe Flow, The Reader's Promise. Seed script at `scripts/seed-catalog-01.ts` runs against both DEV and PROD databases.
-- **Author Path Selection ("The Induction"):** After completing all 5 lessons of Catalog 01 (foundations_mastery badge earned), the PathSelectionModal appears automatically. Full-screen Folio overlay with paper grain, rule line, and four elegant vertical cards with custom SVG press marks. Paths: Novelist (fountain pen nib), Authority (magnifying glass over text), Poet (organic feather), Storyteller (pocket watch). Modal cannot be dismissed without choosing a path. On selection, calls `POST /api/student/author-path`, unlocks specialist_seal badge, and filters curriculum to show only Universal Core + chosen path's catalog. `vibe_decks` table has `specialization` column (VARCHAR 50) — null for Universal Core, 'novelist'/'authority'/'poet'/'storyteller' for specialized catalogs. Four placeholder catalogs seeded: "The Novelist's Craft" (id 102), "The Authority's Framework" (id 103), "The Poet's Voice" (id 104), "The Storyteller's Art" (id 105). Component: `client/src/components/PathSelectionModal.tsx`.
-- **Email Notifications:** Automated via Resend for key events. Admin email is dynamically configurable via `system_settings` table (key: `admin_email`), cached 60s with fallback to `jon@theindiequill.com`. Admin can update via Operations > Email Settings in dashboard. All emails (CC, failure alerts, contact forms) use dynamic lookup.
-- **Contact Modal System:** Reusable `ContactModal` component (`client/src/components/ContactModal.tsx`) replaces all public-facing `mailto:` links. Collects email + message, sends via `POST /api/contact-us` (rate-limited: 3/15min per IP, no auth required). Email includes page source reference and reply-to sender. Used on: Community page ("Writer's Council Application"), Donations page, Student Dashboard ("Mentor Contact"). Privacy page uses direct `mailto:jon@theindiequill.com`.
-- **Catalog 02 Seeded ("The Novelist's Craft"):** Specialization catalog for `author_path = 'novelist'`. Contains 5 lessons with 3 tasks each (15 total, typed speaking/comprehension/writing). Lessons: Your Hero's Big Wish, A World That Feels Real, The Big Change, People Talking, The Big Finish. Written in "Michener-simple" 5th-grade style. Seed script at `scripts/seed-catalog-02.ts`. `specialization` column added to `vibe_decks` table on both DEV and PROD Supabase databases.
-- **Catalog 03 Seeded ("The Authority's Framework"):** Specialization catalog for `author_path = 'authority'`. Contains 5 lessons with 3 tasks each (15 total, typed speaking/comprehension/writing). Lessons: The Big Problem, The Pillar Method, The Power of Proof, The Teacher's Voice, The Call to Action. Written in "Michener-simple" 5th-grade style. Seed script at `scripts/seed-catalog-03.ts`.
-- **Catalog 04 Seeded ("The Storyteller's Art"):** Specialization catalog for `author_path = 'storyteller'`. Contains 5 lessons with 3 tasks each (15 total, typed speaking/comprehension/writing). Lessons: The Single Spark, Starting in the Middle, The Power of One, The Sharp Twist, The Echo. Written in "Michener-simple" 5th-grade style. Seed script at `scripts/seed-catalog-04.ts`.
-- **Catalog 05 Seeded ("The Poet's Voice"):** Specialization catalog for `author_path = 'poet'`. Contains 5 lessons with 3 tasks each (15 total, typed speaking/comprehension/writing). Lessons: The Image as an Anchor, The Music of Words, The Power of White Space, The Unexpected Turn, The Soul's Signature. Seed script at `scripts/seed-catalog-05.ts`.
-- **Community Page ("The Quill Collective"):** Renamed from "Fellowship of the Quill." Three-column participatory hub at `/student/community`. Column 1: "The Lineage" (Campbell, Jenkins, Michener, Rainey, The Novelry). Column 2: "Our Partners" (Founding Visionary, Founding 25, Open Ledger) with "Become a Patron" button. Column 3: "The Writer's Council" (Fiction Lead, Non-Fiction Lead, Poetry Consultant — all vacant/recruiting) with "Apply for the Council" contact modal in Academy Blue. Paper grain (#FDFBF7 + SVG noise) background on all cards.
-
-## Important Accounts
-- **Apple Review Demo Account:** Scribe ID `123-456` (Buildathon Tester, buildathon.tester@theindiequill.org, role: student). This is the permanent demo account for Apple's App Store review team. Do not delete or modify this user.
-
-## App Store Compliance Notes
-- **Issue 90725 (SDK Version):** Starting April 28, 2026, all iOS and iPadOS apps must be built with the iOS 26 SDK or later (included in Xcode 26 or later) to be uploaded to App Store Connect or submitted for distribution. Current builds use iOS 18.2 SDK — must upgrade before that deadline.
-
-## Database Schema Notes
-- **foundation_grants table:** DB column is `recorded_by` (not `created_by`). Drizzle schema maps it as `createdBy: varchar("recorded_by")`. Routes use `createdBy: req.session.userId` for inserts.
-- **Board member routing:** `/board` route registered in App.tsx, Board.tsx page with stats, calendar, fundraising views.
-- **Auditor/Board access:** `/api/auditor/metrics` and `/api/auditor/dglf-impact-report` allow `auditor`, `admin`, and `board_member` roles.
+- **Security:** HTTP header protection with Helmet.js, rate limiting on critical endpoints, secure session cookies, `crypto.scrypt` for password hashing, Drizzle ORM for SQL injection prevention, COPPA audit logging, PII firewall, and role-based access control with dual-role support.
+- **Author Lifecycle Management:** Multi-step application process, automated contract generation with forensic e-signatures, and PDF download.
+- **Compliance:** COPPA guardian consent tracking, GDPR data export, and cascading account deletion.
+- **Integrations:** Automatic HMAC-SHA256 signed syncing with The Indie Quill LLC, two-way Google Calendar synchronization, and Stripe for donations.
+- **Admin Dashboard:** Comprehensive management for users, applications, cohorts, board members, grants, and financial ledgers.
+- **VibeScribe Mobile App (Expo/React Native):** Native app for iOS/Android, featuring 6-digit Scribe ID login, audio recording with transcription (OpenAI Whisper), text-to-speech, and draft saving to the Workspace.
+- **Curriculum System:** A 4-tier hierarchy (Curriculum > Catalog > Lesson > Task) for educational content delivery. Includes an Admin Curriculum Builder with full CRUD operations and a student-facing view of published curricula.
+- **Lessons (formerly Tomes of Wisdom):** Educational content gating task access. Students must complete lessons to unlock associated tasks.
+- **Scribe's Sanctum (Writer's Workspace):** A full-page editor with a three-pane layout including a task list, a TipTap rich text editor, and a word count/reading time display. Supports "Project View" for master manuscripts and "Task View" for individual writing tasks, with auto-save and voice snippet injection.
+- **Card Submission Flow:** Students submit tasks with reflection, triggering a completion status update.
+- **Soft Integrity Layer:** Monitors copy-paste activity during writing sessions. Submissions exceeding a 50% paste threshold are flagged for review.
+- **Author Metrics System:** Replaces XP with word-count-based progression. Displays Words Spoken, Words Written, and Total Output. Features a 3x3 "Legacy Seals" badge grid awarded for curriculum milestones and word count achievements.
+- **Catalog Seeding:** Initial content for "The Universal Core" and specialization catalogs ("The Novelist's Craft," "The Authority's Framework," "The Storyteller's Art," "The Poet's Voice") are seeded with lessons and tasks.
+- **Author Path Selection ("The Induction"):** A modal presented upon completion of foundational lessons, allowing students to choose a specialization path (Novelist, Authority, Poet, Storyteller).
+- **Email Notifications:** Automated email delivery via Resend for key events, with dynamic admin email configuration.
+- **Contact Modal System:** A reusable component for user inquiries, replacing `mailto:` links, with rate-limiting and page source tracking.
 
 ## External Dependencies
-- **Supabase:** PostgreSQL database services.
-- **Google Calendar API:** For two-way event synchronization.
-- **The Indie Quill LLC API:** For secure author data synchronization.
-- **Stripe:** For payment processing (donations).
+- **Supabase:** PostgreSQL database and authentication services.
+- **Google Calendar API:** For synchronizing calendar events.
+- **The Indie Quill LLC API:** For secure synchronization of author data.
+- **Stripe:** For processing donations.
 - **Resend:** For transactional email delivery.
-- **OpenAI:** For VibeScribe audio transcription.
-- **GitHub:** For source code version control.
+- **OpenAI:** For VibeScribe audio transcription services.
 - **Render:** Cloud platform for hosting production services.
