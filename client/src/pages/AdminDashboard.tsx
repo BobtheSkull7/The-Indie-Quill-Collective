@@ -1262,6 +1262,17 @@ export default function AdminDashboard() {
                 <Mail className="w-5 h-5 text-teal-600" />
                 Email Settings
               </h3>
+              {emailLogs.some(l => l.status === 'failed' && l.errorMessage?.includes('domain is not verified')) && (
+                <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+                  <div className="text-sm text-amber-800">
+                    <strong>Email delivery is failing.</strong> The sending domain (<code className="bg-amber-100 px-1 rounded">theindiequillcollective.com</code>) is not verified with Resend.
+                    {' '}To fix this, go to{' '}
+                    <a href="https://resend.com/domains" target="_blank" rel="noreferrer" className="underline font-medium">resend.com/domains</a>
+                    {' '}and add DNS verification records for your domain. Until verified, all platform emails (password resets, welcome emails) will fail.
+                  </div>
+                </div>
+              )}
               <p className="text-sm text-gray-600 mb-4">
                 All platform emails (notifications, alerts, student messages) will be sent to this address.
               </p>
@@ -1399,10 +1410,20 @@ export default function AdminDashboard() {
                                 Sent
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1 text-red-600" title={log.errorMessage || undefined}>
-                                <AlertTriangle className="w-3.5 h-3.5" />
-                                Failed
-                              </span>
+                              <div>
+                                <span className="inline-flex items-center gap-1 text-red-600">
+                                  <AlertTriangle className="w-3.5 h-3.5" />
+                                  Failed
+                                </span>
+                                {log.errorMessage && (() => {
+                                  try {
+                                    const parsed = JSON.parse(log.errorMessage);
+                                    return <p className="text-xs text-red-500 mt-0.5 max-w-xs">{parsed.message}</p>;
+                                  } catch {
+                                    return <p className="text-xs text-red-500 mt-0.5 max-w-xs">{log.errorMessage}</p>;
+                                  }
+                                })()}
+                              </div>
                             )}
                           </td>
                         </tr>

@@ -3820,7 +3820,7 @@ export async function registerRoutes(app: Express) {
   // Grant-Ready PDF Audit Report
   // ============================================
 
-  app.post("/api/admin/compliance/export", async (req: Request, res: Response) => {
+  app.get("/api/admin/compliance/export", async (req: Request, res: Response) => {
     if (!req.session.userId || req.session.userRole !== "admin") {
       return res.status(403).json({ message: "Not authorized" });
     }

@@ -77,25 +77,39 @@ export default function OperationsPanel() {
     setExportingCompliance(true);
     try {
       const response = await fetch('/api/admin/compliance/export', {
-        method: 'POST',
+        method: 'GET',
         credentials: 'include',
       });
       if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `compliance-audit-${new Date().toISOString().split('T')[0]}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        a.remove();
+        const contentType = response.headers.get('content-type') || '';
+        if (contentType.includes('application/pdf')) {
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.style.display = 'none';
+          a.href = url;
+          a.download = `compliance-audit-${new Date().toISOString().split('T')[0]}.pdf`;
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => {
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+          }, 100);
+        } else {
+          const data = await response.json();
+          alert(data.message || 'Failed to generate compliance report. Please try again.');
+        }
       } else {
-        alert('Failed to generate compliance report. Please try again.');
+        let errorMsg = 'Failed to generate compliance report. Please try again.';
+        try {
+          const data = await response.json();
+          errorMsg = data.message || errorMsg;
+        } catch {}
+        alert(errorMsg);
       }
     } catch (error) {
       console.error('Failed to export compliance report:', error);
-      alert('Failed to generate compliance report. Please try again.');
+      alert('Failed to generate compliance report. Please check your connection and try again.');
     } finally {
       setExportingCompliance(false);
     }
