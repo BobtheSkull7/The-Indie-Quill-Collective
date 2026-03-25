@@ -55,6 +55,15 @@ export const AuthContext = createContext<AuthContextType>({
 
 export const useAuth = () => useContext(AuthContext);
 
+const STUDENT_ALLOWED_ROLES = ["student", "writer", "admin", "board_member", "auditor", "mentor"];
+
+function StudentGuard({ children }: { children: React.ReactNode }) {
+  const { user } = useContext(AuthContext);
+  if (!user) return <Redirect to="/login" />;
+  if (!STUDENT_ALLOWED_ROLES.includes(user.role)) return <Redirect to="/dashboard" />;
+  return <>{children}</>;
+}
+
 function App() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -98,11 +107,11 @@ function App() {
           <Route path="/reset-password" component={ResetPassword} />
           <Route path="/dashboard" component={Dashboard} />
           
-          <Route path="/student" component={StudentDashboard} />
-          <Route path="/student/module/:id" component={CurriculumPlayer} />
-          <Route path="/student/drafts" component={DraftingSuite} />
-          <Route path="/student/workspace" component={Workspace} />
-          <Route path="/student/community" component={Community} />
+          <Route path="/student">{() => <StudentGuard><StudentDashboard /></StudentGuard>}</Route>
+          <Route path="/student/module/:id">{() => <StudentGuard><CurriculumPlayer /></StudentGuard>}</Route>
+          <Route path="/student/drafts">{() => <StudentGuard><DraftingSuite /></StudentGuard>}</Route>
+          <Route path="/student/workspace">{() => <StudentGuard><Workspace /></StudentGuard>}</Route>
+          <Route path="/student/community">{() => <StudentGuard><Community /></StudentGuard>}</Route>
           <Route path="/mentor" component={MentorDashboard} />
           <Route path="/family" component={FamilyDashboard} />
           <Route path="/vibe" component={VibeScribe} />
