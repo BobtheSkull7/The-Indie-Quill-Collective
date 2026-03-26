@@ -70,11 +70,56 @@ export default function AboutUs() {
           <p className="text-gray-500 text-lg">Protecting Young Voices. Building Futures.</p>
         </div>
 
-        <div className="text-center py-8 mb-8">
-          <h2 className="font-display text-2xl md:text-3xl font-bold text-slate-800 max-w-3xl mx-auto">
-            A future where authorship is a fundamental right, not a guarded privilege—where the barriers of systemic bias are permanently neutralized, and the global narrative is a true reflection of all human experience.
-          </h2>
+        <div className="text-center py-6 mb-8 space-y-4 max-w-3xl mx-auto">
+          <p className="font-display text-xl md:text-2xl font-bold text-slate-800">
+            Vision: Empowering marginalized voices to overcome every obstacle and finally be heard.
+          </p>
+          <p className="text-base md:text-lg text-gray-700 leading-relaxed">
+            Mission: To provide the essential writing curriculum, literacy support, and publishing infrastructure that moves authors—regardless of race, religion, or background—from their first word to their first edition.
+          </p>
         </div>
+
+        <section className="mb-8">
+          <div className="text-center mb-8">
+            <h2 className="font-display text-3xl font-bold text-slate-800 mb-2">
+              Our Services
+            </h2>
+            <p className="text-gray-600 max-w-2xl mx-auto">
+              The Indie Quill Collective actively provides the following programs and services to the communities we serve.
+            </p>
+          </div>
+
+          <div className="space-y-6">
+            {SERVICES.map((service) => {
+              const Icon = service.icon;
+              return (
+                <div
+                  key={service.title}
+                  className={`bg-white rounded-2xl shadow-sm border ${service.border} p-8`}
+                >
+                  <div className="flex items-start gap-5">
+                    <div className={`w-14 h-14 rounded-xl ${service.light} flex items-center justify-center flex-shrink-0`}>
+                      <Icon className={`w-7 h-7 ${service.text}`} />
+                    </div>
+                    <div>
+                      <h3 className={`font-display text-xl font-bold ${service.text} mb-3`}>
+                        {service.title}
+                      </h3>
+                      <ul className="space-y-1.5">
+                        {service.bullets.map((bullet) => (
+                          <li key={bullet} className="flex items-start gap-2 text-gray-700">
+                            <span className={`mt-2 w-1.5 h-1.5 rounded-full flex-shrink-0 ${service.dot}`} />
+                            {bullet}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
 
         <section className="bg-gradient-to-br from-slate-800 via-slate-700 to-slate-800 rounded-2xl shadow-lg p-8 mb-8 text-white">
           <h2 className="font-display text-2xl font-bold mb-6 text-center">
@@ -189,48 +234,6 @@ export default function AboutUs() {
             <span className="bg-white/10 px-3 py-1 rounded-full">Youth</span>
             <span className="bg-white/10 px-3 py-1 rounded-full">Women</span>
             <span className="bg-white/10 px-3 py-1 rounded-full">Refugees</span>
-          </div>
-        </section>
-
-        <section className="mb-8">
-          <div className="text-center mb-8">
-            <h2 className="font-display text-3xl font-bold text-slate-800 mb-2">
-              Our Services
-            </h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              The Indie Quill Collective actively provides the following programs and services to the communities we serve.
-            </p>
-          </div>
-
-          <div className="space-y-6">
-            {SERVICES.map((service) => {
-              const Icon = service.icon;
-              return (
-                <div
-                  key={service.title}
-                  className={`bg-white rounded-2xl shadow-sm border ${service.border} p-8`}
-                >
-                  <div className="flex items-start gap-5">
-                    <div className={`w-14 h-14 rounded-xl ${service.light} flex items-center justify-center flex-shrink-0`}>
-                      <Icon className={`w-7 h-7 ${service.text}`} />
-                    </div>
-                    <div>
-                      <h3 className={`font-display text-xl font-bold ${service.text} mb-3`}>
-                        {service.title}
-                      </h3>
-                      <ul className="space-y-1.5">
-                        {service.bullets.map((bullet) => (
-                          <li key={bullet} className="flex items-start gap-2 text-gray-700">
-                            <span className={`mt-2 w-1.5 h-1.5 rounded-full flex-shrink-0 ${service.dot}`} />
-                            {bullet}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
           </div>
         </section>
 
