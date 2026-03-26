@@ -5,32 +5,48 @@ const SERVICES = [
   {
     icon: BookOpen,
     title: "Writing Workshops & Author Mentorship",
-    description:
-      "We provide structured, hands-on writing workshops and one-on-one author mentorship designed for emerging voices at every skill level. Our curriculum guides writers from idea to polished manuscript—covering narrative structure, voice development, genre craft, and revision techniques. Each author is paired with a trained mentor who provides personalized guidance throughout the entire writing journey.",
+    bullets: [
+      "Structured, hands-on writing workshops for all skill levels",
+      "One-on-one author mentorship throughout the writing journey",
+      "Curriculum covering narrative structure, voice, genre craft, and revision",
+      "Pairing with a trained mentor from idea through polished manuscript",
+    ],
     color: "from-teal-500 to-teal-700",
     light: "bg-teal-50",
     border: "border-teal-200",
     text: "text-teal-700",
+    dot: "bg-teal-700",
   },
   {
     icon: GraduationCap,
     title: "Adult Literacy Testing & Training",
-    description:
-      "The Indie Quill Collective offers comprehensive adult literacy assessment and training services, including administration of standardized literacy evaluations and individualized instruction plans. Our educators work with adult learners to build foundational reading, writing, and comprehension skills—removing the literacy barriers that prevent full participation in education and professional life. We track progress through structured assessments and celebrate every educational milestone.",
+    bullets: [
+      "Administration of standardized literacy evaluations",
+      "Individualized instruction plans for adult learners",
+      "Foundational reading, writing, and comprehension skill-building",
+      "Structured progress tracking and milestone celebrations",
+    ],
     color: "from-blue-500 to-blue-700",
     light: "bg-blue-50",
     border: "border-blue-200",
     text: "text-blue-700",
+    dot: "bg-blue-700",
   },
   {
     icon: Printer,
     title: "Publishing Assistance",
-    description:
-      "From manuscript to published book, we provide end-to-end publishing assistance to help authors bring their work to the world. Our services include professional editing, cover design, interior formatting, ISBN registration, copyright filing, and distribution coordination. We partner with The Indie Quill LLC to ensure every author who completes our program has a professionally published title to their name—regardless of their financial circumstances.",
+    bullets: [
+      "Professional editing and manuscript review",
+      "Cover design and interior formatting",
+      "ISBN registration and copyright filing",
+      "Distribution coordination",
+      "Partnership with The Indie Quill LLC for every program graduate",
+    ],
     color: "from-purple-500 to-purple-700",
     light: "bg-purple-50",
     border: "border-purple-200",
     text: "text-purple-700",
+    dot: "bg-purple-700",
   },
 ];
 
@@ -54,23 +70,11 @@ export default function AboutUs() {
           <p className="text-gray-500 text-lg">Protecting Young Voices. Building Futures.</p>
         </div>
 
-        <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mb-8">
-          <h2 className="font-display text-2xl font-bold text-slate-800 mb-4">
-            Our Vision
-          </h2>
-          <p className="text-gray-700 text-lg leading-relaxed">
+        <div className="text-center py-8 mb-8">
+          <h2 className="font-display text-2xl md:text-3xl font-bold text-slate-800 max-w-3xl mx-auto">
             A future where authorship is a fundamental right, not a guarded privilege—where the barriers of systemic bias are permanently neutralized, and the global narrative is a true reflection of all human experience.
-          </p>
-        </section>
-
-        <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mb-8">
-          <h2 className="font-display text-2xl font-bold text-slate-800 mb-4">
-            Breaking the Silence. Building the Author.
           </h2>
-          <p className="text-gray-700 text-lg leading-relaxed">
-            To dismantle the systemic architectures of forced silence. We provide a radical, frictionless path to authorship for disadvantaged youth and adults whose voices have been muted by systemic bias. By providing the specific education, tools, and human assistance required to bypass traditional gatekeepers, we ensure that those historically ignored are finally empowered as published authorities of their own narratives.
-          </p>
-        </section>
+        </div>
 
         <section className="bg-gradient-to-br from-slate-800 via-slate-700 to-slate-800 rounded-2xl shadow-lg p-8 mb-8 text-white">
           <h2 className="font-display text-2xl font-bold mb-6 text-center">
@@ -188,18 +192,6 @@ export default function AboutUs() {
           </div>
         </section>
 
-        <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mb-8">
-          <h2 className="font-display text-2xl font-bold text-slate-800 mb-4">
-            The Condition of Forced Silence
-          </h2>
-          <p className="text-gray-700 text-lg leading-relaxed mb-4">
-            The literary landscape is not a meritocracy; it is a fortress. For many, silence is not a choice—it is a condition forced upon them by systemic barriers. Traditional gatekeepers have built a framework of exclusion that effectively mutes marginalized voices, ensuring their stories never leave their minds and their vital histories are erased before they are even told.
-          </p>
-          <p className="text-gray-700 text-lg leading-relaxed">
-            When the tools of storytelling are guarded by those who do not value these perspectives, the result is a systemic erasure of entire communities, cultures, and generations. We exist to end this silence.
-          </p>
-        </section>
-
         <section className="mb-8">
           <div className="text-center mb-8">
             <h2 className="font-display text-3xl font-bold text-slate-800 mb-2">
@@ -226,9 +218,14 @@ export default function AboutUs() {
                       <h3 className={`font-display text-xl font-bold ${service.text} mb-3`}>
                         {service.title}
                       </h3>
-                      <p className="text-gray-700 leading-relaxed">
-                        {service.description}
-                      </p>
+                      <ul className="space-y-1.5">
+                        {service.bullets.map((bullet) => (
+                          <li key={bullet} className="flex items-start gap-2 text-gray-700">
+                            <span className={`mt-2 w-1.5 h-1.5 rounded-full flex-shrink-0 ${service.dot}`} />
+                            {bullet}
+                          </li>
+                        ))}
+                      </ul>
                     </div>
                   </div>
                 </div>
