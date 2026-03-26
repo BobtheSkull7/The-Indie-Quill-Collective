@@ -1991,11 +1991,15 @@ export async function registerRoutes(app: Express) {
 
     try {
       const result = await db.execute(sql`
+        WITH safe_updates AS (
+          SELECT * FROM publishing_updates
+          WHERE (user_id::text) ~ '^\d+$'
+        )
         SELECT 
           pu.id as "id",
           pu.application_id as "applicationId",
-          pu.user_id as "userId",
-          pu.status as "stage",
+          pu.user_id::text as "userId",
+          pu.status::text as "stage",
           pu.status_message as "statusMessage",
           pu.updated_at as "updatedAt",
           a.pseudonym as "authorPseudonym",
@@ -2003,15 +2007,15 @@ export async function registerRoutes(app: Express) {
           COALESCE(ms.total_words, 0) as "manuscriptWordCount",
           u.first_name as "firstName",
           u.last_name as "lastName"
-        FROM publishing_updates pu
+        FROM safe_updates pu
         JOIN applications a ON pu.application_id = a.id
-        JOIN users u ON pu.user_id::integer = u.id
+        JOIN users u ON (pu.user_id::text)::integer = u.id
         LEFT JOIN (
           SELECT user_id::integer as user_id_int, SUM(word_count) as total_words
           FROM manuscripts
           WHERE user_id ~ '^\d+$'
           GROUP BY user_id_int
-        ) ms ON ms.user_id_int = pu.user_id::integer
+        ) ms ON ms.user_id_int = (pu.user_id::text)::integer
         ORDER BY pu.updated_at DESC
       `);
       return res.json(result.rows || []);
