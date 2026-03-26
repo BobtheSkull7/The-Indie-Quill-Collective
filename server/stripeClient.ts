@@ -42,7 +42,7 @@ async function getCredentials() {
   const response = await fetch(url.toString(), {
     headers: {
       'Accept': 'application/json',
-      'X_REPLIT_TOKEN': xReplitToken
+      'X-Replit-Token': xReplitToken
     }
   });
 
