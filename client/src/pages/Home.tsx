@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "wouter";
-import { Heart, ArrowRight, Shield, BookOpen, Users, Handshake } from "lucide-react";
+import { Heart, ArrowRight, BookOpen, Handshake } from "lucide-react";
 
 interface ImpactMetrics {
   totalAuthorsSupported: number;
@@ -74,21 +74,17 @@ export default function Home() {
       </section>
 
       {/* Slim Impact Metrics Bar */}
-      <div className="bg-white border-y border-gray-100">
+      <div className="bg-white border-y border-gray-100 py-4">
         <div className="max-w-3xl mx-auto px-4">
           <div className="flex divide-x divide-gray-100">
             {[
               {
                 value: metricsLoading ? "—" : `${metrics?.identityProtectionRate ?? "—"}%`,
                 label: "Identity Protection",
-                icon: Shield,
-                iconClass: "text-green-500",
               },
               {
                 value: metricsLoading ? "—" : (metrics?.totalAuthorsSupported ?? "—"),
                 label: "Authors Supported",
-                icon: Users,
-                iconClass: "text-teal-500",
               },
               {
                 value: metricsLoading
@@ -97,19 +93,14 @@ export default function Home() {
                   ? metrics.publishedBooks
                   : "Launching Soon",
                 label: "Books Published",
-                icon: BookOpen,
-                iconClass: "text-purple-500",
               },
-            ].map((m) => {
-              const Icon = m.icon;
-              return (
-                <div key={m.label} className="flex-1 flex items-center justify-center gap-2.5 py-4 px-3">
-                  <Icon className={`w-4 h-4 flex-shrink-0 ${m.iconClass}`} />
-                  <span className="font-bold text-slate-800 text-sm">{m.value}</span>
-                  <span className="text-gray-500 text-xs hidden sm:inline">{m.label}</span>
-                </div>
-              );
-            })}
+            ].map((m) => (
+              <div key={m.label} className="flex-1 flex items-center justify-center gap-2 px-3">
+                <span className="font-bold text-slate-800 text-sm">{m.value}</span>
+                <span className="text-gray-500 text-xs">·</span>
+                <span className="text-gray-600 text-xs">{m.label}</span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
