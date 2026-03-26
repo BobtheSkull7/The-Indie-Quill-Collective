@@ -333,7 +333,7 @@ export default function Board() {
             {boardMembersData.length === 0 ? (
               <div className="text-center py-12">
                 <User className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500 text-lg">Board member information coming soon.</p>
+                <p className="text-gray-500 text-lg">Leadership profiles will be displayed here.</p>
               </div>
             ) : (
               <div className="grid md:grid-cols-2 gap-8">

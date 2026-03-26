@@ -397,22 +397,38 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-slate-900 text-slate-300 py-8">
+      <footer className="bg-slate-900 text-slate-300 py-10">
         <div className="max-w-5xl mx-auto px-4">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="flex items-center space-x-3 mb-4 md:mb-0">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-6">
+            <div className="flex items-center space-x-3">
               <img src="/logo.png" alt="The Indie Quill Collective" className="w-10 h-10 rounded-full" />
               <div>
                 <h3 className="font-display text-base font-bold text-white">The Indie Quill Collective</h3>
                 <p className="text-xs text-red-400">501(c)(3) Non-Profit Organization</p>
               </div>
             </div>
-            <div className="flex items-center gap-4">
-              <a href="/privacy" className="text-xs text-slate-400 hover:text-teal-400 transition-colors">Privacy Policy</a>
-              <p className="text-xs">
-                &copy; {new Date().getFullYear()} The Indie Quill Collective. All rights reserved.
-              </p>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <a
+                href="mailto:jon@theindiequill.com"
+                className="flex items-center gap-2 text-sm text-slate-300 hover:text-teal-400 transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                jon@theindiequill.com
+              </a>
+              <a
+                href="tel:+18179132154"
+                className="flex items-center gap-2 text-sm text-slate-300 hover:text-teal-400 transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.61 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                (817) 913-2154
+              </a>
             </div>
+          </div>
+          <div className="border-t border-slate-800 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <a href="/privacy" className="text-xs text-slate-400 hover:text-teal-400 transition-colors">Privacy Policy</a>
+            <p className="text-xs text-slate-500">
+              &copy; {new Date().getFullYear()} The Indie Quill Collective. All rights reserved.
+            </p>
           </div>
         </div>
       </footer>

@@ -1,195 +1,40 @@
-import { useState, useEffect, useRef } from "react";
 import { Link } from "wouter";
-import { ArrowLeft, Heart, Mail, Linkedin, User, Pencil, Plus, Trash2, X, Save, Upload } from "lucide-react";
-import { useAuth } from "../App";
+import { ArrowLeft, Heart, BookOpen, GraduationCap, Printer, Phone, Mail } from "lucide-react";
 
-interface BoardMemberData {
-  id: number;
-  name: string;
-  title: string;
-  bio: string | null;
-  photoFilename: string | null;
-  email: string | null;
-  linkedin: string | null;
-  displayOrder: number;
-  isActive: boolean;
-}
+const SERVICES = [
+  {
+    icon: BookOpen,
+    title: "Writing Workshops & Author Mentorship",
+    description:
+      "We provide structured, hands-on writing workshops and one-on-one author mentorship designed for emerging voices at every skill level. Our curriculum guides writers from idea to polished manuscript—covering narrative structure, voice development, genre craft, and revision techniques. Each author is paired with a trained mentor who provides personalized guidance throughout the entire writing journey.",
+    color: "from-teal-500 to-teal-700",
+    light: "bg-teal-50",
+    border: "border-teal-200",
+    text: "text-teal-700",
+  },
+  {
+    icon: GraduationCap,
+    title: "Adult Literacy Testing & Training",
+    description:
+      "The Indie Quill Collective offers comprehensive adult literacy assessment and training services, including administration of standardized literacy evaluations and individualized instruction plans. Our educators work with adult learners to build foundational reading, writing, and comprehension skills—removing the literacy barriers that prevent full participation in education and professional life. We track progress through structured assessments and celebrate every educational milestone.",
+    color: "from-blue-500 to-blue-700",
+    light: "bg-blue-50",
+    border: "border-blue-200",
+    text: "text-blue-700",
+  },
+  {
+    icon: Printer,
+    title: "Publishing Assistance",
+    description:
+      "From manuscript to published book, we provide end-to-end publishing assistance to help authors bring their work to the world. Our services include professional editing, cover design, interior formatting, ISBN registration, copyright filing, and distribution coordination. We partner with The Indie Quill LLC to ensure every author who completes our program has a professionally published title to their name—regardless of their financial circumstances.",
+    color: "from-purple-500 to-purple-700",
+    light: "bg-purple-50",
+    border: "border-purple-200",
+    text: "text-purple-700",
+  },
+];
 
 export default function AboutUs() {
-  const { user } = useAuth();
-  const [boardMembers, setBoardMembers] = useState<BoardMemberData[]>([]);
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [formData, setFormData] = useState({ name: "", title: "", bio: "", email: "", linkedin: "", displayOrder: "0" });
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const isAdmin = user && (user.role === "admin" || user.role === "board_member" || (user as any).secondaryRole === "board_member");
-
-  useEffect(() => {
-    loadBoardMembers();
-  }, []);
-
-  const loadBoardMembers = () => {
-    fetch("/api/public/board-members")
-      .then(res => res.ok ? res.json() : [])
-      .then(data => setBoardMembers(Array.isArray(data) ? data : []))
-      .catch(() => {});
-  };
-
-  const handleEdit = (member: BoardMemberData) => {
-    setEditingId(member.id);
-    setShowAddForm(false);
-    setFormData({
-      name: member.name,
-      title: member.title,
-      bio: member.bio || "",
-      email: member.email || "",
-      linkedin: member.linkedin || "",
-      displayOrder: String(member.displayOrder),
-    });
-    setPhotoFile(null);
-  };
-
-  const handleAdd = () => {
-    setShowAddForm(true);
-    setEditingId(null);
-    setFormData({ name: "", title: "", bio: "", email: "", linkedin: "", displayOrder: "0" });
-    setPhotoFile(null);
-  };
-
-  const handleCancel = () => {
-    setEditingId(null);
-    setShowAddForm(false);
-    setFormData({ name: "", title: "", bio: "", email: "", linkedin: "", displayOrder: "0" });
-    setPhotoFile(null);
-  };
-
-  const handleSave = async () => {
-    const fd = new FormData();
-    fd.append("name", formData.name);
-    fd.append("title", formData.title);
-    fd.append("bio", formData.bio);
-    fd.append("email", formData.email);
-    fd.append("linkedin", formData.linkedin);
-    fd.append("displayOrder", formData.displayOrder);
-    if (photoFile) fd.append("photo", photoFile);
-
-    const url = editingId ? `/api/admin/board-members/${editingId}` : "/api/admin/board-members";
-    const method = editingId ? "PATCH" : "POST";
-
-    const res = await fetch(url, { method, body: fd });
-    if (res.ok) {
-      loadBoardMembers();
-      handleCancel();
-    }
-  };
-
-  const handleDelete = async (id: number) => {
-    if (!confirm("Are you sure you want to remove this board member?")) return;
-    const res = await fetch(`/api/admin/board-members/${id}`, { method: "DELETE" });
-    if (res.ok) loadBoardMembers();
-  };
-
-  const renderForm = () => (
-    <div className="bg-white rounded-2xl shadow-sm border border-teal-200 p-6 mb-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-display text-lg font-bold text-slate-800">
-          {editingId ? "Edit Board Member" : "Add Board Member"}
-        </h3>
-        <button onClick={handleCancel} className="text-gray-400 hover:text-gray-600">
-          <X className="w-5 h-5" />
-        </button>
-      </div>
-      <div className="grid md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-          <input
-            type="text"
-            value={formData.name}
-            onChange={e => setFormData({ ...formData, name: e.target.value })}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
-          <input
-            type="text"
-            value={formData.title}
-            onChange={e => setFormData({ ...formData, title: e.target.value })}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-          />
-        </div>
-        <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
-          <textarea
-            value={formData.bio}
-            onChange={e => setFormData({ ...formData, bio: e.target.value })}
-            rows={3}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-          <input
-            type="email"
-            value={formData.email}
-            onChange={e => setFormData({ ...formData, email: e.target.value })}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">LinkedIn URL</label>
-          <input
-            type="url"
-            value={formData.linkedin}
-            onChange={e => setFormData({ ...formData, linkedin: e.target.value })}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Display Order</label>
-          <input
-            type="number"
-            value={formData.displayOrder}
-            onChange={e => setFormData({ ...formData, displayOrder: e.target.value })}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Photo</label>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={e => setPhotoFile(e.target.files?.[0] || null)}
-            className="hidden"
-          />
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="flex items-center space-x-2 border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-gray-50"
-          >
-            <Upload className="w-4 h-4" />
-            <span>{photoFile ? photoFile.name : "Choose photo..."}</span>
-          </button>
-        </div>
-      </div>
-      <div className="flex justify-end mt-4 space-x-3">
-        <button onClick={handleCancel} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">
-          Cancel
-        </button>
-        <button
-          onClick={handleSave}
-          disabled={!formData.name || !formData.title}
-          className="flex items-center space-x-2 bg-teal-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <Save className="w-4 h-4" />
-          <span>{editingId ? "Update" : "Add"}</span>
-        </button>
-      </div>
-    </div>
-  );
-
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto px-4 py-8">
@@ -201,11 +46,12 @@ export default function AboutUs() {
         <div className="text-center mb-12">
           <div className="inline-flex items-center space-x-2 bg-red-50 rounded-full px-4 py-2 mb-4">
             <Heart className="w-4 h-4 text-red-500" />
-            <span className="text-sm font-medium text-red-700">501(c)(3) Non-Profit</span>
+            <span className="text-sm font-medium text-red-700">501(c)(3) Non-Profit Organization</span>
           </div>
           <h1 className="font-display text-4xl md:text-5xl font-bold text-slate-800 mb-4">
-            About The Indie Quill Collective
+            The Indie Quill Collective
           </h1>
+          <p className="text-gray-500 text-lg">Protecting Young Voices. Building Futures.</p>
         </div>
 
         <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mb-8">
@@ -233,7 +79,7 @@ export default function AboutUs() {
           <p className="text-slate-200 text-center mb-8 max-w-2xl mx-auto">
             We stand with and uplift marginalized communities whose stories have been silenced for too long.
           </p>
-          
+
           <div className="flex flex-wrap justify-center gap-4 mb-8">
             <div className="w-16 h-12 rounded-lg overflow-hidden shadow-lg" title="Intersex-Inclusive Progress Pride Flag">
               <svg viewBox="0 0 60 40" className="w-full h-full">
@@ -252,7 +98,7 @@ export default function AboutUs() {
                 <circle cx="8" cy="20" r="2.5" fill="#7902AA"/>
               </svg>
             </div>
-            
+
             <div className="w-16 h-12 rounded-lg overflow-hidden shadow-lg relative" title="Pan-African Flag with Raised Fist">
               <svg viewBox="0 0 60 40" className="w-full h-full">
                 <rect fill="#E31B23" width="60" height="13.33" y="0"/>
@@ -263,7 +109,7 @@ export default function AboutUs() {
                 </g>
               </svg>
             </div>
-            
+
             <div className="w-16 h-12 rounded-lg overflow-hidden shadow-lg" title="Hispanic Heritage">
               <svg viewBox="0 0 60 40" className="w-full h-full">
                 <rect fill="#1E3A5F" width="60" height="12" y="0"/>
@@ -275,7 +121,7 @@ export default function AboutUs() {
                 <rect fill="#78350F" width="60" height="6" y="34"/>
               </svg>
             </div>
-            
+
             <div className="w-16 h-12 rounded-lg overflow-hidden shadow-lg" title="Asian American & Pacific Islander">
               <svg viewBox="0 0 60 40" className="w-full h-full">
                 <rect fill="#E63946" width="60" height="40"/>
@@ -297,7 +143,7 @@ export default function AboutUs() {
                 <circle cx="55" cy="33" r="2" fill="#FFFFFF" fillOpacity="0.8"/>
               </svg>
             </div>
-            
+
             <div className="w-16 h-12 rounded-lg overflow-hidden shadow-lg" title="Indigenous Peoples Flag">
               <svg viewBox="0 0 60 40" className="w-full h-full">
                 <rect fill="#D32F2F" width="30" height="20" x="0" y="0"/>
@@ -314,7 +160,7 @@ export default function AboutUs() {
                 </g>
               </svg>
             </div>
-            
+
             <div className="w-16 h-12 rounded-lg overflow-hidden shadow-lg" title="Disability Pride">
               <div className="w-full h-full bg-slate-900 relative">
                 <div className="absolute inset-0 flex items-center justify-center">
@@ -327,7 +173,7 @@ export default function AboutUs() {
               </div>
             </div>
           </div>
-          
+
           <div className="flex flex-wrap justify-center gap-2 text-sm">
             <span className="bg-white/10 px-3 py-1 rounded-full">LGBTQIA+</span>
             <span className="bg-white/10 px-3 py-1 rounded-full">Black</span>
@@ -355,121 +201,71 @@ export default function AboutUs() {
         </section>
 
         <section className="mb-8">
-          <div className="flex items-center justify-center mb-8">
-            <div className="text-center">
-              <h2 className="font-display text-3xl font-bold text-slate-800 mb-2">
-                Our Leadership Team
-              </h2>
-              <p className="text-gray-600 max-w-2xl mx-auto">
-                Meet the dedicated individuals guiding The Indie Quill Collective's mission 
-                to empower emerging authors and advance literacy.
-              </p>
-            </div>
+          <div className="text-center mb-8">
+            <h2 className="font-display text-3xl font-bold text-slate-800 mb-2">
+              Our Services
+            </h2>
+            <p className="text-gray-600 max-w-2xl mx-auto">
+              The Indie Quill Collective actively provides the following programs and services to the communities we serve.
+            </p>
           </div>
 
-          {isAdmin && !showAddForm && editingId === null && (
-            <div className="flex justify-end mb-4">
-              <button
-                onClick={handleAdd}
-                className="flex items-center space-x-2 bg-teal-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-teal-700 transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Add Member</span>
-              </button>
-            </div>
-          )}
-
-          {isAdmin && (showAddForm || editingId !== null) && renderForm()}
-
-          {boardMembers.length === 0 && !showAddForm ? (
-            <div className="text-center py-12 bg-white rounded-2xl shadow-sm border border-gray-100">
-              <User className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 text-lg">Board member information coming soon.</p>
-            </div>
-          ) : (
-            <div className="grid md:grid-cols-2 gap-8">
-              {boardMembers.map((member, index) => (
-                <div 
-                  key={member.id}
-                  className={`bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden relative group ${
-                    index === 0 ? "md:col-span-2" : ""
-                  }`}
+          <div className="space-y-6">
+            {SERVICES.map((service) => {
+              const Icon = service.icon;
+              return (
+                <div
+                  key={service.title}
+                  className={`bg-white rounded-2xl shadow-sm border ${service.border} p-8`}
                 >
-                  {isAdmin && editingId !== member.id && (
-                    <div className="absolute top-3 right-3 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                      <button
-                        onClick={() => handleEdit(member)}
-                        className="p-2 bg-white rounded-full shadow-md text-gray-500 hover:text-teal-600 transition-colors border border-gray-200"
-                        title="Edit"
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(member.id)}
-                        className="p-2 bg-white rounded-full shadow-md text-gray-500 hover:text-red-600 transition-colors border border-gray-200"
-                        title="Remove"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                  <div className="flex items-start gap-5">
+                    <div className={`w-14 h-14 rounded-xl ${service.light} flex items-center justify-center flex-shrink-0`}>
+                      <Icon className={`w-7 h-7 ${service.text}`} />
                     </div>
-                  )}
-
-                  <div className={`p-8 ${index === 0 ? "md:flex md:gap-8" : ""}`}>
-                    <div className={`${index === 0 ? "md:w-1/3" : ""} mb-6 md:mb-0`}>
-                      <div
-                        className={`${
-                          index === 0 ? "w-48 h-48 mx-auto md:mx-0" : "w-32 h-32 mx-auto"
-                        } bg-gradient-to-br from-teal-100 to-blue-100 rounded-full flex items-center justify-center border-4 border-white shadow-lg`}
-                        style={{ overflow: "hidden" }}
-                      >
-                        {member.photoFilename ? (
-                          <img 
-                            src={`/uploads/board/${member.photoFilename}`} 
-                            alt={member.name}
-                            className="w-full h-full object-cover"
-                            style={{ display: "block", minWidth: "100%", minHeight: "100%" }}
-                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                          />
-                        ) : (
-                          <User className={`${index === 0 ? "w-20 h-20" : "w-12 h-12"} text-teal-400`} />
-                        )}
-                      </div>
-                    </div>
-
-                    <div className={`${index === 0 ? "md:w-2/3" : ""} text-center ${index === 0 ? "md:text-left" : ""}`}>
-                      <h3 className="font-display text-xl font-bold text-slate-800 mb-1">
-                        {member.name}
+                    <div>
+                      <h3 className={`font-display text-xl font-bold ${service.text} mb-3`}>
+                        {service.title}
                       </h3>
-                      <p className="text-teal-600 font-medium text-sm mb-4">
-                        {member.title}
+                      <p className="text-gray-700 leading-relaxed">
+                        {service.description}
                       </p>
-                      {member.bio && (
-                        <p className="text-gray-600 leading-relaxed mb-4">
-                          {member.bio}
-                        </p>
-                      )}
-                      {(member.email || member.linkedin) && (
-                        <div className="flex items-center justify-center md:justify-start space-x-4">
-                          {member.email && (
-                            <a href={`mailto:${member.email}`} className="flex items-center space-x-1 text-gray-500 hover:text-teal-600 transition-colors text-sm">
-                              <Mail className="w-4 h-4" />
-                              <span>Email</span>
-                            </a>
-                          )}
-                          {member.linkedin && (
-                            <a href={member.linkedin} target="_blank" rel="noopener noreferrer" className="flex items-center space-x-1 text-gray-500 hover:text-blue-600 transition-colors text-sm">
-                              <Linkedin className="w-4 h-4" />
-                              <span>LinkedIn</span>
-                            </a>
-                          )}
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="bg-gradient-to-br from-teal-700 to-teal-900 rounded-2xl shadow-lg p-8 mb-8 text-white">
+          <h2 className="font-display text-2xl font-bold mb-2 text-center">
+            Contact Us
+          </h2>
+          <p className="text-teal-100 text-center mb-8 max-w-xl mx-auto">
+            To inquire about any of our services or to begin your journey with The Indie Quill Collective, reach out to us directly.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+            <a
+              href="mailto:jon@theindiequill.com"
+              className="flex items-center gap-3 bg-white/10 hover:bg-white/20 transition-colors rounded-xl px-6 py-4 min-w-[220px]"
+            >
+              <Mail className="w-5 h-5 text-teal-200 flex-shrink-0" />
+              <div>
+                <p className="text-xs text-teal-300 font-medium uppercase tracking-wider">Email</p>
+                <p className="text-white font-semibold">jon@theindiequill.com</p>
+              </div>
+            </a>
+            <a
+              href="tel:+18179132154"
+              className="flex items-center gap-3 bg-white/10 hover:bg-white/20 transition-colors rounded-xl px-6 py-4 min-w-[220px]"
+            >
+              <Phone className="w-5 h-5 text-teal-200 flex-shrink-0" />
+              <div>
+                <p className="text-xs text-teal-300 font-medium uppercase tracking-wider">Phone</p>
+                <p className="text-white font-semibold">(817) 913-2154</p>
+              </div>
+            </a>
+          </div>
         </section>
 
         <div className="text-center py-8">
