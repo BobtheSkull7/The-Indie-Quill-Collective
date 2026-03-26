@@ -5243,15 +5243,28 @@ export function registerGrantRoutes(app: Express) {
     }
 
     try {
-      const [newGrant] = await db.insert(foundationGrants).values({
-        foundationId,
-        amount,
-        targetAuthorCount,
-        assignedCohortId: assignedCohortId || null,
-        grantDate: new Date(grantDate),
-        grantPurpose,
-        createdBy: req.session.userId,
-      }).returning();
+      // Use raw SQL to avoid Drizzle schema mismatch:
+      // - schema declares column as "recorded_by" but DB column is "created_by"
+      // - schema declares "updated_at" but that column does not exist in the DB
+      const grantResult = await pool.query(
+        `INSERT INTO foundation_grants
+           (foundation_id, amount, target_author_count, assigned_cohort_id, grant_date, grant_purpose, created_by)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
+         RETURNING id, foundation_id AS "foundationId", amount, target_author_count AS "targetAuthorCount",
+                   assigned_cohort_id AS "assignedCohortId", grant_date AS "grantDate",
+                   grant_purpose AS "grantPurpose", donor_locked_at AS "donorLockedAt",
+                   created_by AS "createdBy", created_at AS "createdAt"`,
+        [
+          foundationId,
+          amount,
+          targetAuthorCount,
+          assignedCohortId || null,
+          new Date(grantDate),
+          grantPurpose || null,
+          String(req.session.userId),
+        ]
+      );
+      const newGrant = grantResult.rows[0];
 
       // Update solicitation log to "funded" if there's a recent one
       // Wrapped in try/catch since solicitation_logs may have schema differences on PROD
