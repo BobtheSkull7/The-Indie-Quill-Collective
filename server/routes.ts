@@ -1953,6 +1953,37 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  app.get("/api/admin/manuscripts", async (req: Request, res: Response) => {
+    if (!req.session.userId || !hasRole(req.session, "admin")) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    try {
+      const result = await db.execute(sql`
+        SELECT
+          m.id,
+          m.user_id as "userId",
+          CONCAT(u.first_name, ' ', u.last_name) as "authorName",
+          COALESCE(a.pseudonym, 'Unknown') as "pseudonym",
+          SUM(m.word_count) as "wordCount",
+          MAX(m.updated_at) as "updatedAt",
+          CASE WHEN pu.status = 'published' THEN true ELSE false END as "isPublished",
+          CASE WHEN pu.status = 'published' THEN pu.updated_at ELSE NULL END as "publishedAt"
+        FROM manuscripts m
+        JOIN users u ON m.user_id::integer = u.id
+        LEFT JOIN applications a ON a.user_id = u.id
+        LEFT JOIN publishing_updates pu ON pu.user_id = m.user_id
+        WHERE m.user_id ~ '^\d+$'
+        GROUP BY m.user_id, u.id, u.first_name, u.last_name, a.pseudonym, pu.status, pu.updated_at
+        ORDER BY MAX(m.updated_at) DESC
+      `);
+      return res.json(result.rows || []);
+    } catch (error) {
+      console.error("Fetch manuscripts error:", error);
+      return res.status(500).json({ message: "Failed to fetch manuscripts" });
+    }
+  });
+
   app.get("/api/admin/pipeline", async (req: Request, res: Response) => {
     if (!req.session.userId || !hasRole(req.session, "admin")) {
       return res.status(403).json({ message: "Not authorized" });
@@ -1968,19 +1999,19 @@ export async function registerRoutes(app: Express) {
           pu.status_message as "statusMessage",
           pu.updated_at as "updatedAt",
           a.pseudonym as "authorPseudonym",
-          NULL::text as "manuscriptTitle",
+          CONCAT(a.pseudonym, ' — Manuscript') as "manuscriptTitle",
           COALESCE(ms.total_words, 0) as "manuscriptWordCount",
           u.first_name as "firstName",
           u.last_name as "lastName"
         FROM publishing_updates pu
         JOIN applications a ON pu.application_id = a.id
-        JOIN users u ON pu.user_id = u.id
+        JOIN users u ON pu.user_id::integer = u.id
         LEFT JOIN (
           SELECT user_id::integer as user_id_int, SUM(word_count) as total_words
           FROM manuscripts
           WHERE user_id ~ '^\d+$'
           GROUP BY user_id_int
-        ) ms ON ms.user_id_int = pu.user_id
+        ) ms ON ms.user_id_int = pu.user_id::integer
         ORDER BY pu.updated_at DESC
       `);
       return res.json(result.rows || []);

@@ -94,8 +94,11 @@ export default function PipelineContent() {
         throw new Error(errData.message || "Failed to advance stage");
       }
 
+      const confirmed = await res.json().catch(() => ({ status: newStage }));
+      const confirmedStage = confirmed.status || newStage;
+
       setItems(prev =>
-        prev.map(m => m.id === item.id ? { ...m, stage: newStage, updatedAt: new Date().toISOString() } : m)
+        prev.map(m => m.id === item.id ? { ...m, stage: confirmedStage, updatedAt: new Date().toISOString() } : m)
       );
     } catch (err: any) {
       console.error("Error advancing stage:", err);
