@@ -42,8 +42,8 @@ export default function VibeDeckCard({ task, qualifications, isCompleted = false
               <span className="text-xs font-medium text-green-600 bg-green-100 px-2 py-0.5 rounded-full">Done</span>
             )}
           </div>
-          <div className="flex-1 flex items-start">
-            <p className="text-left text-slate-800 font-medium text-sm leading-relaxed w-full">{task}</p>
+          <div className="flex-1">
+            <p className="text-left text-slate-800 font-medium text-sm leading-relaxed">{task}</p>
           </div>
           <div className="mt-3 flex items-center justify-between">
             <span className="text-left text-xs text-gray-400 italic">Tap to flip</span>
@@ -64,8 +64,8 @@ export default function VibeDeckCard({ task, qualifications, isCompleted = false
               <CheckCircle className="w-5 h-5 text-green-400" />
             )}
           </div>
-          <div className="flex-1 flex items-start">
-            <p className="text-left text-white/90 text-sm leading-relaxed w-full">{qualifications}</p>
+          <div className="flex-1">
+            <p className="text-left text-white/90 text-sm leading-relaxed">{qualifications}</p>
           </div>
 
           {onStartWriting && !isCompleted && (
