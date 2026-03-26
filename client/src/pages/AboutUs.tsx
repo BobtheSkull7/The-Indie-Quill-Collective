@@ -262,7 +262,7 @@ export default function AboutUs() {
               <Phone className="w-5 h-5 text-teal-200 flex-shrink-0" />
               <div>
                 <p className="text-xs text-teal-300 font-medium uppercase tracking-wider">Phone</p>
-                <p className="text-white font-semibold">(817) 913-2154</p>
+                <p className="text-white font-semibold">+1 (817) 913-2154</p>
               </div>
             </a>
           </div>
