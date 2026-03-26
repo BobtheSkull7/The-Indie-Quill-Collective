@@ -7330,18 +7330,15 @@ export async function registerDonationRoutes(app: Express) {
           u.email,
           u.role,
           u.vibe_scribe_id as "shortId",
-          sp.training_path as "trainingPath",
           sp.enrolled_at as "enrolledAt",
-          COALESCE(dd.total_words, 0) + COALESCE(ms.ms_words, 0) + COALESCE(mm.mm_words, 0) as "wordCount",
+          -- Mirror the Author Scorecard: wordsWritten (manuscripts+master) + wordsSpoken (vibescribe_transcripts)
+          COALESCE(ms.ms_words, 0) + COALESCE(mm.mm_words, 0) + COALESCE(vt.spoken_words, 0) as "wordCount",
           COALESCE(sal.total_hours, 0) as "hoursActive",
           COALESCE(scp.avg_progress, 0) as "courseProgress",
           COALESCE(scp.modules_completed, 0) as "modulesCompleted",
           COALESCE(sw.snippet_count, 0) as "vibeSnippetCount"
         FROM users u
         LEFT JOIN student_profiles sp ON sp.user_id = u.id
-        LEFT JOIN (
-          SELECT user_id, SUM(word_count) as total_words FROM drafting_documents GROUP BY user_id
-        ) dd ON dd.user_id = u.id
         LEFT JOIN (
           SELECT user_id::integer as uid, SUM(word_count) as ms_words
           FROM manuscripts
@@ -7354,6 +7351,13 @@ export async function registerDonationRoutes(app: Express) {
           WHERE user_id ~ '^\d+$'
           GROUP BY uid
         ) mm ON mm.uid = u.id
+        LEFT JOIN (
+          SELECT user_id,
+            COALESCE(SUM(array_length(regexp_split_to_array(trim(content), '\s+'), 1)), 0) as spoken_words
+          FROM vibescribe_transcripts
+          WHERE content IS NOT NULL AND trim(content) != ''
+          GROUP BY user_id
+        ) vt ON vt.user_id = u.id
         LEFT JOIN (
           SELECT user_id, ROUND(SUM(minutes_active) / 60.0, 1) as total_hours
           FROM student_activity_logs GROUP BY user_id
