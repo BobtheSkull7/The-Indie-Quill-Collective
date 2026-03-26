@@ -85,10 +85,13 @@ export default function AuthorScorecard({ className = "", refreshKey = 0 }: Auth
   const [error, setError] = useState<string | null>(null);
   const [metrics, setMetrics] = useState<AuthorMetrics | null>(null);
   const [selectedTitle, setSelectedTitle] = useState<string>("");
+  const [justRefreshed, setJustRefreshed] = useState(false);
+  const refreshedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchMetrics = async () => {
     setLoading(true);
     setError(null);
+    setJustRefreshed(false);
     try {
       const res = await fetch(`/api/student/author-metrics?_t=${Date.now()}`, {
         credentials: "include",
@@ -113,6 +116,9 @@ export default function AuthorScorecard({ className = "", refreshKey = 0 }: Auth
       const data = await res.json();
       setMetrics(data);
       setSelectedTitle(data.activeTitle || "the Novice");
+      setJustRefreshed(true);
+      if (refreshedTimerRef.current) clearTimeout(refreshedTimerRef.current);
+      refreshedTimerRef.current = setTimeout(() => setJustRefreshed(false), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
@@ -123,6 +129,12 @@ export default function AuthorScorecard({ className = "", refreshKey = 0 }: Auth
   useEffect(() => {
     fetchMetrics();
   }, [refreshKey]);
+
+  useEffect(() => {
+    return () => {
+      if (refreshedTimerRef.current) clearTimeout(refreshedTimerRef.current);
+    };
+  }, []);
 
   const sectionBorder = "border-[#33333319]";
 
@@ -289,15 +301,20 @@ export default function AuthorScorecard({ className = "", refreshKey = 0 }: Auth
             )}
           </div>
 
-          <div className="text-center">
+          <div className="text-center space-y-1.5">
             <button
               onClick={fetchMetrics}
               disabled={loading}
-              className={`px-3 py-1.5 bg-white/60 hover:bg-amber-50/80 text-[#2C2C2C]/60 text-xs rounded-lg flex items-center gap-2 transition-colors mx-auto border ${sectionBorder}`}
+              className={`px-3 py-1.5 bg-white/60 hover:bg-amber-50/80 text-[#2C2C2C]/60 text-xs rounded-lg flex items-center gap-2 transition-colors mx-auto border ${sectionBorder} disabled:opacity-60 disabled:cursor-not-allowed`}
             >
               <RefreshCw className={`w-3 h-3 ${loading ? "animate-spin" : ""}`} />
-              Refresh
+              {loading ? "Refreshing..." : "Refresh"}
             </button>
+            {justRefreshed && (
+              <p className="text-[10px] text-amber-700/60 italic animate-pulse">
+                Updated just now
+              </p>
+            )}
           </div>
         </div>
       </div>
