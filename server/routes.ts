@@ -7560,6 +7560,9 @@ export async function registerDonationRoutes(app: Express) {
       return res.status(401).json({ error: "Not authenticated" });
     }
 
+    const mentorId = Number(req.session.userId);
+    console.log(`[mentor/students] session userId=${req.session.userId} (type=${typeof req.session.userId}) → mentorId=${mentorId}`);
+
     try {
       const result = await db.execute(sql`
         SELECT 
@@ -7594,13 +7597,14 @@ export async function registerDonationRoutes(app: Express) {
         LEFT JOIN (
           SELECT user_id, AVG(percent_complete) as avg_progress FROM student_curriculum_progress GROUP BY user_id
         ) scp ON scp.user_id = u.id
-        WHERE msa.mentor_id = ${req.session.userId}
+        WHERE msa.mentor_id = ${mentorId}
         ORDER BY u.first_name, u.last_name
       `);
 
+      console.log(`[mentor/students] rows returned: ${result.rows.length}`);
       res.json(result.rows);
     } catch (error) {
-      console.error("Error fetching mentor students:", error);
+      console.error("[mentor/students] query error:", error);
       res.status(500).json({ error: "Failed to fetch students" });
     }
   });
@@ -7610,6 +7614,7 @@ export async function registerDonationRoutes(app: Express) {
       return res.status(401).json({ error: "Not authenticated" });
     }
 
+    const mentorId = Number(req.session.userId);
     try {
       const result = await db.execute(sql`
         SELECT 
@@ -7619,7 +7624,7 @@ export async function registerDonationRoutes(app: Express) {
         FROM meetings m
         JOIN meeting_attendees ma ON ma.meeting_id = m.id
         JOIN users u ON u.id = ma.user_id
-        WHERE m.mentor_id = ${req.session.userId}
+        WHERE m.mentor_id = ${mentorId}
         ORDER BY m.start_time DESC
       `);
 
@@ -7677,16 +7682,17 @@ export async function registerDonationRoutes(app: Express) {
       return res.status(401).json({ error: "Not authenticated" });
     }
 
+    const mentorId = Number(req.session.userId);
     try {
       const studentsResult = await db.execute(sql`
-        SELECT COUNT(*) as count FROM mentor_student_assignments WHERE mentor_id = ${req.session.userId}
+        SELECT COUNT(*) as count FROM mentor_student_assignments WHERE mentor_id = ${mentorId}
       `);
 
       const progressResult = await db.execute(sql`
         SELECT AVG(scp.percent_complete) as avg_progress
         FROM mentor_student_assignments msa
         JOIN student_curriculum_progress scp ON scp.user_id = msa.student_id
-        WHERE msa.mentor_id = ${req.session.userId}
+        WHERE msa.mentor_id = ${mentorId}
       `);
 
       const hoursResult = await db.execute(sql`
@@ -7694,12 +7700,12 @@ export async function registerDonationRoutes(app: Express) {
         FROM mentor_student_assignments msa
         JOIN (SELECT user_id, ROUND(SUM(minutes_active) / 60.0, 1) as total_hours FROM student_activity_logs GROUP BY user_id) sal
           ON sal.user_id = msa.student_id
-        WHERE msa.mentor_id = ${req.session.userId}
+        WHERE msa.mentor_id = ${mentorId}
       `);
 
       const meetingsResult = await db.execute(sql`
         SELECT COUNT(*) as count FROM meetings 
-        WHERE mentor_id = ${req.session.userId} AND start_time > NOW()
+        WHERE mentor_id = ${mentorId} AND start_time > NOW()
       `);
 
       res.json({

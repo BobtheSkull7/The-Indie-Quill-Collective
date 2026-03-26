@@ -83,14 +83,20 @@ export default function MentorDashboard() {
   const loadDashboardData = async () => {
     try {
       const [studentsRes, meetingsRes, statsRes] = await Promise.all([
-        fetch("/api/mentor/students").then(r => r.json()),
-        fetch("/api/mentor/meetings").then(r => r.json()),
-        fetch("/api/mentor/stats").then(r => r.json())
+        fetch("/api/mentor/students", { credentials: "include" })
+          .then(r => r.ok ? r.json() : [])
+          .catch(() => []),
+        fetch("/api/mentor/meetings", { credentials: "include" })
+          .then(r => r.ok ? r.json() : [])
+          .catch(() => []),
+        fetch("/api/mentor/stats", { credentials: "include" })
+          .then(r => r.ok ? r.json() : null)
+          .catch(() => null),
       ]);
 
       setStudents(Array.isArray(studentsRes) ? studentsRes : []);
       setMeetings(Array.isArray(meetingsRes) ? meetingsRes : []);
-      if (statsRes && typeof statsRes === 'object' && !statsRes.error) {
+      if (statsRes && typeof statsRes === 'object') {
         setStats(statsRes);
       }
     } catch (error) {
